@@ -1,0 +1,475 @@
+---
+title: 'Lit Review'
+description: 'What the science actually shows about psychological variation — heritability, environmental shaping, gene-environment interaction, sex differences, cognitive capacity. The post-2010 genomic era confirmed mid-20th-century behavior genetics while demolishing the candidate-gene paradigm; assortative mating and genetic nurture are actively rewriting older interpretations.'
+date: 2026-04-28
+status: complete
+refinementPass: 0
+---
+
+## TLDR
+
+Virtually every measured psychological trait is moderately to substantially heritable, hyper-polygenic, and shaped by environments that are themselves partly genetic in origin. The post-2010 genomic era confirmed the core findings of mid-20th-century behavior genetics while simultaneously demolishing the candidate-gene paradigm that dominated psychiatry from 1996–2010. Twin heritability for psychological traits averages ~49% (Polderman et al. 2015); molecular GWAS increasingly accounts for this through thousands of tiny-effect common variants plus rarer large-effect variants in neurodevelopmental conditions.
+
+A crucial methodological development since 2018 is the recognition that assortative mating and gene-environment correlation systematically inflate GWAS-derived estimates. Border et al. (2022, *Science*) showed that cross-trait assortative mating alone can account for substantial fractions of reported genetic correlations — including some psychiatric cross-disorder correlations previously attributed to shared biology. Kong et al.'s (2018) "genetic nurture" finding demonstrated that roughly half of population-level polygenic score prediction for educational attainment reflects environmentally-mediated parental effects, not direct genetic causation. These corrections don't eliminate genetic influence — they reframe it.
+
+The field's most contested findings are not the ones most disputed in public discourse: heritability is settled science, the "parenting wars" are largely resolved, and the candidate-gene-by-environment literature has collapsed. What remains genuinely open is mechanistic — how genes build minds, why the gender equality paradox exists, what drives the Flynn Effect's reversal, and whether between-population mean differences have any genetic component (a question currently unanswerable with available methods, not "settled" in either direction). The generating function for psychological variation is not "genes vs. environment" but a tightly coupled developmental system in which genetic predispositions, environments created by genetically-similar parents, assortative mating patterns, stochastic noise, and cultural context are deeply entangled.
+
+This document is structured for someone building a formal model of psychological variation. Each section flags effect sizes, replication status, consensus, live debate, and ideological distortion from any direction.
+
+---
+
+## 1. Heritability: The Foundation Finding
+
+### The Polderman meta-analysis
+
+**Polderman et al. (2015, *Nature Genetics*)** meta-analyzed 50 years of twin research — 17,804 traits, 14.5 million twin pairs, 2,748 publications — and reported a mean heritability across all human traits of **49%**. [Polderman et al., 2015](https://www.nature.com/articles/ng.3285). For ~69% of traits, simple additive ACE models fit cleanly.
+
+### Turkheimer's Laws and the Fourth Law
+
+**Turkheimer's Three Laws** (2000) — all human behavioral traits are heritable; shared family environment is smaller than genes; substantial variance is explained by neither — were extended by **Chabris et al. (2015)** with the **Fourth Law: a typical behavioral trait is associated with very many genetic variants of tiny effect**. This emerged from the failure of candidate-gene studies and the polygenic architecture revealed by GWAS.
+
+### What heritability actually means (and doesn't)
+
+Heritability is a **population statistic**, not an individual one. Saying IQ is 70% heritable does *not* mean 70% of any person's IQ comes from genes. It is **not deterministic** (height is ~80% heritable yet rose ~10cm in 20th-century Europe through nutrition) and **not immutable** (h² changes with environment — if all environments became identical, h² would approach 1.0). The most common misinterpretation collapses statistical variance partitioning into causal mechanism.
+
+### Twin and molecular estimates by domain
+
+| Domain | Twin h² | SNP-h² | Largest GWAS | Loci | Best PGS R² |
+|---|---|---|---|---|---|
+| Adult IQ / g | 0.70–0.80 | ~0.20 | 269,867 (Savage 2018) | 205 | ~0.05 |
+| Educational attainment | ~0.40 | ~0.13 | 3M (Okbay 2022) | 3,952 | 0.12–0.16 |
+| Big Five (avg) | 0.40–0.60 | 0.05–0.18 | 449k (Nagel 2018) | 136 (N) | &lt;0.05 |
+| Political orientation | ~0.40 | — | — | — | — |
+| Religiosity | 0.30–0.45 | — | — | — | — |
+| Risk tolerance | ~0.30 | 0.05 | 1M (Karlsson Linnér) | 99 | &lt;0.02 |
+| Schizophrenia | 0.60–0.80 | 0.24 | 320k (Trubetskoy 2022) | 287 | 0.07–0.10 |
+| Bipolar | 0.70–0.85 | 0.18–0.20 | 414k (Mullins 2021) | 64 | 0.04 |
+| MDD | 0.35–0.40 | 0.09 | 807k (Howard 2019) | 102 | 0.02–0.03 |
+| ADHD | 0.74 | 0.14 | 225k (Demontis 2023) | 27 | 0.04–0.06 |
+| Autism | 0.80 | 0.12 | 46k (Grove 2019) | 5 | &lt;0.03 |
+
+Note: Political orientation and religiosity are included because they are among the few adult traits where shared family environment (C) remains substantial (~20–30%), unlike personality and cognition where C ≈ 0 by adulthood. See [Alford, Funk & Hibbing (2005)](https://digitalcommons.unl.edu/cgi/viewcontent.cgi?article=1006&context=poliscifacpub); [Hatemi et al. (2014)](https://pubmed.ncbi.nlm.nih.gov/25994545/).
+
+### The Wilson Effect
+
+**Bouchard (2013)** documented that IQ heritability *rises* with age — from ~20% at age 5 to ~80% by adulthood, with shared-environment effects dropping from ~55% in early childhood to roughly zero by adolescence. [Bouchard 2013](https://pubmed.ncbi.nlm.nih.gov/23919982/). Briley & Tucker-Drob (2013) explained the mechanism: early genetic effects are amplified across development through gene-environment correlation (niche-picking). [Briley & Tucker-Drob 2013](https://journals.sagepub.com/doi/abs/10.1177/0956797613478618). This finding is robust, replicated, and counterintuitive — genetic differences become *more* expressed as people age into self-selected environments.
+
+### The "missing heritability" problem
+
+The gap between twin h² (~0.70 for IQ) and SNP-h² (~0.20) launched a decade of debate. **Wainschtein et al. (2022, *Nature Genetics*)** essentially closed it for height: using whole-genome sequencing in 25,465 unrelated individuals, h² recovered to 0.68 when rare and low-LD variants were included. [Wainschtein et al. 2022](https://www.nature.com/articles/s41588-022-01012-3). For psychological traits the same pattern is emerging. The current synthesis: missing heritability is partly real (rare variants, dominance, GxE) and partly artifactual (twin overestimation from assortative mating and rGE, measurement noise).
+
+### Assortative mating: a pervasive inflation source
+
+**Assortative mating (AM)** — the tendency for partners to resemble each other on traits — has emerged as a major methodological concern. People mate assortatively on education (spousal r ≈ 0.40–0.60), IQ (~0.40), personality (~0.10–0.20), height (~0.20), and psychiatric conditions. AM has three consequences for genetic estimates:
+
+1. **Inflated heritability**: AM increases additive genetic variance across generations by creating linkage disequilibrium among causal variants. Most twin studies *underestimate* heritability by ignoring AM (counterintuitively); GWAS-based SNP-h² may be *inflated* by AM-induced LD. [Border et al. 2022, *Nat Commun*](https://pubmed.ncbi.nlm.nih.gov/35115539/).
+2. **Inflated genetic correlations**: **Border et al. (2022, *Science*)** introduced **cross-trait assortative mating (xAM)** and showed that phenotypic cross-mate correlations explain R² = 74% of the variance in reported genetic correlation estimates. Some psychiatric cross-disorder genetic correlations — previously interpreted as evidence of shared biology — may be largely or entirely attributable to xAM. [Border et al. 2022](https://www.science.org/doi/10.1126/science.abo2059).
+3. **Inflated PGS prediction**: Within-family PGS effects are roughly half of population-level effects for educational attainment (Okbay 2022), partly because AM and population stratification inflate between-family comparisons.
+
+**Plomin (2022, *Behav Genet*)** argues this is a prediction-vs-explanation distinction: AM inflates causal genetic estimates but doesn't invalidate PGS as predictors, since AM-induced variance is real population variance. [Plomin 2022](https://pmc.ncbi.nlm.nih.gov/articles/PMC8960389/). This is technically correct but sidesteps the question of *why* PGS predict — whether through direct genetic causation or through correlated environments created by assortatively-mating parents.
+
+### The genetic nurture revolution
+
+**Kong et al. (2018, *Science*)** used 21,637 Icelandic probands with parental genotypes to compute polygenic scores from *non-transmitted* parental alleles. The non-transmitted PGS predicted offspring educational attainment at ~30% the magnitude of transmitted PGS — meaning **parental genotypes shape children via environments they create, even for alleles never inherited**. [Kong et al. 2018](https://www.bdi.ox.ac.uk/publications/823004). **Okbay et al. (2022, EA4, *Nature Genetics*)** confirmed this in 3 million people: within-family direct effects are roughly *half* the population-level PGS magnitude. [Okbay et al. 2022](https://www.nature.com/articles/s41588-022-01016-z). The implication: GWAS effect sizes for socially-valued traits are inflated by indirect/dynastic effects, and roughly half of what we used to call "genetic transmission" is actually environmentally mediated by genetically-similar parents.
+
+---
+
+## 2. Environmental Shaping: Real, But Smaller and Weirder Than Common Sense Suggests
+
+The shared-vs-non-shared distinction is the single most disorienting finding for laypeople. Across hundreds of twin and adoption studies, the **shared family environment (C) accounts for ~0% of variance in adult personality and most adult cognition** ([Plomin & Daniels 1987](http://www.simine.com/240/readings/Plomin_et_al_(9).pdf); Bouchard & McGue 2003). Parental warmth, parenting style, dinner conversations, books in the home — once genetic transmission is controlled, almost none of this leaves a measurable trace on adult personality. **Important exceptions where C remains substantial: educational attainment (~20%), antisocial behavior, religiosity (~25%), political orientation (~20–30%), and childhood (but not adult) externalizing.**
+
+### What "non-shared environment" actually is
+
+Turkheimer & Waldron's (2000) meta-analysis of *measured* non-shared environmental predictors found these accounted for only ~2% of variance in outcomes. Plomin's recent verdict: non-shared environment is "real but largely random," more akin to **stochastic developmental noise** — differential peer experiences, illness, idiosyncratic events, measurement error — than systematic experience.
+
+### The Equal Environments Assumption
+
+Critics (Joseph, Charney; [Fosse et al. 2015](https://www.sciencedirect.com/science/article/abs/pii/S0049089X13001397)) note that MZ twins are treated more similarly than DZ twins. The central empirical defense: **Kendler et al. (1993)** showed misperceived-zygosity twins had phenotypic similarity tracking *true* zygosity. [Kendler et al. 1993](https://link.springer.com/article/10.1007/BF01067551). MZ-reared-apart correlations (Bouchard's Minnesota study) closely match MZ-reared-together correlations. **Felson (2014)** reanalysis: EEA is "not strictly valid, but bias is modest." Modern SNP-based heritability estimates entirely bypass EEA and give somewhat lower but still substantial h². **Verdict: EEA is approximately valid; bias is modest (~10–20% inflation) for most traits.**
+
+### Environmental factors with robust causal effects on cognition
+
+A small number of environmental insults have **large, replicated, causal effects** — typically asymmetric (removing severe deficits matters more than enrichment above normal):
+
+- **Lead exposure**: Lanphear et al. (2005) pooled 7 prospective cohorts: blood lead 1→10 µg/dL → **−6.2 IQ points**, with steeper slope at low concentrations. Causal status: strong.
+- **Severe iodine deficiency**: 8–12 IQ point cost; supplementation recovers ~8.7 points ([Bougma 2013](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3705354/); [Qian 2005](https://pubmed.ncbi.nlm.nih.gov/15734706/)). RCT-supported, globally replicated.
+- **Heavy prenatal alcohol**: FAS produces mean IQ ~70; Mendelian-randomization confirms causation.
+- **Schooling**: **Ritchie & Tucker-Drob (2018)** meta-analyzed 142 effect sizes / 600,000 participants across three quasi-experimental designs. **Each year of education raises IQ by 1–5 points (mean ~3.4)**, persisting into old age. The most consistent durable IQ-raising intervention identified. [Ritchie & Tucker-Drob 2018](https://journals.sagepub.com/doi/10.1177/0956797618774253).
+- **Air pollution (PM2.5)**: ~−0.27 IQ points per 1 µg/m³ ([Aghaei 2024](https://ui.adsabs.harvard.edu/abs/2024EnvHe..23..101A/abstract)); smaller per-unit than lead but exposure is widespread.
+
+### The Scarr-Rowe interaction (SES × heritability)
+
+**Turkheimer et al. (2003)** reported that in impoverished families, IQ heritability was ~10% with shared environment ~60%; in affluent families this reversed. [Turkheimer et al. 2003](https://journals.sagepub.com/doi/abs/10.1046/j.0956-7976.2003.psci_1475.x). **Tucker-Drob & Bates (2016)** meta-analysis: replicated in U.S. samples but **absent in Western European/Australian samples** — likely because more universal healthcare/education reduces environmental variance at the bottom. Status: real but context-dependent and U.S.-specific.
+
+### Parenting effects: the Harris correction, partially reversed
+
+**Judith Rich Harris (1995; *The Nurture Assumption* 1998)** argued that within-normal-range parenting has minimal long-term effects on adult personality. The empirical core was correct: C ≈ 0 for adult personality. But Harris overstated her case. Korean-American adoption studies (**Sacerdote 2007**; [Beauchamp et al. 2023](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=4491976)) show real but modest causal effects of family environment on educational attainment, BMI, drinking, smoking — transmission coefficients ~25% of biological-family magnitude. Severe deprivation/abuse causes clear damage. **The accurate position: within the normal Western range, parenting style has small effects on adult personality; family environment has measurable but modest effects on attainment outcomes; severe parenting variation matters substantially.**
+
+### Neighborhood and peer effects
+
+**Chetty & Hendren (2018, *QJE*)** used 5+ million U.S. cross-county movers with sibling fixed effects: each year of childhood exposure to a 1-SD better county raises adult income by ~0.5–0.7%. [Chetty & Hendren 2018](https://opportunityinsights.org/paper/neighborhoodsi/). **Moving to Opportunity reanalysis** ([Chetty, Hendren & Katz 2016](https://www.nber.org/papers/w21156)): children moving before age 13 had adult earnings 31% higher than controls. Place matters, but accumulates slowly across many years of exposure.
+
+### The Flynn Effect and its reversal
+
+Flynn (1984, 1987) documented ~3 IQ points/decade gains across the 20th century. Causes contested: nutrition, schooling, infectious-disease reduction, test sophistication, smaller families — no single mechanism established. **Bratsberg & Rogeberg (2018, *PNAS*)** used Norwegian within-family conscript data to demonstrate that both the Flynn Effect and its **post-1990s reversal** are environmentally driven (visible within sibships, ruling out dysgenic/compositional explanations). [Bratsberg & Rogeberg 2018](https://www.pnas.org/doi/10.1073/pnas.1718793115). Similar declines now reported in Denmark, Finland, the Netherlands, France, the UK, and Germany. The reversal's cause is unknown — this is one of the field's most important open questions.
+
+---
+
+## 3. Gene-Environment Interplay: rGE Wins, Candidate-GxE Collapsed
+
+### Three types of gene-environment correlation
+
+The Plomin/DeFries/Loehlin (1977) framework distinguishes **passive rGE** (parents transmit both genes and correlated rearing environment), **evocative rGE** (heritable child traits elicit specific responses), and **active rGE / niche-picking** (individuals select environments matching genetic propensities). **Kendler & Baker's (2007)** systematic review shows essentially every measured environment is itself heritable (15–35%) — meaning observational claims like "parental warmth causes child outcomes" are confounded by passive rGE. The genetic nurture and within-family PGS results (Section 1) quantify this: **population-level "genetic" prediction is roughly half indirect environmental effects of genetically-similar parents**.
+
+### The candidate gene × environment collapse
+
+**Caspi et al. (2003, *Science*)** reported that 5-HTTLPR short-allele carriers showed elevated depression risk under stress. The paper became one of the most cited in psychiatry (>9000 citations). It collapsed:
+
+- **Risch et al. (2009, *JAMA*)**: meta-analysis of 14 studies, N=14,250 — no evidence. [Risch et al. 2009](https://www.ncbi.nlm.nih.gov/books/NBK76610/).
+- **Culverhouse et al. (2018)**: pre-registered collaborative meta-analysis, 31 datasets, N=38,802 — definitively no evidence.
+- **Border et al. (2019, *Am J Psychiatry*)**: examined 18 most-studied depression candidate genes in N up to 443,264. **No clear evidence** for any candidate gene polymorphism on depression. As a set, candidate genes were no more associated with depression than non-candidate genes. [Border et al. 2019](https://profiles.wustl.edu/en/publications/no-support-for-historical-candidate-gene-or-candidate-gene-by-int/).
+- **Duncan & Keller (2011)**: 96% of novel candidate-GxE studies were significant; only 27% of replication attempts were. [Duncan & Keller 2011](https://pmc.ncbi.nlm.nih.gov/articles/PMC3222234/).
+
+**MAOA × maltreatment** (Caspi et al. 2002) is the partial exception that survived meta-analysis ([Byrd & Manuck 2014](https://pmc.ncbi.nlm.nih.gov/articles/PMC3858396/)) — modest male-specific interaction, but smaller than originally reported.
+
+### Differential susceptibility / orchid-dandelion
+
+**Belsky & Pluess (2009)** reframed "risk alleles" as "plasticity alleles" — some individuals are more reactive to environments "for better and for worse." [Belsky & Pluess 2009](https://pubmed.ncbi.nlm.nih.gov/19883141/). The theory is generative; the empirical record is mixed. Recent systematic reviews find that interactions between child characteristics and parenting rarely replicate across cohorts and developmental domains. Distinguishing differential susceptibility from diathesis-stress requires very large, preregistered samples. [de Villiers et al. 2018](https://pubmed.ncbi.nlm.nih.gov/30626458/).
+
+### Epigenetics: real biology, oversold psychology
+
+DNA methylation, histone modifications, and non-coding RNA regulation are real, well-characterized mechanisms important in development. The controversy concerns whether environmentally-induced epigenetic marks are faithfully transmitted across generations in humans. **They generally are not.**
+
+- **Heard & Martienssen (2014, *Cell*)**: in mammals, two waves of near-complete epigenetic reprogramming erase most acquired methylation marks. Robust transgenerational epigenetic inheritance occurs in plants and *C. elegans*; in humans it remains largely speculative. [Heard & Martienssen 2014](https://www.sciencedirect.com/science/article/pii/S0092867414002864).
+- **Dutch Hunger Winter** ([Heijmans et al. 2008](https://www.pnas.org/doi/10.1073/pnas.0806560105)): real *within-individual* epigenetic effect persisting decades, *not* evidence of transmission to grandchildren.
+- **Yehuda's Holocaust FKBP5 study** (2016): tiny sample (n=8 control parents), opposite-direction effects in parents vs. offspring, no germline measurement. Yehuda's own group failed to replicate. The "trauma is inherited epigenetically" narrative is not supported by current evidence.
+
+### Critical periods: solid developmental neuroscience
+
+**Hensch (2005, *Nat Rev Neurosci*)** provides a mechanistically rigorous account of cortical critical-period plasticity. [Hensch 2005](https://www.nature.com/articles/nrn1787). GABAergic maturation (parvalbumin-positive interneurons) gates onset; perineuronal nets and myelin-associated inhibitors close periods. This represents the high end of how environmental experience shapes brain structure — genuine, replicated, and mechanistically understood.
+
+---
+
+## 4. Sex and Gender Differences: Large Where You're Not Told They Are
+
+Sex differences are one of psychology's most ideologically distorted areas — distorted by both minimization and overstatement. The actual picture: **small differences in average cognitive ability, large differences in interests and physical aggression, moderate-to-large multivariate personality differences, and a robust but mechanistically contested gender equality paradox.**
+
+### Cognitive abilities
+
+Mental rotation shows **d ≈ 0.56–0.73 male advantage** (Voyer et al. 1995), among the largest cognitive sex differences documented. Mean math performance: **d ≈ 0.05–0.10** ([Lindberg et al. 2010](https://pmc.ncbi.nlm.nih.gov/articles/PMC3057475/)) — essentially no average difference. Writing: substantial female advantage. School grades favor girls overall ([Voyer & Voyer 2014](https://pubmed.ncbi.nlm.nih.gov/24773502/)). At extreme tails (95th–99th percentile) males outnumber females ~2:1 in many countries — driven by **slightly greater male variance** (~3–15% higher) compounding at extremes.
+
+### Personality: univariate vs. multivariate framing
+
+Univariate Big Five differences are moderate: women higher on Neuroticism (d ≈ 0.40) and Agreeableness (d ≈ 0.40). **Del Giudice, Booth & Irwing (2012)** computed multivariate **Mahalanobis D = 2.71** on 16PF data from 10,261 Americans, implying ~10% overlap between male and female personality profiles. [Del Giudice et al. 2012](https://journals.plos.org/plosone/article/file?id=10.1371/journal.pone.0029265&type=printable). Hyde's (2005) "Gender Similarities Hypothesis" — most differences trivial or small — is mathematically compatible but tells a very different qualitative story. **Both univariate and multivariate framings should be reported jointly**; selective use is ideological.
+
+### Interests: the largest sex difference in psychology
+
+**Su, Rounds & Armstrong (2009, *Psych Bulletin*)** meta-analyzed 503,188 people: the **People-Things dimension d = 0.93**, with engineering interest d = 1.11. [Su et al. 2009](https://eric.ed.gov/?id=EJ860932). These are *very large* by psychological standards and the largest in the entire literature on psychological sex differences.
+
+### Aggression
+
+Archer (2004): physical aggression d ≈ 0.40–0.60 male; trait anger near zero. Males commit ~95% of homicides globally. [Archer 2004](https://journals.sagepub.com/doi/10.1037/1089-2680.8.4.291). Indirect/relational aggression: Card et al. (2008) found differences trivial (d &lt; 0.10), challenging the "girls do indirect aggression equally" narrative.
+
+### The Gender Equality Paradox (replicated; mechanism contested)
+
+A robust empirical pattern across at least four domains: **personality, preference, interest, and depression-rate differences are larger in more gender-equal and wealthier countries.**
+
+- **Schmitt et al. (2008)**: 55-nation Big Five study — differences largest in egalitarian Western cultures. [Schmitt et al. 2008](https://pubmed.ncbi.nlm.nih.gov/18712468/).
+- **Falk & Hermle (2018, *Science*)**: 80,000 adults, 76 countries — sex differences in 6 economic preferences positively related to GDP and gender equality.
+- **Stoet & Geary (2018)**: STEM Gender-Equality Paradox — more gender-equal countries had *smaller* female share of STEM graduates. A corrigendum addressed methods; the core correlation remained robust.
+
+The correlation is robust. The causal mechanism — innate-expression release in wealthy environments vs. measurement artifacts vs. ecological confounds — is genuinely contested.
+
+### Mental health asymmetries
+
+Depression female:male ≈ 2:1; anorexia ~10:1 female; ADHD diagnosis ~2–3:1 male; antisocial personality, substance use, completed suicide all male-skewed; autism ~3–4:1 male; schizophrenia roughly equal but more severe early-onset in males.
+
+### Biological mechanisms
+
+CAH girls (prenatally elevated androgens) show masculinized toy preferences and play patterns ([Kung et al. 2024 meta-analysis](https://www.sciencedirect.com/science/article/abs/pii/S014976342400085X)). Same-sex-typed toy preferences in vervet and rhesus monkeys parallel human findings, supporting partial biological mediation. Wood & Eagly's social role theory faces empirical challenge from the gender equality paradox.
+
+---
+
+## 5. Cognitive Ability and Intelligence
+
+### The g-factor
+
+Spearman's 1904 finding of a **positive manifold** — every cognitive test correlates positively with every other — is arguably the most replicated finding in psychology. A first unrotated principal factor captures 40–50% of variance in any sufficiently broad battery. **van der Maas et al. (2006)** mutualism model offers an alternative: g may be an emergent network property of reciprocally beneficial cognitive processes during development, not a unitary biological cause. [van der Maas et al. 2006](https://pubmed.ncbi.nlm.nih.gov/17014305/). Most working researchers treat g as a robust statistical regularity whose causal architecture is unsettled.
+
+### Structure: CHC theory
+
+**Carroll's (1993)** three-stratum theory — g at top, ~8–10 broad abilities (Gf, Gc, Gv, Ga, Gs, Gsm, Glr, Gq, Grw), ~70+ narrow abilities — was integrated with Cattell-Horn into the **Cattell-Horn-Carroll (CHC)** framework, which underlies modern IQ tests.
+
+### Predictive validity
+
+**Schmidt & Hunter (1998)**: corrected GMA validity for job performance r ≈ 0.51. **Sackett et al. (2022)** argued corrections were too aggressive; re-estimate: **r ≈ 0.31 uncorrected / ~0.42 corrected**. GMA remains among the most predictive selection tools. Childhood IQ predicts educational attainment at r ≈ 0.50–0.70. **Calvin et al. (2011)** meta-analysis (1.1M, 22,453 deaths): each 1-SD higher childhood IQ → ~24% lower all-cause mortality. [Calvin et al. 2011](https://pubmed.ncbi.nlm.nih.gov/21037248/).
+
+### Lifespan stability
+
+**Lothian Birth Cohort**: age 11 → age 90 corrected correlation r ≈ 0.67. [Deary et al. 2013](https://pubmed.ncbi.nlm.nih.gov/24084038/). About one-third of variance in mental ability at 90 is accounted for by ability at 11.
+
+### Group differences in test scores: the most distorted area
+
+**Roth et al. (2001)** meta-analysis (N=6.2M): U.S. Black-White cognitive ability gap **d ≈ 1.0 (~15 IQ points)**. **Dickens & Flynn (2006)**: Black IQ rose 4–7 points relative to whites between 1972–2002 (about one-third of the gap). [Dickens & Flynn 2006](https://journals.sagepub.com/doi/abs/10.1111/j.1467-9280.2006.01802.x). The gap exists, has narrowed somewhat, and has not closed.
+
+The mainstream contemporary position (**Nisbett et al. 2012**; **Turkheimer, Harden & Nisbett 2017**): within-group heritability does *not* license between-group inferences (Lewontin's point); **Martin et al. (2019, *Nature Genetics*)** demonstrated PGS lose ~4.5x prediction accuracy in African-ancestry individuals due to differential LD and allele frequencies, meaning **current PGS cannot validly compare mean genetic predisposition across continental ancestry groups**. [Mostafavi et al. (2020)](https://elifesciences.org/articles/48376) showed PGS portability also breaks down *within* Europeans across SES strata.
+
+**The honest scientific position: gaps in test scores are real, partly narrowing, and their causes are not currently identifiable as genetic, environmental, or both** — direct evidence is absent and mainstream geneticists treat the question as not currently answerable.
+
+**Distortion from the hereditarian direction**: treating g-loadedness as evidence of genetic etiology (environmental causes can also be g-loaded); citing fringe admixture studies published in weak-peer-review venues; conflating absence of evidence with agnosticism. **Distortion from the environmentalist direction**: claiming gaps have closed when they only partly narrowed; dismissing IQ as "culturally biased" despite measurement-invariance evidence; overstating stereotype threat (Flore & Wicherts 2015 meta-analysis showed publication-biased modest effects).
+
+### Brain correlates
+
+Brain volume × IQ: r ≈ 0.24 ([Pietschnig et al. 2015, 2022](https://royalsocietypublishing.org/rsos/article/9/5/211621/96643/Of-differing-methods-disputed-estimates-and)). **P-FIT theory** (Jung & Haier 2007): intelligence supported by parieto-frontal network. [Jung & Haier 2007](https://www.cambridge.org/core/journals/behavioral-and-brain-sciences/article/parietofrontal-integration-theory-pfit-of-intelligence-converging-neuroimaging-evidence/175ECF09153B51136C21325465C6A86F).
+
+### Creativity and intelligence
+
+The "IQ ≈ 120 threshold" hypothesis is largely disconfirmed ([Weiss et al. 2020](https://pmc.ncbi.nlm.nih.gov/articles/PMC7709632/)). Intelligence and creativity correlate ~r = 0.20–0.30 across the range. Openness to Experience is the personality trait most reliably correlated with creative achievement (~0.30–0.40).
+
+---
+
+## 6. Personality and Temperament
+
+### The Big Five (OCEAN) and HEXACO
+
+The Big Five emerged from the lexical hypothesis. **Heritability is ~40–60% per twin studies**; SNP-h² is 8–18%. **Nagel et al. (2018)** identified 136 loci for neuroticism in 449,484 people. [Nagel et al. 2018](https://pubmed.ncbi.nlm.nih.gov/29942085/). The ReGPC consortium (2025) reports 703 loci for neuroticism in 1M+ participants. [ReGPC 2025](https://www.biorxiv.org/content/10.1101/2025.05.16.648988.full.pdf).
+
+**Roberts & DelVecchio (2000)**: rank-order stability rises from ~0.31 in childhood to ~0.74 by midlife (**cumulative continuity**). [Roberts & DelVecchio 2000](http://jenni.uchicago.edu/Spencer_Conference/Representative%20Papers/Roberts%20&%20DelVecchio,%202000.pdf). **Roberts et al. (2006)** the **maturity principle**: mean-level increases in Conscientiousness, Agreeableness, and Emotional Stability with age, especially in young adulthood. [Bleidorn et al. 2022 update](https://www.researchgate.net/publication/362021332_Personality_stability_and_change_A_meta-analysis_of_longitudinal_studies).
+
+**HEXACO** (Ashton & Lee): lexical studies in 12+ languages consistently yield six factors, the sixth being **Honesty-Humility**. H predicts integrity-related criteria incrementally over Big Five. [Ashton & Lee 2008](https://compass.onlinelibrary.wiley.com/doi/abs/10.1111/j.1751-9004.2008.00134.x).
+
+### Temperament: the developmental foundation
+
+Temperament research constitutes a parallel tradition to adult personality, focused on biologically-grounded individual differences emerging in infancy.
+
+**Rothbart's model** identifies three overarching dimensions: **Surgency/Extraversion** (activity, positive affect, approach), **Negative Affectivity** (fear, anger, sadness, discomfort), and **Effortful Control** (attentional regulation, inhibitory control, low-intensity pleasure). Effortful Control is particularly important — it is the self-regulatory component of temperament, developing primarily during ages 2–7 as the anterior attention network matures, and is a strong predictor of later externalizing problems, academic success, and conscience development.
+
+**Kagan's Behavioral Inhibition (BI)** framework focuses on extreme phenotypes: ~15–20% of infants show high-reactive patterns (vigorous motor activity and distress to novel stimuli at 4 months) who become behaviorally inhibited toddlers — cautious, avoidant with unfamiliar people and situations. BI maps approximately onto low Surgency + high Negative Affectivity (especially fear). Kagan's longitudinal studies showed BI is moderately heritable (~50%), associated with higher resting heart rate and amygdala excitability, and predicts elevated risk for social anxiety disorder in adolescence (OR ~2–4). However, ~60% of high-reactive infants do *not* become clinically anxious adults — biology is a foundation, not a constraint.
+
+**Thomas & Chess's (1977)** "goodness of fit" model — later empirically supported — emphasized that temperamental difficulty per se doesn't predict poor outcomes; the match between child temperament and environmental demands does.
+
+The temperament → personality continuity is increasingly well-documented: infant Surgency maps onto adult Extraversion; infant Negative Affectivity onto Neuroticism; infant Effortful Control onto Conscientiousness. The mapping is imperfect — adult personality includes social-cognitive layers (identity, values, narrative) absent in temperament.
+
+### Cross-cultural universality
+
+**McCrae & Terracciano (2005)**: clean Big Five replication in 50 cultures. [McCrae & Terracciano 2005](https://www.researchgate.net/publication/7994365_Universal_Features_of_Personality_Traits_From_the_Observer's_Perspective_Data_From_50_Cultures). **Gurven et al. (2013)** challenged this with the Tsimane forager-horticulturalists, where the full Big Five did not robustly emerge. [Gurven et al. 2013](https://pubmed.ncbi.nlm.nih.gov/23245291/). **Consensus**: 3 factors (E, A, C) replicate cross-linguistically; the full Big Five replicates well in Indo-European languages; non-WEIRD samples sometimes show structural deviations.
+
+### Dark traits and the D factor
+
+**Paulhus & Williams (2002)**: the Dark Triad (Machiavellianism, narcissism, psychopathy). [Buckels, Jones & Paulhus (2013)](https://pubmed.ncbi.nlm.nih.gov/24022650/) added everyday sadism. **Moshagen, Hilbig & Zettler (2018)** proposed the **D factor** — a general tendency to maximize individual utility while disregarding others — as the common core, mapping strongly onto low Honesty-Humility. [Moshagen et al. 2018](https://pubmed.ncbi.nlm.nih.gov/29999338/).
+
+### Person-situation debate: resolved
+
+The Mischel (1968) critique — cross-situational consistency rarely exceeds r ≈ 0.30 — was resolved through aggregation, interactionism (Mischel & Shoda's CAPS model), and Fleeson's within-person variability framework. The modern consensus: persons, situations, and their interactions all matter.
+
+### Personality predicts outcomes as strongly as IQ and SES
+
+**Roberts et al. (2007)** "The Power of Personality": meta-analytic comparison shows personality effects on mortality, divorce, and occupational attainment are *indistinguishable in magnitude* from SES and cognitive ability effects. [Roberts et al. 2007](https://journals.sagepub.com/doi/10.1111/j.1745-6916.2007.00047.x). Conscientiousness predicts mortality through health behaviors with large effect size. [Bogg & Roberts 2004](https://gwern.net/doc/psychology/personality/conscientiousness/2004-bogg.pdf).
+
+### Recent theoretical developments
+
+**DeYoung's Cybernetic Big Five Theory (2015)**: traits as parameters of a cybernetic goal-pursuit system. [DeYoung 2015](https://www.semanticscholar.org/paper/Cybernetic-Big-Five-Theory.-DeYoung/432f424abfc5891b009f89eeb3ed112e664af50e). **Mõttus et al. (2017)**: "personality nuances" research argues item-level traits capture incremental valid variance below the facet level. [Mõttus et al. 2017](https://pmc.ncbi.nlm.nih.gov/articles/PMC6348042/).
+
+---
+
+## 7. Neurodiversity and Psychopathology: Dimensional, Polygenic, Transdiagnostic
+
+The genomic era has produced three conclusions that fundamentally reshape psychiatric nosology: **all major psychiatric conditions are highly heritable, hyper-polygenic, and substantially genetically overlapping across diagnostic categories.**
+
+### Headline findings by disorder
+
+- **Schizophrenia**: twin h² ~80%; **Trubetskoy et al. (2022, *Nature*)**: **287 loci**; SNP-h² ~24%. [Trubetskoy et al. 2022](https://www.nature.com/articles/s41586-022-04434-5). Environmental risk factors: urban birth (~2× risk), high-potency cannabis (OR ~3.9), migration, obstetric complications.
+- **Bipolar**: twin h² ~70–85%; **Mullins et al. (2021)**: **64 loci**; rg(SCZ,BD) ~0.7. [Mullins et al. 2021](https://pmc.ncbi.nlm.nih.gov/articles/PMC8192451/).
+- **Major Depression**: h² ~37%; **Howard et al. (2019)**: **102 loci**; SNP-h² ~9%. [Howard et al. 2019](https://pmc.ncbi.nlm.nih.gov/articles/PMC6522363/). Strong rg with neuroticism (~0.7).
+- **ADHD**: twin h² ~74%; **Demontis et al. (2023)**: **27 loci**. [Demontis et al. 2023](https://www.researchgate.net/publication/358716011_Genome-wide_analyses_of_ADHD_identify_27_risk_loci_refine_the_genetic_architecture_and_implicate_several_cognitive_domains). Negative rg with educational attainment and IQ.
+- **Autism**: twin h² ~80%; **Grove et al. (2019)**: **5 common-variant loci** plus substantial rare/de novo variants of large effect (CHD8, SCN2A, SYNGAP1). [Grove et al. 2019](https://www.nature.com/articles/s41588-019-0344-8). Common-variant PGS positively correlated with IQ and education; ID-comorbid autism (rare-variant-driven) negatively correlated.
+
+### Cross-disorder pleiotropy (with assortative mating caveat)
+
+**Brainstorm Consortium (2018, *Science*)**: substantial genetic correlations among psychiatric disorders. **Cross-Disorder PGC (Lee et al. 2019, *Cell*)**: across 8 disorders, **109 pleiotropic loci**, three clusters — compulsive, mood/psychotic, early-onset neurodevelopmental. [Lee et al. 2019](https://www.biorxiv.org/content/10.1101/528117v1).
+
+**Critical caveat**: Border et al. (2022, *Science*) showed that cross-trait assortative mating can generate spurious genetic correlations between phenotypes with entirely distinct genetic bases. Some fraction of reported psychiatric cross-disorder genetic correlations may reflect xAM rather than shared biology. The magnitude of this artifact is actively being quantified and represents a major revision in progress.
+
+### The p-factor
+
+**Caspi et al. (2014)**: a single **p (general psychopathology)** factor fit Dunedin cohort data better than three-factor models — analogous to g for cognitive ability. [Caspi et al. 2014](https://journals.sagepub.com/doi/abs/10.1177/2167702613497473). Higher p associated with greater impairment, familiality, worse developmental histories. Replicated in dozens of samples. Interpretations contested: genuine common liability, statistical artifact of bifactor over-extraction, or a reflection of impairment/distress per se.
+
+### Dimensional alternatives: HiTOP and RDoC
+
+**HiTOP** ([Kotov et al. 2017](https://pubmed.ncbi.nlm.nih.gov/33577350/)): a quantitatively-derived dimensional alternative to DSM organized hierarchically. **RDoC** (NIMH 2009–): six dimensional neurobiologically-grounded research domains. Both converge with taxometric evidence (most psychopathology is dimensional, not taxonic) on the **dimensional turn in psychiatric science**.
+
+### Polygenic scores in clinics: not yet
+
+Best PGS R² ~7–10% for schizophrenia. PGS alone does not outperform family history. PGS performance drops 50–70% in non-European-ancestry populations — a major equity and portability problem.
+
+### The neurodiversity framework: scientific–identity tensions
+
+Coined by Singer (1998), the neurodiversity paradigm reframes autism, ADHD, dyslexia as natural variation rather than pathology. The framework has legitimate ethical force but operates in tension with deficit-oriented findings for severe presentations (profound autism with ID, epilepsy, self-injury). A defensible position recognizes both the reality of impairment at the severe end and the population-level continuous variation that grades into normality.
+
+---
+
+## 8. Key Researchers and Labs
+
+| Researcher | Affiliation | Central contribution |
+|---|---|---|
+| **Robert Plomin** | King's College London | Behavioral genetics synthesis; Blueprint; GPS |
+| **Eric Turkheimer** | University of Virginia | Three Laws; Scarr-Rowe; philosophical foundations |
+| **K. Paige Harden** | UT Austin | Genetic Lottery; causal inference with PGS |
+| **Avshalom Caspi / Terrie Moffitt** | Duke / King's | p-factor; Dunedin cohort; (and candidate-GxE) |
+| **Ian Deary** | Edinburgh | Lothian Birth Cohorts; cognitive epidemiology |
+| **Elliot Tucker-Drob** | UT Austin | Education-IQ meta-analysis; Wilson Effect mechanisms |
+| **Daniel Benjamin / SSGAC** | UCLA | EA GWAS consortium; social-science genomics |
+| **Colin DeYoung** | Minnesota | Cybernetic Big Five Theory; personality neuroscience |
+| **Jay Belsky** | UC Davis | Differential susceptibility |
+| **Marco Del Giudice** | UNM | Multivariate sex differences |
+| **Janet Hyde** | Wisconsin | Gender similarities hypothesis |
+| **David Geary** | Missouri | Sex differences in math/STEM |
+| **Brent Roberts** | UIUC | Personality development; maturity principle |
+| **Alexander Young** | UCLA | Genetic nurture; within-family methods |
+| **Richard Border** | Harvard/UCLA | Candidate gene demolition; xAM |
+| **Peter Hatemi / John Hibbing** | Penn State / Nebraska | Genopolitics; heritability of political attitudes |
+
+---
+
+## 9. The Integrated Picture: What Generates Psychological Variation
+
+### The model
+
+A formal model of individual psychological variation should treat the person as the joint product of:
+
+**(a) A hyper-polygenic genome** encoding thousands of small-effect predispositions (plus some rare large-effect variants in neurodevelopmental conditions). Twin h² for most traits falls in 0.40–0.80.
+
+**(b) Substantial gene-environment correlation** through passive (parents transmit genes + correlated environments), evocative (child traits elicit responses), and active (niche-picking) channels. Roughly half of population-level PGS prediction reflects indirect/environmental mediation by genetically-similar parents, not direct genetic causation.
+
+**(c) Assortative mating** inflating additive genetic variance, genetic correlations between traits, and PGS prediction accuracy. This is a recently-quantified source of systematic bias in nearly all genetic estimates.
+
+**(d) A small set of large-effect environmental insults** — lead, severe iodine deficiency, heavy prenatal alcohol, severe deprivation — plus schooling (~3.4 IQ points/year). Effects are typically asymmetric: removing severe deficits matters more than enriching above-normal environments.
+
+**(e) Substantial stochastic developmental noise** — the dominant source of the non-shared environment, which accounts for ~50% of personality variance and is not yet well-characterized mechanistically.
+
+**(f) Cultural/institutional contexts** that modulate which genetic predispositions are expressed and rewarded (WEIRD effects, gender equality paradox, Scarr-Rowe interaction, Flynn Effect).
+
+**(g) Developmental unfolding across time** — temperament in infancy (biologically grounded reactivity and regulation) becomes personality in adulthood (adding social-cognitive layers), with heritability increasing across the lifespan (Wilson Effect) and rank-order stability rising to ~0.74 by midlife.
+
+### Where political distortion is strongest, by direction
+
+**From the environmentalist/blank-slate direction**: dismissing twin study validity wholesale; overstating Scarr-Rowe; promoting transgenerational epigenetic narratives that exceed evidence; dismissing IQ as culturally biased despite measurement-invariance findings; overstating stereotype-threat magnitudes; minimizing the gender equality paradox.
+
+**From the hereditarian direction**: citing within-population heritability to license between-population genetic inferences; citing fringe admixture studies as if mainstream; treating g-loadedness of gaps as evidence of genetic etiology when environmental causes can also be g-loaded; ignoring the assortative mating and genetic nurture corrections to PGS.
+
+**From the "gender similarities" direction**: selective citation of d ≈ 0.05 for math to imply no differences anywhere; obscuring multivariate D ≈ 2.71 with univariate framing; minimizing d ≈ 0.93 people-things interest differences.
+
+**From popular evolutionary psychology**: treating dimensional differences as taxonic; extrapolating from small ds to categorical claims; overgeneralizing from specific tasks to broad domain claims.
+
+### Open questions worth modeling
+
+1. **Mechanistic interpretation of PGS**: Plomin's "causal genetic" view vs. Turkheimer's "weak genetic explanation" — genuinely open.
+2. **Flynn Effect reversal**: cause unknown; one of the most important open questions in differential psychology.
+3. **Gender equality paradox mechanism**: innate-expression release vs. measurement artifacts vs. wealth confounds — unsettled.
+4. **Between-population cognitive differences**: currently scientifically unanswerable (PGS portability too poor; cross-ancestry GWAS at scale don't exist). Honest position: unresolved, not settled in either direction.
+5. **The causal architecture of g**: latent common cause vs. emergent network property (mutualism) — the positive manifold is not in dispute; what generates it is.
+6. **What non-shared environment actually is**: stochastic noise, epigenetic variation, immune/microbial variation, differential peer networks — largely uncharacterized despite accounting for ~50% of personality variance.
+7. **Assortative mating correction magnitudes**: how much do AM and xAM corrections change the substantive picture of genetic architecture and cross-trait pleiotropy? Active area of revision.
+
+---
+
+## 10. Load-Bearing Assumptions and Falsification Conditions
+
+This section makes explicit which conclusions in this review depend on which assumptions, and what evidence would substantially revise or flip them. Ordered roughly by how much of the document's picture collapses if the assumption fails.
+
+### Assumption 1: The twin method provides approximately valid variance decomposition
+
+**What depends on it**: Nearly all h² estimates in Section 1's table, the C ≈ 0 finding for adult personality, the Wilson Effect, the Scarr-Rowe interaction.
+
+**Status**: Approximately valid. SNP-h² estimates (which bypass EEA entirely) give lower but still substantial heritability for every trait measured. MZ-reared-apart designs converge with MZ-reared-together. Felson (2014) estimates ~10–20% EEA-induced inflation, not enough to eliminate the core finding.
+
+**What would flip it**: SNP-h² for psychological traits systematically converging on &lt;0.05 (would suggest twin h² is mostly EEA artifact). Or: a large, well-powered MZ-reared-apart study finding IQ correlations &lt;0.40 (current estimates ~0.70). Neither has occurred.
+
+**Robustness verdict**: HIGH. The convergence of twin, adoption, and molecular methods on moderate-to-substantial heritability is the most replicated finding in the field.
+
+### Assumption 2: GWAS identifies real genetic signal (not just population structure and AM artifacts)
+
+**What depends on it**: The entire PGS enterprise, genetic nurture estimates, cross-disorder pleiotropy findings, the "missing heritability" narrative.
+
+**Status**: Substantially valid but with known inflation. Within-family PGS effects are non-zero for educational attainment (~half of population effects), meaning direct genetic signal exists. But the magnitude of AM and stratification inflation is still being quantified.
+
+**What would flip it**: Within-family PGS effects for most traits converging on ~zero (would mean population-level PGS prediction is entirely indirect/environmental). Current evidence: within-family effects are reduced but clearly non-zero for EA, BMI, height; less well-characterized for personality and psychiatric traits.
+
+**Robustness verdict**: MODERATE-HIGH for the existence of direct genetic effects; MODERATE for their precise magnitude, which is actively being revised downward.
+
+### Assumption 3: g is a real dimension of individual variation (not a measurement artifact)
+
+**What depends on it**: The entire intelligence section (Section 5), predictive validity claims, group-difference discussions, the CHC structure.
+
+**Status**: The positive manifold is among the most replicated findings in psychology. Whether g is a latent common cause or an emergent network property (mutualism) is unsettled, but both interpretations preserve g's predictive validity and the meaningfulness of individual differences in general cognitive ability.
+
+**What would flip it**: A sufficiently broad, well-constructed cognitive battery where the first principal component explains &lt;15% of variance (would undermine the positive manifold). Or: successful interventions that consistently raise one cognitive ability while lowering others (would violate the manifold's structure). Neither has been demonstrated.
+
+**Robustness verdict**: HIGH for g as a statistical regularity with predictive validity. MODERATE for g as a unitary biological mechanism (mutualism remains a viable alternative).
+
+### Assumption 4: Sex-difference effect sizes from meta-analyses are not primarily measurement artifacts
+
+**What depends on it**: The gender equality paradox, the claim that interest differences (d = 0.93) are among psychology's largest, the multivariate personality finding (D = 2.71).
+
+**Status**: Interest measures (Su et al. 2009) use well-validated instruments; the d = 0.93 holds across inventories and cultures. The Del Giudice multivariate D is sensitive to the number of variables included and the specific battery, though the qualitative finding (large multivariate difference despite moderate univariate ds) is robust across datasets. CAH and non-human primate evidence provides independent convergent support for biological mediation of interest differences.
+
+**What would flip it**: A large cross-cultural study using behavioral (not self-report) interest measures finding d &lt; 0.30 for people-things. Or: evidence that the gender equality paradox disappears when using non-self-report personality measures (reference-group effects could inflate self-report differences in egalitarian countries). Current evidence: Falk & Hermle (2018) used incentivized behavioral measures for some preferences and found the paradox held, but full behavioral replication across all domains is incomplete.
+
+**Robustness verdict**: HIGH for the existence of substantial sex differences in interests and aggression. MODERATE for the precise magnitude of multivariate personality differences. MODERATE for the gender equality paradox's causal interpretation.
+
+### Assumption 5: The candidate-GxE collapse generalizes — specific gene × environment interactions are mostly small or nonexistent
+
+**What depends on it**: Section 3's dismissal of 5-HTTLPR and similar findings, the shift toward polygenic approaches.
+
+**Status**: For candidate genes, the collapse is definitive (Border et al. 2019). But this does not necessarily mean polygenic-score × environment interactions are also null. PGS × environment work is younger, uses better methods, and could in principle yield robust results.
+
+**What would flip it**: Multiple large, pre-registered PGS × measured-environment studies showing robust, replicable interactions explaining >5% of variance. Current evidence: a few suggestive findings (PGS-for-education × compulsory schooling reforms) but nothing approaching the scale or replication needed for confidence.
+
+**Robustness verdict**: HIGH for the candidate-gene collapse. LOW-MODERATE confidence in the broader claim that specific GxE interactions are generally small — this is an extrapolation from the candidate-gene failure, and the polygenic GxE literature is too young to draw strong conclusions.
+
+### Assumption 6: Cross-disorder genetic correlations reflect shared biology (pleiotropy)
+
+**What depends on it**: The p-factor interpretation, HiTOP structure, the "dimensional turn" in psychiatry, transdiagnostic treatment rationales.
+
+**Status**: Substantially challenged by Border et al. (2022). Cross-trait assortative mating can generate spurious genetic correlations between traits with entirely distinct genetic bases. The R² = 74% finding means most of the variance in genetic correlation *estimates* tracks spousal phenotypic correlations — though this does not prove all genetic correlations are spurious (some genuine pleiotropy surely exists).
+
+**What would flip it**: Within-family designs showing that cross-disorder genetic correlations survive AM correction at >50% of current estimates. Or: identification of specific shared biological pathways (e.g., synaptic pruning variants affecting both SCZ and BD) that don't depend on LD induced by AM.
+
+**Robustness verdict**: MODERATE. The dimensional/transdiagnostic pattern is likely real but inflated. The magnitude of genuine pleiotropy vs. AM artifact is one of the field's most active methodological debates.
+
+---
+
+## 11. Toward Topology: Structure for the Next Phase
+
+This section identifies the natural graph/network structure embedded in this literature, to facilitate the transition from landscape analysis to formal topology mapping.
+
+### Natural node types
+
+1. **Trait nodes**: Cognitive abilities (g, Gf, Gc, Gv, Gs...), personality dimensions (Big Five/HEXACO factors and facets), temperament dimensions (Surgency, Negative Affectivity, Effortful Control), psychopathology spectra (internalizing, externalizing, thought disorder), interests (people-things, RIASEC), political/moral attitudes
+2. **Mechanism nodes**: Genetic architecture (common polygenic, rare large-effect, de novo), environmental factors (lead, iodine, schooling, deprivation, neighborhoods), developmental processes (critical periods, niche-picking, genetic nurture, AM), stochastic noise
+3. **Method nodes**: Twin studies, adoption studies, GWAS, PGS, within-family designs, Mendelian randomization, meta-analysis
+4. **Population-level modifier nodes**: SES (Scarr-Rowe), culture (WEIRD), gender equality index, historical period (Flynn Effect)
+
+### Natural edge types
+
+1. **Genetic correlations** (with AM caveat): e.g., rg(SCZ, BD) ≈ 0.7; rg(EA, IQ) ≈ 0.7; rg(neuroticism, MDD) ≈ 0.7
+2. **Developmental continuity**: temperament → personality (Surgency → Extraversion; Effortful Control → Conscientiousness)
+3. **Causal environmental effects**: lead → IQ (−6.2 pts per 10 µg/dL); schooling → IQ (+3.4 pts/year)
+4. **Predictive validity edges**: g → job performance (r ≈ 0.42); Conscientiousness → mortality; EA PGS → income
+5. **Methodological dependency**: twin h² → SNP-h² → PGS R² (each constraining the next)
+6. **Taxonomic hierarchy**: g → broad abilities → narrow abilities (CHC); p → spectra → subfactors → syndromes (HiTOP)
+7. **Moderation edges**: SES × heritability (Scarr-Rowe); gender equality × sex differences (GEP); age × heritability (Wilson Effect)
+
+### Key structural features for the graph
+
+- **Two parallel hierarchies** (CHC for cognition, HiTOP for psychopathology) that share genetic correlations at the top level (g correlates with p inversely)
+- **A developmental cascade** from temperament (infancy) through personality (adulthood) through outcomes (mortality, income, relationships), with heritability increasing and shared-environment decreasing across the lifespan
+- **A methodological funnel** from twin estimates (broadest, highest h²) through molecular estimates (narrower, lower h²) through within-family estimates (narrowest, lowest but most causally clean)
+- **Cross-domain genetic correlations** that form a web connecting cognition, personality, and psychopathology — but with the critical caveat that an unknown fraction may be AM artifact rather than biological pleiotropy
+
+### Highest-leverage next steps for topology phase
+
+1. **Build the trait correlation matrix**: Assemble published genetic correlations (from LD Score regression / GWAS) among the ~20–30 most well-characterized traits spanning cognition, personality, and psychopathology. Annotate each with AM-corrected estimates where available. This matrix is the empirical backbone of the topology.
+
+2. **Map the developmental cascade**: Create a directed graph from temperament → personality → outcomes with age-indexed heritability and stability coefficients as edge weights. This captures the time dimension that a static correlation matrix misses.
+
+3. **Formalize the variance decomposition**: For each major trait, create a standardized decomposition: [direct genetic] + [genetic nurture/indirect] + [AM-induced] + [shared environment] + [measured non-shared environment] + [stochastic residual]. Where values are unknown, flag them explicitly. This is the generating function skeleton that the formalization phase will flesh out.

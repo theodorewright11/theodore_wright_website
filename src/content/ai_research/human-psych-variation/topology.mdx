@@ -1,0 +1,517 @@
+---
+title: 'Topology'
+description: 'Dependency graph of the lit review — typed nodes (assumption, method, empirical, logical, mechanism, synthesis, open, distortion), typed edges, six crux nodes, weakest links, and four variant views (vulnerability, flow, minimal claim set, politicization).'
+date: 2026-04-28
+status: in-progress
+refinementPass: 0
+---
+
+import PsychVariationGraph from '../../../components/ai-research/PsychVariationGraph';
+
+## TLDR
+
+The lit review documents what the science says about psychological variation. This topology asks a sharper question: **what depends on what?** Strip the field down to its load-bearing structure and the picture is surprisingly clean. Three foundational assumptions — that twin/adoption methods give approximately valid variance decomposition (A1), that GWAS signal reflects real genetic effects rather than population structure or assortative-mating artifact (A2), and that a general factor of cognitive ability `g` exists as a real dimension of individual variation (A3) — carry roughly 70% of the inferential weight. Everything else is either an empirical claim resting on these foundations, a methodological prerequisite that lets the foundations be tested, a logical necessity that constrains how the empirical claims can be interpreted, or a generating mechanism that explains why the empirical pattern looks the way it does.
+
+The dependency structure has six **crux nodes** — places where if the assumption flipped, large regions of the integrated picture would have to be rebuilt. A1 (twin validity), A2 (GWAS signal real), and A3 (g exists) are foundational cruxes. Three more sit downstream: **passive rGE / genetic nurture** (G2/E6) reframes ~50% of population-level genetic prediction as environmentally mediated by genetically-similar parents — a finding that doesn't kill heritability but fundamentally changes its causal interpretation; **cross-trait assortative mating** (G6/E7) confounds an unknown but substantial fraction of cross-disorder genetic correlations, actively revising the p-factor and shared-biology stories; and **the within/between-population firewall** (L4 — Lewontin's logical point) is the single most critical guardrail in the whole system, since without it any within-group heritability finding can be misused to claim between-group genetic causation.
+
+The field's **weakest links** are not where public discourse focuses heat. Mainstream contests over "is heritability real" target settled findings (A1+E1 are robust). The actual fragile zones are: (a) the generalization from candidate-GxE failure to all-GxE-is-small (an extrapolation, not a result); (b) the Scarr-Rowe SES×heritability interaction (US-only, doesn't replicate in Europe — load-bearing for "environments matter more in deprivation" narratives); (c) the polygenic-score → mechanism inference (Plomin's "causal" view vs. Turkheimer's "weak explanation" view is genuinely undecided); (d) the magnitude of AM-correction across psychiatric cross-disorder rg estimates (actively being revised, with the answer pending). The Flynn-reversal cause and the Gender Equality Paradox mechanism are also genuinely open mechanistic questions, but they are open in a different way — the empirical patterns themselves are robust; only the explanation is contested.
+
+This topology is the input to model formalization (Stage 3). The cleanest formalization target is the **variance decomposition equation**: V(trait) = V(direct genetic) + V(genetic nurture / indirect) + V(AM-induced LD) + V(shared environment) + V(measured non-shared) + V(stochastic) + 2·Cov(genes, environment) + interaction terms — with each term parameterized by trait, age, and population context, and with the AM and rGE terms being where current methodological revision is concentrated. The four variant views below (Vulnerability / Flow / Minimal / Politicization) read the same graph through different lenses to make the formalization choices easier.
+
+
+## The graph
+
+<PsychVariationGraph client:load />
+
+*Click a node for its claim and load-bearing weight; hover an edge for the relation type; drag to rearrange. The variant toggles read the same graph through different lenses (vulnerability, flow, minimal claim set, politicization).*
+
+---
+
+## How to read this graph
+
+Every node in the lit review collapses to one of eight types. Edges between them carry one of seven relations. Together they make the structure inspectable.
+
+### Node types
+
+| Code | Type | What it is |
+|---|---|---|
+| **A** | Foundational assumption | A claim the field cannot operate without; if false, large downstream regions collapse |
+| **M** | Methodological prerequisite | A study design or estimation tool that must work for the empirical claims to be testable |
+| **E** | Empirical claim | A specific measured finding with an effect size and replication status |
+| **L** | Logical necessity | Follows from definitions or algebra; not empirically refutable |
+| **G** | Generating mechanism | A causal process that explains a pattern (rGE, AM, niche-picking, critical periods) |
+| **S** | Synthesis claim | An integrative statement combining multiple lower-level claims |
+| **O** | Open question | Genuinely undecided with current methods or evidence |
+| **D** | Distortion vector | Where motivated reasoning concentrates (typed by direction) |
+
+### Edge types
+
+| Code | Edge | Meaning |
+|---|---|---|
+| **dep** | depends-on | If target collapses, source collapses |
+| **imp** | implies | Logical implication |
+| **sup** | empirically-supports | Evidence relation |
+| **conf** | confounds / inflates | Artifact relationship (e.g., AM inflates rg) |
+| **mod** | moderates | Changes magnitude (e.g., SES × heritability) |
+| **dev** | develops-into | Temporal/developmental successor (temperament → personality) |
+| **corr** | corrects | Within-family corrects between-family bias |
+
+### Weight scale (load-bearing weight, 1–5)
+
+- **5** — crux node; collapse propagates across multiple sections of the lit review
+- **4** — load-bearing within a section
+- **3** — important but local
+- **2** — corroborating
+- **1** — decorative; could be removed without changing the picture
+
+---
+
+## 1. Node catalog
+
+Each node carries: type code · weight · short claim · key citation · status. Status flags: ✓ (robust/replicated), ~ (partial/qualified), ? (contested), ✗ (refuted, kept as historical reference).
+
+### A — Foundational assumptions
+
+| ID | Wt | Claim | Status |
+|---|---|---|---|
+| **A1** | 5 | Twin/adoption methods provide approximately valid variance decomposition (EEA modestly violated but not fatally) | ✓ |
+| **A2** | 5 | GWAS signal reflects real genetic effects, not (only) population stratification or AM artifact | ✓ partial |
+| **A3** | 5 | A general factor of cognitive ability `g` is a real dimension of individual variation (positive manifold) | ✓ statistical / ? mechanism |
+| **A4** | 4 | Heritability is a population statistic, not an individual one (definitional) | ✓ |
+| **A5** | 3 | Phenotypes are reliably and validly measurable across cultures and time | ~ |
+| **A6** | 3 | Most psychological variation is dimensional, not taxonic | ✓ |
+
+### M — Methodological prerequisites
+
+| ID | Wt | Tool | Notes |
+|---|---|---|---|
+| **M1** | 4 | Twin studies (MZ/DZ) at scale | Polderman 2015 meta: 14.5M pairs |
+| **M2** | 4 | Adoption studies, especially cross-cultural (Korean-American) | Sacerdote 2007; Beauchamp 2023 |
+| **M3** | 5 | GWAS at N ≥ 100k (ideally ≥ 1M for personality/EA) | Okbay 2022 (3M for EA) |
+| **M4** | 5 | Within-family designs (sibling FE, MZ-discordant, parent-offspring trios) | Kong 2018; Okbay 2022 |
+| **M5** | 4 | Polygenic scores (PGS) | Best R² ~0.16 for EA, ~0.10 for SCZ |
+| **M6** | 3 | Cross-trait LD-score regression for genetic correlations | Brainstorm 2018 |
+| **M7** | 3 | Mendelian randomization | For causal inference from observational data |
+| **M8** | 3 | Pre-registration & collaborative meta-analysis | Demolished candidate-GxE |
+| **M9** | 4 | Whole-genome sequencing (rare-variant capture) | Wainschtein 2022 closed missing heritability for height |
+
+### E — Empirical claims
+
+Cognition / IQ:
+| ID | Wt | Claim | Status |
+|---|---|---|---|
+| **E1** | 5 | Mean trait heritability ≈ 0.49 across 17,804 traits (Polderman 2015) | ✓ |
+| **E2** | 5 | Shared environment C ≈ 0 for adult personality and most adult cognition | ✓ with exceptions (EA, religiosity, politics) |
+| **E3** | 4 | Wilson Effect: IQ heritability rises from ~0.20 (age 5) to ~0.80 (adulthood) | ✓ |
+| **E4** | 5 | Hyper-polygenic architecture: thousands of small-effect variants | ✓ (Turkheimer's 4th Law, Chabris 2015) |
+| **E5** | 4 | Candidate-gene approach for psychiatric/personality traits failed (5-HTTLPR etc.) | ✗ original claims; ✓ collapse finding |
+| **E6** | 5 | Within-family PGS effects are ~½ population-level effects (genetic nurture) | ✓ for EA, BMI, height |
+| **E7** | 5 | Cross-trait assortative mating explains R²≈74% of variance in genetic correlation estimates | ✓ (Border 2022, Science) |
+| **E8** | 4 | Lead exposure 1–10 µg/dL → −6.2 IQ pts (Lanphear 2005) | ✓ |
+| **E9** | 4 | Each year of schooling adds ~3.4 IQ points, persisting into old age | ✓ (Ritchie & Tucker-Drob 2018) |
+| **E22** | 4 | Within-population heritability does not license between-population inference | ✓ logical |
+| **E23** | 4 | PGS portability drops 4.5× across continental ancestries (and within Europe by SES) | ✓ (Martin 2019; Mostafavi 2020) |
+| **E24** | 3 | Flynn Effect and its post-1990s reversal are both environmentally driven (within-sibship evidence) | ✓ pattern; ? cause |
+| **E25** | 3 | Scarr-Rowe: hSES × heritability replicates in US, NOT in Western Europe/AU | ~ context-dependent |
+| **E18** | 4 | Positive manifold: every cognitive test correlates positively with every other | ✓ |
+| **E26** | 3 | Childhood IQ → all-cause mortality: each 1-SD ≈ 24% lower mortality | ✓ (Calvin 2011) |
+| **E27** | 3 | Lifespan IQ stability: Lothian Birth Cohort age-11 → age-90 r ≈ 0.67 | ✓ |
+| **E28** | 3 | Severe iodine/alcohol/deprivation cause large asymmetric IQ effects | ✓ |
+
+Personality / temperament:
+| ID | Wt | Claim | Status |
+|---|---|---|---|
+| **E29** | 4 | Big Five h² ≈ 0.40–0.60; cross-cultural replication for E/A/C | ✓ partial (Tsimane qualifier) |
+| **E30** | 4 | Cumulative continuity: rank-order stability rises to ~0.74 by midlife | ✓ |
+| **E31** | 4 | Maturity principle: mean-level ↑ in C, A, ES with age | ✓ |
+| **E32** | 3 | Temperament dimensions (Surgency, Negative Affectivity, Effortful Control) → adult personality | ✓ |
+| **E33** | 3 | Personality predicts mortality/divorce/income at magnitudes ≈ SES & cognition | ✓ (Roberts 2007) |
+
+Sex differences:
+| ID | Wt | Claim | Status |
+|---|---|---|---|
+| **E10** | 4 | Multivariate Big Five sex difference: D ≈ 2.71 (~10% overlap) | ~ method-sensitive |
+| **E11** | 4 | People-things interest difference d ≈ 0.93 (largest in psychology) | ✓ |
+| **E12** | 3 | Mental rotation d ≈ 0.56–0.73 male advantage | ✓ |
+| **E13** | 3 | Math performance d ≈ 0.05–0.10 (essentially equal) | ✓ |
+| **E14** | 4 | Gender Equality Paradox: differences larger in egalitarian/wealthier countries | ✓ pattern; ? mechanism |
+| **E34** | 3 | Physical aggression d ≈ 0.40–0.60 male; ~95% of homicides male | ✓ |
+| **E35** | 2 | CAH girls show masculinized toy preferences; primate parallels | ✓ |
+
+Psychopathology:
+| ID | Wt | Claim | Status |
+|---|---|---|---|
+| **E15** | 4 | All major psychiatric disorders highly heritable (h² 0.35–0.85) and hyper-polygenic | ✓ |
+| **E16** | 4 | Cross-disorder genetic correlations exist | ✓ existence; ? magnitude post-AM |
+| **E17** | 3 | A `p` factor (general psychopathology) fits cross-syndrome data | ✓ statistical; ? interpretation |
+| **E36** | 3 | Autism: common-PGS positively correlated with IQ; rare/de-novo drives ID-comorbid cases | ✓ |
+| **E37** | 2 | Critical-period plasticity (GABAergic, perineuronal nets) is mechanistically real | ✓ |
+
+### L — Logical necessities
+
+| ID | Wt | Claim |
+|---|---|---|
+| **L1** | 5 | Heritability is a population variance ratio; it does not partition individual phenotypes |
+| **L2** | 4 | h² changes with environmental variance: hold genes constant, equalize environments → h² → 1 |
+| **L3** | 5 | Within-family designs control for between-family confounds (rGE, stratification, AM) |
+| **L4** | 5 | Within-population heritability provides no information about between-population mean differences (Lewontin) |
+| **L5** | 3 | Multivariate D ≥ max(univariate d) when component dimensions are positively correlated |
+| **L6** | 3 | Positive manifold permits both unitary-cause and emergent-network interpretations of g |
+| **L7** | 3 | Effect-size interpretation is scale-dependent (d=0.10 trivial in trait psychology, large in clinical) |
+
+### G — Generating mechanisms
+
+| ID | Wt | Mechanism | Drives |
+|---|---|---|---|
+| **G1** | 4 | Active rGE / niche-picking | E3 (Wilson Effect amplification) |
+| **G2** | 5 | Passive rGE | E6 (genetic nurture); inflation of population-level h² |
+| **G3** | 3 | Evocative rGE | Heritability of "environments" (Kendler & Baker 2007) |
+| **G4** | 3 | Critical-period plasticity (GABAergic maturation) | Asymmetric environmental effects on early development |
+| **G5** | 4 | Assortative mating → LD induction | Inflates additive genetic variance, h² |
+| **G6** | 5 | Cross-trait AM → spurious genetic correlations | Confounds E16, E17 (p-factor) |
+| **G7** | 4 | Stochastic developmental noise | Dominant source of non-shared environment |
+| **G8** | 3 | Selection / niche construction across the lifespan | Bridges temperament → personality → outcome cascade |
+
+### S — Synthesis claims
+
+| ID | Wt | Claim |
+|---|---|---|
+| **S1** | 5 | "Genes vs. environment" is the wrong frame; the system is tightly coupled (genome × rGE × AM × few large environmental insults × stochastic noise × culture × developmental unfolding) |
+| **S2** | 5 | Twin h² ≥ SNP h² ≥ within-family h² gradient quantifies AM/rGE/measurement inflation across estimation methods |
+| **S3** | 4 | Heritability ≠ destiny; high h² is compatible with large environmental shifts (height: h² ≈ 0.80, +10cm in a century) |
+| **S4** | 4 | Most "non-shared environment" is stochastic, not systematic — it accounts for ~50% of personality variance and is poorly characterized |
+| **S5** | 4 | Two parallel hierarchies (CHC for cognition, HiTOP for psychopathology) connected at the top by inverse g↔p genetic correlation |
+| **S6** | 4 | Developmental cascade: temperament (infant biological reactivity) → personality (adult social-cognitive layer added) → outcomes (mortality, attainment, relationships) with h² ↑ and shared-env ↓ across the lifespan |
+
+### O — Open questions
+
+| ID | Wt | Question | Why it matters |
+|---|---|---|---|
+| **O1** | 5 | Mechanistic interpretation of PGS: "causal genetic" (Plomin) vs. "weak explanation" (Turkheimer) | Determines what PGS prediction *means* |
+| **O2** | 3 | Cause of Flynn-effect reversal post-1990s | Empirical pattern robust; mechanism is the field's biggest puzzle |
+| **O3** | 4 | Causal mechanism behind Gender Equality Paradox | Innate-expression release vs. measurement artifact vs. confound — selection of explanation has political stakes |
+| **O4** | 5 | Between-population mean differences: any genetic component? | **Currently scientifically unanswerable** with available methods (PGS portability too poor, cross-ancestry GWAS at scale don't exist). Honest position: unresolved, not settled in either direction |
+| **O5** | 3 | g architecture: latent common cause vs. emergent network (mutualism, van der Maas 2006) | Affects how interventions could in principle move g |
+| **O6** | 4 | What "non-shared environment" actually is: stochastic noise, immune/microbial, peer networks, epigenetic, measurement error | Largest unmodeled variance component in personality |
+| **O7** | 5 | Magnitude of AM-correction across the cross-disorder genetic correlation matrix | Active revision in progress; could substantially shrink the p-factor signal |
+
+### D — Distortion vectors (where motivated reasoning concentrates)
+
+| ID | Direction | Targets | Failure mode |
+|---|---|---|---|
+| **D1** | Blank-slate / environmentalist | A1, E1, E10–E14 | Dismiss twin studies wholesale; oversell transgenerational epigenetics; overstate stereotype threat; minimize sex differences via univariate-only framing |
+| **D2** | Hereditarian | L4, E22, E23, O4 | Ignore Lewontin; treat g-loadedness of gaps as evidence of genetic etiology; cite fringe admixture studies; ignore AM/rGE corrections to PGS |
+| **D3** | "Gender similarities" minimization | E10, E11, E14 | Selective citation (math d=0.05) to imply no differences anywhere; obscure D=2.71 multivariate; minimize d=0.93 interest gap |
+| **D4** | Pop evpsych overgeneralization | E10–E14, A6 | Treat dimensional ds as taxonic; extrapolate small ds to categorical claims; overgeneralize from specific tasks to broad-domain claims |
+
+---
+
+## 2. Dependency cascade
+
+The cascade reads from foundations up to synthesis, and from corrections back down to corrected claims.
+
+### Forward cascade (foundations → empirical claims → synthesis)
+
+```
+A1 ──dep──> M1, M2 ──sup──> E1, E2, E3, E25, E29
+A2 ──dep──> M3, M5 ──sup──> E4, E6, E7, E15–E17, E22–E23
+A3 ──dep──> E18 ──sup──> E26, E27 ──imp──> S5
+A4 ──imp──> L1, L2 ──guards──> S3
+A6 ──imp──> S5 (dimensional turn in psychiatry)
+M9 ──corr──> E1 (closes missing-heritability gap)
+M3 + M4 ──sup──> E6 (genetic nurture), E7 (xAM)
+E5 (candidate-gene collapse) ──imp──> E4 (polygenic architecture confirmed by absence of large hits)
+
+E1 + E2 + E3 + G1 ──imp──> S6 (developmental cascade)
+E1 + E4 + G2 + G5 ──imp──> S2 (h² gradient by method)
+E10 + E11 + E12 + E13 + L5 ──imp──> "small univariate, large multivariate" sex-difference picture
+E14 + O3 ──imp──> mechanism-pending GEP
+E15 + E16 + E17 ──imp──> S5 (HiTOP/p)
+E22 + E23 + L4 ──imp──> O4 (between-pop unanswerable currently)
+E1 + E2 + E4 + E6 + E7 + E8 + E9 + G1–G7 ──imp──> S1, S2 (integrated picture)
+```
+
+### Backward / corrective cascade (newer evidence revises older claims)
+
+```
+G2 (passive rGE) ──corr──> E1 estimates (population-level overstates direct genetic)
+G6 (cross-trait AM) ──corr──> E16 (some psychiatric rg's may be xAM artifact)
+M4 (within-family) ──corr──> E6 magnitude (~½ of population PGS)
+M8 (preregistration) ──corr──> E5 (collapsed candidate-GxE)
+M9 (WGS) ──corr──> "missing heritability" interpretation
+```
+
+### Distortion → target edges
+
+```
+D1 ──attacks──> A1, E1, E10, E11, E12, E14
+D2 ──attacks──> L4, E23 (ignores), exploits A2 absent corrections from G2/G6
+D3 ──attacks──> E10, E11 (selective univariate framing)
+D4 ──attacks──> A6, L7
+```
+
+---
+
+## 3. Crux nodes (highest load-bearing)
+
+These are the six nodes where collapse propagates farthest. If you have limited time to interrogate this field, interrogate these.
+
+### Crux 1: A1 — Twin/adoption method validity
+
+**Carries**: ~all of Section 1 of the lit review; the heritability-by-domain table; Wilson Effect; Scarr-Rowe.
+
+**Robustness**: HIGH. Multiple convergent methodological lines (MZ-reared-apart, SNP-h² that bypasses EEA, misperceived-zygosity studies) give similar substantive answers. EEA bias is real but modest (~10–20%).
+
+**What would flip**: SNP-h² for psychological traits systematically converging on &lt;0.05 (would imply twin-h² is mostly EEA artifact). Has not occurred.
+
+### Crux 2: A2 — GWAS signal is real (not artifact)
+
+**Carries**: PGS enterprise; genetic nurture estimates; cross-disorder pleiotropy; missing-heritability narrative; modern psychiatric genetics.
+
+**Robustness**: MODERATE-HIGH. Within-family PGS effects are non-zero for EA, BMI, height — direct genetic signal exists. But AM and stratification inflation magnitudes are still being quantified.
+
+**What would flip**: Within-family PGS effects converging on zero across most traits. Currently reduced ~50% but clearly non-zero for measured traits.
+
+### Crux 3: A3 — `g` is a real dimension
+
+**Carries**: Section 5 of lit review; predictive-validity claims; CHC structure; Calvin/Lothian findings; mortality/income predictions.
+
+**Robustness**: HIGH for g as a statistical regularity with predictive validity; MODERATE for g as a unitary biological mechanism (mutualism/network interpretations remain alive — see O5).
+
+**What would flip**: A broad cognitive battery where the first PC explains &lt;15%, or interventions that reliably move one ability while lowering others. Neither has been demonstrated.
+
+### Crux 4: G2/E6 — Passive rGE / genetic nurture
+
+**Carries**: Reframes the *meaning* of every population-level genetic estimate. Without G2, "genetic transmission" reads as direct biological causation; with G2, ~half is environmentally mediated by genetically-similar parents.
+
+**Robustness**: HIGH for the existence of genetic nurture (Kong 2018, Okbay 2022 EA4 in N=3M). MODERATE for the precise magnitude across all traits.
+
+**What would flip**: Within-family PGS effects converging on full population-level magnitude (would mean no nurture component). Has not occurred for any well-measured trait.
+
+### Crux 5: G6/E7 — Cross-trait assortative mating
+
+**Carries**: The cross-disorder genetic-correlation matrix; the p-factor's interpretation; transdiagnostic shared-biology rationales.
+
+**Robustness**: HIGH for the existence of xAM-induced inflation (Border 2022, *Science*: R²=74% of variance in genetic-correlation estimates tracks spousal phenotypic correlations). MODERATE for the share of any specific rg that is artifact vs. genuine pleiotropy.
+
+**What would flip**: Within-family designs showing cross-disorder rg's survive AM correction at &gt;50% of current estimates. Active research; answer pending.
+
+### Crux 6: L4 — Within-population heritability ≠ between-population genetic difference
+
+**Carries**: The single most important logical guardrail in the entire field. Without L4, every E1–E3 finding can be misread as licensing between-group genetic causation claims.
+
+**Robustness**: HIGH (it's a logical/algebraic point — Lewontin 1970, well-known). It is not refutable; it can only be ignored.
+
+**Why it's a crux despite being a logical truth**: because D2 (hereditarian distortion) routinely violates L4 in public discourse, and because E23 (PGS-portability collapse across ancestries) means the empirical methods that *might* speak to between-population genetic differences don't currently work.
+
+---
+
+## 4. Load-bearing vs. decorative
+
+### Load-bearing (≥4)
+
+Foundational: A1, A2, A3, A4. Methodological: M1, M3, M4, M9. Empirical: E1–E11, E14–E16, E18, E22–E23, E29–E32. Logical: L1–L4. Mechanisms: G1, G2, G5, G6, G7. Synthesis: S1–S6. Open: O1, O3, O4, O7.
+
+### Decorative (≤2) — interesting but removable without changing the picture
+
+- **E35** (CAH / primate toy preferences): convergent evidence, not necessary
+- **E37** (specific GABAergic critical-period mechanisms): biologically real, not load-bearing for the variation argument
+- **HEXACO Honesty-Humility specifics**: incremental over Big Five, not foundational
+- **Specific Dark-Triad subdimensions**: D-factor synthesis (Moshagen 2018) carries more weight
+- **P-FIT brain network specifics**: corroborate g but don't establish it
+- **Specific transgenerational-epigenetics findings (Yehuda Holocaust FKBP5)**: refuted/non-replicated; kept only as historical reference for D1 distortion targeting
+- **Specific candidate-gene findings (5-HTTLPR depression)**: refuted; kept as the historical anchor for the field's methodological turn (M8)
+
+The decorative set is where the lit review can be most aggressively compressed without information loss.
+
+---
+
+## 5. Weakest links
+
+These are the load-bearing pieces with the lowest current confidence. Targeted attack on any one would do the most damage to the integrated picture.
+
+### W1: Generalization from candidate-GxE failure to "all GxE is small" (E5 → broader claim)
+
+**Why fragile**: The candidate-gene collapse is definitive. The extrapolation that polygenic-score × environment interactions are also small is an *inductive leap*, not a result. PGS×E literature is too young to support a strong null. A few suggestive findings (compulsory-schooling-reform × education-PGS) hint that real PGS×E may exist.
+
+**Pressure test**: Several large preregistered PGS×E studies finding interactions explaining &gt;5% variance would substantially revise this corner of the picture.
+
+### W2: Scarr-Rowe (E25)
+
+**Why fragile**: Replicates in US samples, **does not replicate** in Western Europe / Australia (Tucker-Drob & Bates 2016). Load-bearing for the popular claim that "environments matter more in deprivation." If it's a US-specific artifact of healthcare/education inequality, the broader generalization fails outside the US.
+
+### W3: Plomin-vs-Turkheimer interpretation of PGS (O1)
+
+**Why fragile**: Both views are compatible with current data. Determines what PGS *means* — direct biology vs. summary statistic of correlated environments. The field publishes ambiguously across both interpretations. Will likely be settled only by within-family-only PGS that are still well-powered.
+
+### W4: Magnitude of AM-correction across psychiatric cross-disorder rg matrix (O7)
+
+**Why fragile**: Border 2022 showed xAM explains 74% of variance in *estimates* but did not prove all rg's are spurious — some genuine pleiotropy surely exists. The actual share that is artifact is being quantified now; could meaningfully shrink the p-factor / shared-biology picture (S5) if artifact share is high.
+
+### W5: Gender Equality Paradox mechanism (O3, E14)
+
+**Why fragile**: Pattern is robust across personality, preference, interest, and depression. Mechanism is contested between (a) innate-expression release, (b) reference-group artifacts in self-report, (c) wealth/freedom confounds. Each implies different normative conclusions. Behavioral (non-self-report) replication is incomplete. Falk & Hermle 2018 used incentivized measures and found the paradox held for some preferences but full coverage is missing.
+
+### W6: Flynn-reversal cause (O2)
+
+**Why fragile**: The pattern is environmentally driven (within-sibship, Bratsberg & Rogeberg 2018), so "dysgenic" explanations are out. But no mechanism (screen time, education quality, attention, nutrition, lead) has been pinned down. Not load-bearing for the integrated picture, but a major embarrassment for the field's self-understanding.
+
+### W7: A6 (dimensional vs. taxonic) at psychiatric extremes
+
+**Why fragile**: Most psychopathology is dimensional (taxometric evidence is robust), but for severe early-onset autism with intellectual disability, rare large-effect variants (CHD8, SCN2A, SYNGAP1) drive a partly taxonic picture. The "all dimensional" framing oversells continuity at the severe tail.
+
+---
+
+## 6. Variant views
+
+The same graph, read four ways.
+
+### Variant A: Vulnerability map — *where does this break?*
+
+The vulnerability map is the union of the six crux nodes (Section 3) and the seven weakest links (Section 5). Together they describe the smallest set of falsifiers that would force restructuring of the integrated picture:
+
+- Falsify A1: SNP-h² systematically &lt;0.05 → twin-method discredited → Section 1 collapses
+- Falsify A2: within-family PGS → 0 → modern psychiatric genetics collapses
+- Falsify A3: positive manifold dissolves → Section 5 collapses
+- Falsify G2: within-family PGS = population PGS → genetic nurture is null → Plomin direct-causal view wins (O1 resolves)
+- Falsify G6 fully: AM correction barely changes rg matrix → cross-disorder pleiotropy is real
+- Violate L4: cannot be falsified, only ignored — but its violation in public discourse is the largest single source of public confusion
+
+If exactly one of these were to flip, the rebuild would be: A1→ rebuild Section 1 only; A2→ rebuild Sections 1, 3, 7 (~40% of lit review); A3→ rebuild Section 5 (~25%); G2/G6→ keep numbers, rewrite causal interpretation throughout.
+
+### Variant B: Flow map — *how does causation propagate?*
+
+Causation in this system runs in two directions, both important.
+
+**Forward developmental flow** (genome → outcomes):
+
+```
+Genome (polygenic + few rare large-effect)
+    │
+    ├──> Temperament (infant biological reactivity: Surgency / NA / EC)
+    │       │
+    │       ├──> Active rGE / niche-picking ─────────┐
+    │       │                                        │
+    │       └──> Evocative rGE (eliciting responses) ┤
+    │                                                │
+    └──> Direct expression in brain development ─────┤
+                                                     ▼
+                                                Personality (adult)
+                                                     │
+                                                     ├──> Attainment
+                                                     ├──> Relationships
+                                                     ├──> Health behaviors
+                                                     └──> Mortality
+```
+
+**Indirect / dynastic flow** (parents' genome → offspring environment → offspring outcome):
+
+```
+Parents' genome
+    │
+    ├──> Parents' phenotype (income, vocabulary, parenting style, neighborhood choice)
+    │       │
+    │       └──> Offspring's rearing environment ────────┐
+    │                                                    ▼
+    │                                              Offspring outcomes
+    │                                                    ▲
+    └──> Transmitted alleles ───────────────────────────┘
+```
+
+The genetic-nurture finding (E6) says these two pathways have roughly equal magnitude for educational attainment. They are partially separable only via within-family designs (M4) or non-transmitted-allele PGS.
+
+**Cross-generational drift via assortative mating:**
+
+```
+Mating choice (correlated on phenotype) 
+    │
+    └──> LD induction among causal variants (G5)
+              │
+              ├──> Inflated additive genetic variance
+              ├──> Inflated h²
+              ├──> Inflated cross-trait genetic correlations (G6)
+              └──> Inflated PGS prediction accuracy
+```
+
+### Variant C: Minimal claim set — *smallest set supporting the conclusion*
+
+The smallest collection of claims that yields the integrated picture (S1) is **eight nodes**:
+
+1. **E1** — Mean trait h² ≈ 0.49 (heritability is real and substantial)
+2. **E4** — Polygenic architecture (no master genes)
+3. **E6** — Within-family PGS ≈ ½ population PGS (genetic nurture is real)
+4. **E7** — Cross-trait AM is a major source of inflated genetic correlations
+5. **E8** — A small set of large environmental insults have causal effects (lead, iodine, alcohol, deprivation, schooling)
+6. **L4** — Within-pop ≠ between-pop (Lewontin)
+7. **G7** — Stochastic developmental noise is the dominant source of non-shared environment
+8. **A6** — Most psychological variation is dimensional, not taxonic
+
+These eight together generate the qualitative integrated picture without requiring detailed effect-size tables, cross-cultural caveats, or specific candidate-gene history. The remaining ~50 nodes refine and corroborate but do not change the shape.
+
+### Variant D: Politicization map — *where does motivated reasoning concentrate?*
+
+This is the variant most relevant to the topic framing ("a minefield of motivated reasoning on all sides").
+
+**Distortion-to-target matrix:**
+
+| Distortion | Targets | Move | Counter-evidence |
+|---|---|---|---|
+| **D1** Blank-slate | A1, E1, E10–E14 | "Twin studies are flawed; differences are socialization" | SNP-h² (bypasses EEA), MZ-reared-apart, Su 2009 (d=0.93), CAH/primate convergence |
+| **D2** Hereditarian | L4, E22, E23, O4 | "Group differences are genetic" | PGS portability collapse (E23); Lewontin (L4); cross-ancestry GWAS at scale don't exist |
+| **D3** Gender-similarities | E10, E11, E14 | "All differences are tiny (cite math d=0.05)" | Multivariate D=2.71 (E10); people-things d=0.93 (E11); GEP (E14) |
+| **D4** Pop-evpsych | A6, L7, E10–E14 | "Men are X, women are Y" (categorical from dimensional) | A6 (dimensional); L7 (effect-size context) |
+
+**Why all four distortions can target the same evidence base**: the evidence base contains *both* large differences (people-things d=0.93) *and* trivial ones (math d=0.05) *and* strong heritability (h²=0.49) *and* large environmental insults (lead, schooling) *and* logical guardrails against between-group inference (L4). Any single-direction narrative requires selective citation. The integrated picture (S1) requires holding all of it at once.
+
+**Operational implication for the formalization stage**: any model that *only* parameterizes the variance components without parameterizing the *interpretation* of those components will be silently captured by whichever distortion the reader is most prone to. The formal model needs to make L4, G2, G6, and the dimensional/taxonic distinction (A6) structurally visible, not just numerically present.
+
+---
+
+## 7. Topology → formalization handoff
+
+What the next stage (model formalization) should pick up.
+
+### Ready for equations
+
+1. **Variance decomposition** — fully specifiable now:
+
+   V(P) = V(A_direct) + V(A_indirect) + V(A_AM-LD) + V(C_residual) + V(E_measured) + V(E_stochastic) + 2·Cov(G,E) + V(GxE)
+
+   With each V parameterized by trait, age, population (US vs. Europe for E25), and method (twin / SNP / within-family). Cov(G,E) captures rGE; V(A_AM-LD) captures G5/G6; V(A_indirect) captures G2.
+
+2. **Method gradient** (S2): twin h² ≥ SNP h² ≥ within-family h², with the gaps decomposable into AM, rGE, and rare-variant contributions. Parameterize as a function of estimation method.
+
+3. **Wilson-effect curve**: h²(age) = a + b·log(age) or similar saturation form, with the slope driven by G1 (active rGE). Calibratable from Bouchard 2013 and Briley & Tucker-Drob 2013.
+
+4. **Multivariate sex-difference algebra**: D² = (μ₁ - μ₂)ᵀ Σ⁻¹ (μ₁ - μ₂), with a worked example showing how D = 2.71 follows from moderate univariate ds and a positive-correlation covariance structure.
+
+5. **PGS-portability decay function**: prediction accuracy as a function of genetic distance from training population (Martin 2019; ~4.5× drop for African ancestry).
+
+### Still at observation stage (formalization premature)
+
+- O1 — Plomin/Turkheimer interpretation of PGS: not yet a formal disagreement, just a verbal one
+- O3 — GEP mechanism: the algebra of "innate expression release" is not yet specified
+- O6 — what non-shared environment *is*: no candidate decomposition
+- O7 — share of cross-disorder rg that survives AM correction: empirical question pending
+
+### Recommended formalization scope for Stage 3
+
+**Primary target**: Build the variance decomposition (item 1 above) as the central equation, with the method gradient (item 2) as its empirical signature, and an interactive dashboard that lets the user dial trait, age, population, and method to see how the decomposition shifts.
+
+**Stretch target**: Add the multivariate sex-difference algebra (item 4) as a second module showing how univariate-vs-multivariate framings give different qualitative pictures of the same data.
+
+**Avoid**: trying to formalize anything in the "still at observation stage" list — premature math will mask genuine uncertainty and will be obsoleted within a year.
+
+---
+
+## 8. Stage_outputs convention reference
+
+Raw working drafts from each LLM-iterate stage live at:
+
+```
+stage_outputs/<topic>/<stage>.md
+```
+
+Where `<topic>` is kebab-case (e.g., `human-psych-variation`) and `<stage>` is one of: `lit-review`, `topology`, `model`, `data`, `build`. Polished versions move into `src/content/ai_research/<topic>/<stage>.mdx` with proper frontmatter (title, description, date, status, refinementPass, refinementLog) once ready to publish on the site.
+
+The interactive D3 graph for this topology lives at `src/components/research/PsychVariationGraph.tsx` and is mounted in `src/content/ai_research/human-psych-variation/topology.mdx` via `client:load`.

@@ -7,6 +7,7 @@
 - **MDX** for long-form content (essays, model explanations, AI research stages)
 - **React 19** for interactive components (model dashboards)
 - **@astrojs/sitemap** for sitemap generation
+- **d3-force** for force-directed graph layouts in AI-research topology visualizations (React renders SVG; d3-force only computes positions)
 
 ## Folder structure
 
@@ -27,8 +28,10 @@
 │   │   ├── SectionLabel.astro           ← mono-uppercase label + optional "→" link
 │   │   ├── TierChip.astro               ← me / me + ai / ai chip (writing tiers)
 │   │   ├── RefinementLog.astro
-│   │   └── models/                      ← React components for interactive models
-│   │       └── OptionValueDashboard.tsx
+│   │   ├── models/                      ← React components for interactive models
+│   │   │   └── OptionValueDashboard.tsx
+│   │   └── ai-research/                 ← React components for AI-research stage visualizations
+│   │       └── PsychVariationGraph.tsx  ← topology graph (force-directed via d3-force)
 │   ├── content/
 │   │   ├── blog/<slug>.mdx              ← essays
 │   │   ├── research/<slug>.mdx          ← formal research entries
@@ -108,7 +111,9 @@ Each topic is a folder under `src/content/ai_research/<topic>/`. Inside:
 - `data.mdx` — stage 4
 - `build.mdx` — stage 5
 
-`stage_outputs/<topic>/<stage>.md` holds raw LLM outputs that feed each stage. Polished versions move into `src/content/ai_research/`.
+`stage_outputs/<topic>/<stage>.md` holds raw LLM outputs that feed each stage. Topic slugs are kebab-case; stage filenames are exactly one of `lit-review`, `topology`, `model`, `data`, `build` (no version suffixes — git provides history). Polished versions move into `src/content/ai_research/<topic>/<stage>.mdx`.
+
+Stage-specific interactive components (D3 graphs for topology, dashboards for model/data) live at `src/components/ai-research/<ComponentName>.tsx` and are mounted in the stage's MDX with `client:load` (wrap in `not-prose` so Tailwind Typography doesn't override styles).
 
 Refinement history is stored as an array in frontmatter:
 

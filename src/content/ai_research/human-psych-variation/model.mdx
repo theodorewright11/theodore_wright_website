@@ -1,0 +1,31 @@
+---
+title: 'Model'
+description: 'Formalization of the variance decomposition for psychological traits — direct genetic, indirect (genetic nurture), AM-induced, shared and non-shared environment, stochastic, gene-environment covariance, interactions — parameterized by trait, age, and method.'
+date: 2026-04-28
+status: not-started
+refinementPass: 0
+---
+
+> Pipeline status: not yet generated. Run **Step 3** of the LLM Iterate prompt with the topology as input.
+
+## What this stage will produce
+
+Primary target (from the topology handoff):
+
+- **Variance decomposition equation**:
+  `V(P) = V(A_direct) + V(A_indirect) + V(A_AM-LD) + V(C_residual) + V(E_measured) + V(E_stochastic) + 2·Cov(G,E) + V(GxE)`
+- **Method gradient**: twin h² ≥ SNP h² ≥ within-family h², with the gaps decomposable into AM, rGE, and rare-variant components
+- **Wilson-effect curve**: `h²(age)` saturation form driven by active rGE (G1)
+- **Multivariate sex-difference algebra**: `D² = (μ₁ - μ₂)ᵀ Σ⁻¹ (μ₁ - μ₂)` with worked example showing how D = 2.71 emerges from moderate univariate ds + positive-correlation Σ
+- **PGS-portability decay function**: prediction accuracy as a function of genetic distance from training population
+
+Plus an interactive dashboard (slider/number/visual) letting the user dial trait, age, population, and method to see the decomposition shift.
+
+## What is *not* ready for formalization yet
+
+- O1 (PGS interpretation: Plomin vs Turkheimer) — verbal disagreement, not yet a formal one
+- O3 (GEP mechanism) — algebra of "innate-expression release" not yet specified
+- O6 (what non-shared environment is) — no candidate decomposition
+- O7 (AM-correction magnitude across cross-disorder rg matrix) — empirical question pending
+
+Premature math here would mask uncertainty. Stay observational.
