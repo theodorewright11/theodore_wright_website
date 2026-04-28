@@ -35,7 +35,7 @@ Every essay carries one of three tier labels in its frontmatter:
 | Value | Label shown | Meaning |
 |---|---|---|
 | `mine` | **Me** | Written by Teddy, no AI involvement |
-| `collab` | **Me + AI** | Teddy directs and injects substance, AI refines/synthesizes |
+| `collab` | **Me x AI** | Teddy directs and injects substance, AI refines/synthesizes |
 | `ai-led` | **AI** | Primarily AI-generated, Teddy curated/edited only |
 
 Tier shows on the post card and at the top of the post. Default is `mine`.
@@ -49,13 +49,15 @@ A model has:
 - An optional interactive React component (sliders, real-time computation)
 - A `featured` flag controlling whether it gets emphasized on `/models`
 
-Initial roster (drafts/published over time):
+Initial roster (drafts/published over time). Public titles are plain-language ("stupid simple to interpret") — the conceptual short-name in parentheses is for internal reference only:
 
-- **Option Value** — existence asymmetry from holding an option on future states
-- **Suffering Salience** — perceived harm = actual harm × salience distortion
-- **Trust Tracker** — months × contexts × consistency
-- **Parental Decision-Making Under Uncertainty** — confidence/stakes/reversibility/disclosure framework
-- **Social Environment Output Efficiency** — how social scaffolding modulates available cognitive output
+- **Why continuing is easier than starting** *(option value)* — existence asymmetry from holding an option on future states
+- **Why vivid pain feels worse than equal pain** *(suffering salience)* — perceived harm = actual harm × salience distortion
+- **How trust builds over time** *(trust tracker)* — months × contexts × consistency
+- **Parenting under uncertainty** *(parental decision-making)* — confidence/stakes/reversibility/disclosure framework
+- **How surroundings shape your output** *(social environment output efficiency)* — how social scaffolding modulates available cognitive output
+
+Tags on model frontmatter exist in the schema but are no longer rendered — model identity is carried by the title and description.
 
 ## AI's Research (LLM Iterate)
 
@@ -111,6 +113,12 @@ Research entries reference their paper via `paperUrl: '/papers/<slug>.pdf'` in f
 
 Word documents (.docx) should be converted to PDF before upload (Word: File → Save As → PDF). Hosting `.docx` directly causes browsers to download rather than display.
 
+## Site chrome
+
+- **Nav** at the top of every page (brand + section links).
+- **Footer** at the bottom of every page (replaces the old top-of-page NOW strip). Shows the site's last-updated date (driven by `src/data/now.json`), a download link to the full-content markdown bundle (`/content-bundle.md`), and contact links.
+- **Content bundle**: `/content-bundle.md` is a build-time-generated single markdown file containing every published essay, research entry, model writeup, update, and AI-research stage on the site. Surfaced in the footer so a visitor (or AI assistant) can grab the entire site as one document.
+
 ## Out of scope (for now)
 
 - Comments
@@ -133,3 +141,10 @@ Word documents (.docx) should be converted to PDF before upload (Word: File → 
 - **2026-04-28**: Singletons (bio, now, dashboard roster) live in `src/data/*.json` rather than as content collections — they're tiny, edited by hand, and don't need MDX bodies.
 - **2026-04-28**: Models index now lists drafts as well as published entries (drafts at `opacity-70` with a "Draft" pill); previously drafts were hidden. Stub MDX files added for the four unpublished models in the roster.
 - **2026-04-28**: AI's Research topic page is now a single page with stage tabs (Overview + each existing stage); the standalone `/ai-research/<topic>/<stage>` URL still works as a deep-link / shareable permalink.
+- **2026-04-28**: Site chrome reshaped — top-of-page NOW strip retired; replaced by a global Footer that shows the last-updated date, contact links, and a download link to `/content-bundle.md` (a single markdown file with every published piece of content on the site, intended for AI summarization).
+- **2026-04-28**: Home masthead simplified — `Vol. I · Salt Lake City` eyebrow and `Salt Lake City` colophon line removed; section labels on the home grid promoted from muted 10px mono to Fraunces 18px ink with a prominent `see all →` accent link; featured-essay "Continue reading" and research paper links bumped up to 13px semibold.
+- **2026-04-28**: Model titles rewritten in plain language ("Option Value" → "Why continuing is easier than starting", etc.) and academic tag chips dropped from `/models` index and detail pages.
+- **2026-04-28**: Writing tier `collab` label changed from `me + ai` to `me x ai` (TierChip).
+- **2026-04-28**: `/research` paper links promoted from inline mono text to bordered call-to-action buttons ("Read the paper →") on both the index and detail pages, and surfaced on the home page Research column when a research entry has a `paperUrl` or `externalUrl`.
+- **2026-04-28**: Index pages unified — `/research`, `/models`, and `/ai-research` all now use a shared `GroupHeader` component to break content into status sections (Research: In Progress / Finished / Upcoming / Contributions; Models: Live / Drafts; AI's Research: In Progress / Planned). The decorative `§ N` numeral on Research group headers is dropped.
+- **2026-04-28**: Favicon swapped from a sans-serif blue "T" to a paper-background sienna italic "tw" mark consistent with the V4 design tokens.

@@ -1,0 +1,27 @@
+---
+import now from '../data/now.json';
+import bio from '../data/bio.json';
+
+const updated = new Date(now.updated + 'T00:00:00').toLocaleDateString('en-US', {
+  month: 'short', day: 'numeric', year: 'numeric',
+});
+---
+
+<footer class="border-t border-rule mt-20">
+  <div class="max-w-[1080px] mx-auto px-8 py-8 flex items-baseline justify-between gap-4 flex-wrap font-mono text-[11px] text-muted"
+       style="letter-spacing: 0.06em">
+    <div class="flex items-baseline gap-4 flex-wrap">
+      <span>updated {updated}</span>
+      <a href="/content-bundle.md"
+         class="text-accent no-underline hover:underline"
+         download>download all content (.md) ↓</a>
+    </div>
+    <div class="flex items-baseline gap-3 flex-wrap">
+      <a href={`mailto:${bio.email}`} class="text-ink-soft no-underline hover:text-accent transition-colors">email</a>
+      <span>/</span>
+      <a href={bio.substack} target="_blank" rel="noopener" class="text-ink-soft no-underline hover:text-accent transition-colors">substack</a>
+      <span>/</span>
+      <a href={bio.github} target="_blank" rel="noopener" class="text-ink-soft no-underline hover:text-accent transition-colors">github</a>
+    </div>
+  </div>
+</footer>

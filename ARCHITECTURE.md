@@ -24,9 +24,10 @@
 ├── src/
 │   ├── components/
 │   │   ├── Nav.astro                    ← V4 nav (brand + horizontal links, accent active state)
-│   │   ├── NowStrip.astro               ← top-of-page status bar
-│   │   ├── SectionLabel.astro           ← mono-uppercase label + optional "→" link
-│   │   ├── TierChip.astro               ← me / me + ai / ai chip (writing tiers)
+│   │   ├── Footer.astro                 ← global footer (updated date + content bundle download + contact)
+│   │   ├── SectionLabel.astro           ← Fraunces 18px label + accent "see all →" link, hairline rule below
+│   │   ├── GroupHeader.astro            ← shared status-group header used on /research, /models, /ai-research
+│   │   ├── TierChip.astro               ← me / me x ai / ai chip (writing tiers)
 │   │   ├── RefinementLog.astro
 │   │   ├── models/                      ← React components for interactive models
 │   │   │   └── OptionValueDashboard.tsx
@@ -41,9 +42,9 @@
 │   ├── content.config.ts
 │   ├── data/                            ← singletons (not collections — small, edited-by-hand)
 │   │   ├── bio.json                     ← name, blurb, location, contact links
-│   │   ├── now.json                     ← current status line + updated date (drives NowStrip)
+│   │   ├── now.json                     ← `updated` date drives the global Footer (NowStrip retired)
 │   │   └── dashboards.json              ← roster of planned dashboards
-│   ├── layouts/BaseLayout.astro         ← NowStrip + Nav + slot, paper bg
+│   ├── layouts/BaseLayout.astro         ← Nav + slot + Footer, paper bg, flex-column for sticky footer
 │   ├── pages/
 │   │   ├── index.astro                  ← V4 editorial home (masthead + 3-col index + colophon)
 │   │   ├── research.astro
@@ -57,6 +58,7 @@
 │   │   │   ├── index.astro
 │   │   │   └── [slug].astro
 │   │   ├── dashboards/index.astro
+│   │   ├── content-bundle.md.ts         ← static endpoint emitting /content-bundle.md (all content as one markdown file)
 │   │   └── ai-research/
 │   │       ├── index.astro
 │   │       ├── [topic]/index.astro      ← topic page with stage tabs (Overview + per-stage)
@@ -164,10 +166,11 @@ Loaded via Google Fonts at the top of `global.css`.
 
 ### Patterns
 
-- **Section label** (column heading on home): mono 10px uppercase, letter-spacing 0.18em, `text-muted`, optional `→` arrow link to the section's index — see `SectionLabel.astro`.
-- **Group header** (Research status sections): `§ N` mono accent + Fraunces 18px label + count, with `border-b border-rule pb-2`.
+- **Section label** (column heading on home): Fraunces 18px ink + accent `see all →` mono link, hairline rule below — see `SectionLabel.astro`.
+- **Group header** (status sections on /research, /models, /ai-research): Fraunces 18px label + count on the right, hairline rule below. No `§ N` numeral — see `GroupHeader.astro`.
 - **Eyebrow / status pills**: mono 10px uppercase letter-spacing 0.12em. Live = accent border + accent text; Draft/Planned = rule border + muted text.
-- **Tier chip** (writing tier): mono 10px uppercase, rule border, muted text. Labels: `me` / `me + ai` / `ai` (mapped from `mine` / `collab` / `ai-led`) — see `TierChip.astro`.
+- **Tier chip** (writing tier): mono 10px uppercase, rule border, muted text. Labels: `me` / `me x ai` / `ai` (mapped from `mine` / `collab` / `ai-led`) — see `TierChip.astro`.
+- **Paper / external CTAs**: `font-mono text-[13px] font-semibold uppercase` border-button — accent border + accent text, hover fills accent. Used on /research index, detail, and home Research column.
 - **Item separator** (writing/models/updates/dashboards lists): `border-t border-rule` between items, plus `border-b` on the last item to close the list.
 - **No left-rule cards** (the V3 indigo `border-l-2 border-primary-200` pattern is retired).
 - **Active link**: italic + accent + `underline underline-offset-4`. Inactive nav: `text-ink-soft`, hovers to `text-accent`.
@@ -183,9 +186,13 @@ Loaded via Google Fonts at the top of `global.css`.
 
 Both styles use ink/ink-soft/muted/rule/accent tokens consistently.
 
-### NOW strip
+### Footer
 
-`NowStrip.astro` reads `src/data/now.json` (`{ line, updated }`). Pinned to top of every page above the nav. Background `paper-edge`, accent "NOW" tag, italic Source Serif status line, mono `updated <date>` on the right.
+`Footer.astro` is mounted in `BaseLayout.astro` after the main slot. It reads `src/data/now.json` for the `updated` date (the previous top-of-page NOW strip is retired) and `src/data/bio.json` for contact links. Three slots: left (`updated <date>` + a download link to `/content-bundle.md`), right (email / substack / github). Border-top `rule`, `font-mono text-[11px]`, all in muted/ink-soft.
+
+### Content bundle
+
+`src/pages/content-bundle.md.ts` is a static endpoint that prerenders to `dist/content-bundle.md` at build time. It pulls every collection (`blog`, `research`, `models`, `updates`, `ai_research`), strips MDX `import` lines, and emits one big markdown file. Linked from the Footer with `download` so a visitor — or an LLM the visitor pastes it into — can grab the whole site in one file. No frontmatter or component embeds in the output; just title/date/status header and the body.
 
 ## Interactive components
 

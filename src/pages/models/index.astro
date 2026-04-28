@@ -1,14 +1,28 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import GroupHeader from '../../components/GroupHeader.astro';
 import { getCollection } from 'astro:content';
 
-const models = (await getCollection('models')).sort((a, b) => {
-  const liveDelta = Number(b.data.status === 'published') - Number(a.data.status === 'published');
-  if (liveDelta !== 0) return liveDelta;
-  const featuredDelta = Number(b.data.featured) - Number(a.data.featured);
-  if (featuredDelta !== 0) return featuredDelta;
-  return b.data.date.valueOf() - a.data.date.valueOf();
-});
+const all = await getCollection('models');
+
+const order: Array<['published' | 'draft', string]> = [
+  ['published', 'Live'],
+  ['draft', 'Drafts'],
+];
+
+const groups = order
+  .map(([k, l]) => ({
+    k,
+    l,
+    items: all
+      .filter(m => m.data.status === k)
+      .sort((a, b) => {
+        const featuredDelta = Number(b.data.featured) - Number(a.data.featured);
+        if (featuredDelta !== 0) return featuredDelta;
+        return b.data.date.valueOf() - a.data.date.valueOf();
+      }),
+  }))
+  .filter(g => g.items.length > 0);
 ---
 
 <BaseLayout title="Models — Teddy Wright"
@@ -21,22 +35,23 @@ const models = (await getCollection('models')).sort((a, b) => {
       Slide the inputs and watch the output move.
     </p>
 
-    {models.length === 0 ? (
+    {groups.length === 0 ? (
       <div class="text-center py-16 font-serif italic text-muted">
         <p>No models yet.</p>
       </div>
     ) : (
-      <div>
-        {models.map((m, i) => {
-          const live = m.data.status === 'published';
-          return (
-            <article class:list={[
-              'py-6 border-t border-rule grid grid-cols-[1fr_auto] gap-4 items-baseline',
-              i === models.length - 1 ? 'border-b border-rule' : '',
-              live ? '' : 'opacity-70',
-            ]}>
-              <div>
-                <h2 class="font-display font-semibold text-[24px] m-0 mb-1.5 text-ink"
+      groups.map(g => (
+        <section class="mb-14">
+          <GroupHeader label={g.l} count={g.items.length} />
+          {g.items.map((m, i) => {
+            const live = m.data.status === 'published';
+            return (
+              <article class:list={[
+                'py-5',
+                i < g.items.length - 1 ? 'border-b border-rule-soft' : '',
+                live ? '' : 'opacity-70',
+              ]}>
+                <h3 class="font-display font-semibold text-[22px] m-0 mb-1.5 text-ink"
                     style="letter-spacing: -0.015em">
                   {live ? (
                     <a href={`/models/${m.slug}`}
@@ -46,26 +61,14 @@ const models = (await getCollection('models')).sort((a, b) => {
                   ) : (
                     m.data.title
                   )}
-                </h2>
-                <p class="font-serif text-[15px] text-ink-soft leading-[1.55] m-0 mb-2"
+                </h3>
+                <p class="font-serif text-[15px] text-ink-soft leading-[1.55] m-0"
                    style="text-wrap: pretty">{m.data.description}</p>
-                {m.data.tags.length > 0 && (
-                  <div class="font-mono text-[10px] uppercase text-muted"
-                       style="letter-spacing: 0.08em">
-                    {m.data.tags.join(' · ')}
-                  </div>
-                )}
-              </div>
-              <span class:list={[
-                'font-mono text-[10px] uppercase whitespace-nowrap rounded-sm px-2 py-px self-start mt-1',
-                live ? 'text-accent border border-accent' : 'text-muted border border-rule',
-              ]} style="letter-spacing: 0.12em">
-                {live ? 'Live' : 'Draft'}
-              </span>
-            </article>
-          );
-        })}
-      </div>
+              </article>
+            );
+          })}
+        </section>
+      ))
     )}
   </section>
 </BaseLayout>

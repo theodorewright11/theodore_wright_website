@@ -50,14 +50,19 @@ const fmtYear = (date: Date) => String(date.getFullYear());
       </div>
 
       {(entry.data.paperUrl || entry.data.externalUrl) && (
-        <div class="flex gap-5 mt-4 font-mono text-[11px]" style="letter-spacing: 0.06em">
+        <div class="flex gap-3 mt-6 flex-wrap font-mono text-[13px] font-semibold uppercase"
+             style="letter-spacing: 0.1em">
           {entry.data.paperUrl && (
             <a href={entry.data.paperUrl} target="_blank" rel="noopener"
-               class="text-accent no-underline hover:underline">open paper →</a>
+               class="inline-block px-4 py-2 border border-accent text-accent no-underline hover:bg-accent hover:text-paper transition-colors">
+              Read the paper →
+            </a>
           )}
           {entry.data.externalUrl && (
             <a href={entry.data.externalUrl} target="_blank" rel="noopener"
-               class="text-accent no-underline hover:underline">external ↗</a>
+               class="inline-block px-4 py-2 border border-rule text-ink-soft no-underline hover:border-accent hover:text-accent transition-colors">
+              External ↗
+            </a>
           )}
         </div>
       )}

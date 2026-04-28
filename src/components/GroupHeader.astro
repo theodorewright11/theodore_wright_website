@@ -1,0 +1,15 @@
+---
+interface Props {
+  label: string;
+  count?: number;
+}
+const { label, count } = Astro.props;
+---
+
+<div class="flex items-baseline gap-3 mb-6 pb-2 border-b border-rule">
+  <h2 class="font-display font-semibold text-[18px] text-ink m-0"
+      style="letter-spacing: -0.01em">{label}</h2>
+  {typeof count === 'number' && (
+    <span class="font-mono text-[11px] text-muted ml-auto">{count}</span>
+  )}
+</div>

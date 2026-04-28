@@ -27,10 +27,6 @@ const live = entry.data.status === 'published';
           'font-mono text-[10px] uppercase rounded-sm border px-2 py-px',
           live ? 'text-accent border-accent' : 'text-muted border-rule',
         ]} style="letter-spacing: 0.12em">{live ? 'Live' : 'Draft'}</span>
-        {entry.data.tags.length > 0 && (
-          <span class="font-mono text-[10px] uppercase text-muted"
-                style="letter-spacing: 0.08em">{entry.data.tags.join(' · ')}</span>
-        )}
       </div>
       <h1 class="font-display font-semibold text-[42px] leading-[1.08] m-0 mb-3 text-ink"
           style="letter-spacing: -0.025em; text-wrap: balance">{entry.data.title}</h1>

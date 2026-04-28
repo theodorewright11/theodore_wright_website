@@ -6,17 +6,17 @@ interface Props {
 const { label, href } = Astro.props;
 ---
 
-<div class="flex items-baseline gap-2.5 mb-[18px]">
+<div class="flex items-baseline gap-3 mb-5 pb-2 border-b border-rule">
   <h2
-    class="font-mono text-[10px] font-medium uppercase text-muted m-0 flex-1"
-    style="letter-spacing: 0.18em"
+    class="font-display font-semibold text-[18px] text-ink m-0 flex-1"
+    style="letter-spacing: -0.01em"
   >{label}</h2>
   {href && (
     <a
       href={href}
-      class="font-mono text-[10px] text-muted no-underline hover:text-accent transition-colors"
-      style="letter-spacing: 0.1em"
+      class="font-mono text-[12px] uppercase font-semibold text-accent no-underline hover:underline whitespace-nowrap"
+      style="letter-spacing: 0.12em"
       aria-label={`See all ${label}`}
-    >→</a>
+    >see all →</a>
   )}
 </div>
