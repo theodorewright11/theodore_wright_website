@@ -40,8 +40,8 @@ const NODES: GraphNode[] = [
 
   // Methodological prerequisites
   { id: 'M3', type: 'M', weight: 5, label: 'GWAS at scale (≥100k–1M)', detail: 'Hyper-polygenic architecture only detectable at very large N.', status: '✓' },
-  { id: 'M4', type: 'M', weight: 5, label: 'Within-family designs', detail: 'Sibling FE, MZ-discordant, parent-offspring trios. Control between-family confounds.', status: '✓' },
-  { id: 'M9', type: 'M', weight: 4, label: 'Whole-genome sequencing', detail: 'Captures rare variants. Wainschtein 2022 closed missing-h² gap for height.', status: '✓' },
+  { id: 'M4', type: 'M', weight: 5, label: 'Within-family designs', detail: 'Sibling FE, MZ-discordant, parent-offspring trios. Control between-family confounds. Howe et al. 2022 extended within-sibship GWAS to 178k siblings × 25 phenotypes — within-sibship estimates were systematically smaller than population estimates for height, EA, cognitive ability, depressive symptoms, smoking. Now mature beyond just educational attainment.', status: '✓' },
+  { id: 'M9', type: 'M', weight: 4, label: 'Whole-genome sequencing', detail: 'Captures rare variants. Wainschtein 2022 closed missing-h² gap for height. Wang et al. 2025 (Nature) extended this: WGS in ~500k UK Biobank captures ~88% of pedigree-based narrow-sense heritability across many traits (20% rare + 68% common). The "missing heritability" problem is now substantially resolved for many phenotypes.', status: '✓' },
 
   // Empirical claims
   { id: 'E1', type: 'E', weight: 5, label: 'Mean trait h² ≈ 0.49', detail: 'Polderman 2015 meta-analysis, 17,804 traits, 14.5M twin pairs.', status: '✓' },
@@ -55,14 +55,14 @@ const NODES: GraphNode[] = [
   { id: 'E9', type: 'E', weight: 4, label: 'Schooling → IQ (~3.4 pts/yr)', detail: 'Ritchie & Tucker-Drob 2018, 142 effect sizes, durable into old age.', status: '✓' },
   { id: 'E10', type: 'E', weight: 4, label: 'Multivariate sex Δ: D ≈ 2.71', detail: 'Del Giudice 2012; ~10% personality overlap. Method-sensitive.', status: '~' },
   { id: 'E11', type: 'E', weight: 4, label: 'People-things Δ: d ≈ 0.93', detail: 'Su 2009. Largest documented sex difference in psychology.', status: '✓' },
-  { id: 'E14', type: 'E', weight: 4, label: 'Gender Equality Paradox', detail: 'Sex differences in personality, preferences, depression, STEM larger in egalitarian/wealthy countries. Mechanism contested.', status: '~' },
+  { id: 'E14', type: 'E', weight: 4, label: 'Gender Equality Paradox', detail: 'Sex differences in personality, preferences, depression, STEM larger in egalitarian/wealthy countries. Herlitz et al. 2025 systematic review (54 articles, 27 meta-analyses) confirmed the pattern across personality, verbal abilities, episodic memory, and negative emotions — pattern replication has strengthened. Mechanism still contested (innate-expression vs reference-group artifact vs wealth confound).', status: '~' },
   { id: 'E15', type: 'E', weight: 4, label: 'Psych disorders heritable + polygenic', detail: 'h² 0.35–0.85; SNP-h² 0.09–0.24; SCZ has 287 loci.', status: '✓' },
   { id: 'E16', type: 'E', weight: 4, label: 'Cross-disorder rg', detail: 'Substantial genetic correlations across psychiatric disorders. Magnitude post-AM correction is open.', status: '~' },
   { id: 'E17', type: 'E', weight: 3, label: 'p factor', detail: 'General psychopathology factor analogous to g. Statistical: ✓; interpretation: contested.', status: '~' },
   { id: 'E18', type: 'E', weight: 4, label: 'Positive manifold', detail: 'Every cognitive test correlates positively with every other. Spearman 1904, replicated countless times.', status: '✓' },
   { id: 'E22', type: 'E', weight: 4, label: 'Within-pop ≠ between-pop', detail: 'h² within a population gives no info about between-pop mean differences. Lewontin\'s logical point.', status: '✓' },
-  { id: 'E23', type: 'E', weight: 4, label: 'PGS portability collapses', detail: 'Martin 2019: 4.5× drop across ancestries. Mostafavi 2020: also drops within Europeans by SES.', status: '✓' },
-  { id: 'E25', type: 'E', weight: 3, label: 'Scarr-Rowe (US-only)', detail: 'SES × heritability interaction in US samples; does NOT replicate in W. Europe / Australia.', status: '~' },
+  { id: 'E23', type: 'E', weight: 4, label: 'PGS portability decays continuously', detail: 'Ding et al. 2023 (Nature): Pearson r = −0.95 between genetic distance and PGS accuracy across 84 traits. Reframes the older "discrete ancestry-group drop" picture (Martin 2019; Mostafavi 2020) — the decay is continuous along genetic distance from training population, not a step function across continental ancestries.', status: '✓' },
+  { id: 'E25', type: 'E', weight: 2, label: 'Scarr-Rowe weakening further', detail: 'SES × heritability interaction (more genetic expression in higher-SES). Already failed to replicate outside US (Tucker-Drob & Bates 2016). Figlio et al. 2024 (Norwegian register data) found 39/42 PGI×SES interactions in education NEGATIVE (compensatory direction); only 1 marginal positive. Picture in 2026: Scarr-Rowe is failing; the "compensatory hypothesis" (more genetic expression in low-SES) is the better-supported pattern for education.', status: '✗' },
   { id: 'E29', type: 'E', weight: 4, label: 'Big Five h² 0.40–0.60', detail: 'Cross-cultural replication for E/A/C; full Big Five in Indo-European; Tsimane qualifier.', status: '~' },
   { id: 'E30', type: 'E', weight: 4, label: 'Cumulative continuity', detail: 'Rank-order personality stability rises from ~0.31 in childhood to ~0.74 by midlife.', status: '✓' },
 
@@ -72,7 +72,7 @@ const NODES: GraphNode[] = [
 
   // Mechanisms
   { id: 'G1', type: 'G', weight: 4, label: 'Active rGE / niche-picking', detail: 'People select environments matching genetic propensities. Drives Wilson Effect amplification.', status: '✓' },
-  { id: 'G2', type: 'G', weight: 5, label: 'Passive rGE / genetic nurture', detail: 'Parents transmit genes AND correlated environments. Reframes ~50% of "genetic" effect as environmental.', status: '✓' },
+  { id: 'G2', type: 'G', weight: 5, label: 'Passive rGE / genetic nurture', detail: 'Parents transmit genes AND correlated environments. Reframes ~50% of "genetic" effect as environmental (Wang 2021 / Isungset 2022 confirm). Nivard et al. 2024 found indirect genetic effects extend BEYOND the nuclear family — dynastic / extended-family / community processes contribute, so the "parents transmit gene + correlated environment" framing actually understates the spread.', status: '✓' },
   { id: 'G5', type: 'G', weight: 4, label: 'AM → LD induction', detail: 'Assortative mating creates linkage among causal variants → inflates h² and PGS.', status: '✓' },
   { id: 'G6', type: 'G', weight: 5, label: 'Cross-trait AM → spurious rg', detail: 'xAM creates genetic correlations between phenotypes with distinct genetic bases. Confounds p-factor / shared-biology stories.', status: '✓' },
   { id: 'G7', type: 'G', weight: 4, label: 'Stochastic developmental noise', detail: 'Dominant source of non-shared environment (~50% of personality variance). Not yet mechanistically characterized.', status: '~' },
@@ -87,7 +87,7 @@ const NODES: GraphNode[] = [
   { id: 'O1', type: 'O', weight: 5, label: 'PGS interpretation', detail: 'Plomin "causal genetic" vs Turkheimer "weak explanation". Both compatible with current data. Determines what PGS *means*.', status: '?' },
   { id: 'O3', type: 'O', weight: 4, label: 'GEP mechanism', detail: 'Innate-expression release vs reference-group artifact vs wealth confound. Pattern robust; cause unsettled.', status: '?' },
   { id: 'O4', type: 'O', weight: 5, label: 'Between-pop genetics', detail: 'Currently scientifically UNANSWERABLE. PGS portability too poor; cross-ancestry GWAS at scale don\'t exist. Honest position: unresolved, not settled in either direction.', status: '?' },
-  { id: 'O7', type: 'O', weight: 5, label: 'AM-correction magnitude', detail: 'Share of cross-disorder rg matrix that survives AM correction. Active research; could substantially shrink p-factor signal.', status: '?' },
+  { id: 'O7', type: 'O', weight: 5, label: 'AM-correction magnitude', detail: 'Share of cross-disorder rg matrix that survives AM correction. Active research. Ma, Wang, Border et al. 2024 (Am J Hum Genet) introduced LAVA-Knock — a local-genetic-correlation method that reduces xAM-induced bias across 630 trait pairs. Methods to give the answer are now emerging, not just to flag the problem. Field-wide answer likely in 2-3 years.', status: '?' },
 
   // Distortion
   { id: 'D1', type: 'D', weight: 4, label: 'Blank-slate distortion', detail: 'Targets A1, E1, E10–E14. Move: dismiss twin studies, oversell transgenerational epigenetics, minimize sex differences via univariate-only framing.' },

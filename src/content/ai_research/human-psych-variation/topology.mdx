@@ -1,9 +1,9 @@
 ---
 title: 'Topology'
-description: 'Dependency graph of the lit review — typed nodes (assumption, method, empirical, logical, mechanism, synthesis, open, distortion), typed edges, six crux nodes, weakest links, four variant views, an objections section, and a glossary.'
+description: 'Dependency graph of the lit review — typed nodes, typed edges, six crux nodes, weakest links, four variant views, an objections section, and a glossary. Updated through 2024-2025 literature on AM correction, within-family GWAS at scale, PGS portability, Scarr-Rowe, GEP replication, and missing-heritability closure.'
 date: 2026-04-28
 status: in-progress
-refinementPass: 1
+refinementPass: 2
 refinementLog:
   - pass: 1
     date: '2026-04-28'
@@ -19,6 +19,26 @@ refinementLog:
       - 'Added §8 Objections to this topology (4 objections + steelman + response)'
       - 'Added §9 Glossary (19 terms) for non-specialist readers'
       - 'Renumbered stage_outputs reference to §10'
+  - pass: 2
+    date: '2026-04-28'
+    passes: ['gap scan (with web research)']
+    why: 'Pass-1 deferred web research because the parent harness initially seemed to block WebSearch. After the user pushed back, I confirmed WebSearch was available, ran 12 targeted searches across the topologys weakest links and open questions, and incorporated the 2024-2025 findings that actually shift the picture.'
+    changes:
+      - 'M9 (WGS) updated: Wang et al. 2025 Nature shows WGS in ~500k UK Biobank captures ~88% of pedigree-based narrow-sense heritability — "missing heritability" problem now substantially resolved for many traits'
+      - 'E23 (PGS portability) reframed: Ding et al. 2023 Nature shows continuous decay along genetic-distance continuum (r=−0.95), not a discrete ancestry-group step function'
+      - 'E25 (Scarr-Rowe) downgraded weight 3 → 2, status ~ → ✗: Figlio et al. 2024 found 39/42 PGI×SES interactions in education were NEGATIVE (compensatory direction); Scarr-Rowe is failing'
+      - 'M4 (within-family designs) strengthened: Howe et al. 2022 extended to 178k siblings × 25 phenotypes — within-family approach now mature beyond just EA'
+      - 'E14 (GEP) strengthened: Herlitz et al. 2025 systematic review (54 articles, 27 meta-analyses) confirmed the pattern across personality, verbal abilities, episodic memory, negative emotions'
+      - 'O7 (AM-correction magnitude) updated: Ma, Wang, Border et al. 2024 introduced LAVA-Knock — first method to systematically reduce xAM-induced bias across 630 trait pairs'
+      - 'G2 (passive rGE) extended: Nivard et al. 2024 found indirect genetic effects extend beyond the nuclear family to dynastic / extended-family / community processes'
+      - 'O2 (Flynn reversal) updated: Pietschnig et al. 2024 Vienna cohort found the positive manifold itself may be weakening across cohorts — softly pressures A3 in a new way'
+      - 'W1 (PGS×E generalization) updated: Allegrini 2020 + 2025 systematic reviews show the candidate-gene-failure extrapolation is partially holding the null'
+      - 'W2 (Scarr-Rowe) substantially rewritten: from "context-dependent" to "failing — compensatory hypothesis is the better-supported pattern"'
+      - 'W4 (AM-correction) updated: methods now emerging, field-wide answer likely in 2-3 years'
+      - 'W5 (GEP mechanism) updated: pattern strengthened by 2025 review; mechanism still contested'
+      - 'W6 (Flynn-reversal cause) updated with positive-manifold-weakening wrinkle'
+      - 'TLDR para 3 (weakest links) substantially rewritten to reflect 2024-2026 state'
+      - 'Crux 3 (A3) added 2024 wrinkle on positive-manifold weakening'
 ---
 
 import PsychVariationGraph from '../../../components/ai-research/PsychVariationGraph';
@@ -29,7 +49,7 @@ The lit review documents what the science says about psychological variation. Th
 
 The dependency structure has six **crux nodes** — places where if the assumption flipped, large regions of the integrated picture would have to be rebuilt. A1 (twin validity), A2 (GWAS signal real), and A3 (g exists) are foundational cruxes. Three more sit downstream: **passive rGE / genetic nurture** (G2/E6) reframes ~50% of population-level genetic prediction as environmentally mediated by genetically-similar parents — a finding that doesn't kill heritability but fundamentally changes its causal interpretation; **cross-trait assortative mating** (G6/E7) confounds an unknown but substantial fraction of cross-disorder genetic correlations, actively revising the p-factor and shared-biology stories; and **the within/between-population firewall** (L4 — Lewontin's logical point) is the single most critical guardrail in the whole system, since without it any within-group heritability finding can be misused to claim between-group genetic causation.
 
-The field's **weakest links** are not where public discourse focuses heat. Mainstream contests over "is heritability real" target settled findings (A1+E1 are robust). The actual fragile zones are: (a) the generalization from candidate-GxE failure to all-GxE-is-small (an extrapolation, not a result); (b) the Scarr-Rowe SES×heritability interaction (US-only, doesn't replicate in Europe — load-bearing for "environments matter more in deprivation" narratives); (c) the polygenic-score → mechanism inference (Plomin's "causal" view vs. Turkheimer's "weak explanation" view is genuinely undecided); (d) the magnitude of AM-correction across psychiatric cross-disorder rg estimates (actively being revised, with the answer pending). The Flynn-reversal cause and the Gender Equality Paradox mechanism are also genuinely open mechanistic questions, but they are open in a different way — the empirical patterns themselves are robust; only the explanation is contested.
+The field's **weakest links** are not where public discourse focuses heat. Mainstream contests over "is heritability real" target settled findings (A1+E1 are robust); the 2025 whole-genome-sequencing work (Wang et al. 2025, *Nature*) now closes ~88% of the pedigree-based heritability gap, so the "missing heritability" critique is also substantially answered. The actual fragile zones in 2026 are: (a) the generalization from candidate-GxE failure to all-GxE-is-small — partially holding the null (Allegrini 2020 for education, 2025 systematic review for depression) but the literature is still too young for confidence; (b) **Scarr-Rowe** has weakened further — Figlio et al. 2024 found 39/42 PGI×SES interactions in the *opposite* (compensatory) direction, so "deprivation suppresses heritability" is now evidence-thin; (c) the polygenic-score → mechanism inference (Plomin's "causal" view vs. Turkheimer's "weak explanation" view) remains genuinely undecided; (d) the magnitude of AM-correction across psychiatric cross-disorder rg estimates is now being actively addressed — Ma, Wang, Border et al. 2024 (LAVA-Knock) is the first method to systematically reduce xAM-induced bias, with the field-wide answer likely in 2–3 years. The Flynn-reversal cause and the Gender Equality Paradox mechanism remain open mechanistic questions, but they are open in a different way — the empirical patterns themselves are robust; only the explanation is contested. The 2025 GEP systematic review (Herlitz et al.) actually *strengthened* the pattern across personality, verbal abilities, episodic memory, and negative emotions.
 
 This topology is the input to model formalization (Stage 3). The cleanest formalization target is the **variance decomposition equation**: V(trait) = V(direct genetic) + V(genetic nurture / indirect) + V(AM-induced LD) + V(shared environment) + V(measured non-shared) + V(stochastic) + 2·Cov(genes, environment) + interaction terms — with each term parameterized by trait, age, and population context, and with the AM and rGE terms being where current methodological revision is concentrated. The four variant views below (Vulnerability / Flow / Minimal / Politicization) read the same graph through different lenses to make the formalization choices easier.
 
@@ -103,12 +123,12 @@ Each node carries: type code · weight · short claim · key citation · status.
 | **M1** | 4 | Twin studies (MZ/DZ) at scale | Polderman 2015 meta: 14.5M pairs |
 | **M2** | 4 | Adoption studies, especially cross-cultural (Korean-American) | Sacerdote 2007; Beauchamp 2023 |
 | **M3** | 5 | GWAS at N ≥ 100k (ideally ≥ 1M for personality/EA) | Okbay 2022 (3M for EA) |
-| **M4** | 5 | Within-family designs (sibling FE, MZ-discordant, parent-offspring trios) | Kong 2018; Okbay 2022 |
+| **M4** | 5 | Within-family designs (sibling FE, MZ-discordant, parent-offspring trios). Kong 2018; Okbay 2022 (EA, N=3M); Howe et al. 2022 *Nature Genetics* extended this to 178k siblings × 25 phenotypes — within-sibship estimates were systematically smaller than population estimates for height, EA, cognitive ability, depressive symptoms, smoking. The within-family approach is now mature beyond just educational attainment | ✓ |
 | **M5** | 4 | Polygenic scores (PGS) | Best R² ~0.16 for EA, ~0.10 for SCZ |
 | **M6** | 3 | Cross-trait LD-score regression for genetic correlations | Brainstorm 2018 |
 | **M7** | 3 | Mendelian randomization | For causal inference from observational data |
 | **M8** | 3 | Pre-registration & collaborative meta-analysis | Demolished candidate-GxE |
-| **M9** | 4 | Whole-genome sequencing (rare-variant capture) | Wainschtein 2022 closed missing heritability for height |
+| **M9** | 4 | Whole-genome sequencing (rare-variant capture). 2025 follow-up (UK Biobank ~500k, Wang et al. 2025 *Nature*) captures ~88% of pedigree-based narrow-sense heritability across many traits (20% rare + 68% common variants). The "missing heritability" problem is now substantially resolved for many phenotypes | ✓ |
 
 ### E — Empirical claims
 
@@ -125,9 +145,9 @@ Cognition / IQ:
 | **E8** | 4 | Lead exposure 1–10 µg/dL → −6.2 IQ pts (Lanphear 2005) | ✓ |
 | **E9** | 4 | Each year of schooling adds ~3.4 IQ points, persisting into old age | ✓ (Ritchie & Tucker-Drob 2018) |
 | **E22** | 4 | Within-population heritability does not license between-population inference | ✓ logical |
-| **E23** | 4 | PGS portability drops 4.5× across continental ancestries (and within Europe by SES) | ✓ (Martin 2019; Mostafavi 2020) |
+| **E23** | 4 | PGS prediction accuracy decays *continuously* along the genetic-distance continuum from training population (Pearson r = −0.95 between genetic distance and PGS accuracy across 84 traits, Ding et al. 2023, *Nature*). Reframes the older "discrete ancestry-group drop" picture (Martin 2019; Mostafavi 2020) | ✓ |
 | **E24** | 3 | Flynn Effect and its post-1990s reversal are both environmentally driven (within-sibship evidence) | ✓ pattern; ? cause |
-| **E25** | 3 | Scarr-Rowe: hSES × heritability replicates in US, NOT in Western Europe/AU | ~ context-dependent |
+| **E25** | 2 | Scarr-Rowe: SES × heritability hypothesis (more genetic expression in higher-SES). Weakening further in 2024 — Figlio et al. 2024 found 39/42 PGI×SES interactions in education NEGATIVE (compensatory direction); only 1 significant positive. Pattern is now closer to "compensatory hypothesis holds, Scarr-Rowe fails" than to "context-dependent" | ✗ |
 | **E18** | 4 | Positive manifold: every cognitive test correlates positively with every other | ✓ |
 | **E26** | 3 | Childhood IQ → all-cause mortality: each 1-SD ≈ 24% lower mortality | ✓ (Calvin 2011) |
 | **E27** | 3 | Lifespan IQ stability: Lothian Birth Cohort age-11 → age-90 r ≈ 0.67 | ✓ |
@@ -149,7 +169,7 @@ Sex differences:
 | **E11** | 4 | People-things interest difference d ≈ 0.93 (largest in psychology) | ✓ |
 | **E12** | 3 | Mental rotation d ≈ 0.56–0.73 male advantage | ✓ |
 | **E13** | 3 | Math performance d ≈ 0.05–0.10 (essentially equal) | ✓ |
-| **E14** | 4 | Gender Equality Paradox: differences larger in egalitarian/wealthier countries | ✓ pattern; ? mechanism |
+| **E14** | 4 | Gender Equality Paradox: differences larger in egalitarian/wealthier countries. Herlitz et al. 2025 systematic review (54 articles, 27 meta-analyses) confirmed the pattern across personality, verbal abilities, episodic memory, and negative emotions — pattern replication has strengthened, not weakened | ✓ pattern; ? mechanism |
 | **E34** | 3 | Physical aggression d ≈ 0.40–0.60 male; ~95% of homicides male | ✓ |
 | **E35** | 2 | CAH girls show masculinized toy preferences; primate parallels | ✓ |
 
@@ -179,7 +199,7 @@ Psychopathology:
 | ID | Wt | Mechanism | Drives |
 |---|---|---|---|
 | **G1** | 4 | Active rGE / niche-picking | E3 (Wilson Effect amplification) |
-| **G2** | 5 | Passive rGE | E6 (genetic nurture); inflation of population-level h² |
+| **G2** | 5 | Passive rGE. Wang 2021 / Isungset 2022 confirm indirect ≈ ½ direct genetic effect for EA. Nivard et al. 2024 found indirect genetic effects on offspring achievement extend *beyond* the nuclear family — dynastic / extended-family / community processes contribute, so the "parents transmit gene + correlated environment" framing understates the spread | E6 (genetic nurture); inflation of population-level h² |
 | **G3** | 3 | Evocative rGE | Heritability of "environments" (Kendler & Baker 2007) |
 | **G4** | 3 | Critical-period plasticity (GABAergic maturation) | Asymmetric environmental effects on early development |
 | **G5** | 4 | Assortative mating → LD induction | Inflates additive genetic variance, h² |
@@ -203,12 +223,12 @@ Psychopathology:
 | ID | Wt | Question | Why it matters |
 |---|---|---|---|
 | **O1** | 5 | Mechanistic interpretation of PGS: "causal genetic" (Plomin) vs. "weak explanation" (Turkheimer) | Determines what PGS prediction *means* |
-| **O2** | 3 | Cause of Flynn-effect reversal post-1990s | Empirical pattern robust; mechanism is the field's biggest puzzle |
+| **O2** | 3 | Cause of Flynn-effect reversal post-1990s | Empirical pattern robust (Bratsberg & Rogeberg 2018 within-sibship Norway). Mechanism still unsettled. Pietschnig et al. 2024 (Vienna 2005–2018 cohort) added a wrinkle: the *positive manifold itself* may be weakening — gains in some abilities aren't tracking gains in others, suggesting the g-loading of the rise/fall is not constant. Hypothesized mechanisms (screens, reduced long-form reading, attention) circulate without empirical pinning |
 | **O3** | 4 | Causal mechanism behind Gender Equality Paradox | Innate-expression release vs. measurement artifact vs. confound — selection of explanation has political stakes |
 | **O4** | 5 | Between-population mean differences: any genetic component? | **Currently scientifically unanswerable** with available methods (PGS portability too poor, cross-ancestry GWAS at scale don't exist). Honest position: unresolved, not settled in either direction |
 | **O5** | 3 | g architecture: latent common cause vs. emergent network (mutualism, van der Maas 2006) | Affects how interventions could in principle move g |
 | **O6** | 4 | What "non-shared environment" actually is: stochastic noise, immune/microbial, peer networks, epigenetic, measurement error | Largest unmodeled variance component in personality |
-| **O7** | 5 | Magnitude of AM-correction across the cross-disorder genetic correlation matrix | Active revision in progress; could substantially shrink the p-factor signal |
+| **O7** | 5 | Magnitude of AM-correction across the cross-disorder genetic correlation matrix | Active revision. Ma, Wang, Border et al. 2024 *AJHG* introduced LAVA-Knock — a local-genetic-correlation method that reduces xAM-induced bias. Methods to give the answer are now emerging, not just to flag the problem |
 
 ### D — Distortion vectors (where motivated reasoning concentrates)
 
@@ -295,6 +315,8 @@ These are the six nodes where collapse propagates farthest. If you have limited 
 
 **What would flip**: A broad cognitive battery where the first PC explains &lt;15%, or interventions that reliably move one ability while lowering others. Neither has been demonstrated.
 
+**2024 wrinkle**: Pietschnig et al. 2024 (Vienna 2005–2018 cohort) reported that the positive manifold may be *weakening* across recent cohorts — gains in some abilities aren't tracking gains in others. If this generalizes, A3 isn't refuted, but its strength becomes cohort-dependent. Worth watching; not yet load-bearing.
+
 ### Crux 4: G2/E6 — Passive rGE / genetic nurture
 
 **Carries**: Reframes the *meaning* of every population-level genetic estimate. Without G2, "genetic transmission" reads as direct biological causation; with G2, ~half is environmentally mediated by genetically-similar parents.
@@ -347,29 +369,31 @@ These are the load-bearing pieces with the lowest current confidence. Targeted a
 
 ### W1: Generalization from candidate-GxE failure to "all GxE is small" (E5 → broader claim)
 
-**Why fragile**: The candidate-gene collapse is definitive. The extrapolation that polygenic-score × environment interactions are also small is an *inductive leap*, not a result. PGS×E literature is too young to support a strong null. A few suggestive findings (compulsory-schooling-reform × education-PGS) hint that real PGS×E may exist.
+**Why fragile**: The candidate-gene collapse is definitive. The extrapolation that polygenic-score × environment interactions are also small is an *inductive leap*, not a result. As of 2025, the picture is **partially holding the null but not strengthening it**. A 2025 systematic review of 56 PGS×E studies for depression found mostly null or small effects. A multivariable PGS×E study of educational achievement (Allegrini et al. 2020) found "no evidence that GxE effects significantly contributed to multivariable prediction." UK Biobank work (2024) on distinct explanations of GxE shows that many apparent GxE signals are confounded by scale, ascertainment, or population structure. The candidate-gene-failure extrapolation is looking less like an inductive leap and more like a substantive empirical pattern — but the literature is still too young for a strong null.
 
 **Pressure test**: Several large preregistered PGS×E studies finding interactions explaining &gt;5% variance would substantially revise this corner of the picture.
 
-### W2: Scarr-Rowe (E25)
+### W2: Scarr-Rowe (E25) — has substantially weakened since pass-0
 
-**Why fragile**: Replicates in US samples, **does not replicate** in Western Europe / Australia (Tucker-Drob & Bates 2016). Load-bearing for the popular claim that "environments matter more in deprivation." If it's a US-specific artifact of healthcare/education inequality, the broader generalization fails outside the US.
+**Why fragile**: The original meta-analytic picture was "replicates in US, fails in W. Europe / Australia" (Tucker-Drob & Bates 2016). Figlio et al. 2024 (Norwegian register data, polygenic-index design across 42 PGI×SES interaction tests for educational outcomes) found 39/42 negative, 0 significant positive, 1 marginally significant positive — i.e., the *opposite* sign from Scarr-Rowe in most cases. The picture in 2026 is closer to "the **compensatory hypothesis** (more genetic expression in low-SES because constrained environments suppress non-genetic variance) is the better-supported pattern, at least for educational outcomes." E25's weight has been downgraded from 3 → 2 to reflect this. The narrative "deprivation suppresses heritability" — popular in policy discourse — is now evidence-thin.
 
 ### W3: Plomin-vs-Turkheimer interpretation of PGS (O1)
 
 **Why fragile**: Both views are compatible with current data. Determines what PGS *means* — direct biology vs. summary statistic of correlated environments. The field publishes ambiguously across both interpretations. Will likely be settled only by within-family-only PGS that are still well-powered.
 
-### W4: Magnitude of AM-correction across psychiatric cross-disorder rg matrix (O7)
+### W4: Magnitude of AM-correction across psychiatric cross-disorder rg matrix (O7) — methods now emerging
 
-**Why fragile**: Border 2022 showed xAM explains 74% of variance in *estimates* but did not prove all rg's are spurious — some genuine pleiotropy surely exists. The actual share that is artifact is being quantified now; could meaningfully shrink the p-factor / shared-biology picture (S5) if artifact share is high.
+**Why still fragile but improving**: Border 2022 showed xAM explains R²=74% of variance in genetic-correlation *estimates* but didn't prove all rg's are spurious — some genuine pleiotropy surely exists. As of 2024, the field is moving from flagging the problem to building correction methods. **Ma, Wang, Border et al. 2024** (*American Journal of Human Genetics*) introduced **LAVA-Knock**, a local-genetic-correlation method using knockoff inference to reduce xAM-induced bias; tested across 630 trait pairs in simulation and real GWAS, it substantially reduces but does not eliminate the bias. A 2024 study found AM genetic signatures across SCZ, BD, MDD, alcohol phenotypes, and Tourette syndrome — confirming xAM is not selective. **What's still pending**: how much of the cross-disorder rg matrix and the p-factor genetic signal survives systematic application of AM-correction methods at scale. Likely answer in 2–3 years.
 
-### W5: Gender Equality Paradox mechanism (O3, E14)
+### W5: Gender Equality Paradox mechanism (O3, E14) — pattern strengthened, mechanism still contested
 
-**Why fragile**: Pattern is robust across personality, preference, interest, and depression. Mechanism is contested between (a) innate-expression release, (b) reference-group artifacts in self-report, (c) wealth/freedom confounds. Each implies different normative conclusions. Behavioral (non-self-report) replication is incomplete. Falk & Hermle 2018 used incentivized measures and found the paradox held for some preferences but full coverage is missing.
+**Empirical pattern: more robust as of 2025**. Herlitz et al. 2025 systematic review (54 articles, 27 meta-analyses, *Perspectives on Psychological Science*) found the paradox replicates across personality, verbal abilities, episodic memory, and negative emotions. Balducci et al. 2024 extended it to within-individual academic strengths cross-temporally. The "this won't replicate" objection has weakened.
 
-### W6: Flynn-reversal cause (O2)
+**Mechanism: still contested**. Three live candidates: (a) innate-expression release in resource-rich environments, (b) reference-group / self-anchoring artifacts in self-report (people compare to their gender peers, not to humans-in-general), (c) wealth/freedom confounds with gender equality. Behavioral / incentivized-measure replications (Falk & Hermle 2018 for economic preferences) cover only part of the domain. The decisive test — non-self-report behavioral replication across personality and interests — is still incomplete. Each candidate mechanism implies different normative conclusions, which is part of why this remains contested rather than resolved.
 
-**Why fragile**: The pattern is environmentally driven (within-sibship, Bratsberg & Rogeberg 2018), so "dysgenic" explanations are out. But no mechanism (screen time, education quality, attention, nutrition, lead) has been pinned down. Not load-bearing for the integrated picture, but a major embarrassment for the field's self-understanding.
+### W6: Flynn-reversal cause (O2) — and a new wrinkle on the positive manifold
+
+**Why fragile**: The pattern is environmentally driven (within-sibship, Bratsberg & Rogeberg 2018), so "dysgenic" explanations are out. But no mechanism (screen time, education quality, attention, nutrition, lead, microplastics) has been pinned down with within-cohort empirical work. Pietschnig et al. 2024 (Vienna 2005–2018 cohort) added a structural twist: the *positive manifold itself* may be weakening across cohorts — meaning the recent rise/fall is **not uniformly g-loaded**. If confirmed broadly, this softly pressures A3 (g exists as a stable dimension) — not refuting it, but suggesting its strength may be cohort-dependent. Still not load-bearing for the integrated picture, but interacts with A3 in a new way.
 
 ### W7: A6 (dimensional vs. taxonic) at psychiatric extremes
 

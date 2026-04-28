@@ -86,7 +86,7 @@ Active topics — folders exist in `src/content/ai_research/` and `stage_outputs
 | Topic slug | Title | Furthest stage |
 |---|---|---|
 | `social-output-efficiency` | Social Environment Output Efficiency | scaffold only |
-| `human-psych-variation` | Psychology of Individual Differences | topology (pass 1) |
+| `human-psych-variation` | Psychology of Individual Differences | topology (pass 2) |
 
 Planned topics (full list in `prompts.md`): philosophy → personal decisions; philosophy → organizations; philosophy of mind / ethics / epistemology; evolution-modernity mismatch; navigating an AI world; emotions architecture; meaning & spirituality; bedrock generating functions; AI decompression; information fidelity; trust architecture; parent-child transmission; technology utilization architecture; prediction & calibration; AI cognitive profile. Each spins up its own folder pair when started.
 
