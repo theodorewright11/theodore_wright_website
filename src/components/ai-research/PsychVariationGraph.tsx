@@ -35,7 +35,7 @@ const NODES: GraphNode[] = [
   { id: 'A1', type: 'A', weight: 5, label: 'Twin method valid', detail: 'EEA approximately holds; SNP-h² convergence supports.', status: '✓' },
   { id: 'A2', type: 'A', weight: 5, label: 'GWAS signal real', detail: 'Reflects genetic effects, not just stratification or AM artifact.', status: '✓' },
   { id: 'A3', type: 'A', weight: 5, label: 'g exists', detail: 'Positive manifold across cognitive tests is among psychology\'s most replicated findings.', status: '✓' },
-  { id: 'A4', type: 'A', weight: 4, label: 'h² is population-level', detail: 'Variance ratio, not individual partition.', status: '✓' },
+  { id: 'A4', type: 'A', weight: 3, label: 'Findings apply to the population sampled', detail: 'A heritability number applies to the group it was estimated in, not to individuals or other populations. Distinct from L1 (which is the algebraic form): A4 is about scope of claim, L1 is about mathematical form.', status: '✓' },
   { id: 'A6', type: 'A', weight: 3, label: 'Variation is dimensional', detail: 'Most psychological variation is continuous, not taxonic. Severe psychiatric tail partly violates.', status: '~' },
 
   // Methodological prerequisites
@@ -111,13 +111,14 @@ const LINKS: GraphLink[] = [
   { source: 'M4', target: 'E7', type: 'sup' },
   { source: 'M9', target: 'E1', type: 'corr', label: 'closes missing-h² gap' },
 
-  // A1 directly supports the heritability findings
+  // A1 directly supports the heritability findings.
+  // (We do NOT add A3 → E18: the empirical pattern E18 supports the assumption A3,
+  //  not the other way around. See E18 → A3 below.)
   { source: 'A1', target: 'E1', type: 'sup' },
   { source: 'A1', target: 'E2', type: 'sup' },
   { source: 'A1', target: 'E3', type: 'sup' },
   { source: 'A1', target: 'E25', type: 'sup' },
   { source: 'A1', target: 'E29', type: 'sup' },
-  { source: 'A3', target: 'E18', type: 'sup' },
 
   // Mechanisms → empirical patterns
   { source: 'G1', target: 'E3', type: 'sup', label: 'niche-picking drives Wilson' },
@@ -126,9 +127,10 @@ const LINKS: GraphLink[] = [
   { source: 'G6', target: 'E16', type: 'conf', label: 'xAM → spurious rg' },
   { source: 'G6', target: 'E17', type: 'conf' },
 
-  // Empirical → empirical (logical implications)
-  { source: 'E5', target: 'E4', type: 'imp', label: 'failure → polygenic confirmed' },
+  // Empirical → assumption: positive manifold IS the empirical evidence for g
   { source: 'E18', target: 'A3', type: 'sup' },
+  // Candidate-gene collapse is consistent with hyper-polygenic architecture but does not strictly imply it.
+  { source: 'E5', target: 'E4', type: 'sup', label: 'absence of large hits ↔ polygenic' },
 
   // Empirical → synthesis
   { source: 'E1', target: 'S1', type: 'sup' },
@@ -148,12 +150,13 @@ const LINKS: GraphLink[] = [
   { source: 'E30', target: 'S6', type: 'sup' },
   { source: 'E29', target: 'S6', type: 'sup' },
 
-  // Logical guards
-  { source: 'L1', target: 'E1', type: 'mod', label: 'guards interpretation' },
-  { source: 'L4', target: 'E22', type: 'imp' },
+  // Logical guards. L1 and L4 do not change the magnitude of E nodes (so 'mod' is wrong);
+  // they constrain how downstream claims can be interpreted, which we encode as 'imp'
+  // with an explicit label.
+  { source: 'L1', target: 'E1', type: 'imp', label: 'constrains interpretation' },
+  { source: 'L4', target: 'E22', type: 'imp', label: 'E22 is the applied form of L4' },
   { source: 'L4', target: 'O4', type: 'imp', label: 'makes O4 currently unanswerable' },
-  { source: 'A4', target: 'L1', type: 'imp' },
-  { source: 'A6', target: 'S5', type: 'mod' },
+  { source: 'A6', target: 'S5', type: 'imp', label: 'dimensional view shapes hierarchy' },
 
   // Open questions sit downstream of crux nodes
   { source: 'E6', target: 'O1', type: 'imp', label: 'PGS interpretation' },
@@ -297,7 +300,7 @@ export default function PsychVariationGraph() {
   const [hoveredEdge, setHoveredEdge] = useState<number | null>(null);
   const [positions, setPositions] = useState<Map<string, Pos>>(new Map());
   const svgRef = useRef<SVGSVGElement | null>(null);
-  const dragRef = useRef<{ id: string; offsetX: number; offsetY: number } | null>(null);
+  const dragRef = useRef<{ id: string; offsetX: number; offsetY: number; moved: boolean } | null>(null);
   const simRef = useRef<Simulation<GraphNode, GraphLink> | null>(null);
 
   const width = 920;
@@ -335,43 +338,60 @@ export default function PsychVariationGraph() {
     return () => { sim.stop(); };
   }, []);
 
-  // Node drag.
-  function handleMouseDown(e: React.MouseEvent, id: string) {
+  // Convert pointer screen coordinates into the SVG's coordinate system.
+  function pointerToSvg(e: { clientX: number; clientY: number }): Pos | null {
     const svg = svgRef.current;
-    if (!svg) return;
+    if (!svg) return null;
+    const ctm = svg.getScreenCTM();
+    if (!ctm) return null;
     const pt = svg.createSVGPoint();
     pt.x = e.clientX;
     pt.y = e.clientY;
-    const cursor = pt.matrixTransform(svg.getScreenCTM()?.inverse());
+    const cursor = pt.matrixTransform(ctm.inverse());
+    return { x: cursor.x, y: cursor.y };
+  }
+
+  // Pointer-capture drag on each node. The `<g>` captures the pointer on down,
+  // then receives all subsequent move/up events even if the cursor leaves the
+  // shape — the standard fix for "drag stops working halfway."
+  function handlePointerDown(e: React.PointerEvent<SVGGElement>, id: string) {
+    const cursor = pointerToSvg(e);
     const pos = positions.get(id);
-    if (!pos) return;
-    dragRef.current = { id, offsetX: cursor.x - pos.x, offsetY: cursor.y - pos.y };
+    if (!cursor || !pos) return;
+    (e.currentTarget as Element).setPointerCapture(e.pointerId);
+    dragRef.current = {
+      id,
+      offsetX: cursor.x - pos.x,
+      offsetY: cursor.y - pos.y,
+      moved: false,
+    };
     e.preventDefault();
   }
 
-  useEffect(() => {
-    function onMove(e: MouseEvent) {
-      const drag = dragRef.current;
-      const svg = svgRef.current;
-      if (!drag || !svg) return;
-      const pt = svg.createSVGPoint();
-      pt.x = e.clientX;
-      pt.y = e.clientY;
-      const cursor = pt.matrixTransform(svg.getScreenCTM()?.inverse());
-      setPositions(prev => {
-        const next = new Map(prev);
-        next.set(drag.id, { x: cursor.x - drag.offsetX, y: cursor.y - drag.offsetY });
-        return next;
-      });
+  function handlePointerMove(e: React.PointerEvent<SVGGElement>) {
+    const drag = dragRef.current;
+    if (!drag) return;
+    const cursor = pointerToSvg(e);
+    if (!cursor) return;
+    const newX = cursor.x - drag.offsetX;
+    const newY = cursor.y - drag.offsetY;
+    drag.moved = true;
+    setPositions(prev => {
+      const next = new Map(prev);
+      next.set(drag.id, { x: newX, y: newY });
+      return next;
+    });
+  }
+
+  function handlePointerUp(e: React.PointerEvent<SVGGElement>, id: string) {
+    const drag = dragRef.current;
+    (e.currentTarget as Element).releasePointerCapture?.(e.pointerId);
+    dragRef.current = null;
+    // Treat as a click (toggle selection) only if the user did not actually drag.
+    if (drag && !drag.moved) {
+      setSelected(prev => (prev === id ? null : id));
     }
-    function onUp() { dragRef.current = null; }
-    window.addEventListener('mousemove', onMove);
-    window.addEventListener('mouseup', onUp);
-    return () => {
-      window.removeEventListener('mousemove', onMove);
-      window.removeEventListener('mouseup', onUp);
-    };
-  }, []);
+  }
 
   const selectedNode = useMemo(
     () => (selected ? NODES.find(n => n.id === selected) ?? null : null),
@@ -415,7 +435,7 @@ export default function PsychVariationGraph() {
             ref={svgRef}
             viewBox={`0 0 ${width} ${height}`}
             preserveAspectRatio="xMidYMid meet"
-            style={{ width: '100%', height: 'auto', display: 'block', userSelect: 'none' }}
+            style={{ width: '100%', height: 'auto', display: 'block', userSelect: 'none', touchAction: 'none' }}
           >
             <defs>
               <marker id="arrow" viewBox="0 -5 10 10" refX="10" refY="0" markerWidth="6" markerHeight="6" orient="auto">
@@ -516,9 +536,11 @@ export default function PsychVariationGraph() {
                 <g
                   key={node.id}
                   transform={`translate(${pos.x}, ${pos.y})`}
-                  onMouseDown={e => handleMouseDown(e, node.id)}
-                  onClick={() => setSelected(node.id === selected ? null : node.id)}
-                  style={{ cursor: 'pointer', opacity }}
+                  onPointerDown={e => handlePointerDown(e, node.id)}
+                  onPointerMove={handlePointerMove}
+                  onPointerUp={e => handlePointerUp(e, node.id)}
+                  onPointerCancel={e => handlePointerUp(e, node.id)}
+                  style={{ cursor: dragRef.current?.id === node.id ? 'grabbing' : 'grab', opacity, touchAction: 'none' }}
                 >
                   {isCrux && (
                     <circle r={r + 5} fill="none" stroke="#8a4a2b" strokeWidth={1.5} opacity={0.55} />

@@ -1,16 +1,31 @@
 ---
 title: 'Topology'
-description: 'Dependency graph of the lit review — typed nodes (assumption, method, empirical, logical, mechanism, synthesis, open, distortion), typed edges, six crux nodes, weakest links, and four variant views (vulnerability, flow, minimal claim set, politicization).'
+description: 'Dependency graph of the lit review — typed nodes (assumption, method, empirical, logical, mechanism, synthesis, open, distortion), typed edges, six crux nodes, weakest links, four variant views, an objections section, and a glossary.'
 date: 2026-04-28
 status: in-progress
-refinementPass: 0
+refinementPass: 1
+refinementLog:
+  - pass: 1
+    date: '2026-04-28'
+    passes: ['error check', 'gap scan', 'adversarial + steelman', 'readability']
+    why: 'Pass-0 had a logical cycle (A3 ↔ E18), an unsupported quantitative claim ("70% of inferential weight"), two near-duplicate nodes (A4/L1, E22/L4), one mistyped edge, and no defense against the strongest objections. Drag was also broken on the interactive graph. Web research was attempted but blocked in this session — that gap is deferred to a later pass.'
+    changes:
+      - 'Fixed drag bug: switched to pointer events with setPointerCapture (mouse-event approach was unreliable with SVG hit-testing)'
+      - 'Removed bidirectional A3 ↔ E18 cycle; kept only the empirically-correct E18 → A3 (positive manifold supports g-as-real-dimension)'
+      - 'Reframed E5 → E4 from "implies polygenic" to "consistent with polygenic" (candidate-gene collapse does not strictly imply hyper-polygenic architecture)'
+      - 'Reframed L1 → E1 edge from mod (moderates magnitude) to imp (constrains interpretation) with explicit label'
+      - 'Removed redundant A4 → L1 edge; differentiated A4 (scope-of-claim) from L1 (mathematical form)'
+      - 'Softened TLDR claim from "~70% of inferential weight" to "sit upstream of most empirical and synthesis nodes"'
+      - 'Added §8 Objections to this topology (4 objections + steelman + response)'
+      - 'Added §9 Glossary (19 terms) for non-specialist readers'
+      - 'Renumbered stage_outputs reference to §10'
 ---
 
 import PsychVariationGraph from '../../../components/ai-research/PsychVariationGraph';
 
 ## TLDR
 
-The lit review documents what the science says about psychological variation. This topology asks a sharper question: **what depends on what?** Strip the field down to its load-bearing structure and the picture is surprisingly clean. Three foundational assumptions — that twin/adoption methods give approximately valid variance decomposition (A1), that GWAS signal reflects real genetic effects rather than population structure or assortative-mating artifact (A2), and that a general factor of cognitive ability `g` exists as a real dimension of individual variation (A3) — carry roughly 70% of the inferential weight. Everything else is either an empirical claim resting on these foundations, a methodological prerequisite that lets the foundations be tested, a logical necessity that constrains how the empirical claims can be interpreted, or a generating mechanism that explains why the empirical pattern looks the way it does.
+The lit review documents what the science says about psychological variation. This topology asks a sharper question: **what depends on what?** Strip the field down to its load-bearing structure and the picture is surprisingly clean. Three foundational assumptions — that twin/adoption methods give approximately valid variance decomposition (A1), that GWAS signal reflects real genetic effects rather than population structure or assortative-mating artifact (A2), and that a general factor of cognitive ability `g` exists as a real dimension of individual variation (A3) — sit upstream of most of the empirical and synthesis nodes in the graph; if any one of them flipped, large regions would have to be rebuilt. Everything else is either an empirical claim resting on these foundations, a methodological prerequisite that lets the foundations be tested, a logical necessity that constrains how the empirical claims can be interpreted, or a generating mechanism that explains why the empirical pattern looks the way it does.
 
 The dependency structure has six **crux nodes** — places where if the assumption flipped, large regions of the integrated picture would have to be rebuilt. A1 (twin validity), A2 (GWAS signal real), and A3 (g exists) are foundational cruxes. Three more sit downstream: **passive rGE / genetic nurture** (G2/E6) reframes ~50% of population-level genetic prediction as environmentally mediated by genetically-similar parents — a finding that doesn't kill heritability but fundamentally changes its causal interpretation; **cross-trait assortative mating** (G6/E7) confounds an unknown but substantial fraction of cross-disorder genetic correlations, actively revising the p-factor and shared-biology stories; and **the within/between-population firewall** (L4 — Lewontin's logical point) is the single most critical guardrail in the whole system, since without it any within-group heritability finding can be misused to claim between-group genetic causation.
 
@@ -77,7 +92,7 @@ Each node carries: type code · weight · short claim · key citation · status.
 | **A1** | 5 | Twin/adoption methods provide approximately valid variance decomposition (EEA modestly violated but not fatally) | ✓ |
 | **A2** | 5 | GWAS signal reflects real genetic effects, not (only) population stratification or AM artifact | ✓ partial |
 | **A3** | 5 | A general factor of cognitive ability `g` is a real dimension of individual variation (positive manifold) | ✓ statistical / ? mechanism |
-| **A4** | 4 | Heritability is a population statistic, not an individual one (definitional) | ✓ |
+| **A4** | 3 | Heritability findings apply to the population sampled, not to individuals or other populations (scope) | ✓ |
 | **A5** | 3 | Phenotypes are reliably and validly measurable across cultures and time | ~ |
 | **A6** | 3 | Most psychological variation is dimensional, not taxonic | ✓ |
 
@@ -151,10 +166,10 @@ Psychopathology:
 
 | ID | Wt | Claim |
 |---|---|---|
-| **L1** | 5 | Heritability is a population variance ratio; it does not partition individual phenotypes |
+| **L1** | 5 | Heritability is a population variance ratio; it does not partition individual phenotypes (mathematical form — A4 is the scope-of-claim sibling) |
 | **L2** | 4 | h² changes with environmental variance: hold genes constant, equalize environments → h² → 1 |
 | **L3** | 5 | Within-family designs control for between-family confounds (rGE, stratification, AM) |
-| **L4** | 5 | Within-population heritability provides no information about between-population mean differences (Lewontin) |
+| **L4** | 5 | Within-population heritability provides no information about between-population mean differences (Lewontin). E22 in the empirical column is the applied form of this same point |
 | **L5** | 3 | Multivariate D ≥ max(univariate d) when component dimensions are positively correlated |
 | **L6** | 3 | Positive manifold permits both unitary-cause and emergent-network interpretations of g |
 | **L7** | 3 | Effect-size interpretation is scale-dependent (d=0.10 trivial in trait psychology, large in clinical) |
@@ -216,7 +231,7 @@ The cascade reads from foundations up to synthesis, and from corrections back do
 A1 ──dep──> M1, M2 ──sup──> E1, E2, E3, E25, E29
 A2 ──dep──> M3, M5 ──sup──> E4, E6, E7, E15–E17, E22–E23
 A3 ──dep──> E18 ──sup──> E26, E27 ──imp──> S5
-A4 ──imp──> L1, L2 ──guards──> S3
+A4 (scope) + L1 (form) ──guards──> interpretation of E1, E2, E3 and S3
 A6 ──imp──> S5 (dimensional turn in psychiatry)
 M9 ──corr──> E1 (closes missing-heritability gap)
 M3 + M4 ──sup──> E6 (genetic nurture), E7 (xAM)
@@ -504,7 +519,65 @@ What the next stage (model formalization) should pick up.
 
 ---
 
-## 8. Stage_outputs convention reference
+## 8. Objections to this topology (adversarial + steelman)
+
+Four ways a careful reader could push back. The strongest version of each, then my response.
+
+### Objection 1 — Discrete typed edges falsify a continuous, magnitude-weighted, context-conditional system
+
+Heritability is not "supported by" a twin study in the same binary way that a logical implication holds. The system is a tightly coupled developmental process; flattening it into nodes-and-arrows with discrete edge types loses information about magnitude, conditional dependence, and gradient relationships.
+
+**Response**: Acknowledged, and intentional. The topology is the qualitative skeleton; edge weights and conditional dependencies are the job of Stage 3 (formalization), where each edge will be turned into a parameterized function. The graph's value is not that it stands in for the full system but that it makes the structure visible cheaply enough that the formalization knows where to put the parameters.
+
+### Objection 2 — The crux/decorative split is editorial, not empirical
+
+There is no algorithm that picks crux nodes; the choice depends on which failure modes you are worried about. A 1990s topology of this field would have crowned candidate-gene findings as cruxes. Naming A2 (GWAS signal real) a crux today is a judgment call about the field's current methodological commitments — not an objective feature of the science.
+
+**Response**: Correct. Cruxes are time-stamped. This topology is a 2026 snapshot. If the field shifts (post-AM-correction era, post-within-family-PGS-at-scale era) the crux set will shift — that is what the refinement passes are for. Use this as a current map, not an immutable structural claim.
+
+### Objection 3 — Calling L4 a "logical firewall" overstates the case
+
+Lewontin's 1970 argument has been challenged. Edwards (2003) "Lewontin's Fallacy" showed that Lewontin's specific quantitative point — that ~85% of human genetic variance is within rather than between populations — does not preclude reliable population-classification from genetic markers. Modern population genetics treats between-population genetic inference as more nuanced than the firewall framing suggests.
+
+**Response**: The Edwards critique is real, but it addresses a different claim. Edwards refuted "you cannot reliably classify individuals into populations from genetic data." The L4 firewall as I formulate it says "within-population heritability provides no information about between-population *mean differences* without strong auxiliary assumptions about shared causal architecture and equal environments." Those are different propositions. PGS portability collapse (E23) is the contemporary empirical evidence that the auxiliary assumptions are not currently being met for psychological traits. The firewall framing survives the Edwards critique; its strength rests on the empirical PGS-portability finding, not on the original Lewontin variance argument alone.
+
+### Objection 4 — The Politicization variant is meta-commentary, not topology
+
+The D nodes and `attacks` edges describe how people misuse the evidence base. That is epistemics or sociology of science, not structural topology of the field. A pure topology should omit them.
+
+**Response**: Fair, and the inclusion is non-orthodox. It is justified here only by the topic framing — the user's prompt explicitly described the field as "a minefield of motivated reasoning … where the actual generating functions are obscured by politics." A topology of just the science would omit the D nodes; a topology that helps a reader navigate the field as it is actually encountered should include them. The D nodes will not be carried into Stage 3 formalization — they exist for navigation, not for downstream computation.
+
+---
+
+## 9. Glossary
+
+For readers approaching this from outside the field. Terms appear throughout the lit review and topology; this is the lookup table.
+
+| Term | Meaning |
+|---|---|
+| **h²** | Heritability — fraction of trait variance in a population attributable to genetic variation. A population statistic, not an individual one. |
+| **SNP** | Single-nucleotide polymorphism — a single-base difference at a position in the genome where multiple variants exist in the population. |
+| **GWAS** | Genome-wide association study — scans hundreds of thousands of SNPs against a measured trait, looking for statistical association. |
+| **PGS** | Polygenic score — a per-individual sum of trait-associated SNPs weighted by their GWAS effect sizes. Used as a predictor. |
+| **LD** | Linkage disequilibrium — non-random association between alleles at nearby loci, typically because they are inherited together. |
+| **AM** | Assortative mating — partners resemble each other on a trait above chance. **xAM** = cross-trait AM (e.g., taller-than-average partners with more-educated-than-average). |
+| **rGE** | Gene-environment correlation. **Passive** (parents transmit genes + correlated environment), **evocative** (heritable traits elicit responses), **active** (people select environments matching propensities). |
+| **GxE** | Gene-environment interaction — the same genotype produces different phenotypes in different environments. |
+| **EEA** | Equal environments assumption — the twin-method assumption that MZ and DZ twins are treated similarly enough that any extra MZ phenotypic resemblance reflects genetics, not differential treatment. |
+| **MZ / DZ** | Monozygotic (identical, ~100% shared DNA) / dizygotic (fraternal, ~50% shared DNA) twins. |
+| **rg** | Genetic correlation between two traits — how much the same genetic variants influence both. |
+| **WGS** | Whole-genome sequencing — capturing every base in the genome, including rare variants GWAS misses. |
+| **g-factor** | General factor of cognitive ability — the latent dimension behind the positive manifold (every cognitive test correlates positively with every other). |
+| **p-factor** | Proposed general factor of psychopathology — analogous to g, derived from cross-syndrome correlations. |
+| **CHC / HiTOP** | Cattell-Horn-Carroll cognitive-ability hierarchy / Hierarchical Taxonomy of Psychopathology (a dimensional alternative to DSM). |
+| **d (Cohen's d)** | Standardized mean difference between two groups, in standard-deviation units. Effect-size labels (small / medium / large) are scale-dependent — see L7 in the node catalog. |
+| **Mahalanobis D** | Multivariate generalization of Cohen's d — distance between two group means in the geometry of the trait space, accounting for correlation between traits. |
+| **Within-family design** | Comparing siblings or MZ-discordant twins or parent-offspring trios within the same family — controls for between-family confounds (population stratification, AM, passive rGE). |
+| **Genetic nurture** | Effect of *parents'* genotype on offspring outcomes via the environment the parents create — including alleles the parent did not transmit. |
+
+---
+
+## 10. Stage_outputs convention reference
 
 Raw working drafts from each LLM-iterate stage live at:
 
