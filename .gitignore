@@ -1,3 +1,6 @@
+stage_outputs
+prompts.md
+
 # build
 dist/
 .astro/
