@@ -1,0 +1,39 @@
+---
+interface LogEntry {
+  pass: number;
+  date: string;
+  passes: string[];
+  why: string;
+  changes: string[];
+}
+interface Props {
+  log: LogEntry[];
+}
+const { log } = Astro.props;
+const reversed = [...log].reverse();
+---
+
+<aside class="mt-16 pt-8 border-t border-gray-100 not-prose">
+  <h2 class="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-6">Iteration history</h2>
+  <ol class="space-y-6">
+    {reversed.map(entry => (
+      <li class="border-l-2 border-gray-200 pl-4">
+        <div class="flex items-baseline justify-between mb-2">
+          <span class="text-xs font-medium text-gray-500">Pass {entry.pass}</span>
+          <span class="text-xs text-gray-400 font-mono">{entry.date}</span>
+        </div>
+        <div class="flex flex-wrap gap-1.5 mb-3">
+          {entry.passes.map(p => (
+            <span class="text-xs px-2 py-0.5 bg-gray-100 text-gray-700 rounded">{p}</span>
+          ))}
+        </div>
+        <p class="text-sm text-gray-600 mb-2">
+          <span class="font-medium text-gray-700">Why:</span> {entry.why}
+        </p>
+        <ul class="text-sm text-gray-600 list-disc pl-5 space-y-0.5">
+          {entry.changes.map(c => <li>{c}</li>)}
+        </ul>
+      </li>
+    ))}
+  </ol>
+</aside>

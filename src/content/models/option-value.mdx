@@ -1,0 +1,60 @@
+---
+title: 'Option Value'
+description: 'Once you exist, you hold an option on future states. The asymmetry between starting and continuing is rational, not psychological.'
+date: 2026-04-27
+status: published
+featured: true
+component: OptionValueDashboard
+tags: ['decision theory', 'existence', 'option value']
+---
+import OptionValueDashboard from '../../components/models/OptionValueDashboard';
+
+## Intuition
+
+Once you're alive there's more rational incentive to keep living than there would have been to start living in the first place — and this isn't sunk cost bias but a real structural difference in the decision architecture.
+
+Once you're alive you hold an option — the right to keep experiencing future states. That option has value independent of current conditions because the future is uncertain and you can't re-enter once you exit. From outside existence, you don't hold the option, so the comparison is asymmetric for a structural reason, not a psychological one.
+
+## Equations
+
+Pre-existence (no option value):
+
+`EV(exist) = G − B + w(E − C)`
+
+In-existence (option value added):
+
+`EV(continue) = G_future − B_future + w(E_future − C_future) + OV`
+
+The option value itself:
+
+`OV = ∫ max(future good states, 0) · f(states) d(states)`
+
+You integrate probability-weighted future good outcomes across all possible states; bad states contribute zero because you retain the choice to exit later.
+
+## Variables
+
+- **G** — expected good experiences
+- **B** — expected bad experiences
+- **E** — positive externalities generated for others
+- **C** — costs imposed on others
+- **w** — weight on others' utility relative to your own (0–1)
+- **OV** — option value
+
+## Try it
+
+<OptionValueDashboard client:load />
+
+## Key insights
+
+- OV is only zero when the future is perfectly certain to be uniformly bad — almost never true.
+- Depression artificially truncates the right tail of future good states, collapsing *perceived* OV without changing actual OV.
+- Pre-existence EV can be negative while in-existence EV is positive — entirely because of the OV term.
+- This vindicates the asymmetry without appealing to sunk cost.
+
+## Consent-adjusted natalism extension
+
+`EV(create life) = p · k · (G − B + w(E − C)) + (1 − p)(−B)`
+
+where `p` is the probability the person would endorse their own existence, `k ∈ [0,1]` is a quality-of-circumstances scalar, and `(1 − p)(−B)` is the moral penalty for imposing harm on a non-consenting subject.
+
+Anti-natalism and pro-natalism disagree specifically on: whether `G − B` is reliably negative in bad circumstances, what `p` actually is empirically, and how much unique irreplaceable value each life generates.

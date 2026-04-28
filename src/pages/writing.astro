@@ -1,21 +1,46 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+import { getCollection } from 'astro:content';
+import TierBadge from '../components/TierBadge.astro';
 
-// This will eventually pull from content/blog/*.mdx files
-// For now, placeholder structure
+const posts = (await getCollection('blog', ({ data }) => !data.draft))
+  .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
 ---
 
-<BaseLayout title="Writing — Teddy Wright">
+<BaseLayout title="Writing — Teddy Wright" description="Essays on AI, identity, and information processing.">
   <section class="max-w-3xl mx-auto px-6 pt-16 pb-16">
     <h1 class="text-3xl font-bold tracking-tight mb-4">Writing</h1>
     <p class="text-gray-500 mb-12">
       Essays on AI, identity, information processing, and rebuilding worldviews from
-      first principles. Also on
-      <a href="https://substack.com/@theodorewright" class="text-primary-600 hover:text-primary-800" target="_blank" rel="noopener">Substack</a>.
+      first principles. Each post carries a tier label — <span class="text-gray-700">Me</span>,
+      <span class="text-gray-700">Me + AI</span>, or <span class="text-gray-700">AI</span> — showing
+      how AI-assisted it is. Also on
+      <a href="https://substack.com/@theodorealan" class="text-primary-600 hover:text-primary-800" target="_blank" rel="noopener">Substack</a>.
     </p>
 
-    <div class="text-center py-16 text-gray-400">
-      <p class="text-sm">Posts coming soon.</p>
-    </div>
+    {posts.length === 0 ? (
+      <div class="text-center py-16 text-gray-400">
+        <p class="text-sm">Posts coming soon.</p>
+      </div>
+    ) : (
+      <div class="space-y-8">
+        {posts.map(post => (
+          <article class="border-l-2 border-gray-200 pl-4">
+            <div class="flex items-baseline gap-3 mb-1">
+              <time class="text-xs text-gray-400 font-mono">
+                {post.data.date.toISOString().slice(0, 10)}
+              </time>
+              <TierBadge tier={post.data.tier} />
+            </div>
+            <h2 class="text-lg font-semibold mt-1">
+              <a href={`/writing/${post.slug}`} class="hover:text-primary-600 transition-colors">
+                {post.data.title}
+              </a>
+            </h2>
+            <p class="text-sm text-gray-500 mt-2">{post.data.description}</p>
+          </article>
+        ))}
+      </div>
+    )}
   </section>
 </BaseLayout>

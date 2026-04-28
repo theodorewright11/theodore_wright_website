@@ -1,0 +1,32 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { getCollection } from 'astro:content';
+
+export async function getStaticPaths() {
+  const items = await getCollection('updates');
+  return items.map(entry => ({
+    params: { slug: entry.slug },
+    props: { entry },
+  }));
+}
+
+const { entry } = Astro.props;
+const { Content } = await entry.render();
+---
+
+<BaseLayout title={`${entry.data.title} — Updates`} description={entry.data.description}>
+  <article class="max-w-3xl mx-auto px-6 pt-16 pb-16">
+    <header class="mb-10">
+      <a href="/updates" class="text-sm text-gray-500 hover:text-gray-900 transition-colors">← Updates</a>
+      <div class="flex items-baseline gap-3 mt-4">
+        <time class="text-xs text-gray-400 font-mono">{entry.data.date.toISOString().slice(0, 10)}</time>
+        <span class="text-xs uppercase tracking-wider text-gray-400">{entry.data.period}</span>
+      </div>
+      <h1 class="text-3xl font-bold tracking-tight mt-2 mb-2">{entry.data.title}</h1>
+      {entry.data.description && <p class="text-gray-500">{entry.data.description}</p>}
+    </header>
+    <div class="prose prose-gray max-w-none">
+      <Content />
+    </div>
+  </article>
+</BaseLayout>

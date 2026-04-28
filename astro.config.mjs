@@ -12,4 +12,7 @@ export default defineConfig({
     tailwind(),
     sitemap(),
   ],
+  redirects: {
+    '/about': '/',
+  },
 });

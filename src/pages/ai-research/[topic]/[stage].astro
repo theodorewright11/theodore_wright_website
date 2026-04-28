@@ -1,0 +1,46 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import RefinementLog from '../../../components/RefinementLog.astro';
+import { getCollection } from 'astro:content';
+
+export async function getStaticPaths() {
+  const all = await getCollection('ai_research');
+  return all
+    .filter(entry => entry.slug.includes('/'))
+    .map(entry => {
+      const [topic, stage] = entry.slug.split('/');
+      return {
+        params: { topic, stage },
+        props: { entry },
+      };
+    });
+}
+
+const { entry } = Astro.props;
+const { topic, stage } = Astro.params;
+const { Content } = await entry.render();
+---
+
+<BaseLayout title={`${entry.data.title} — ${topic}`} description={entry.data.description}>
+  <article class="max-w-3xl mx-auto px-6 pt-16 pb-16">
+    <header class="mb-10">
+      <a href={`/ai-research/${topic}`} class="text-sm text-gray-500 hover:text-gray-900 transition-colors">← {topic}</a>
+      <span class="text-xs font-medium text-primary-600 uppercase tracking-wider mt-4 block">{stage}</span>
+      <h1 class="text-3xl font-bold tracking-tight mt-1 mb-2">{entry.data.title}</h1>
+      <p class="text-gray-500">{entry.data.description}</p>
+      {entry.data.refinementPass > 0 && (
+        <p class="text-xs text-gray-400 mt-3 font-mono">
+          Pass {entry.data.refinementPass} · {entry.data.status}
+        </p>
+      )}
+    </header>
+
+    <div class="prose prose-gray max-w-none">
+      <Content />
+    </div>
+
+    {entry.data.refinementLog.length > 0 && (
+      <RefinementLog log={entry.data.refinementLog} />
+    )}
+  </article>
+</BaseLayout>

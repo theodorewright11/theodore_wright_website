@@ -1,0 +1,73 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import { getCollection } from 'astro:content';
+
+export async function getStaticPaths() {
+  const all = await getCollection('ai_research');
+  const topics = new Set<string>();
+  for (const entry of all) {
+    const [topic, stage] = entry.slug.split('/');
+    if (stage) topics.add(topic);
+  }
+  return Array.from(topics).map(topic => ({ params: { topic } }));
+}
+
+const { topic } = Astro.params;
+const all = await getCollection('ai_research');
+const stages = all
+  .filter(entry => entry.slug.startsWith(`${topic}/`))
+  .map(entry => ({
+    stage: entry.slug.split('/')[1],
+    data: entry.data,
+  }));
+
+const stageOrder = ['overview', 'lit-review', 'topology', 'model', 'data', 'build'];
+stages.sort((a, b) => stageOrder.indexOf(a.stage) - stageOrder.indexOf(b.stage));
+
+const overview = stages.find(s => s.stage === 'overview');
+const stageList = stageOrder.filter(s => s !== 'overview');
+---
+
+<BaseLayout title={`${overview?.data.title ?? topic} — AI's Research`} description={overview?.data.description}>
+  <section class="max-w-3xl mx-auto px-6 pt-16 pb-16">
+    <a href="/ai-research" class="text-sm text-gray-500 hover:text-gray-900 transition-colors">← AI's Research</a>
+    <h1 class="text-3xl font-bold tracking-tight mt-4 mb-4">{overview?.data.title ?? topic}</h1>
+    {overview && <p class="text-gray-500 mb-12">{overview.data.description}</p>}
+
+    <h2 class="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-6">Stages</h2>
+    <div class="space-y-6">
+      {stageList.map(stage => {
+        const present = stages.find(s => s.stage === stage);
+        const status = present?.data.status ?? 'not-started';
+        return (
+          <article class:list={[
+            'border-l-2 pl-4',
+            present && status === 'complete' ? 'border-primary-200' : 'border-gray-200',
+          ]}>
+            <span class:list={[
+              'text-xs font-medium uppercase tracking-wider',
+              status === 'complete' ? 'text-primary-600' : 'text-gray-400',
+            ]}>
+              {status}
+            </span>
+            <h3 class="text-lg font-semibold mt-1">
+              {present ? (
+                <a href={`/ai-research/${topic}/${stage}`} class="hover:text-primary-600 transition-colors">
+                  {stage}
+                </a>
+              ) : (
+                <span class="text-gray-400">{stage}</span>
+              )}
+            </h3>
+            {present && <p class="text-sm text-gray-500 mt-2">{present.data.description}</p>}
+            {present && present.data.refinementPass > 0 && (
+              <p class="text-xs text-gray-400 mt-2 font-mono">
+                {present.data.refinementPass} refinement pass{present.data.refinementPass === 1 ? '' : 'es'}
+              </p>
+            )}
+          </article>
+        );
+      })}
+    </div>
+  </section>
+</BaseLayout>

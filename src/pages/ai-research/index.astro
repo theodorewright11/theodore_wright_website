@@ -1,0 +1,74 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { getCollection } from 'astro:content';
+
+const all = await getCollection('ai_research');
+
+type Stage = { stage: string; data: typeof all[number]['data']; slug: string };
+const byTopic = new Map<string, Stage[]>();
+for (const entry of all) {
+  const [topic, stage] = entry.slug.split('/');
+  if (!stage) continue;
+  if (!byTopic.has(topic)) byTopic.set(topic, []);
+  byTopic.get(topic)!.push({ stage, data: entry.data, slug: entry.slug });
+}
+
+const stageOrder = ['overview', 'lit-review', 'topology', 'model', 'data', 'build'];
+
+const topics = Array.from(byTopic.entries()).map(([topic, stages]) => {
+  stages.sort((a, b) => stageOrder.indexOf(a.stage) - stageOrder.indexOf(b.stage));
+  const overview = stages.find(s => s.stage === 'overview');
+  const latestDate = stages.reduce((acc, s) => Math.max(acc, s.data.date.valueOf()), 0);
+  return { topic, stages, overview, latestDate };
+}).sort((a, b) => b.latestDate - a.latestDate);
+---
+
+<BaseLayout title="AI's Research — Teddy Wright" description="Outputs of the LLM Iterate pipeline — topics progressively refined across five stages.">
+  <section class="max-w-3xl mx-auto px-6 pt-16 pb-16">
+    <h1 class="text-3xl font-bold tracking-tight mb-4">AI's Research</h1>
+    <p class="text-gray-500 mb-12">
+      Outputs of the LLM Iterate pipeline. I supply a topic; AI produces a draft;
+      we refine it across five stages — lit review, topology, model, data, build.
+      Each stage feeds the next. Iteration history is recorded per stage. Authorship
+      is largely AI; direction and evaluation are mine.
+    </p>
+
+    {topics.length === 0 ? (
+      <div class="text-center py-16 text-gray-400">
+        <p class="text-sm">No topics yet.</p>
+      </div>
+    ) : (
+      <div class="space-y-12">
+        {topics.map(({ topic, stages, overview }) => (
+          <article>
+            <h2 class="text-lg font-semibold">
+              <a href={`/ai-research/${topic}`} class="hover:text-primary-600 transition-colors">
+                {overview?.data.title ?? topic}
+              </a>
+            </h2>
+            {overview && <p class="text-sm text-gray-500 mt-2">{overview.data.description}</p>}
+            <div class="flex flex-wrap gap-2 mt-4">
+              {stageOrder.filter(s => s !== 'overview').map(stage => {
+                const present = stages.find(s => s.stage === stage);
+                const status = present?.data.status ?? 'not-started';
+                const cls = !present
+                  ? 'bg-gray-50 text-gray-300 cursor-not-allowed pointer-events-none'
+                  : status === 'complete'
+                    ? 'bg-primary-100 text-primary-700 hover:bg-primary-200'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200';
+                return (
+                  <a
+                    href={present ? `/ai-research/${topic}/${stage}` : '#'}
+                    class:list={['text-xs uppercase tracking-wider px-2 py-1 rounded transition-colors', cls]}
+                  >
+                    {stage}
+                  </a>
+                );
+              })}
+            </div>
+          </article>
+        ))}
+      </div>
+    )}
+  </section>
+</BaseLayout>

@@ -1,0 +1,28 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { getCollection } from 'astro:content';
+
+export async function getStaticPaths() {
+  const models = await getCollection('models');
+  return models.map(entry => ({
+    params: { slug: entry.slug },
+    props: { entry },
+  }));
+}
+
+const { entry } = Astro.props;
+const { Content } = await entry.render();
+---
+
+<BaseLayout title={`${entry.data.title} — Models`} description={entry.data.description}>
+  <article class="max-w-3xl mx-auto px-6 pt-16 pb-16">
+    <header class="mb-10">
+      <a href="/models" class="text-sm text-gray-500 hover:text-gray-900 transition-colors">← Models</a>
+      <h1 class="text-3xl font-bold tracking-tight mt-4 mb-2">{entry.data.title}</h1>
+      <p class="text-gray-500">{entry.data.description}</p>
+    </header>
+    <div class="prose prose-gray max-w-none">
+      <Content />
+    </div>
+  </article>
+</BaseLayout>

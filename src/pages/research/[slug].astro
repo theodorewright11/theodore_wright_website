@@ -1,0 +1,73 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { getCollection } from 'astro:content';
+
+export async function getStaticPaths() {
+  const items = await getCollection('research');
+  return items.map(entry => ({
+    params: { slug: entry.slug },
+    props: { entry },
+  }));
+}
+
+const { entry } = Astro.props;
+const { Content } = await entry.render();
+
+const statusLabel: Record<string, string> = {
+  'in-progress': 'In Progress',
+  'published': 'Published',
+  'upcoming': 'Upcoming',
+  'contribution': 'Contribution',
+};
+
+const meta = () => {
+  const parts: string[] = [];
+  if (entry.data.collaborators.length > 0) parts.push(`With ${entry.data.collaborators.join(' & ')}`);
+  if (entry.data.venue) parts.push(entry.data.venue);
+  return parts.join(' · ');
+};
+const metaLine = meta();
+---
+
+<BaseLayout title={`${entry.data.title} — Research`} description={entry.data.description}>
+  <article class="max-w-3xl mx-auto px-6 pt-16 pb-16">
+    <header class="mb-10">
+      <a href="/research" class="text-sm text-gray-500 hover:text-gray-900 transition-colors">← Research</a>
+      <span class="text-xs font-medium text-primary-600 uppercase tracking-wider mt-4 block">
+        {statusLabel[entry.data.status] ?? entry.data.status}
+      </span>
+      <h1 class="text-3xl font-bold tracking-tight mt-1 mb-3">{entry.data.title}</h1>
+      <p class="text-gray-500">{entry.data.description}</p>
+      {metaLine && <p class="text-xs text-gray-400 mt-4">{metaLine}</p>}
+
+      {(entry.data.paperUrl || entry.data.externalUrl) && (
+        <div class="flex gap-5 mt-6">
+          {entry.data.paperUrl && (
+            <a
+              href={entry.data.paperUrl}
+              target="_blank"
+              rel="noopener"
+              class="text-sm font-medium text-primary-600 hover:text-primary-800 transition-colors"
+            >
+              Open paper →
+            </a>
+          )}
+          {entry.data.externalUrl && (
+            <a
+              href={entry.data.externalUrl}
+              target="_blank"
+              rel="noopener"
+              class="text-sm font-medium text-primary-600 hover:text-primary-800 transition-colors"
+            >
+              External link →
+            </a>
+          )}
+        </div>
+      )}
+    </header>
+
+    <div class="prose prose-gray max-w-none">
+      <Content />
+    </div>
+  </article>
+</BaseLayout>
