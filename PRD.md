@@ -117,3 +117,7 @@ Word documents (.docx) should be converted to PDF before upload (Word: File → 
 - **2026-04-28**: `Featured` eyebrow label removed from `/models` index — the flag still controls sort order but is not visually surfaced.
 - **2026-04-28**: `/updates` added — weekly/daily/monthly notes, content collection `updates`.
 - **2026-04-28**: `/dashboards` added as a top-level tab (currently a "Planned" list; first dashboard not yet built).
+- **2026-04-28**: Adopted V4 "Quiet Paper + Editorial Front" design (Fraunces + Source Serif 4 + JetBrains Mono on a warm paper background, sienna accent). Home is an editorial three-column index with a masthead; inner pages are calm single-column reading. NOW strip pinned to the top of every page surfaces the current status line. The previous Inter + indigo + left-rule-card design system is retired. See `ARCHITECTURE.md` for tokens.
+- **2026-04-28**: Singletons (bio, now, dashboard roster) live in `src/data/*.json` rather than as content collections — they're tiny, edited by hand, and don't need MDX bodies.
+- **2026-04-28**: Models index now lists drafts as well as published entries (drafts at `opacity-70` with a "Draft" pill); previously drafts were hidden. Stub MDX files added for the four unpublished models in the roster.
+- **2026-04-28**: AI's Research topic page is now a single page with stage tabs (Overview + each existing stage); the standalone `/ai-research/<topic>/<stage>` URL still works as a deep-link / shareable permalink.

@@ -2,44 +2,69 @@
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import { getCollection } from 'astro:content';
 
-const models = (await getCollection('models', ({ data }) => data.status === 'published'))
-  .sort((a, b) =>
-    Number(b.data.featured) - Number(a.data.featured)
-    || b.data.date.valueOf() - a.data.date.valueOf()
-  );
+const models = (await getCollection('models')).sort((a, b) => {
+  const liveDelta = Number(b.data.status === 'published') - Number(a.data.status === 'published');
+  if (liveDelta !== 0) return liveDelta;
+  const featuredDelta = Number(b.data.featured) - Number(a.data.featured);
+  if (featuredDelta !== 0) return featuredDelta;
+  return b.data.date.valueOf() - a.data.date.valueOf();
+});
 ---
 
-<BaseLayout title="Models — Teddy Wright" description="Interactive quantitative models — formalizations of relational, emotional, and decision-theoretic problems.">
-  <section class="max-w-3xl mx-auto px-6 pt-16 pb-16">
-    <h1 class="text-3xl font-bold tracking-tight mb-4">Models</h1>
-    <p class="text-gray-500 mb-12">
-      Interactive quantitative models — formalizations of relational, emotional,
-      and decision-theoretic problems. Slide the inputs and watch the output move.
+<BaseLayout title="Models — Teddy Wright"
+  description="Interactive quantitative models — formalizations of relational, emotional, and decision-theoretic problems.">
+  <section class="max-w-[760px] mx-auto px-8 pt-14 pb-24">
+    <h1 class="font-display font-semibold text-[48px] leading-none m-0 mb-3 text-ink"
+        style="letter-spacing: -0.03em">Models</h1>
+    <p class="font-serif text-[17px] text-muted leading-[1.55] max-w-[580px] m-0 mb-14">
+      Interactive quantitative models — formalizations of relational, emotional, and decision-theoretic problems.
+      Slide the inputs and watch the output move.
     </p>
 
     {models.length === 0 ? (
-      <div class="text-center py-16 text-gray-400">
-        <p class="text-sm">No models published yet.</p>
+      <div class="text-center py-16 font-serif italic text-muted">
+        <p>No models yet.</p>
       </div>
     ) : (
-      <div class="space-y-8">
-        {models.map(({ slug, data }) => (
-          <article class="border-l-2 border-primary-200 pl-4">
-            <h2 class="text-lg font-semibold">
-              <a href={`/models/${slug}`} class="hover:text-primary-600 transition-colors">
-                {data.title}
-              </a>
-            </h2>
-            <p class="text-sm text-gray-500 mt-2">{data.description}</p>
-            {data.tags.length > 0 && (
-              <div class="flex flex-wrap gap-2 mt-3">
-                {data.tags.map(tag => (
-                  <span class="text-xs text-gray-400">{tag}</span>
-                ))}
+      <div>
+        {models.map((m, i) => {
+          const live = m.data.status === 'published';
+          return (
+            <article class:list={[
+              'py-6 border-t border-rule grid grid-cols-[1fr_auto] gap-4 items-baseline',
+              i === models.length - 1 ? 'border-b border-rule' : '',
+              live ? '' : 'opacity-70',
+            ]}>
+              <div>
+                <h2 class="font-display font-semibold text-[24px] m-0 mb-1.5 text-ink"
+                    style="letter-spacing: -0.015em">
+                  {live ? (
+                    <a href={`/models/${m.slug}`}
+                       class="text-ink no-underline hover:text-accent transition-colors">
+                      {m.data.title}
+                    </a>
+                  ) : (
+                    m.data.title
+                  )}
+                </h2>
+                <p class="font-serif text-[15px] text-ink-soft leading-[1.55] m-0 mb-2"
+                   style="text-wrap: pretty">{m.data.description}</p>
+                {m.data.tags.length > 0 && (
+                  <div class="font-mono text-[10px] uppercase text-muted"
+                       style="letter-spacing: 0.08em">
+                    {m.data.tags.join(' · ')}
+                  </div>
+                )}
               </div>
-            )}
-          </article>
-        ))}
+              <span class:list={[
+                'font-mono text-[10px] uppercase whitespace-nowrap rounded-sm px-2 py-px self-start mt-1',
+                live ? 'text-accent border border-accent' : 'text-muted border border-rule',
+              ]} style="letter-spacing: 0.12em">
+                {live ? 'Live' : 'Draft'}
+              </span>
+            </article>
+          );
+        })}
       </div>
     )}
   </section>

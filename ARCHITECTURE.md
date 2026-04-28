@@ -15,39 +15,50 @@
 ├── PRD.md, ARCHITECTURE.md, CLAUDE.md   ← read-first specs
 ├── stage_outputs/                       ← raw LLM stage outputs (working drafts)
 │   └── <topic>/<stage>.md
+├── design_handoff_personal_site/        ← V4 design source (reference only)
 ├── public/
 │   ├── favicon.svg
 │   └── papers/                          ← published PDFs (papers, posters, working drafts)
 │       └── <slug>.pdf
 ├── src/
 │   ├── components/
-│   │   ├── Nav.astro
-│   │   ├── Footer.astro
-│   │   ├── TierBadge.astro
+│   │   ├── Nav.astro                    ← V4 nav (brand + horizontal links, accent active state)
+│   │   ├── NowStrip.astro               ← top-of-page status bar
+│   │   ├── SectionLabel.astro           ← mono-uppercase label + optional "→" link
+│   │   ├── TierChip.astro               ← me / me + ai / ai chip (writing tiers)
 │   │   ├── RefinementLog.astro
 │   │   └── models/                      ← React components for interactive models
 │   │       └── OptionValueDashboard.tsx
 │   ├── content/
 │   │   ├── blog/<slug>.mdx              ← essays
-│   │   ├── research/<slug>.mdx          ← formal research entries (currently inline in research.astro)
-│   │   ├── models/<slug>.mdx            ← model explanations
+│   │   ├── research/<slug>.mdx          ← formal research entries
+│   │   ├── models/<slug>.mdx            ← model explanations (drafts included)
+│   │   ├── updates/<slug>.mdx
 │   │   └── ai_research/<topic>/<stage>.mdx
 │   ├── content.config.ts
-│   ├── layouts/BaseLayout.astro
+│   ├── data/                            ← singletons (not collections — small, edited-by-hand)
+│   │   ├── bio.json                     ← name, blurb, location, contact links
+│   │   ├── now.json                     ← current status line + updated date (drives NowStrip)
+│   │   └── dashboards.json              ← roster of planned dashboards
+│   ├── layouts/BaseLayout.astro         ← NowStrip + Nav + slot, paper bg
 │   ├── pages/
-│   │   ├── index.astro
-│   │   ├── about.astro
+│   │   ├── index.astro                  ← V4 editorial home (masthead + 3-col index + colophon)
 │   │   ├── research.astro
+│   │   ├── research/[slug].astro
 │   │   ├── writing.astro
-│   │   ├── writing/[slug].astro
+│   │   ├── writing/[slug].astro         ← narrow column (640px) + drop cap
 │   │   ├── models/
 │   │   │   ├── index.astro
 │   │   │   └── [slug].astro
+│   │   ├── updates/
+│   │   │   ├── index.astro
+│   │   │   └── [slug].astro
+│   │   ├── dashboards/index.astro
 │   │   └── ai-research/
 │   │       ├── index.astro
-│   │       ├── [topic]/index.astro
-│   │       └── [topic]/[stage].astro
-│   └── styles/global.css
+│   │       ├── [topic]/index.astro      ← topic page with stage tabs (Overview + per-stage)
+│   │       └── [topic]/[stage].astro    ← deep-link standalone stage page
+│   └── styles/global.css                ← font imports, design tokens, .essay-prose / .paper-prose
 ├── astro.config.mjs
 ├── tailwind.config.mjs
 └── tsconfig.json
@@ -116,20 +127,60 @@ Rendered at the bottom of each stage page by `<RefinementLog>`.
 
 ## Design system
 
-Locked tokens — do not deviate without updating this file.
+V4 "Quiet Paper + Editorial Front" — locked tokens. Do not deviate without updating this file. Reference: `design_handoff_personal_site/v4-quiet-paper-plus.jsx`.
 
-- **Typography**: Inter (sans), JetBrains Mono (mono), loaded from Google Fonts in `global.css`
-- **Container**: `max-w-3xl mx-auto px-6` (≈ 768px reading column)
-- **Vertical rhythm**: `pt-16 pb-16` on inner pages, `pt-20` on home, `mt-20` for footer
-- **Color**: single accent ramp `primary` (indigo, defined in `tailwind.config.mjs`); everything else is gray scale
-- **Active link**: `text-primary-600`; inactive: `text-gray-500 hover:text-gray-900`
-- **Card pattern**: `border-l-2 border-primary-200 pl-4` (or `pl-5`) — eyebrow / title / description / meta
-  - Active items use `border-primary-200`
-  - Archival/upcoming items use `border-gray-200`
-- **Eyebrow**: `text-xs font-medium uppercase tracking-wider`, primary-600 for active, gray-500 for archival
-- **Section heading (eyebrow style)**: `text-sm font-semibold text-gray-400 uppercase tracking-wider mb-6`
-- **Prose**: `prose prose-gray max-w-none` for MDX rendered content
-- **Selection**: `bg-primary-100 text-primary-900` (set in global.css)
+### Colors (Tailwind theme + raw)
+
+- `paper` `#f7f3ec` — page background (warm off-white)
+- `paper-edge` `#efe9dd` — NOW strip background
+- `ink` `#1a1614` — primary text, headlines
+- `ink-soft` `#3a342c` — body text, secondary headlines
+- `muted` `#7a7166` — metadata, labels, dates
+- `rule` `#d9d0bf` — primary hairlines
+- `rule-soft` `#e6dfcf` — softer hairlines (between items inside a group)
+- `accent` `#8a4a2b` — sienna; links on hover, NOW tag, drop cap, active nav
+- `accent-soft` `#c98a6e` — in-progress markers, partial progress bars
+
+The `primary` indigo ramp is retained in the Tailwind config but unused in V4. Don't reach for it.
+
+### Typography
+
+- `font-display` — Fraunces (variable, opsz 9..144), used for all headlines and brand
+- `font-serif` — Source Serif 4, body and most metadata
+- `font-mono` — JetBrains Mono, labels / dates / chips / "→" affordances
+
+Loaded via Google Fonts at the top of `global.css`.
+
+### Containers
+
+- **Home**: `max-w-[1080px]` with `px-8 pt-12 pb-20`
+- **Inner index/detail**: `max-w-[760px]` with `px-8 pt-14 pb-24`
+- **Essay reader**: `max-w-[640px]` (narrow) with `px-8 pt-14 pb-24`
+
+### Patterns
+
+- **Section label** (column heading on home): mono 10px uppercase, letter-spacing 0.18em, `text-muted`, optional `→` arrow link to the section's index — see `SectionLabel.astro`.
+- **Group header** (Research status sections): `§ N` mono accent + Fraunces 18px label + count, with `border-b border-rule pb-2`.
+- **Eyebrow / status pills**: mono 10px uppercase letter-spacing 0.12em. Live = accent border + accent text; Draft/Planned = rule border + muted text.
+- **Tier chip** (writing tier): mono 10px uppercase, rule border, muted text. Labels: `me` / `me + ai` / `ai` (mapped from `mine` / `collab` / `ai-led`) — see `TierChip.astro`.
+- **Item separator** (writing/models/updates/dashboards lists): `border-t border-rule` between items, plus `border-b` on the last item to close the list.
+- **No left-rule cards** (the V3 indigo `border-l-2 border-primary-200` pattern is retired).
+- **Active link**: italic + accent + `underline underline-offset-4`. Inactive nav: `text-ink-soft`, hovers to `text-accent`.
+- **Hover**: linked titles transition `color` over `0.18s` to `text-accent`. Featured-essay title underlines on hover instead of color-shifting.
+- **Selection**: `rgba(179, 51, 31, 0.18)` (sienna at low alpha), set in `global.css`.
+
+### Prose styles
+
+`prose prose-gray` from `@tailwindcss/typography` is **not** used (it ships its own colors and rhythm that fight the paper aesthetic). Two custom prose classes live in `global.css`:
+
+- `.essay-prose` — for `/writing/[slug]`. 18px Source Serif body, 21px lead paragraph, drop cap on first paragraph (76px Fraunces accent, floated). 1.75 line-height, generous paragraph spacing.
+- `.paper-prose` — for research/model/update/stage detail pages. 16px Source Serif body, 1.7 line-height, no drop cap.
+
+Both styles use ink/ink-soft/muted/rule/accent tokens consistently.
+
+### NOW strip
+
+`NowStrip.astro` reads `src/data/now.json` (`{ line, updated }`). Pinned to top of every page above the nav. Background `paper-edge`, accent "NOW" tag, italic Source Serif status line, mono `updated <date>` on the right.
 
 ## Interactive components
 

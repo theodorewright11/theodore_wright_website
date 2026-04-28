@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,700;1,9..144,400;1,9..144,700&family=Source+Serif+4:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400;1,600&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -10,10 +10,165 @@
   }
 
   body {
-    @apply bg-white text-gray-900 antialiased;
+    @apply bg-paper text-ink antialiased font-serif;
   }
 
-  ::selection {
-    @apply bg-primary-100 text-primary-900;
+  *::selection {
+    background: rgba(179, 51, 31, 0.18);
   }
+}
+
+/* Drop cap + lead paragraph for essay reader.
+   Applied to the rendered MDX root of /writing/[slug]. */
+.essay-prose > p {
+  font-family: '"Source Serif 4"', Georgia, serif;
+  font-size: 18px;
+  line-height: 1.75;
+  color: #1a1614;
+  margin: 0 0 1.4em;
+  text-wrap: pretty;
+}
+.essay-prose > p:first-of-type {
+  font-size: 21px;
+}
+.essay-prose > p:first-of-type::first-letter {
+  font-family: Fraunces, '"Source Serif 4"', Georgia, serif;
+  font-size: 76px;
+  font-weight: 600;
+  line-height: 0.85;
+  float: left;
+  margin: 6px 12px 0 0;
+  color: #8a4a2b;
+}
+.essay-prose strong {
+  font-weight: 600;
+  color: #1a1614;
+}
+.essay-prose em {
+  font-style: italic;
+}
+.essay-prose a {
+  color: #8a4a2b;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-thickness: 1px;
+}
+.essay-prose h2 {
+  font-family: Fraunces, serif;
+  font-size: 26px;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  line-height: 1.2;
+  color: #1a1614;
+  margin: 2em 0 0.6em;
+}
+.essay-prose h3 {
+  font-family: Fraunces, serif;
+  font-size: 21px;
+  font-weight: 600;
+  color: #1a1614;
+  margin: 1.6em 0 0.5em;
+}
+.essay-prose blockquote {
+  border-left: 2px solid #d9d0bf;
+  padding-left: 1em;
+  font-style: italic;
+  color: #3a342c;
+  margin: 1.4em 0;
+}
+.essay-prose ul,
+.essay-prose ol {
+  margin: 0 0 1.4em;
+  padding-left: 1.4em;
+}
+.essay-prose li {
+  margin-bottom: 0.4em;
+}
+.essay-prose code {
+  font-family: '"JetBrains Mono"', monospace;
+  font-size: 0.9em;
+  background: rgba(217, 208, 191, 0.35);
+  padding: 1px 5px;
+  border-radius: 2px;
+}
+.essay-prose hr {
+  border: none;
+  border-top: 1px solid #d9d0bf;
+  margin: 2.4em 0;
+}
+
+/* MDX rendered into the standard body column (research/model/update/stage detail).
+   Quieter paper styling than essay-prose; no drop cap. */
+.paper-prose {
+  font-family: '"Source Serif 4"', Georgia, serif;
+  font-size: 16px;
+  line-height: 1.7;
+  color: #1a1614;
+}
+.paper-prose > p {
+  margin: 0 0 1.2em;
+  text-wrap: pretty;
+}
+.paper-prose strong { font-weight: 600; }
+.paper-prose em { font-style: italic; }
+.paper-prose a {
+  color: #8a4a2b;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-thickness: 1px;
+}
+.paper-prose h2 {
+  font-family: Fraunces, serif;
+  font-size: 24px;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  line-height: 1.2;
+  color: #1a1614;
+  margin: 1.8em 0 0.5em;
+}
+.paper-prose h3 {
+  font-family: Fraunces, serif;
+  font-size: 19px;
+  font-weight: 600;
+  color: #1a1614;
+  margin: 1.4em 0 0.4em;
+}
+.paper-prose blockquote {
+  border-left: 2px solid #d9d0bf;
+  padding-left: 1em;
+  font-style: italic;
+  color: #3a342c;
+  margin: 1.2em 0;
+}
+.paper-prose ul,
+.paper-prose ol {
+  margin: 0 0 1.2em;
+  padding-left: 1.4em;
+}
+.paper-prose li {
+  margin-bottom: 0.3em;
+}
+.paper-prose code {
+  font-family: '"JetBrains Mono"', monospace;
+  font-size: 0.9em;
+  background: rgba(217, 208, 191, 0.35);
+  padding: 1px 5px;
+  border-radius: 2px;
+}
+.paper-prose pre {
+  background: rgba(217, 208, 191, 0.25);
+  padding: 14px 16px;
+  border-radius: 3px;
+  overflow-x: auto;
+  font-size: 13px;
+  margin: 1.2em 0;
+}
+.paper-prose pre code {
+  background: transparent;
+  padding: 0;
+}
+.paper-prose hr {
+  border: none;
+  border-top: 1px solid #d9d0bf;
+  margin: 2em 0;
 }

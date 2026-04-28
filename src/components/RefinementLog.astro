@@ -13,24 +13,28 @@ const { log } = Astro.props;
 const reversed = [...log].reverse();
 ---
 
-<aside class="mt-16 pt-8 border-t border-gray-100 not-prose">
-  <h2 class="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-6">Iteration history</h2>
-  <ol class="space-y-6">
+<aside class="mt-14 pt-7 border-t border-rule not-prose">
+  <h2 class="font-mono text-[10px] font-medium uppercase text-muted mb-6"
+      style="letter-spacing: 0.18em">Iteration history</h2>
+  <ol class="space-y-7 list-none p-0">
     {reversed.map(entry => (
-      <li class="border-l-2 border-gray-200 pl-4">
+      <li>
         <div class="flex items-baseline justify-between mb-2">
-          <span class="text-xs font-medium text-gray-500">Pass {entry.pass}</span>
-          <span class="text-xs text-gray-400 font-mono">{entry.date}</span>
+          <span class="font-mono text-[11px] text-ink">Pass {entry.pass}</span>
+          <span class="font-mono text-[11px] text-muted">{entry.date}</span>
         </div>
         <div class="flex flex-wrap gap-1.5 mb-3">
           {entry.passes.map(p => (
-            <span class="text-xs px-2 py-0.5 bg-gray-100 text-gray-700 rounded">{p}</span>
+            <span class="font-mono text-[10px] uppercase border border-rule rounded-sm px-1.5 py-px text-muted"
+                  style="letter-spacing: 0.08em">{p}</span>
           ))}
         </div>
-        <p class="text-sm text-gray-600 mb-2">
-          <span class="font-medium text-gray-700">Why:</span> {entry.why}
+        <p class="font-serif text-[15px] text-ink-soft leading-[1.55] mb-2">
+          <span class="font-mono text-[10px] uppercase text-muted mr-2"
+                style="letter-spacing: 0.08em">Why</span>
+          {entry.why}
         </p>
-        <ul class="text-sm text-gray-600 list-disc pl-5 space-y-0.5">
+        <ul class="font-serif text-[15px] text-ink-soft leading-[1.55] list-disc pl-5 space-y-1 m-0">
           {entry.changes.map(c => <li>{c}</li>)}
         </ul>
       </li>

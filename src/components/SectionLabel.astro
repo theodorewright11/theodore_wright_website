@@ -1,0 +1,22 @@
+---
+interface Props {
+  label: string;
+  href?: string;
+}
+const { label, href } = Astro.props;
+---
+
+<div class="flex items-baseline gap-2.5 mb-[18px]">
+  <h2
+    class="font-mono text-[10px] font-medium uppercase text-muted m-0 flex-1"
+    style="letter-spacing: 0.18em"
+  >{label}</h2>
+  {href && (
+    <a
+      href={href}
+      class="font-mono text-[10px] text-muted no-underline hover:text-accent transition-colors"
+      style="letter-spacing: 0.1em"
+      aria-label={`See all ${label}`}
+    >→</a>
+  )}
+</div>

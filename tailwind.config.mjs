@@ -5,9 +5,20 @@ export default {
     extend: {
       fontFamily: {
         sans: ['Inter', 'system-ui', 'sans-serif'],
-        mono: ['JetBrains Mono', 'monospace'],
+        serif: ['"Source Serif 4"', 'Georgia', 'serif'],
+        display: ['Fraunces', '"Source Serif 4"', 'Georgia', 'serif'],
+        mono: ['"JetBrains Mono"', 'ui-monospace', 'monospace'],
       },
       colors: {
+        paper: '#f7f3ec',
+        'paper-edge': '#efe9dd',
+        ink: '#1a1614',
+        'ink-soft': '#3a342c',
+        muted: '#7a7166',
+        rule: '#d9d0bf',
+        'rule-soft': '#e6dfcf',
+        accent: '#8a4a2b',
+        'accent-soft': '#c98a6e',
         primary: {
           50: '#f0f4ff',
           100: '#dbe4ff',

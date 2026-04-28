@@ -1,36 +1,44 @@
 ---
 const navLinks = [
   { href: '/research', label: 'Research' },
-  { href: '/ai-research', label: "AI's Research" },
+  { href: '/ai-research', label: "AI’s Research" },
   { href: '/models', label: 'Models' },
   { href: '/dashboards', label: 'Dashboards' },
   { href: '/writing', label: 'Writing' },
   { href: '/updates', label: 'Updates' },
 ];
 
-const currentPath = Astro.url.pathname;
-const isActive = (href: string) => currentPath === href || currentPath.startsWith(`${href}/`);
+const currentPath = Astro.url.pathname.replace(/\/$/, '') || '/';
+const isActive = (href: string) =>
+  currentPath === href || currentPath.startsWith(`${href}/`);
 ---
 
-<header class="border-b border-gray-100">
-  <nav class="max-w-3xl mx-auto px-6 py-5 flex items-center justify-between">
-    <a href="/" class="font-semibold text-lg tracking-tight hover:text-primary-600 transition-colors">
+<header class="border-b border-rule bg-paper">
+  <nav class="max-w-[1080px] mx-auto px-8 py-5 flex items-baseline justify-between gap-6 flex-wrap">
+    <a
+      href="/"
+      class="font-display font-semibold text-[22px] text-ink no-underline hover:text-accent transition-colors"
+      style="letter-spacing: -0.02em"
+    >
       Teddy Wright
     </a>
-    <div class="flex items-center gap-5">
-      {navLinks.map(({ href, label }) => (
-        <a
-          href={href}
-          class:list={[
-            'text-sm font-medium transition-colors',
-            isActive(href)
-              ? 'text-primary-600'
-              : 'text-gray-500 hover:text-gray-900',
-          ]}
-        >
-          {label}
-        </a>
-      ))}
+    <div class="flex items-baseline gap-[18px] flex-wrap">
+      {navLinks.map(({ href, label }) => {
+        const active = isActive(href);
+        return (
+          <a
+            href={href}
+            class:list={[
+              'font-serif text-sm transition-colors',
+              active
+                ? 'italic text-accent underline underline-offset-4 decoration-1'
+                : 'text-ink-soft no-underline hover:text-accent',
+            ]}
+          >
+            {label}
+          </a>
+        );
+      })}
     </div>
   </nav>
 </header>

@@ -19,23 +19,44 @@ export async function getStaticPaths() {
 const { entry } = Astro.props;
 const { topic, stage } = Astro.params;
 const { Content } = await entry.render();
+
+const stageLabel: Record<string, string> = {
+  'lit-review': 'Lit Review',
+  topology: 'Topology',
+  model: 'Model',
+  data: 'Data',
+  build: 'Build',
+  overview: 'Overview',
+};
 ---
 
 <BaseLayout title={`${entry.data.title} — ${topic}`} description={entry.data.description}>
-  <article class="max-w-3xl mx-auto px-6 pt-16 pb-16">
-    <header class="mb-10">
-      <a href={`/ai-research/${topic}`} class="text-sm text-gray-500 hover:text-gray-900 transition-colors">← {topic}</a>
-      <span class="text-xs font-medium text-primary-600 uppercase tracking-wider mt-4 block">{stage}</span>
-      <h1 class="text-3xl font-bold tracking-tight mt-1 mb-2">{entry.data.title}</h1>
-      <p class="text-gray-500">{entry.data.description}</p>
-      {entry.data.refinementPass > 0 && (
-        <p class="text-xs text-gray-400 mt-3 font-mono">
-          Pass {entry.data.refinementPass} · {entry.data.status}
-        </p>
-      )}
+  <article class="max-w-[760px] mx-auto px-8 pt-14 pb-24">
+    <a href={`/ai-research/${topic}`}
+       class="font-mono text-[11px] uppercase text-muted no-underline hover:text-accent transition-colors"
+       style="letter-spacing: 0.08em">← {topic}</a>
+
+    <header class="mt-5 mb-10 pb-8 border-b border-rule">
+      <div class="flex items-baseline gap-3 mb-3 flex-wrap">
+        <span class="font-mono text-[10px] uppercase text-accent"
+              style="letter-spacing: 0.12em">{stageLabel[stage ?? ''] ?? stage}</span>
+        <span class:list={[
+          'font-mono text-[11px]',
+          entry.data.status === 'complete' ? 'text-ink'
+            : entry.data.status === 'in-progress' ? 'text-accent'
+            : 'text-muted',
+        ]} style="letter-spacing: 0.06em">{entry.data.status}</span>
+        {entry.data.refinementPass > 0 && (
+          <span class="font-mono text-[11px] text-muted">pass {entry.data.refinementPass}</span>
+        )}
+      </div>
+      <h1 class="font-display font-semibold text-[36px] leading-[1.1] m-0 mb-3 text-ink"
+          style="letter-spacing: -0.02em; text-wrap: balance">{entry.data.title}</h1>
+      <p class="font-serif text-[17px] text-ink-soft leading-[1.55] m-0"
+         style="text-wrap: pretty">{entry.data.description}</p>
     </header>
 
-    <div class="prose prose-gray max-w-none">
+    <div class="paper-prose">
       <Content />
     </div>
 

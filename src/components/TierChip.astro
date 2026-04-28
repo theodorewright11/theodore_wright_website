@@ -1,0 +1,21 @@
+---
+type Tier = 'mine' | 'collab' | 'ai-led';
+interface Props {
+  tier: Tier;
+}
+const { tier } = Astro.props;
+
+const labels: Record<Tier, string> = {
+  mine: 'me',
+  collab: 'me + ai',
+  'ai-led': 'ai',
+};
+const label = labels[tier] ?? labels.mine;
+---
+
+<span
+  class="inline-block font-mono text-[10px] uppercase text-muted border border-rule rounded-sm px-1.5 py-px whitespace-nowrap"
+  style="letter-spacing: 0.08em"
+>
+  {label}
+</span>

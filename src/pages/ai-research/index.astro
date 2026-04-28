@@ -4,67 +4,119 @@ import { getCollection } from 'astro:content';
 
 const all = await getCollection('ai_research');
 
-type Stage = { stage: string; data: typeof all[number]['data']; slug: string };
-const byTopic = new Map<string, Stage[]>();
+const stageOrder = ['lit-review', 'topology', 'model', 'data', 'build'] as const;
+const stageLabel: Record<string, string> = {
+  'lit-review': 'lit review',
+  topology: 'topology',
+  model: 'model',
+  data: 'data',
+  build: 'build',
+};
+
+type Stage = { id: string; label: string; status: string };
+type Topic = {
+  slug: string;
+  title: string;
+  desc: string;
+  stages: Stage[];
+  done: number;
+  latestDate: number;
+};
+
+const topicMap = new Map<
+  string,
+  { overview: typeof all[number] | null; stages: Stage[]; latest: number }
+>();
+
 for (const entry of all) {
   const [topic, stage] = entry.slug.split('/');
-  if (!stage) continue;
-  if (!byTopic.has(topic)) byTopic.set(topic, []);
-  byTopic.get(topic)!.push({ stage, data: entry.data, slug: entry.slug });
+  if (!topic) continue;
+  if (!topicMap.has(topic)) topicMap.set(topic, { overview: null, stages: [], latest: 0 });
+  const bucket = topicMap.get(topic)!;
+  bucket.latest = Math.max(bucket.latest, entry.data.date.valueOf());
+  if (stage === 'overview') {
+    bucket.overview = entry;
+  } else if (stage) {
+    bucket.stages.push({
+      id: stage,
+      label: stageLabel[stage] ?? stage,
+      status: entry.data.status,
+    });
+  }
 }
 
-const stageOrder = ['overview', 'lit-review', 'topology', 'model', 'data', 'build'];
-
-const topics = Array.from(byTopic.entries()).map(([topic, stages]) => {
-  stages.sort((a, b) => stageOrder.indexOf(a.stage) - stageOrder.indexOf(b.stage));
-  const overview = stages.find(s => s.stage === 'overview');
-  const latestDate = stages.reduce((acc, s) => Math.max(acc, s.data.date.valueOf()), 0);
-  return { topic, stages, overview, latestDate };
-}).sort((a, b) => b.latestDate - a.latestDate);
+const topics: Topic[] = Array.from(topicMap.entries())
+  .map(([slug, t]): Topic => {
+    const stages = stageOrder.map(id =>
+      t.stages.find(s => s.id === id) ?? { id, label: stageLabel[id], status: 'planned' }
+    );
+    return {
+      slug,
+      title: t.overview?.data.title ?? slug,
+      desc: t.overview?.data.description ?? '',
+      stages,
+      done: stages.filter(s => s.status === 'complete').length,
+      latestDate: t.latest,
+    };
+  })
+  .sort((a, b) => b.latestDate - a.latestDate);
 ---
 
-<BaseLayout title="AI's Research — Teddy Wright" description="Outputs of the LLM Iterate pipeline — topics progressively refined across five stages.">
-  <section class="max-w-3xl mx-auto px-6 pt-16 pb-16">
-    <h1 class="text-3xl font-bold tracking-tight mb-4">AI's Research</h1>
-    <p class="text-gray-500 mb-12">
-      Outputs of the LLM Iterate pipeline. I supply a topic; AI produces a draft;
-      we refine it across five stages — lit review, topology, model, data, build.
-      Each stage feeds the next. Iteration history is recorded per stage. Authorship
-      is largely AI; direction and evaluation are mine.
+<BaseLayout title="AI’s Research — Teddy Wright"
+  description="Outputs of the LLM Iterate pipeline — topics progressively refined across five stages.">
+  <section class="max-w-[760px] mx-auto px-8 pt-14 pb-24">
+    <h1 class="font-display font-semibold text-[48px] leading-none m-0 mb-3 text-ink"
+        style="letter-spacing: -0.03em">AI’s Research</h1>
+    <p class="font-serif text-[17px] text-muted leading-[1.55] max-w-[580px] m-0 mb-3">
+      Outputs of the LLM Iterate pipeline. I supply a topic; AI produces a draft; we refine across five stages — lit review, topology, model, data, build.
+    </p>
+    <p class="font-serif italic text-[14px] text-muted m-0 mb-14">
+      Each topic is one page; stages live behind tabs.
     </p>
 
     {topics.length === 0 ? (
-      <div class="text-center py-16 text-gray-400">
-        <p class="text-sm">No topics yet.</p>
+      <div class="text-center py-16 font-serif italic text-muted">
+        <p>No topics yet.</p>
       </div>
     ) : (
-      <div class="space-y-12">
-        {topics.map(({ topic, stages, overview }) => (
-          <article>
-            <h2 class="text-lg font-semibold">
-              <a href={`/ai-research/${topic}`} class="hover:text-primary-600 transition-colors">
-                {overview?.data.title ?? topic}
-              </a>
-            </h2>
-            {overview && <p class="text-sm text-gray-500 mt-2">{overview.data.description}</p>}
-            <div class="flex flex-wrap gap-2 mt-4">
-              {stageOrder.filter(s => s !== 'overview').map(stage => {
-                const present = stages.find(s => s.stage === stage);
-                const status = present?.data.status ?? 'not-started';
-                const cls = !present
-                  ? 'bg-gray-50 text-gray-300 cursor-not-allowed pointer-events-none'
-                  : status === 'complete'
-                    ? 'bg-primary-100 text-primary-700 hover:bg-primary-200'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200';
-                return (
-                  <a
-                    href={present ? `/ai-research/${topic}/${stage}` : '#'}
-                    class:list={['text-xs uppercase tracking-wider px-2 py-1 rounded transition-colors', cls]}
-                  >
-                    {stage}
-                  </a>
-                );
-              })}
+      <div>
+        {topics.map(t => (
+          <article class="py-7 border-t border-rule">
+            <div class="flex items-baseline gap-3 mb-2">
+              <h2 class="font-display font-semibold text-[26px] m-0 text-ink flex-1"
+                  style="letter-spacing: -0.02em">
+                <a href={`/ai-research/${t.slug}`}
+                   class="text-ink no-underline hover:text-accent transition-colors">
+                  {t.title}
+                </a>
+              </h2>
+              <span class="font-mono text-[11px] text-muted">{t.done}/{t.stages.length}</span>
+            </div>
+            {t.desc && (
+              <p class="font-serif text-[16px] text-ink-soft leading-[1.55] m-0 mb-4"
+                 style="text-wrap: pretty">{t.desc}</p>
+            )}
+            <div class="flex gap-1 h-1.5 rounded-[3px] overflow-hidden mb-2.5">
+              {t.stages.map(s => (
+                <div
+                  class:list={[
+                    'flex-1',
+                    s.status === 'complete' ? 'bg-accent'
+                      : s.status === 'in-progress' ? 'bg-accent-soft'
+                      : 'bg-rule',
+                  ]}
+                />
+              ))}
+            </div>
+            <div class="font-mono text-[11px] text-muted flex gap-2.5 flex-wrap"
+                 style="letter-spacing: 0.06em">
+              {t.stages.map(s => (
+                <span class:list={[
+                  s.status === 'complete' ? 'text-ink'
+                    : s.status === 'in-progress' ? 'text-accent'
+                    : 'text-muted',
+                ]}>{s.label}</span>
+              ))}
             </div>
           </article>
         ))}

@@ -1,0 +1,22 @@
+---
+import now from '../data/now.json';
+
+const updatedDate = new Date(now.updated + 'T00:00:00');
+const formatted = updatedDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+---
+
+<div class="bg-paper-edge border-b border-rule">
+  <div class="max-w-[1080px] mx-auto px-8 py-2.5 flex items-center gap-3.5 flex-wrap">
+    <span
+      class="font-mono text-[10px] font-bold uppercase text-white bg-accent rounded-sm px-2 py-[3px]"
+      style="letter-spacing: 0.16em"
+    >NOW</span>
+    <span class="font-serif italic text-[15px] text-ink leading-snug flex-1 min-w-[240px]">
+      {now.line}
+    </span>
+    <span
+      class="font-mono text-[10px] uppercase text-muted"
+      style="letter-spacing: 0.1em"
+    >updated {formatted}</span>
+  </div>
+</div>

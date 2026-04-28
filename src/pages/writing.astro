@@ -1,43 +1,49 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+import TierChip from '../components/TierChip.astro';
 import { getCollection } from 'astro:content';
-import TierBadge from '../components/TierBadge.astro';
+import bio from '../data/bio.json';
 
 const posts = (await getCollection('blog', ({ data }) => !data.draft))
   .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
+
+const fmt = (date: Date) =>
+  date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 ---
 
-<BaseLayout title="Writing — Teddy Wright" description="Essays on AI, identity, and information processing.">
-  <section class="max-w-3xl mx-auto px-6 pt-16 pb-16">
-    <h1 class="text-3xl font-bold tracking-tight mb-4">Writing</h1>
-    <p class="text-gray-500 mb-12">
-      Essays on AI, identity, information processing, and rebuilding worldviews from
-      first principles. Each post carries a tier label — <span class="text-gray-700">Me</span>,
-      <span class="text-gray-700">Me + AI</span>, or <span class="text-gray-700">AI</span> — showing
-      how AI-assisted it is. Also on
-      <a href="https://substack.com/@theodorealan" class="text-primary-600 hover:text-primary-800" target="_blank" rel="noopener">Substack</a>.
+<BaseLayout title="Writing — Teddy Wright" description="Essays on AI, identity, information processing.">
+  <section class="max-w-[760px] mx-auto px-8 pt-14 pb-24">
+    <h1 class="font-display font-semibold text-[48px] leading-none m-0 mb-3 text-ink"
+        style="letter-spacing: -0.03em">Writing</h1>
+    <p class="font-serif text-[17px] text-muted leading-[1.55] max-w-[580px] m-0 mb-14">
+      Essays on AI, identity, information processing, and rebuilding worldviews from first principles.
+      Also on <a href={bio.substack} target="_blank" rel="noopener" class="text-accent hover:underline">Substack</a>.
     </p>
 
     {posts.length === 0 ? (
-      <div class="text-center py-16 text-gray-400">
-        <p class="text-sm">Posts coming soon.</p>
+      <div class="text-center py-16 font-serif italic text-muted">
+        <p>Posts coming soon.</p>
       </div>
     ) : (
-      <div class="space-y-8">
-        {posts.map(post => (
-          <article class="border-l-2 border-gray-200 pl-4">
-            <div class="flex items-baseline gap-3 mb-1">
-              <time class="text-xs text-gray-400 font-mono">
-                {post.data.date.toISOString().slice(0, 10)}
-              </time>
-              <TierBadge tier={post.data.tier} />
+      <div>
+        {posts.map((p, i) => (
+          <article class:list={[
+            'py-7 border-t border-rule',
+            i === posts.length - 1 ? 'border-b border-rule' : '',
+          ]}>
+            <div class="flex items-baseline gap-3 mb-2.5 flex-wrap">
+              <span class="font-mono text-[11px] text-muted">{fmt(p.data.date)}</span>
+              <TierChip tier={p.data.tier} />
             </div>
-            <h2 class="text-lg font-semibold mt-1">
-              <a href={`/writing/${post.slug}`} class="hover:text-primary-600 transition-colors">
-                {post.data.title}
+            <h2 class="font-display font-semibold text-[28px] leading-[1.1] m-0 mb-3 text-ink"
+                style="letter-spacing: -0.02em; text-wrap: balance">
+              <a href={`/writing/${p.slug}`}
+                 class="text-ink no-underline hover:text-accent transition-colors">
+                {p.data.title}
               </a>
             </h2>
-            <p class="text-sm text-gray-500 mt-2">{post.data.description}</p>
+            <p class="font-serif text-[16px] text-ink-soft leading-[1.6] m-0"
+               style="text-wrap: pretty">{p.data.description}</p>
           </article>
         ))}
       </div>

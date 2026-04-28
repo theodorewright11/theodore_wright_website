@@ -1,6 +1,6 @@
 ---
 import Nav from '../components/Nav.astro';
-import Footer from '../components/Footer.astro';
+import NowStrip from '../components/NowStrip.astro';
 import '../styles/global.css';
 
 interface Props {
@@ -24,11 +24,11 @@ const { title, description = "Teddy Wright — CS & AI researcher, writer, build
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <title>{title}</title>
   </head>
-  <body class="min-h-screen flex flex-col">
+  <body class="min-h-screen bg-paper text-ink font-serif">
+    <NowStrip />
     <Nav />
-    <main class="flex-1">
+    <main>
       <slot />
     </main>
-    <Footer />
   </body>
 </html>

@@ -1,48 +1,32 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
-
-const planned = [
-  {
-    slug: 'decision-tracker',
-    title: 'Decision Tracker',
-    description: 'Confidence × stakes × reversibility × disclosure × fit. Run a decision through the framework and see where it breaks.',
-  },
-  {
-    slug: 'finance',
-    title: 'Finance',
-    description: 'Personal finance dashboard. Public demo lets you plug in your own numbers; private version pulls my data.',
-  },
-  {
-    slug: 'emotional-wellbeing',
-    title: 'Emotional Well-being',
-    description: 'Track mood, regulation cost, and recovery — informed by the social-output-efficiency model.',
-  },
-  {
-    slug: 'social-environment',
-    title: 'Social Environment',
-    description: 'Score the six social-environment subscales and project the maintenance/output split.',
-  },
-];
+import dashboards from '../../data/dashboards.json';
 ---
 
-<BaseLayout title="Dashboards — Teddy Wright" description="Interactive dashboards for decision-making, finance, well-being, and social environment.">
-  <section class="max-w-3xl mx-auto px-6 pt-16 pb-16">
-    <h1 class="text-3xl font-bold tracking-tight mb-4">Dashboards</h1>
-    <p class="text-gray-500 mb-4">
-      Interactive dashboards for personal models. Each will ship in two tiers:
-      a public demo (use it on your own data, stays in your browser, CSV import/export)
-      and a private version with my own data (auth-gated).
+<BaseLayout title="Dashboards — Teddy Wright"
+  description="Interactive dashboards for decision-making, finance, well-being, and social environment.">
+  <section class="max-w-[760px] mx-auto px-8 pt-14 pb-24">
+    <h1 class="font-display font-semibold text-[48px] leading-none m-0 mb-3 text-ink"
+        style="letter-spacing: -0.03em">Dashboards</h1>
+    <p class="font-serif text-[17px] text-muted leading-[1.55] max-w-[580px] m-0 mb-3">
+      Interactive dashboards for personal models. Each will ship in two tiers — a public demo and a private version with my own data.
     </p>
-    <p class="text-gray-500 mb-12">
-      None are live yet. Planned:
-    </p>
+    <p class="font-serif italic text-[14px] text-muted m-0 mb-14">None are live yet. Planned:</p>
 
-    <div class="space-y-6">
-      {planned.map(d => (
-        <article class="border-l-2 border-gray-200 pl-4">
-          <span class="text-xs font-medium uppercase tracking-wider text-gray-400">Planned</span>
-          <h2 class="text-lg font-semibold mt-1 text-gray-700">{d.title}</h2>
-          <p class="text-sm text-gray-500 mt-2">{d.description}</p>
+    <div>
+      {dashboards.map((d, i) => (
+        <article class:list={[
+          'py-5 border-t border-rule grid grid-cols-[1fr_auto] gap-4 items-baseline',
+          i === dashboards.length - 1 ? 'border-b border-rule' : '',
+        ]}>
+          <div>
+            <h2 class="font-display font-semibold text-[20px] m-0 mb-1.5 text-ink"
+                style="letter-spacing: -0.01em">{d.title}</h2>
+            <p class="font-serif text-[15px] text-ink-soft leading-[1.55] m-0"
+               style="text-wrap: pretty">{d.desc}</p>
+          </div>
+          <span class="font-mono text-[10px] uppercase text-muted border border-rule rounded-sm px-2 py-px self-start mt-1"
+                style="letter-spacing: 0.12em">Planned</span>
         </article>
       ))}
     </div>

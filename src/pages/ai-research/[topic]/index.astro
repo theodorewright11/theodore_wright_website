@@ -1,5 +1,6 @@
 ---
 import BaseLayout from '../../../layouts/BaseLayout.astro';
+import RefinementLog from '../../../components/RefinementLog.astro';
 import { getCollection } from 'astro:content';
 
 export async function getStaticPaths() {
@@ -14,60 +15,161 @@ export async function getStaticPaths() {
 
 const { topic } = Astro.params;
 const all = await getCollection('ai_research');
-const stages = all
-  .filter(entry => entry.slug.startsWith(`${topic}/`))
-  .map(entry => ({
-    stage: entry.slug.split('/')[1],
-    data: entry.data,
-  }));
 
-const stageOrder = ['overview', 'lit-review', 'topology', 'model', 'data', 'build'];
-stages.sort((a, b) => stageOrder.indexOf(a.stage) - stageOrder.indexOf(b.stage));
+const stageOrder = ['lit-review', 'topology', 'model', 'data', 'build'];
+const stageLabel: Record<string, string> = {
+  'lit-review': 'Lit Review',
+  topology: 'Topology',
+  model: 'Model',
+  data: 'Data',
+  build: 'Build',
+};
 
-const overview = stages.find(s => s.stage === 'overview');
-const stageList = stageOrder.filter(s => s !== 'overview');
+type StageEntry = typeof all[number];
+const byStage = new Map<string, StageEntry>();
+for (const entry of all) {
+  if (!entry.slug.startsWith(`${topic}/`)) continue;
+  const stage = entry.slug.split('/')[1];
+  if (stage) byStage.set(stage, entry);
+}
+
+const overview = byStage.get('overview');
+if (!overview) {
+  throw new Error(`Topic "${topic}" missing overview.mdx`);
+}
+
+const OverviewContent = (await overview.render()).Content;
+
+type RenderedStage = {
+  id: string;
+  label: string;
+  status: string;
+  data: StageEntry['data'] | null;
+  Content: any;
+};
+
+const stages: RenderedStage[] = [];
+for (const id of stageOrder) {
+  const entry = byStage.get(id);
+  if (entry) {
+    const { Content } = await entry.render();
+    stages.push({
+      id,
+      label: stageLabel[id] ?? id,
+      status: entry.data.status,
+      data: entry.data,
+      Content,
+    });
+  } else {
+    stages.push({ id, label: stageLabel[id] ?? id, status: 'planned', data: null, Content: null });
+  }
+}
 ---
 
-<BaseLayout title={`${overview?.data.title ?? topic} — AI's Research`} description={overview?.data.description}>
-  <section class="max-w-3xl mx-auto px-6 pt-16 pb-16">
-    <a href="/ai-research" class="text-sm text-gray-500 hover:text-gray-900 transition-colors">← AI's Research</a>
-    <h1 class="text-3xl font-bold tracking-tight mt-4 mb-4">{overview?.data.title ?? topic}</h1>
-    {overview && <p class="text-gray-500 mb-12">{overview.data.description}</p>}
+<BaseLayout title={`${overview.data.title} — AI’s Research`} description={overview.data.description}>
+  <section class="max-w-[760px] mx-auto px-8 pt-14 pb-24">
+    <a href="/ai-research"
+       class="font-mono text-[11px] uppercase text-muted no-underline hover:text-accent transition-colors"
+       style="letter-spacing: 0.08em">← AI’s Research</a>
 
-    <h2 class="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-6">Stages</h2>
-    <div class="space-y-6">
-      {stageList.map(stage => {
-        const present = stages.find(s => s.stage === stage);
-        const status = present?.data.status ?? 'not-started';
-        return (
-          <article class:list={[
-            'border-l-2 pl-4',
-            present && status === 'complete' ? 'border-primary-200' : 'border-gray-200',
-          ]}>
-            <span class:list={[
-              'text-xs font-medium uppercase tracking-wider',
-              status === 'complete' ? 'text-primary-600' : 'text-gray-400',
-            ]}>
-              {status}
-            </span>
-            <h3 class="text-lg font-semibold mt-1">
-              {present ? (
-                <a href={`/ai-research/${topic}/${stage}`} class="hover:text-primary-600 transition-colors">
-                  {stage}
-                </a>
-              ) : (
-                <span class="text-gray-400">{stage}</span>
-              )}
-            </h3>
-            {present && <p class="text-sm text-gray-500 mt-2">{present.data.description}</p>}
-            {present && present.data.refinementPass > 0 && (
-              <p class="text-xs text-gray-400 mt-2 font-mono">
-                {present.data.refinementPass} refinement pass{present.data.refinementPass === 1 ? '' : 'es'}
-              </p>
-            )}
-          </article>
-        );
-      })}
+    <h1 class="font-display font-semibold text-[42px] leading-[1.05] m-0 mt-5 mb-3 text-ink"
+        style="letter-spacing: -0.025em">{overview.data.title}</h1>
+    <p class="font-serif text-[17px] text-ink-soft leading-[1.55] max-w-[600px] m-0 mb-9"
+       style="text-wrap: pretty">{overview.data.description}</p>
+
+    <div role="tablist"
+         class="flex gap-0 border-b border-rule mb-7 flex-wrap"
+         data-stage-tabs>
+      <button role="tab"
+              data-tab="overview"
+              data-active="true"
+              class="font-serif text-[14px] bg-transparent border-0 cursor-pointer
+                     px-4 pt-3 pb-3.5 transition-colors -mb-px
+                     border-b-2 border-transparent
+                     text-muted hover:text-accent
+                     data-[active=true]:italic
+                     data-[active=true]:text-accent
+                     data-[active=true]:border-accent">
+        Overview
+      </button>
+      {stages.map(s => (
+        <button role="tab"
+                data-tab={s.id}
+                class="font-serif text-[14px] bg-transparent border-0 cursor-pointer
+                       px-4 pt-3 pb-3.5 transition-colors -mb-px
+                       border-b-2 border-transparent
+                       text-muted hover:text-accent
+                       data-[active=true]:italic
+                       data-[active=true]:text-accent
+                       data-[active=true]:border-accent">
+          {s.label}
+          {s.status === 'in-progress' && (
+            <span class="inline-block w-[5px] h-[5px] rounded-full bg-accent-soft ml-1.5 align-middle"></span>
+          )}
+        </button>
+      ))}
     </div>
+
+    <div data-panel="overview" class="paper-prose" style="font-size: 17px; line-height: 1.7;">
+      <OverviewContent />
+    </div>
+
+    {stages.map(s => (
+      <div data-panel={s.id} hidden>
+        <div class="flex gap-3 items-baseline mb-4">
+          <span class="font-mono text-[11px] uppercase text-muted"
+                style="letter-spacing: 0.08em">Status</span>
+          <span class:list={[
+            'font-mono text-[11px]',
+            s.status === 'complete' ? 'text-ink' : s.status === 'in-progress' ? 'text-accent' : 'text-muted',
+          ]} style="letter-spacing: 0.06em">{s.status}</span>
+        </div>
+
+        {s.data ? (
+          <>
+            <p class="font-serif italic text-[16px] text-muted m-0 mb-4">{s.data.description}</p>
+
+            {s.Content && (
+              <div class="paper-prose mt-6">
+                <s.Content />
+              </div>
+            )}
+
+            <div class="mt-8">
+              <a href={`/ai-research/${topic}/${s.id}`}
+                 class="font-mono text-[11px] uppercase text-accent no-underline hover:underline"
+                 style="letter-spacing: 0.08em">Read full stage →</a>
+            </div>
+
+            {s.data.refinementLog.length > 0 && (
+              <RefinementLog log={s.data.refinementLog} />
+            )}
+          </>
+        ) : (
+          <p class="font-serif italic text-[15px] text-muted m-0">
+            This stage hasn’t been generated yet.
+          </p>
+        )}
+      </div>
+    ))}
   </section>
+
+  <script>
+    const root = document.querySelector<HTMLDivElement>('[data-stage-tabs]');
+    if (root) {
+      const tabs = root.querySelectorAll<HTMLButtonElement>('[data-tab]');
+      const panels = document.querySelectorAll<HTMLElement>('[data-panel]');
+
+      tabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+          const target = tab.dataset.tab;
+          tabs.forEach(t => t.dataset.active = String(t === tab));
+          panels.forEach(p => {
+            const match = p.dataset.panel === target;
+            p.hidden = !match;
+          });
+        });
+      });
+    }
+  </script>
 </BaseLayout>
