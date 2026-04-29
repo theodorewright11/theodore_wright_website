@@ -92,21 +92,24 @@ const WILSON_ANCHORS: WilsonAnchor[] = [
   { age: 25, h2_observed: 0.79, h2_predicted: 0.78 },
 ];
 
-// PGS portability (relative R² vs Ding 2023 genetic distance)
-const PORTABILITY: { trait: string; ancestry: string; gd: number; rel_r2: number }[] = [
-  { trait: 'height', ancestry: 'EUR', gd: 0.00, rel_r2: 1.00 },
-  { trait: 'height', ancestry: 'SAS', gd: 0.10, rel_r2: 0.65 },
-  { trait: 'height', ancestry: 'EAS', gd: 0.15, rel_r2: 0.55 },
-  { trait: 'height', ancestry: 'AMR', gd: 0.18, rel_r2: 0.50 },
-  { trait: 'height', ancestry: 'AFR', gd: 0.30, rel_r2: 0.20 },
-  { trait: 'EA',     ancestry: 'EUR', gd: 0.00, rel_r2: 1.00 },
-  { trait: 'EA',     ancestry: 'AFR', gd: 0.30, rel_r2: 0.10 },
-  { trait: 'BMI',    ancestry: 'EUR', gd: 0.00, rel_r2: 1.00 },
-  { trait: 'BMI',    ancestry: 'AFR', gd: 0.30, rel_r2: 0.30 },
-  { trait: 'BP',     ancestry: 'EUR', gd: 0.00, rel_r2: 1.00 },
-  { trait: 'BP',     ancestry: 'AFR', gd: 0.30, rel_r2: 0.40 },
-  { trait: 'SCZ',    ancestry: 'EUR', gd: 0.00, rel_r2: 1.00 },
-  { trait: 'SCZ',    ancestry: 'AFR', gd: 0.30, rel_r2: 0.30 },
+// PGS portability — per-ancestry literature anchors. Each row cites a
+// specific paper that reports relative R² for European-trained PGS in the
+// target population. NOT an independent replication of Ding 2023 (which
+// uses continuous PCA-distance on individual-level data we don't have).
+// Ding 2023's r=-0.95 is the headline; this panel shows the trend is
+// internally consistent across categorical-ancestry literature.
+const PORTABILITY: { trait: string; ancestry: string; gd: number; rel_r2: number; source: string }[] = [
+  { trait: 'across-trait avg', ancestry: 'EUR', gd: 0.00, rel_r2: 1.00, source: 'Martin 2019 ref' },
+  { trait: 'across-trait avg', ancestry: 'SAS', gd: 0.10, rel_r2: 0.63, source: 'Martin 2019' },
+  { trait: 'across-trait avg', ancestry: 'EAS', gd: 0.15, rel_r2: 0.50, source: 'Martin 2019' },
+  { trait: 'across-trait avg', ancestry: 'AMR', gd: 0.18, rel_r2: 0.50, source: 'Martin 2019' },
+  { trait: 'across-trait avg', ancestry: 'AFR', gd: 0.30, rel_r2: 0.22, source: 'Martin 2019' },
+  { trait: 'EA',               ancestry: 'EUR', gd: 0.00, rel_r2: 1.00, source: 'Okbay 2022' },
+  { trait: 'EA',               ancestry: 'AFR', gd: 0.30, rel_r2: 0.10, source: 'Okbay 2022' },
+  { trait: 'height',           ancestry: 'EUR', gd: 0.00, rel_r2: 1.00, source: 'Yengo 2022' },
+  { trait: 'height',           ancestry: 'AFR', gd: 0.30, rel_r2: 0.20, source: 'Yengo 2022' },
+  { trait: 'schizophrenia',    ancestry: 'EUR', gd: 0.00, rel_r2: 1.00, source: 'Trubetskoy 2022' },
+  { trait: 'schizophrenia',    ancestry: 'AFR', gd: 0.30, rel_r2: 0.30, source: 'Trubetskoy 2022' },
 ];
 
 const XAM_PSYCHIATRIC = [
@@ -479,8 +482,8 @@ function PortabilityPanel() {
     <div>
       <PanelHeader
         title="H5. PGS accuracy decay across genetic ancestry"
-        claim="Replicating Ding 2023 (Pearson r = −0.95 across 84 traits). Curated 5-trait × 4-ancestry panel."
-        verdict={`replicated r = ${pearson.toFixed(2)}`}
+        claim="Categorical-ancestry literature (Martin 2019: 37%/50%/78% accuracy reduction in SAS/EAS/AFR vs EUR; Okbay 2022 EA in AFR: ~10% relative R²; Yengo 2022 height in AFR: ~20%; Trubetskoy 2022 SCZ in AFR: ~30%) is internally consistent and consistent with Ding 2023's continuous-PCA-distance r=−0.95. The slope below is on these literature anchors, not an independent replication of Ding 2023."
+        verdict={`monotone decay (r = ${pearson.toFixed(2)})`}
         verdictKind="supported"
       />
 

@@ -876,11 +876,11 @@
     }
   ],
   "pgs_portability": {
-    "slope": -2.453011317704124,
-    "intercept": 0.9795624494745352,
-    "r2": 0.9530037301243145,
-    "pearson_r": -0.9762190994465916,
-    "n_points": 13,
+    "slope": -2.627416955875061,
+    "intercept": 0.9756990580069411,
+    "r2": 0.9712744428395967,
+    "pearson_r": -0.9855325681273029,
+    "n_points": 11,
     "ding_2023_reference_pearson": -0.95
   },
   "border_xam": {
@@ -1207,7 +1207,7 @@
     "H5_PGS_portability": {
       "claim": "Pearson r between genetic distance and PGS R\u00b2 is strongly negative",
       "Ding_2023_reported_r": -0.95,
-      "replicated_pearson_on_curated_panel": -0.9762190994465916,
+      "replicated_pearson_on_curated_panel": -0.9855325681273029,
       "verdict": "supported"
     },
     "H6_xAM_inflation": {

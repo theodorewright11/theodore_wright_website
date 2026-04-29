@@ -1,14 +1,13 @@
 target_population,training_population,trait,relative_pgs_r2,genetic_distance,source,notes
-european,european,height,1.00,0.00,Ding_2023,Reference baseline
-south_asian,european,height,0.65,0.10,Ding_2023,Approximate from Pearson r=-0.95 trend
-east_asian,european,height,0.55,0.15,Ding_2023,
-admixed_american,european,height,0.50,0.18,Ding_2023,
-african,european,height,0.20,0.30,Ding_2023,Largest decay
+european,european,across_traits,1.00,0.00,Martin_2019,Reference baseline (across-trait avg from Martin 2019)
+south_asian,european,across_traits,0.63,0.10,Martin_2019,"37% accuracy reduction (Martin 2019 across-trait average)"
+east_asian,european,across_traits,0.50,0.15,Martin_2019,"50% accuracy reduction (Martin 2019)"
+admixed_american,european,across_traits,0.50,0.18,Martin_2019,"~50% (interpolated from Martin 2019 fig)"
+african,european,across_traits,0.22,0.30,Martin_2019,"78% accuracy reduction (Martin 2019)"
 european,european,educational_attainment,1.00,0.00,Okbay_2022_EA4,
-african,european,educational_attainment,0.10,0.30,Okbay_2022_EA4,EA4 reports near-zero predictive accuracy in African ancestries
-european,european,bmi,1.00,0.00,Ding_2023,
-african,european,bmi,0.30,0.30,Ding_2023,
-european,european,blood_pressure,1.00,0.00,Ding_2023,
-african,european,blood_pressure,0.40,0.30,Ding_2023,
+african,european,educational_attainment,0.10,0.30,Okbay_2022_EA4,"EA4 reports near-zero predictive accuracy in African ancestries"
+european,european,height,1.00,0.00,Yengo_2022,Reference
+african,european,height,0.20,0.30,Yengo_2022,"12111 EUR-trained SNPs explain 40% of variance in EUR but 10-20% in non-EUR ancestries"
 european,european,schizophrenia,1.00,0.00,Trubetskoy_2022,
-african,european,schizophrenia,0.30,0.30,Trubetskoy_2022,Less decay than EA — closer-to-biological mechanism
+african,european,schizophrenia,0.30,0.30,Trubetskoy_2022,"Less decay than EA — closer-to-biological mechanism"
+ding_continuous_summary,european_training,84_trait_average,NA,NA,Ding_2023,"Pearson r=-0.95 between PCA-distance and PGS R^2 across 84 traits; ATLAS N=36778 + UKB N=487409"
