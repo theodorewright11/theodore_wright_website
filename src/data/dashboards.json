@@ -1,8 +1,8 @@
 [
   {
-    "slug": "decision-tracker",
-    "title": "Decision Tracker",
-    "desc": "Confidence × stakes × reversibility × disclosure × fit. Run a decision through the framework and see where it breaks."
+    "slug": "decision-helper",
+    "title": "Decision Helper",
+    "desc": "Helps make complex decisions better by breaking them down qualitatively."
   },
   {
     "slug": "finance",
@@ -12,11 +12,6 @@
   {
     "slug": "emotional-wellbeing",
     "title": "Emotional Well-being",
-    "desc": "Track mood, regulation cost, and recovery — informed by the social-output-efficiency model."
-  },
-  {
-    "slug": "social-environment",
-    "title": "Social Environment",
-    "desc": "Score the six social-environment subscales and project the maintenance/output split."
+    "desc": "Helps you recognize and take action on your emotional needs."
   }
 ]

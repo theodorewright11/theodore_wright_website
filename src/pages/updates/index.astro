@@ -1,53 +1,17 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
-import { getCollection } from 'astro:content';
-
-const items = (await getCollection('updates', ({ data }) => !data.draft))
-  .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
-
-const fmt = (date: Date) =>
-  date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 ---
 
 <BaseLayout title="Updates — Teddy Wright"
-  description="Weekly notes on what I'm working on — research, reading, ideas in progress.">
+  description="Updates — coming soon.">
   <section class="max-w-[760px] mx-auto px-8 pt-14 pb-24">
     <h1 class="font-display font-semibold text-[48px] leading-none m-0 mb-3 text-ink"
         style="letter-spacing: -0.03em">Updates</h1>
-    <p class="font-serif text-[17px] text-muted leading-[1.55] max-w-[580px] m-0 mb-14">
-      Weekly notes on what I’ve been working on. Mostly for my own reference; partly so anyone curious can see what’s moving.
+    <p class="font-serif text-[17px] text-ink-soft leading-[1.55] max-w-[580px] m-0 mb-4">
+      Coming soon.
     </p>
-
-    {items.length === 0 ? (
-      <div class="text-center py-16 font-serif italic text-muted">
-        <p>No updates yet.</p>
-      </div>
-    ) : (
-      <div>
-        {items.map((u, i) => (
-          <article class:list={[
-            'py-6 border-t border-rule',
-            i === items.length - 1 ? 'border-b border-rule' : '',
-          ]}>
-            <div class="flex items-baseline gap-3 mb-2 flex-wrap">
-              <span class="font-mono text-[11px] text-muted">{fmt(u.data.date)}</span>
-              <span class="font-mono text-[10px] uppercase text-accent"
-                    style="letter-spacing: 0.12em">{u.data.period}</span>
-            </div>
-            <h2 class="font-display font-semibold text-[24px] m-0 mb-2.5 text-ink"
-                style="letter-spacing: -0.015em">
-              <a href={`/updates/${u.slug}`}
-                 class="text-ink no-underline hover:text-accent transition-colors">
-                {u.data.title}
-              </a>
-            </h2>
-            {u.data.description && (
-              <p class="font-serif text-[16px] text-ink-soft leading-[1.55] m-0"
-                 style="text-wrap: pretty">{u.data.description}</p>
-            )}
-          </article>
-        ))}
-      </div>
-    )}
+    <p class="font-serif text-[15px] text-muted leading-[1.55] max-w-[580px] m-0">
+      This will be a stream of short notes — weekly, sometimes daily — on what I'm reading, what I'm working on, and which ideas are moving. Mostly for my own reference; partly so anyone curious can follow along.
+    </p>
   </section>
 </BaseLayout>

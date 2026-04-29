@@ -14,11 +14,11 @@ This is the personal site for Teddy Wright. It serves three audiences:
 |---|---|
 | `/` | Combined home + about — short bio and contact links |
 | `/research` | Formal academic research, grouped by status (In Progress / Finished / Upcoming / Contributions) |
-| `/ai-research` | Outputs of the LLM Iterate pipeline (5-stage refinement of topics) |
+| `/ai-research` | Outputs of the LLM Iterate pipeline (6-stage refinement of topics) |
 | `/models` | Polished interactive quantitative models (sliders, real-time computation) |
 | `/dashboards` | Interactive dashboards (public demo + private tier per dashboard) |
 | `/writing` | Essays, with tier labels showing how AI-assisted each piece is |
-| `/updates` | Weekly (or daily/monthly) notes on what's moving |
+| `/updates` | Weekly (or daily/monthly) notes on what's moving — **placeholder for now** ("coming soon"), no live entries listed |
 
 `/about` redirects to `/`.
 
@@ -53,21 +53,20 @@ Initial roster (drafts/published over time). Public titles are plain-language ("
 
 - **Why continuing is easier than starting** *(option value)* — existence asymmetry from holding an option on future states
 - **Why vivid pain feels worse than equal pain** *(suffering salience)* — perceived harm = actual harm × salience distortion
-- **How trust builds over time** *(trust tracker)* — months × contexts × consistency
 - **Parenting under uncertainty** *(parental decision-making)* — confidence/stakes/reversibility/disclosure framework
-- **How surroundings shape your output** *(social environment output efficiency)* — how social scaffolding modulates available cognitive output
 
 Tags on model frontmatter exist in the schema but are no longer rendered — model identity is carried by the title and description.
 
 ## AI's Research (LLM Iterate)
 
-A pipeline that turns a topic into a progressively refined artifact across 5 stages:
+A pipeline that turns a topic into a progressively refined artifact across 6 stages:
 
 1. **Lit Review** — landscape analysis, key papers, gaps
 2. **Topology** — dependency graph (D3 visualization once implemented)
 3. **Model** — formalization, equations, interactive dashboard
 4. **Data** — empirical pipeline + findings
 5. **Build** — useful artifact (tool / component / site addition)
+6. **Writeup** — long-form synthesis of the whole pipeline for an educated lay reader; defines acronyms before use, contains its own TLDR, surfaces the headline findings without technical jargon
 
 Each stage:
 
@@ -75,7 +74,9 @@ Each stage:
 - Has a refinement log (REFINEMENT / WHY / CHANGES) showing iteration history
 - Feeds the next stage as input
 
-Raw working drafts live in `stage_outputs/<topic>/<stage>.md` (kebab-case topic slug, stage filename one of `lit-review`, `topology`, `model`, `data`, `build`). Polished versions move into `src/content/ai_research/<topic>/<stage>.mdx`.
+Raw working drafts live in `stage_outputs/<topic>/<stage>.md` (kebab-case topic slug, stage filename one of `lit-review`, `topology`, `model`, `data`, `build`, `writeup`). Polished versions move into `src/content/ai_research/<topic>/<stage>.mdx`.
+
+The topic-level `overview.mdx` is **not written during the pipeline** — it is produced (or revised) only after all six stages are complete, since the writeup itself supersedes the overview as the canonical synthesis.
 
 A topic's stage-3 model can be **promoted** to `/models` when polished — copy the formalization to a new `src/content/models/<slug>.mdx` entry.
 
@@ -85,8 +86,7 @@ Active topics — folders exist in `src/content/ai_research/` and `stage_outputs
 
 | Topic slug | Title | Furthest stage |
 |---|---|---|
-| `social-output-efficiency` | Social Environment Output Efficiency | scaffold only |
-| `human-psych-variation` | Psychology of Individual Differences | build (pass 1) |
+| `human-psych-variation` | Psychology of Individual Differences | writeup (pass 1) |
 
 Planned topics (full list in `prompts.md`): philosophy → personal decisions; philosophy → organizations; philosophy of mind / ethics / epistemology; evolution-modernity mismatch; navigating an AI world; emotions architecture; meaning & spirituality; bedrock generating functions; AI decompression; information fidelity; trust architecture; parent-child transmission; technology utilization architecture; prediction & calibration; AI cognitive profile. Each spins up its own folder pair when started.
 
@@ -103,7 +103,7 @@ Each dashboard ships in two tiers:
 
 **Private tier** exists only for dashboards where Teddy's actual data is the point (life metrics, ongoing trackers). Cloudflare Access in front, build-time data fetch from a private source.
 
-Initial dashboard candidates: decision-tracker, finance, emotional-wellbeing, social-environment-output (promoted from the AI Research pipeline).
+Initial dashboard candidates: decision-helper, finance, emotional-wellbeing.
 
 ## Papers and PDFs
 
@@ -155,6 +155,7 @@ Word documents (.docx) should be converted to PDF before upload (Word: File → 
 - **2026-04-28**: `human-psych-variation` model stage (pass 5) — final math-pedantry audit. Three small fixes: §3.3 was overstating the 2·Cov(A_d, A_i) cross-term by treating the AM-coupling parameter k as ≈ 1 when it is empirically 0.1–0.5; §12 Crux C2 still referenced "Crow–Felsenstein fixed point" though pass-4 had moved the dashboard to a one-shot partition; §7 Objection 2 response replaced ambiguous "within 30–50% of" with trait-specific SNP-h²-as-fraction-of-twin-h² numbers (height ~85%, cognition ~50–70%, EA ~30–40%). After pass 5 the model formalization is at the level of polish where further refinement would be diminishing returns; stage is ready for handoff to data pipeline (Stage 4).
 - **2026-04-28**: `human-psych-variation` data stage (pass 1) shipped — curated CSV-based empirical pipeline that confronts the model's six predictions with published consortium estimates. Inputs in `stage_outputs/human-psych-variation/data/` (heritability_estimates.csv, wilson_curve_cognition.csv, sex_differences_panel.csv, pgs_portability.csv, sources.csv); analysis in `pipeline.py`; published as `src/content/ai_research/human-psych-variation/data.mdx` with a six-tab interactive findings panel at `src/components/ai-research/PsychVariationData.tsx`. Five predictions hold cleanly (AM partition, Wilson curve, equicorrelated D vs disattenuated, PGS portability replication of Ding 2023 r=-0.95, xAM inflation Border 2022 R²=0.74); H1 method gradient is "mixed" because cross-paper estimates from different cohorts/methods don't satisfy strict ordering, while within-paper Howe 2022 holds. Numbers are web-verified against primary-source URLs (Polderman 2015, Howe 2022, Okbay 2022, Kong 2018, Border 2022, Horwitz 2023, Wainschtein 2022/2025, Ding 2023, Del Giudice 2012, Yengo 2022, Bouchard 2013).
 - **2026-04-28**: `human-psych-variation` build stage (pass 1) shipped — reader's tool that translates the model formalization (seven variance components) and data pipeline (eight prediction tests) into a plain-language artifact for someone who wants to understand how and why people differ. Five views in `src/components/ai-research/PsychVariationExplorer.tsx`: trait lookup (10 traits across cognition / personality / psychiatric / attitudes / physical, each with three plain-language buckets — Direct genes / Family setup / Environment + chance — plus key environmental levers, two trap callouts, one take-away, primary sources), the four motivated-reasoning traps materialized from topology Variant D (D1 blank-slate, D2 hereditarian, D3 gender-similarities, D4 pop-evpsych — each with what they cite correctly + what they ignore + integrated reading), the asymmetric environmental-effects forest plot (severe insults cost 10–30 IQ pts; enrichment yields 1–5 pts; this is the single most action-relevant insight in the topic), three "heritability ≠ destiny" misreadings with worked examples, and seven take-aways calibrated to mainstream behavior-genetics consensus in 2026. Variance bucket numbers per trait are computed from the Stage-4 CSV (h²_observed, V(A_LD)/h² share from H2 partition, V(A_i) = (β_i/β_d)²·V(A_d) per pass-5 of the model). No new chart libs, only existing tailwind+SVG palette. Build artifact lives at `/ai-research/human-psych-variation/build`; the model dashboard and data findings panel remain as the technical/parametric layer.
+- **2026-04-29**: Front-page trim. (1) `/updates` is now a "coming soon" placeholder — the page no longer lists entries and the home column shows a single coming-soon line. The existing weekly note still exists at `/updates/2026-04-week-17` as a deep link but is dropped from listings. (2) Models roster trimmed from 5 to 3 — kept option value, suffering salience, parental decision-making; removed `trust-tracker` and `social-output-efficiency` (the latter's AI Research scaffold was also removed). (3) Dashboards trimmed from 4 to 3: decision-tracker renamed to `decision-helper` with a plain-language description ("helps make complex decisions better by breaking them down qualitatively"), emotional-wellbeing description simplified ("helps you recognize and take action on your emotional needs"), social-environment removed. (4) Project Iceberg now surfaces `MIT` (its `venue`) on the home Research column. (5) Home masthead: `Wright` is no longer italic-light — it now matches `Teddy`'s display semibold. (6) Bio rewritten to a first-person blurb covering CS+Econ undergrad, Dec 2027 expected graduation, PhD targets (HCI / information science / computational social science), and the breadth of writing topics.
 - **2026-04-28**: `human-psych-variation` data stage (pass 6) — gap scan. On a final reread, one substantive coverage gap surfaced: the model formalization explicitly names V(I) (G×E + G×G + G×age interaction terms) in its generating function, with the falsifiable claim "V(I) is small at PGS-by-environment scale; large only at extreme environmental insults." All five prior passes tested A_d, A_i, A_LD, E_m — but never V(I). Added gxe_interactions.csv with web-verified Tucker-Drob & Bates 2016 numbers (US a'=0.074, SE 0.020, p<.0005; non-US a'=−0.027, SE 0.022, n.s.; pooled a'=0.029, SE 0.019, n.s.; 43 effect sizes / 24,926 pairs / 14 studies / ~50k individuals); plus Turkheimer 2003 anchor (h²=0.10 low-SES → 0.72 high-SES) and Spengler 2018 German null replication. Added H8 prediction + 8th tab to React component (Scarr-Rowe forest plot of a' coefficients with 95% CI bands above Turkheimer's h²-by-SES bars). Verdict "supported_conditional" — the cross-national heterogeneity is the empirical confirmation of the threshold-conditional V(I) reading. After 6 passes the data stage tests every model-named variance component except E_s (residual stochastic noise, untestable by construction) and μ(t) (population-mean trajectory, partly captured by H3's Wilson curve).
 - **2026-04-28**: `human-psych-variation` data stage (pass 5) — cross-stage error check + housekeeping + cell labeling. Pass 4's psychiatric-m correction created an internal inconsistency between stages 3 and 4: the model dashboard's psychopathology m_default was still 0.20 while the data stage now reports SCZ/ADHD/autism at 0.45 and BIP/MDD at 0.15–0.18. Bumped model dashboard psychopathology m_default from 0.20 → 0.30 with an inline comment about the AM heterogeneity (users testing AM-strong should slide to 0.45, AM-weak to 0.15). Synced the data.md working draft to current data.mdx state (was two passes behind). Improved opaque "assumed" CSV cell labels into assumption-type-explicit names ("assumed_no_WF_GWAS_at_scale" for psychiatric β_i/β_d; "extrapolated_from_EA_WF_and_EA_IQ_rg" for IQ within-family h² with the arithmetic shown in notes). After 5 passes the data stage is at diminishing returns; remaining "open" items (cell-by-cell audit of 18×20 CSV, individual-level Ding 2023 replication, full Border γ̂ verification across alternative AM dynamics models) require capabilities outside a content-site pipeline.
 - **2026-04-28**: `human-psych-variation` data stage (pass 4) — error check + crux follow-through + readability. Pass 3 named D1 (cell-level extraction correctness) as the most consequential pipeline crux but didn't audit. Spot-checking the four psychiatric m values cited as "Nordsletten_2016_imputed" surfaced a real correction: web-verified Nordsletten 2016 reports tetrachoric spousal correlations >0.40 for schizophrenia, ADHD, and autism (and 0.14–0.19 for affective disorders), but my CSV had m=0.30 for all the AM-strong disorders. Updated heritability_estimates.csv: SCZ/ADHD/autism m 0.30→0.45, bipolar 0.20→0.18, MDD unchanged. The H2 partition shares lift correspondingly: SCZ V(A_LD)/h² 24%→36%, ADHD 22%→33%, autism 24%→36% — the substantively new reading is that ~1/3 of additive genetic variance for severe psychiatric conditions is structural AM-LD rather than independent direct biological signal. Also rewrote the H1 panel visualization as SVG-per-row (4 colored circles at the actual h² values along a 0–1 axis, with a grey range bar showing cross-paper noise width and a sienna/muted marker at the trait label indicating whether predicted ordering holds) — replaces the unreadable 6%-opacity bars and 1px ticks of passes 1–3.

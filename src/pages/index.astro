@@ -15,9 +15,6 @@ const writing = (await getCollection('blog', ({ data }) => !data.draft))
 const research = (await getCollection('research'))
   .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
 
-const updates = (await getCollection('updates', ({ data }) => !data.draft))
-  .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
-
 const models = (await getCollection('models')).sort((a, b) => {
   const livedDelta = Number(b.data.status === 'published') - Number(a.data.status === 'published');
   if (livedDelta !== 0) return livedDelta;
@@ -28,7 +25,7 @@ const models = (await getCollection('models')).sort((a, b) => {
 
 // AI's Research topics — group MDX entries by topic folder
 const aiAll = await getCollection('ai_research');
-const stageOrder = ['lit-review', 'topology', 'model', 'data', 'build'] as const;
+const stageOrder = ['lit-review', 'topology', 'model', 'data', 'build', 'writeup'] as const;
 type StageEntry = { id: string; status: string };
 const topicMap = new Map<
   string,
@@ -68,7 +65,7 @@ const statusToLabel = (status: string) =>
         <div>
           <h1 class="font-display font-semibold text-[64px] sm:text-[76px] text-ink leading-[0.92] m-0"
               style="letter-spacing: -0.035em">
-            Teddy <span class="italic font-normal">Wright</span>
+            Teddy Wright
           </h1>
         </div>
         <div>
@@ -130,7 +127,7 @@ const statusToLabel = (status: string) =>
                 </a>
               </h4>
               <div class="font-serif italic text-[13px] text-muted leading-[1.4]">
-                {statusToLabel(r.data.status)}{r.data.collaborators?.length
+                {statusToLabel(r.data.status)}{r.data.venue ? ` · ${r.data.venue}` : ''}{r.data.collaborators?.length
                   ? ` · with ${r.data.collaborators[0]}${r.data.collaborators.length > 1 ? ' et al.' : ''}`
                   : ''}
               </div>
@@ -199,23 +196,9 @@ const statusToLabel = (status: string) =>
       {/* Column 3 — Updates + Dashboards */}
       <div>
         <SectionLabel label="Updates" href="/updates" />
-        {updates.map(u => (
-          <article class="mb-4">
-            <div class="font-serif italic text-[13px] text-muted mb-[3px]">
-              {fmt(u.data.date)} · {u.data.period}
-            </div>
-            <h3 class="font-serif text-[15px] font-semibold m-0 mb-1 text-ink leading-[1.3]">
-              <a href={`/updates/${u.slug}`}
-                 class="text-ink no-underline hover:text-accent transition-colors">
-                {u.data.title}
-              </a>
-            </h3>
-            {u.data.description && (
-              <p class="font-serif text-[13px] text-muted m-0 leading-[1.5]"
-                 style="text-wrap: pretty">{u.data.description}</p>
-            )}
-          </article>
-        ))}
+        <div class="font-serif italic text-[13px] text-muted">
+          coming soon — short notes on what I'm reading, working on, and thinking about.
+        </div>
 
         <div class="mt-8">
           <SectionLabel label="Dashboards" href="/dashboards" />
