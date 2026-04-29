@@ -32,7 +32,8 @@
 │   │   ├── models/                      ← React components for interactive models
 │   │   │   └── OptionValueDashboard.tsx
 │   │   └── ai-research/                 ← React components for AI-research stage visualizations
-│   │       └── PsychVariationGraph.tsx  ← topology graph (force-directed via d3-force)
+│   │       ├── PsychVariationGraph.tsx  ← topology graph (force-directed via d3-force)
+│   │       └── PsychVariationModel.tsx  ← model dashboard (variance decomposition + multivariate sex-difference tabs)
 │   ├── content/
 │   │   ├── blog/<slug>.mdx              ← essays
 │   │   ├── research/<slug>.mdx          ← formal research entries

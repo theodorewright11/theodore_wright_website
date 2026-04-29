@@ -1,31 +1,298 @@
 ---
 title: 'Model'
-description: 'Formalization of the variance decomposition for psychological traits — direct genetic, indirect (genetic nurture), AM-induced, shared and non-shared environment, stochastic, gene-environment covariance, interactions — parameterized by trait, age, and method.'
+description: 'Generating function for human psychological variation. One equation per person; variance decomposition follows. Closed-form pieces: Crow–Felsenstein AM inflation, Wilson-Effect saturation, genetic-nurture additive split, multivariate sex-difference Mahalanobis D. Twin / SNP / within-family heritability are projections of the same decomposition. Interactive dashboard included.'
 date: 2026-04-28
-status: not-started
-refinementPass: 0
+status: in-progress
+refinementPass: 1
+refinementLog:
+  - pass: 1
+    date: '2026-04-28'
+    passes: ['decomposition', 'generating function', 'integration', 'gap scan']
+    why: 'First draft of the formalization. Pulled the spine equation, AM inflation, Wilson curve, and multivariate-D algebra out of the topology handoff and wrote them as a single coherent generating function. Built the interactive dashboard so the reader can dial parameters across both modules.'
+    changes:
+      - 'Wrote master equation: P_i = A_d + A_i + A_LD + C + E_m + E_s + I + μ(t)'
+      - 'Decomposed V(P) with explicit Cov(A_d, A_i), Cov(A_d, E_m), Cov(A_d, C) cross-terms (block-orthogonal, not orthogonal)'
+      - 'Closed-form 1: Crow–Felsenstein V_A* = V_A / (1 − r_δ), with r_δ ≈ m·h²'
+      - 'Closed-form 2: Wilson saturation h²(t) = h²_∞ − (h²_∞ − h²_0)·exp(−kt)'
+      - 'Closed-form 3: Genetic-nurture additive split, β_i/β_d ≈ 0.3–0.5 for EA'
+      - 'Module B: Mahalanobis D² = (μ_F − μ_M)ᵀ Σ⁻¹ (μ_F − μ_M); equicorrelated case D² = d²·n/(1+(n−1)ρ̄)'
+      - 'Method gradient identities: twin h² ≥ SNP h² ≥ within-family h² with each estimator picking up a different subset of components'
+      - 'Boundary conditions: severe psychiatric tail, L4 between-pop firewall, environmental thresholds, AM equilibrium, individual-level (L1)'
+      - 'Distortion-aware reading: term-by-term failure modes for each component'
+      - 'Interactive dashboard with two tabs (variance decomposition + multivariate sex-difference)'
 ---
 
-> Pipeline status: not yet generated. Run **Step 3** of the LLM Iterate prompt with the topology as input.
+import PsychVariationModel from '../../../components/ai-research/PsychVariationModel';
 
-## What this stage will produce
+## TLDR
 
-Primary target (from the topology handoff):
+The topology answered "what depends on what?". The formalization answers a sharper question: **given a person, where does their phenotype come from in expectation?** The answer is a single generating function that, once written down, dissolves several apparent paradoxes in the field — most importantly the gap between twin heritability, SNP heritability, and within-family heritability (they estimate different sums of the same underlying components, and the differences are informative).
 
-- **Variance decomposition equation**:
-  `V(P) = V(A_direct) + V(A_indirect) + V(A_AM-LD) + V(C_residual) + V(E_measured) + V(E_stochastic) + 2·Cov(G,E) + V(GxE)`
-- **Method gradient**: twin h² ≥ SNP h² ≥ within-family h², with the gaps decomposable into AM, rGE, and rare-variant components
-- **Wilson-effect curve**: `h²(age)` saturation form driven by active rGE (G1)
-- **Multivariate sex-difference algebra**: `D² = (μ₁ - μ₂)ᵀ Σ⁻¹ (μ₁ - μ₂)` with worked example showing how D = 2.71 emerges from moderate univariate ds + positive-correlation Σ
-- **PGS-portability decay function**: prediction accuracy as a function of genetic distance from training population
+The spine of this stage is one equation. Phenotype `P` for a person in a population is `P = A_d + A_i + A_LD + C + E_m + E_s + I`, with each term a contribution from a distinct mechanism: direct genetic effects from the person's own transmitted alleles, indirect genetic effects from parental (and broader-family) genomes operating through the environment they create, assortative-mating-induced linkage among causal variants, residual shared environment, measured non-shared environment, stochastic developmental noise, and gene-environment interaction terms. Variance decomposition follows directly: `V(P) = V(A_d) + V(A_i) + V(A_LD) + V(C) + V(E_m) + V(E_s) + 2·Cov(G,E) + V(I)`. Three closed-form pieces drop out — the Crow–Felsenstein assortative-mating inflation factor `V_A* = V_A / (1 − r_δ)`, the Wilson-Effect saturation curve `h²(t) = h²_∞ − (h²_∞ − h²_0)·e^(−kt)`, and the method gradient that says twin h² ≥ SNP h² ≥ within-family h² with the gaps decomposable into AM-LD, indirect-genetic, and rare-variant pieces.
 
-Plus an interactive dashboard (slider/number/visual) letting the user dial trait, age, population, and method to see the decomposition shift.
+A second module handles the multivariate sex-difference algebra, because the single largest framing trap in this field is the gap between univariate Cohen's d (typically 0.2–0.6 across personality dimensions) and the multivariate Mahalanobis distance `D² = Δμᵀ·Σ⁻¹·Δμ` (which can hit 2.7 when traits are weakly correlated and you stack 15 of them, as in Del Giudice 2012). The same data, two numbers, opposite-sounding stories — both correct. The formalization makes the bridge explicit so the reader can dial univariate d's and inter-trait correlations and watch D move.
 
-## What is *not* ready for formalization yet
+What this stage **does not** formalize: the Plomin/Turkheimer interpretation of polygenic scores (verbal disagreement, no candidate equation), the mechanism behind the Gender Equality Paradox (three live hypotheses with no shared formalism), and the magnitude of AM-correction across the full cross-disorder genetic-correlation matrix (active research, methods just emerging). These remain at the observation stage; premature math here would mask uncertainty rather than reduce it. The L4 Lewontin firewall is preserved as a structural property of the model: the entire generating function is within-population, and nothing in it licenses between-population mean inference.
 
-- O1 (PGS interpretation: Plomin vs Turkheimer) — verbal disagreement, not yet a formal one
-- O3 (GEP mechanism) — algebra of "innate-expression release" not yet specified
-- O6 (what non-shared environment is) — no candidate decomposition
-- O7 (AM-correction magnitude across cross-disorder rg matrix) — empirical question pending
+<PsychVariationModel client:load />
 
-Premature math here would mask uncertainty. Stay observational.
+## 1. Move I'm making
+
+This stage is a **decomposition + generating function + integration**, in that order:
+
+- **Decomposition** — orthogonalize phenotypic variance into mechanism-specific components, with explicit non-orthogonal `Cov(G,E)` and interaction terms as the principled exceptions.
+- **Generating function** — write the per-person phenotype as a deterministic function of those components plus stochastic noise. The variance decomposition follows by taking `V(·)` of the generating function.
+- **Integration** — show that twin, SNP, and within-family heritability estimators are projections of the same underlying decomposition onto different observable subspaces. The Wilson Effect, AM inflation, and genetic-nurture findings then read as motion of those projections, not as separate phenomena.
+
+What's **not** ready: anything in the topology marked O (open), and the polygenic-score causal-vs-summary debate, where the underlying disagreement isn't yet a formal one.
+
+## 2. The generating function
+
+For a single person `i` in a population at developmental time `t`, sampled from a stable mating regime:
+
+```
+P_i(t) = A_d,i + A_i,i + A_LD,i + C_i + E_m,i + E_s,i + I_i  +  μ(t)
+```
+
+| Term | Mechanism | Source identity |
+|---|---|---|
+| `A_d` | **Direct genetic** — additive effect of person's own transmitted causal alleles, evaluated as if mating were random | `Σ_k β_k · g_{ik}` over causal SNPs k |
+| `A_i` | **Indirect genetic** (genetic nurture) — additive effect of parents' (and extended-family) genotypes operating through the rearing environment | parents' PGS × environmental transmission coefficient |
+| `A_LD` | **Assortative-mating LD inflation** — additional additive variance induced by linkage among causal variants from non-random mating | scales `A_d` by `1/√(1 − r_δ)` at AM equilibrium |
+| `C` | **Shared environment residual** — environmental effects shared by siblings *not already captured* by `A_i`. Adult personality: ~0. Education / religiosity / politics: nonzero |
+| `E_m` | **Measured non-shared environment** — identifiable causes (lead, schooling, head injury, peer composition, nutrition) | each enters with a measured causal coefficient, e.g. lead: β ≈ −6.2 IQ pts per 1–10 µg/dL |
+| `E_s` | **Stochastic developmental noise** — unmeasured non-shared variance: developmental contingencies, immune/microbial, microscale neural variation, measurement error | the unmodeled residual; ~50% of personality variance |
+| `I` | **Interaction terms** — `G×E`, `G×G` (epistasis), `G×age`. As of 2025 evidence, generally small at PGS-by-environment scale; large only at extreme environmental insults | residual non-additivity |
+| `μ(t)` | **Population mean at age t** — not a person-level term but the developmental trajectory the person grows through | calibrated to age-norm tables |
+
+**Why this form**: this is the additive-decomposition default of quantitative genetics extended with the two corrections that the 2018–2025 literature has installed into the field — separating `A_d` from `A_i` (Kong 2018, Young 2022) and separating `A_d` from `A_LD` (Border 2022, Yengo 2018, Wainschtein 2025). Earlier formulations folded `A_i` into `A_d` and `A_LD` into `A_d` and got the wrong answer about how much of the population-level genetic signal is direct biological causation. The within-family literature is what made these terms separately estimable.
+
+### 2.1 Variance decomposition
+
+Taking variance of the generating function and tracking the cross-terms:
+
+```
+V(P) = V(A_d) + V(A_i) + V(A_LD)
+     + V(C) + V(E_m) + V(E_s)
+     + 2·Cov(A_d, A_i)        ← genetic nurture is correlated with direct effects (parents pass both)
+     + 2·Cov(A_d, E_m)        ← active rGE: people select environments matching propensities
+     + 2·Cov(A_d, C)           ← passive rGE residual (small once A_i is split out)
+     + V(I)
+```
+
+The off-diagonal `Cov` terms are why "orthogonal decomposition" is the wrong frame for this system. The system is **block-orthogonal**: the additive components are roughly orthogonal *to the residual environment* but not *to each other*, and the cross-terms are the formal home of every gene-environment correlation finding in the literature. Pretending they're zero is the single most common modeling error.
+
+### 2.2 Heritability identities
+
+Three quantities are estimable from data; each picks up a different subset of the variance terms.
+
+| Estimator | What it estimates | Picks up |
+|---|---|---|
+| **Twin h²** (`2·(rMZ − rDZ)`) | Total additive genetic variance under EEA + random-mating assumption | `V(A_d) + V(A_i) + V(A_LD) + 2·Cov(A_d, A_i)` |
+| **SNP h²** (GREML, LDSC) | Common-variant additive genetic variance | `V(A_d, common) + V(A_LD, common)` (excludes `A_i` fully, excludes rare variants) |
+| **Within-family h²** (sib-FE, MZ-discordant, trio designs) | Direct additive genetic variance | `V(A_d)` (or `V(A_d) + V(A_d, rare)` with WGS) |
+
+This is the **method gradient** (S2 in the topology). Concretely:
+
+```
+twin h²  ≥  SNP h² (with Wainschtein 2025 adjustment for rare variants)  ≥  within-family h²
+```
+
+The gaps are not measurement error — they are the data's way of telling you how much of "heritability" is `A_i`, how much is `A_LD`, and how much depends on rare variants common-variant arrays don't tag.
+
+For educational attainment in 2025: twin h² ≈ 0.40, SNP h² ≈ 0.25 (common-variant, LDSC), within-family additive ≈ 0.15. The gap between twin and within-family (0.25) is the AM-LD plus genetic-nurture contribution. The gap between WGS-h² and SNP-h² is rare-variant contribution.
+
+## 3. Closed-form pieces
+
+Three components admit clean equations. The rest are calibrated empirically.
+
+### 3.1 Assortative-mating inflation (Crow–Felsenstein)
+
+For a polygenic trait under cross-spouse phenotypic correlation `m` and (single-generation) heritability `h²`, the spousal correlation among the genetic component is:
+
+```
+r_δ ≈ m · h²
+```
+
+At AM equilibrium (reached in ~5–10 generations of stable assortment), the additive genetic variance inflates by:
+
+```
+V_A* / V_A  =  1 / (1 − r_δ)
+```
+
+Worked example — educational attainment in modern populations: `m ≈ 0.4`, base `h² ≈ 0.25`, so `r_δ ≈ 0.10`, equilibrium inflation factor ≈ `1.11`. For height: `m ≈ 0.25`, `h² ≈ 0.7`, `r_δ ≈ 0.18`, inflation ≈ `1.21` — matches the 14–23% empirical inflation Border et al. and Yengo et al. report for SNP-h² of height.
+
+Cross-trait AM (`m_xy ≠ 0`) extends the same logic to off-diagonal entries of the genetic-covariance matrix and is the formal reason E7 finds `R² = 0.74` between phenotypic-cross-mate correlations and genetic-correlation estimates.
+
+### 3.2 Wilson-Effect saturation curve
+
+Heritability of cognitive ability rises with age because active rGE (G1) compounds: as children gain agency, they select environments matching their genetic propensities, amplifying genetic variance and shrinking shared environment. A simple two-parameter form fits Bouchard 2013 and Briley & Tucker-Drob 2013 well:
+
+```
+h²(t) = h²_∞ − (h²_∞ − h²_0) · exp(−k·t)
+```
+
+With `h²_0 ≈ 0.20` (age 5), `h²_∞ ≈ 0.80` (asymptote by ~age 20), and `k ≈ 0.15/year`, the curve crosses 0.50 around age 9–10 and saturates by age 20. The shared-environment trace runs the inverse path:
+
+```
+c²(t) = c²_0 · exp(−k_c · t),     with c²_0 ≈ 0.30, k_c ≈ 0.18/year
+```
+
+Both formulas are phenomenological; the exponent `k` is not a primitive and varies by trait. For Big Five personality traits, `h²` is roughly flat across adulthood (no Wilson rise), so `k_personality ≈ 0`.
+
+### 3.3 Genetic-nurture decomposition (additive form)
+
+Define `g_T` as the offspring's transmitted-allele PGS and `g_NT` as the parental non-transmitted-allele PGS. Then:
+
+```
+A_d = β_d · g_T
+A_i = β_i · g_NT
+```
+
+Empirically (Kong 2018, Wang 2021, Okbay 2022, Howe 2022):
+
+```
+β_i / β_d ≈ 0.3 – 0.5  (educational attainment)
+β_i / β_d ≈ 0.0 – 0.1  (height, BMI)
+β_i / β_d ≈ 0.4 – 0.6  (cognitive performance)
+```
+
+The variance contribution from indirect effects, accounting for their correlation with direct effects via parents passing both:
+
+```
+V(A_i) + 2·Cov(A_d, A_i)  ≈  V_PGS,population − V_PGS,within-family
+```
+
+This is the single equation that turns "missing heritability after within-family correction" from a puzzle into a measurement. The right-hand side is now directly observable for any trait with both population-level and within-family GWAS at scale.
+
+### 3.4 Multivariate sex-difference algebra (Module B)
+
+For a trait vector `x` with covariance matrix `Σ` and group means `μ_F, μ_M`, the multivariate effect size is the Mahalanobis distance:
+
+```
+D² = (μ_F − μ_M)ᵀ · Σ⁻¹ · (μ_F − μ_M)
+```
+
+For uncorrelated traits with equal univariate effect sizes `|d|`, `D² = n·d²` so `D = d·√n`. For correlated traits, the inverse covariance structure either amplifies or shrinks `D` depending on whether sex-difference vectors are aligned with high-variance or low-variance directions of `Σ`.
+
+**Worked example.** Take 15 personality dimensions (16PF), univariate `|d| ≈ 0.5` on average, with positive inter-trait correlations averaging `ρ ≈ 0.20`. Then approximately:
+
+```
+D² ≈ d² · 1ᵀ · Σ⁻¹ · 1
+   ≈ d² · n / (1 + (n − 1)·ρ̄)        if Σ has a constant-correlation structure
+   ≈ 0.25 · 15 / (1 + 14·0.20)
+   ≈ 0.25 · 3.95
+   ≈ 0.99
+   D ≈ 1.0
+```
+
+To recover Del Giudice 2012's `D = 2.71` you need either larger univariate `d`s, lower inter-trait correlations, or — what actually drives the result — sex-difference vectors that don't align with the principal components of `Σ`. The intuition: if men and women differ on dimensions that are *uncorrelated* with each other, every dimension contributes independent information, and `D` grows with `√n`. If they differ on correlated dimensions, the differences carry redundant information and `D` plateaus.
+
+**Why this matters for distortions.** D3 (the "gender similarities" framing) cites univariate `d ≈ 0.05` for math performance and reads it as evidence of broad similarity. D4 (pop-evpsych framing) cites multivariate `D ≈ 2.71` and reads it as evidence of broad difference. Both citations are correct. The bridge equation shows that they are about different objects: a single dimension vs. a 15-dimensional space. Anyone who hasn't internalized this algebra can be silently captured by either framing.
+
+### 3.5 PGS portability decay (deferred)
+
+Topology Variant C: `accuracy(distance)` calibration from Ding et al. 2023 (`r = −0.95` between genetic distance and PGS R² across 84 traits) is a clean candidate for closed-form. Deferred to a future tool because it sits at the population-genetics boundary rather than the within-population generative process this stage formalizes. Listed as a follow-up.
+
+## 4. Composing the parts
+
+Putting (3.1), (3.2), and (3.3) together gives a single function that takes (trait class, age, AM correlation, genetic-nurture ratio, rare-variant share) and returns a method-corrected variance decomposition. In the dashboard above this is the first panel.
+
+```
+Inputs:
+  trait_class ∈ {cognitive, personality, psychopathology}    (sets defaults)
+  age ∈ [5, 80]                                              (Wilson curve)
+  m  ∈ [0, 0.6]                                              (spousal phenotypic correlation)
+  ratio_i = β_i / β_d  ∈ [0, 0.6]                            (genetic nurture)
+  share_rare ∈ [0, 0.3]                                      (rare-variant fraction)
+
+Outputs:
+  V(A_d), V(A_i), V(A_LD), V(C), V(E_m + E_s)               (stacked bar)
+  twin h², SNP h², within-family h²                         (three numbers)
+  AM inflation factor 1 / (1 − m·h²)                         (single number)
+```
+
+Three sanity-check anchors the dashboard preserves:
+
+1. **EA at age 25, m = 0.4**: twin h² ≈ 0.40, SNP h² ≈ 0.25, within-family h² ≈ 0.15. AM inflation ≈ 1.11.
+2. **IQ at age 5 vs age 25**: V(C) drops from ~0.30 to ~0.05; V(A_d) rises from ~0.20 to ~0.55.
+3. **Big Five across adulthood**: V(C) ≈ 0, V(A_d) ≈ 0.40, V(A_i) ≈ 0.05, V(E_s) ≈ 0.50 — flat across age.
+
+## 5. Boundary conditions and where the model breaks
+
+The generating function is correct only inside its scope. Five boundaries are explicit:
+
+1. **Severe psychiatric tail.** The hyperpolygenic `A_d = Σ β_k g_{ik}` form assumes thousands of small effects. For early-onset autism with intellectual disability, single rare variants (CHD8, SCN2A) can carry effects of d > 1.0. The decomposition still works component-by-component but `A_d` becomes dominated by a small number of large-effect alleles — effectively Mendelian rather than polygenic. The model should either widen its prior on individual `β_k` or hand off to a separate Mendelian module at the tail.
+
+2. **Between-population mean differences (L4 firewall).** Every term in the generating function is defined within a population at a stable mating regime. The model is structurally silent on between-population means: there is no `μ_pop` term to compare. Computing `D² = (μ_pop1 − μ_pop2)ᵀ Σ⁻¹ (μ_pop1 − μ_pop2)` is mathematically possible but requires assuming `Σ_pop1 = Σ_pop2` and equal causal architecture across populations — neither of which is empirically supported (Ding 2023's PGS-portability collapse is the empirical evidence that the assumption fails). This is the L4 / Lewontin firewall encoded directly into model scope.
+
+3. **Severe environmental insults.** `V(I)` (interaction) is small at PGS-by-environment scale but large when environments cross threshold (lead, alcohol, severe deprivation, iodine). The additive decomposition under-fits at thresholds. Use the model in the normal range; switch to an explicit threshold-effect model at the extreme.
+
+4. **Non-equilibrium AM.** The Crow–Felsenstein formula assumes AM has reached equilibrium. For populations under rapidly changing assortment regimes (e.g. rapid shifts in educational stratification), the inflation factor is en-route to the equilibrium value, not at it. Use the formula as an upper bound under those conditions.
+
+5. **Individual-level inference (L1).** `V(A_d)` is a population variance. For a single person, `A_d` is a realization, not a partition. Statements like "70% of this individual's intelligence is genetic" do not type-check against the model. The dashboard exposes population variance only.
+
+## 6. Distortion-aware reading
+
+Each component of the decomposition has a public-discourse failure mode. The model's job is to make the failure visible, not to suppress it.
+
+| Component | Common misreading | What the model says |
+|---|---|---|
+| `V(A_d)` (high) | "Genes determine outcomes" | Population variance. Says nothing about a specific person's prospects. |
+| `V(A_i)` (large) | "Family environment doesn't matter" | The opposite: this term *is* family environment, mediated by parental genotypes that correlate with parental phenotypes. |
+| `V(A_LD)` | Usually invisible to public discourse | Inflates `V(A_d)` by ~10–25% in twin studies; a chunk of "genetic" effect is structural, not biological. |
+| `Cov(A_d, E_m)` (active rGE) | "People shape their environments" → therefore environments don't matter | They matter — the covariance term *is* their effect, just non-orthogonal to genes. |
+| Twin h² ≥ within-family h² | "Twin studies overestimate" | They estimate a different quantity (population additive variance vs. direct effect). Both are real. |
+| Multivariate `D` large | "Sexes are categorically different" | `D` is a distribution distance; individuals across the distributions still overlap substantially. Dimensional, not taxonic. |
+| Univariate `d` small | "Sexes are essentially the same" | True for the dimension cited, false in the multivariate space. |
+
+D1 and D2 (the two heaviest distortions) both operate by selecting a subset of these readings. The model doesn't resolve the political dispute, but anyone running the dashboard should be able to see why each side is technically correct about the term they're highlighting and incomplete about the rest.
+
+## 7. Open questions that the model exposes (Stage-4 inputs)
+
+The formal apparatus makes four open questions sharper than verbal discussion alone:
+
+- **O1 (PGS interpretation).** The decomposition treats `β_d · g_T` as a direct genetic term. Plomin's "PGS is a real biological cause" reading takes `β_d` as a structural causal coefficient. Turkheimer's "PGS is a summary of correlated environments" reading says `β_d` is contaminated by uncontrolled `Cov(A_d, E_m)`. The two interpretations make different predictions about how `β_d` should change under environmental intervention. **Stage 4 question**: for traits with large enough within-family GWAS, does `β_d, within-family` move under intervention (schooling reform, nutrition shifts) the way Plomin predicts (it shouldn't) or the way Turkheimer predicts (it should)?
+
+- **O3 (Gender Equality Paradox).** The multivariate algebra in 3.4 shows that `D` depends on the inter-trait correlation structure `Σ`. If `Σ` differs between high-equality and low-equality societies, `D` will differ even if univariate `μ_F − μ_M` differences are fixed. **Stage 4 question**: does `Σ` (the personality covariance matrix itself) change across societies, or only the means? This is a different empirical question than "are the differences innate."
+
+- **O6 (what `E_s` actually is).** The model treats stochastic developmental noise as an unmodeled residual. As Stage 4 data accumulates, candidates (immune/microbial, peer-network, epigenetic, measurement error) can be peeled off into `E_m` and the residual `E_s` should shrink. **Stage 4 question**: how much of the current ~50% personality `E_s` can be moved into `E_m` given current measurement panels?
+
+- **O7 (cross-disorder rg post-AM correction).** Module 3.4's bridge between cross-trait phenotypic correlations and genetic correlations under AM (Border 2022, LAVA-Knock 2024) gives a formal correction. **Stage 4 question**: applied at scale to the full psychiatric-disorder rg matrix, what fraction of the cross-disorder genetic correlations survive the correction?
+
+The two questions deferred from Section 1 (PGS portability and the GEP causal mechanism) are **not** sharpened by the model — they require new measurement, not new math.
+
+## 8. Handoff to Stage 4 (data pipeline)
+
+The model defines five parameter sets that Stage 4 needs to populate:
+
+| Parameter | Source | Trait coverage |
+|---|---|---|
+| `β_d, β_i` | Within-family GWAS (Howe 2022, Okbay 2022) | EA, height, BMI, cognitive ability, depressive symptoms, smoking — extending |
+| `m` (cross-spouse phenotypic correlation) | UK Biobank, HUNT, MoBa | EA, height, BMI, cognition, neuroticism — well-covered |
+| `h²(t)` calibration | Bouchard 2013, Briley & Tucker-Drob 2013 longitudinal twin | Cognition (well-covered); personality (sparse); psychopathology (very sparse) |
+| `Σ` for sex-difference module | Del Giudice 2012, Schmitt 2008, Kaiser 2020 | 16PF, NEO, Big Five |
+| `share_rare` | Wainschtein 2025 | Height, EA, several psychiatric — extending |
+
+The single highest-value Stage-4 deliverable: a per-trait table of `(twin h², SNP h², WGS h², within-family h², m, β_i/β_d)` at adulthood, ideally with cohort-by-age stratification. Most of the components already exist in published consortium summaries; the table is mostly aggregation, not new analysis.
+
+## 9. Connection to adjacent topics
+
+- **Parent-to-Child Transmission** (planned). The `A_i` term *is* the formal answer to "how much does parenting matter beyond genes for outcomes that look genetic." That topic should adopt this generating function as its starting point and refine `β_i` by domain (cognition vs. personality vs. health behaviors) and by mechanism (vocabulary input, expectation-setting, neighborhood selection).
+
+- **Evolution-Modernity Mismatch** (planned). The `μ(t)` population-mean trajectory is the formal home of secular shifts (Flynn rise, Flynn reversal, age-of-puberty drift). Within-cohort within-sibship designs are the cleanest separator of genuine environmental shifts in `μ(t)` from compositional artifacts.
+
+- **Bedrock Generating Functions** (planned). The decomposition itself — phenotype = direct + indirect-via-environment + structural-correlation + stochastic + interaction — is a *type signature* shared by many bedrock systems (asset prices, organizational outcomes, ecological abundances). The generic form is itself a candidate bedrock function.
+
+## 10. Glossary (formalization-specific additions)
+
+| Term | Meaning |
+|---|---|
+| `β_d` / `β_i` | Direct / indirect genetic regression coefficients on phenotype, estimated from within-family / parental-genotype designs |
+| `g_T` / `g_NT` | Polygenic score from offspring's transmitted alleles / parents' non-transmitted alleles |
+| `m` | Cross-spouse phenotypic correlation (assortative-mating strength) |
+| `r_δ` | Cross-spouse genetic correlation; ≈ `m · h²` at AM equilibrium for a hyperpolygenic trait |
+| `Σ` | Trait-level covariance matrix (within-sex, used in multivariate-D calculation) |
+| `Mahalanobis D` | Multivariate generalization of Cohen's d: `√(Δμᵀ Σ⁻¹ Δμ)` |
+| `block-orthogonal` | Decomposition where major-component blocks are orthogonal to the residual but cross-terms within blocks (e.g. `Cov(A_d, A_i)`) are explicit, not zero |
+| `method gradient` | The relationship `twin h² ≥ SNP h² ≥ within-family h²` driven by which components each estimator includes |

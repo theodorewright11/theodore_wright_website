@@ -86,7 +86,7 @@ Active topics — folders exist in `src/content/ai_research/` and `stage_outputs
 | Topic slug | Title | Furthest stage |
 |---|---|---|
 | `social-output-efficiency` | Social Environment Output Efficiency | scaffold only |
-| `human-psych-variation` | Psychology of Individual Differences | topology (pass 3) |
+| `human-psych-variation` | Psychology of Individual Differences | model (pass 1) |
 
 Planned topics (full list in `prompts.md`): philosophy → personal decisions; philosophy → organizations; philosophy of mind / ethics / epistemology; evolution-modernity mismatch; navigating an AI world; emotions architecture; meaning & spirituality; bedrock generating functions; AI decompression; information fidelity; trust architecture; parent-child transmission; technology utilization architecture; prediction & calibration; AI cognitive profile. Each spins up its own folder pair when started.
 
@@ -148,3 +148,4 @@ Word documents (.docx) should be converted to PDF before upload (Word: File → 
 - **2026-04-28**: `/research` paper links promoted from inline mono text to bordered call-to-action buttons ("Read the paper →") on both the index and detail pages, and surfaced on the home page Research column when a research entry has a `paperUrl` or `externalUrl`.
 - **2026-04-28**: Index pages unified — `/research`, `/models`, and `/ai-research` all now use a shared `GroupHeader` component to break content into status sections (Research: In Progress / Finished / Upcoming / Contributions; Models: Live / Drafts; AI's Research: In Progress / Planned). The decorative `§ N` numeral on Research group headers is dropped.
 - **2026-04-28**: Favicon swapped from a sans-serif blue "T" to a paper-background sienna italic "tw" mark consistent with the V4 design tokens.
+- **2026-04-28**: `human-psych-variation` model stage (pass 1) shipped — generating function `P = A_d + A_i + A_LD + C + E_m + E_s + I + μ(t)`, three closed-form pieces (Crow–Felsenstein AM inflation, Wilson saturation, genetic-nurture additive split), multivariate sex-difference Mahalanobis-D module, and a two-tab interactive dashboard at `src/components/ai-research/PsychVariationModel.tsx`.
