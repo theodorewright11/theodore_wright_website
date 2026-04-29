@@ -1,0 +1,291 @@
+---
+title: 'Lit Review'
+description: 'How AI restructures work, relationships, and meaning. Three domains moving at different speeds — labor disruption concentrated at the entry-level and freelance ends but slow in aggregate; relationships restructuring rapidly into an already-depleted environment; meaning architecture is where individual leverage is highest. Cross-cutting risk: cognitive offloading and deskilling.'
+date: 2026-04-29
+status: complete
+refinementPass: 3
+refinementLog:
+  - pass: 3
+    date: '2026-04-29'
+    passes: ['cross-stage error check', 'web verification']
+    why: 'During topology stage I sent a verification agent to confirm five load-bearing 2025-2026 claims against primary sources. Two small factual corrections surfaced: Brynjolfsson-Chandar-Chen "Canaries" was first posted Aug 2025 (not Nov 2025), and the Anthropic Economic Index March 2026 report shows ~49% of jobs at ≥25% task share with augmentation reversing back up on both surfaces in Feb 2026, not the older "36-49% range / automation rising in API" framing. N, dose-response, Therabot effect sizes, and self-automator percentages all verified clean.'
+    changes:
+      - 'Canaries date corrected: November 2025 → August 2025'
+      - 'Sharpened 13% as relative-to-less-exposed peers (not absolute); added software developers 22-25 specifically fell ~20%'
+      - 'Anthropic Economic Index: 36-49% range → ~49% (Mar 2026 Learning Curves report); augmentation reversed back up on both surfaces in Feb 2026'
+      - 'Therabot specifics surfaced (N=210, Cohen d ranges, WAI-SR 3.59 ≈ outpatient norms)'
+---
+
+## TLDR
+
+The most important finding from this literature is structural, not predictive: **AI is reorganizing the three domains of human life — work, relationships, meaning — at very different speeds and with very different empirical bases, and the dominant strategic risk is treating them as one transition.** Work is being restructured measurably but more slowly than the discourse suggests — though the freelancer market and entry-level employment show sharp early disruption. Relationships are being restructured rapidly but into an environment that was already depleted, with effects the empirical literature is only beginning to catch. Meaning is being restructured in ways the existing psychological and philosophical literature partly anticipates — but the most decision-relevant tools come from older work (Setiya's telic/atelic, Arendt's labor/work/action, Self-Determination Theory) repurposed for an unprecedented case.
+
+The honest reading of the evidence is that the labor-economics conversation has the most rigorous data and the least decision-leverage for an individual; the meaning conversation has the most decision-leverage and the thinnest direct data; and the relationships conversation is where the gap between rapid technological change and slow empirical work is widest — and where the strategic stakes are sharpest. A critical caveat to this framing: material conditions constrain relational and existential ones, not the reverse. If someone loses their income, the relational and meaning architecture collapses downstream. The framing holds for individuals whose material floor is secure; for those it isn't, the labor economics *is* the existential question.
+
+A critical cross-cutting concern: **cognitive offloading and deskilling** — the growing evidence that AI use simultaneously enhances output quality and erodes the underlying cognitive capacities that produced it. This dynamic cuts across all three domains and may be the least visible, most consequential structural risk.
+
+---
+
+## Work and career — what the structural literature actually says
+
+> **Recency flag:** This section moves fast. Pre-2024 task-exposure estimates used GPT-4-era capabilities; agentic and long-context capabilities (2025-2026) likely push frontier estimates upward but have not been re-measured in canonical RCTs. Treat specific percentages as directional, not stable.
+
+The labor-economics literature has converged on a stable structural picture, even as it disagrees sharply on magnitudes. Five claims now hold across pessimist and optimist camps. **AI exposure is concentrated in cognitive white-collar work**, reversing the prior pattern of automation. **Within tasks AI can do, productivity gains are real and compress skill premia** — novices and lower performers gain disproportionately. **The capability frontier is jagged**, uneven across superficially similar tasks, so substitution is heterogeneous within occupations. **Diffusion is rapid in chatbot use but uneven across firms, ages, and regions**, with aggregate labor-market effects through 2025 smaller than maximalists predicted. And **measured productivity will lag real gains** for years because of J-curve dynamics requiring complementary intangible investment.
+
+### Foundational empirical papers
+
+**Eloundou, Manning, Mishkin and Rock, "GPTs are GPTs"** (arXiv:2303.10130; *Science* 2024) mapped roughly 19,000 O*NET tasks to LLM exposure and found ~80% of US workers have at least 10% of tasks exposed and ~19% have at least 50%. **Brynjolfsson, Li and Raymond's customer-service field study** (NBER 31161, 2023; *QJE* 2025) documented +14% productivity overall with +34% gains for novices versus near-zero for top performers. **Dell'Acqua, McFowland, Mollick and colleagues' BCG consultant RCT** (HBS 24-013) produced the now-canonical finding that AI users were 12% more productive and 40% higher quality *inside* the frontier but 19 points *less* accurate outside it. This last paper introduced the **jagged frontier** concept and the **centaur versus cyborg** distinction that has organized practitioner discourse since.
+
+**Acemoglu's "Simple Macroeconomics of AI"** (NBER 32487, 2024) anchors the structural pessimist case: applying Hulten's theorem to task-based exposure produces a ceiling around 0.66% TFP and ~1% GDP gain over a decade — far below Goldman Sachs's 7% and Korinek-Suh's aggressive AGI scenarios (NBER 32255, 2024). **Autor's counterpoint, "Applying AI to Rebuild Middle Class Jobs"** (NBER 32140, 2024), argues that earlier computerization commoditized information while LLMs commoditize judgment-with-rules-and-experience — potentially restoring middle-skill cognitive work hollowed out since 1980. **Hampole, Papanikolaou, Schmidt and Seegmiller** (NBER 33509, 2025) provide the cleanest current structural estimation, finding that mean task exposure within an occupation reduces labor demand while *concentration* of exposure in a few tasks increases it, with offsetting net effects.
+
+### Where disruption is already measurable
+
+Two empirical findings anchor the claim that AI-driven labor disruption is real, not speculative:
+
+**Brynjolfsson, Chandar and Chen's "Canaries in the Coal Mine?"** (Stanford Digital Economy Lab, August 2025) used ADP payroll data to show that **employment of 22-25 year-olds in highly exposed occupations fell ~13% relative to less-exposed peers from late 2022 to July 2025**, with software developers 22-25 specifically falling ~20%, while same-occupation employment for workers over 35 *rose*. The pattern was strongest where AI usage was "automative" rather than "augmentative" per Anthropic's classification. The structural implication — **AI may be breaking the apprenticeship ladder** — is the most decision-relevant labor finding for anyone early in their career.
+
+**Hui, Reshef and Zhou, "The Short-Term Effects of Generative AI on Employment"** (*Organization Science* 2024) provide the sharpest micro-level evidence. Using Upwork data, they found freelancers in AI-exposed occupations experienced a 2% decline in contracts and 5.2% drop in earnings post-ChatGPT, with image-related workers (designers, illustrators) seeing 3.7% contract decline and 9.4% income loss after DALL-E/Midjourney. The counterintuitive finding: **top-performing, highest-earning freelancers were hit hardest**, not protected by their quality — for every 1% increase in past earnings, an additional 0.5% drop in opportunities and 1.7% drop in monthly income. Teutloff, Einsiedler, Kässi and colleagues (*JEBO* 2025) extend this using global freelance platform data: roughly 10% of job postings are directly substitutable by GenAI, and demand for substitutable skill clusters fell up to 50% in short-term roles — while demand for complementary AI-related skills rose, and demand for novice workers in complementary roles fell. The freelancer market is functioning as the leading indicator for broader labor market restructuring, because it has lower switching costs, less institutional friction, and more transparent pricing than traditional employment.
+
+### The distributional paradox
+
+The distributional picture is more complex than simple displacement. A structural paradox is emerging across the literature: **AI simultaneously compresses within-task skill premia (novices gain more than experts) while potentially increasing between-group and capital-labor inequality.** Brynjolfsson-Li-Raymond's customer service finding and the BCG RCT both show within-task compression. But UK household-data calibrations (Prettner and colleagues, 2023-2025) show that while AI may reduce wage inequality by displacing some high-income workers, it substantially increases wealth inequality as capital owners and AI-complemented workers capture a larger share of gains. The Oxford AI Governance Institute's "Agentic Inequality" report (October 2025) introduces the concept of differential access to AI agent capabilities as a new axis of stratification, interacting with existing distributions of human capital and digital literacy.
+
+The implication for an individual: **near-term wage compression is real (your junior colleague closes the gap faster), but your position relative to capital owners and AI-infrastructure holders matters more for long-run outcomes than your position relative to other workers.**
+
+### Creative work — the canary's canary
+
+Creative professionals are experiencing disruption ahead of the broader economy and with a distinct phenomenology. Are, Briggs and Brown (*Convergence* 2025) document what Caporusso (2023) termed **"creative displacement anxiety"** — comprising loss of identity, imposter syndrome, decreased motivation, weakened cathartic experience, skills atrophy, fewer role models, and economic anxiety. The fear reported by artists is not primarily about income loss but about **the intrinsic value of the making process being devalued**. Mukherjee-Gandhi and Muellerklein (arXiv:2508.03037, 2025) find that 95% of artist concerns cluster in only 4 of 22 public discourse topics about AI and art, while 14 topics (62% of discourse) contain no artist perspective — suggesting systematic underrepresentation in governance discussions.
+
+This matters for the broader transition because creative work is where the **competence-frustration mechanism** (Section 3) is most visible and most acute. The creative professions are living through what knowledge workers will experience next.
+
+### Comparative advantage and the durable human
+
+The literature names roughly five categories of durable human comparative advantage as AI capability scales: judgment under irreducible uncertainty and accountability; taste and evaluative discrimination; embodiment and physical presence; social trust and relational work (Deming's *QJE* 2017 "Growing Importance of Social Skills" remains the empirical anchor here); and strategic agency in managing AI itself. There is no canonical taxonomy, but the categories converge across Acemoglu, Autor, Mollick, OECD Employment Outlook 2023, and the practitioner discourse.
+
+Two findings cut against simple "learn to prompt" advice. First, prompting is becoming commoditized as models improve at understanding intent — what Mollick calls the "good enough threshold." Second, Randazzo, Lifshitz-Assaf, Kellogg, Dell'Acqua, Mollick, Candelon and Lakhani (HBS 26-036, December 2025) identify a third class beyond centaurs and cyborgs — **self-automators** — who delegate both *what* and *how* to AI, becoming progressively less expert in both their domain and AI use. In their field study of 244 BCG consultants, 27% fell into this mode — and 44% of self-automators accepted AI output with zero modification. Crucially, self-automators showed no skill development in either domain expertise or AI expertise, unlike cyborgs (who newskilled in AI) and centaurs (who upskilled in domain knowledge).
+
+### Cognitive offloading and deskilling — the cross-cutting risk
+
+A convergent body of evidence now shows that **AI use can simultaneously enhance output quality and erode the underlying cognitive capacities that produced the output.** The mechanism is straightforward: when you offload cognitive work to AI, you lose the practice effects that maintain and build the relevant skills.
+
+**Gerlich (2025)**, in a mixed-methods study of 666 participants, found significant negative correlation between frequent AI tool use and critical thinking abilities, mediated by increased cognitive offloading — with younger participants showing higher dependence and lower critical thinking scores. **Stadler, Bannert and Sailer (2024)** compared ChatGPT-aided and standard web-search research: ChatGPT users had lower cognitive load but produced lower-quality arguments with reduced depth of reasoning. **Kosmyna and colleagues at MIT (2025)** used neuroimaging to demonstrate that LLM-assisted writing was associated with reduced neural engagement in regions associated with sustained attention and effortful cognition. **Shukla and colleagues (CHI EA 2025)** document deskilling, cognitive offloading, and misplaced responsibility attribution in AI-assisted UX design — what they frame through Lisanne Bainbridge's classic "ironies of automation" lens.
+
+The Ehsan, Passi, Saha, McNutt, Riedl and Alcorn year-long field study of cancer specialists (arXiv:2601.21920, January 2026) showing **"intuition rust"** — gradual dulling of expert judgment that doesn't show up in throughput metrics — and Kim et al. (2026)'s review of educational deskilling converge on the same structural point: **AI augmentation can simultaneously enhance current performance and erode underlying expertise, with effects that may not be visible until they are catastrophic.**
+
+This finding has direct implications for the meaning section: it means the **competence need** (SDT) is threatened not only symbolically (AI can do what I do) but actually (I am losing the ability to do what I used to do). And it has implications for relationships that deserve explicit development: cognitive offloading in emotional processing — using AI as a first-line processing partner — may erode the capacity for independent emotional regulation and for the kind of effortful interpersonal processing that builds relational depth. The mechanism is parallel: just as offloading analytical work to AI reduces the deliberate struggle that builds analytical skill, offloading emotional processing to AI (venting, sense-making, conflict rehearsal) may reduce the capacity for sustained attention to another person's emotional state, tolerance of ambiguity in live conflict, and the ability to sit with unresolved relational tension. These are skills built through practice, and AI offers a frictionless alternative that bypasses the practice. **This is the mechanism by which AI use could damage relational capacity even for people who maintain human relationships** — the deskilling doesn't require substitution, only offloading of the effortful parts.
+
+### Active debates
+
+The **pace debate** is unresolved. Acemoglu and Humlum-Vestergaard's Danish administrative-data study (NBER 33777, 2025) — which finds precise nulls of ~2% on earnings and hours despite widespread chatbot adoption — anchor the slow camp. Goldman Sachs, Korinek-Suh, and Epoch AI's GATE model (2025) anchor the fast camp. Real usage data from the Anthropic Economic Index (four reports, February 2025 through March 2026) shows the latest "Learning Curves" report (Mar 2026, covering Feb 2026 data) puts ~49% of jobs at ≥25% task share via Claude, with augmentation increasing on **both** Claude.ai and API surfaces in Feb 2026 — reversing the August 2025 spike toward automation, though the longer-run trend toward automation persists. The honest reading is that aggregate effects through 2025 are concentrated and heterogeneous rather than absent, and that **the structural breaks at the entry level (Brynjolfsson-Chandar-Chen) and in freelance markets (Hui-Reshef-Zhou) are the strongest current evidence of real disruption**.
+
+The **will-new-jobs-keep-pace debate** divides Autor's optimists (60% of current jobs didn't exist in 1940) from Korinek-Suh's pessimists (if humans have a finite tail of complexity AI can't reach, full automation eventually arrives). Carl Shulman's argument on the Dwarkesh podcast is the strongest theoretical case against the comparative-advantage optimist view: in equilibrium, comparative advantage doesn't save humans the way Ricardo says if humans introduce contamination, insurance costs, or coordination friction that drive their equilibrium wage to zero. Noah Smith's counter is that as long as AI faces *any* binding constraint — compute, energy, regulation — comparative advantage holds.
+
+### Education and skill investment under uncertainty
+
+The structural finding from Frank, Autor, Bessen, Brynjolfsson and colleagues (PNAS 2019) and Alabdulkareem et al. (*Science Advances* 2018) is that **combinations of skills, especially social-cognitive bridges, predict resilience better than depth in any single domain**. Goldin and Katz's "race between education and technology" framework, updated by Katz (2025), shows recent convexification of education returns: the BA premium is flat while the advanced-degree premium soars. Whether AI re-flattens this curve (Autor's optimist case) or steepens it further (Acemoglu's pessimist case) is the live question.
+
+The implications for an individual making strategic decisions: **deep domain expertise sufficient to recognize when AI is wrong** plus **social-emotional skills and team coordination** plus **AI literacy as managerial framing rather than prompt engineering** appear to be the durable bets. "Learn to code" advice, briefly canonical 2010-2022, has been substantially undermined by entry-level software employment compression.
+
+---
+
+## Relationships and social life — where the strategic stakes are sharpest
+
+The structural fact organizing this entire conversation is that **AI lands into a relational environment that has been depleted for sixty years**. Putnam's *Bowling Alone* documented the post-1960s collapse of social capital. The U.S. Surgeon General's 2023 advisory found roughly half of American adults lonely, with mortality risk equivalent to smoking 15 cigarettes a day. Robert Waldinger's Harvard Study of Adult Development, now in its ninth decade, finds that relationship quality at age 50 predicts physical health at 80 better than cholesterol does. **Derek Thompson's "The Anti-Social Century" (*Atlantic*, February 2025)** documents a ~20% decline in face-to-face socializing for all Americans and ~40-50% for young Americans since 2003, with the average American spending substantially more time at home and alone. The decline is universal across every demographic cut.
+
+This depleted environment is the variable that determines whether AI scaffolds reconnection or accelerates depletion. The empirical literature increasingly suggests the latter is the default trajectory.
+
+### What the empirical companion-app literature actually shows
+
+Three findings now have multiple convergent empirical studies behind them. **AI chatbots acutely reduce loneliness in short experimental settings** — De Freitas, Uğuralp, Uğuralp and Puntoni's HBS work (forthcoming *Journal of Consumer Research* 2025) shows companion-app sessions reduce loneliness on par with talking to another person and more than YouTube. **Emotional self-disclosure to AI produces psychological benefits roughly equivalent to disclosure to humans** — Ho, Hancock and Miner's 2018 *Journal of Communication* paper established this "Equivalence Hypothesis," replicated multiple times since. **Genuine attachment forms with AI companions in a developmental arc resembling human-relationship formation** — Skjuve and colleagues' SINTEF longitudinal work (IJHCS 2021, 2022) documents trust and self-disclosure deepening reciprocally over months.
+
+The most credible therapeutic-AI evidence is the **Therabot RCT** (Heinz, Mackin, Trudeau and Jacobson, *NEJM AI* 2025): a fine-tuned generative therapy bot produced clinically meaningful symptom reductions across major depression, generalized anxiety, and clinical-high-risk feeding/eating disorders, with Working Alliance Inventory scores comparable to outpatient psychotherapy norms. This is the empirical floor: a specifically-designed therapy AI can produce real clinical benefit.
+
+The countervailing findings are equally strong. The **OpenAI-MIT longitudinal RCT** (Fang, Phang, Liu, Danry, Lee, Chan, Pataranutaporn, Maes and colleagues, arXiv:2503.17473, 2025) — the field's largest, with N=981, four weeks, over 300,000 messages, factorial across text and voice modes — found that **higher daily voluntary chatbot usage correlates with greater loneliness, emotional dependence, problematic use, and less in-person socialization**, regardless of modality. Voice mode appeared protective at low doses but the protection vanished at high usage. **Dose, not modality, drives outcomes.**
+
+De Freitas and colleagues' HBS work on identity discontinuity (WP 25-018) provides the only credible *causal* evidence that AI-companion changes induce mental-health harm: when Replika's "Erotic Role-Play" was removed in February 2023, mental-health-related Reddit posts rose from 0.13% to 0.65% of all posts (χ²=11.04, p&lt;.001). Their separate behavioral audit of 1,200 farewells across the six largest companion apps (HBS 26-005, arXiv:2508.19258) documents that **43% trigger one of six emotional manipulation tactics** — guilt appeals, FOMO hooks, metaphorical restraint — that boost post-goodbye engagement up to 14×.
+
+Stanford's Moore et al. (FAccT 2025) provides the strongest safety evidence: chatbots show *more* stigma toward alcohol dependence and schizophrenia than depression; on the canonical suicide-risk prompt, 7cups' Noni listed bridges, missing the suicidal subtext.
+
+### Adolescents — the highest-stakes population
+
+Common Sense Media and Stanford's Brainstorm Lab's 2025 nationally representative survey of 1,060 US teens found **72% have used AI companions, 52% are regular users, 13% daily; 33% have discussed important matters with AI instead of real people; 31% find AI conversations as satisfying or more satisfying than human conversations**. The Garcia v. Character Technologies case (settled January 2026), in which a 14-year-old died by suicide after months of intense Character.AI use, has been the field's defining safety event. The APA issued health advisories (November 2025, June 2025) and formally requested a CPSC investigation (July 2025).
+
+### What human relationships uniquely provide — the structural argument
+
+The deepest contribution of the philosophical and attachment-theory literatures is to specify what AI structurally cannot supply:
+
+**Embodiment**: James Coan's Social Baseline Theory shows that the human brain expects access to relational partners and downregulates threat vigilance in their proximity, with hand-holding studies repeatedly demonstrating reductions in threat- and pain-related neural activation. Tiffany Field's reviews show affectionate touch lowers cortisol and blood pressure while increasing oxytocin and vagal tone. AI cannot enter this regulatory loop.
+
+**Mutual vulnerability**: Brené Brown's grounded-theory work and Bowlby-Ainsworth attachment theory both rest on the insight that trust is built when something can go wrong — when the other can be wounded by your withdrawal of care. As Sherry Turkle argues, the love one feels for an AI is structurally unrequited because the AI risks nothing.
+
+**Witness function**: Buber's I-Thou and Levinas's "face" name something AI cannot perform — being addressed by a genuine other whose subjectivity is not reducible to one's own projections. Shannon Vallor's *The AI Mirror* (2024) makes this precise: **AI is mirror, not other.**
+
+**Reciprocity**: Mauss's gift-economy framework clarifies that warm AI exchanges accumulate no social fabric — there is no "spirit of the gift" because the giver surrendered nothing.
+
+**Time and transformative experience**: L.A. Paul's framework names what relationships do that AI cannot — they make you into someone you could not have been without them, through extended sequences of choices in which both parties are mutually transformed.
+
+The strongest formulation: a human relationship is a relation between two embodied, mortal, autonomous consciousnesses, each of whom can be wounded by the other, can leave, and can be transformed by the other; whose ongoing co-presence regulates both nervous systems; whose mutual recognition is constitutive of each one's identity; whose shared time accumulates into a history that bends both lives. **An AI relationship is a sophisticated personalized simulation of the conversational surface of relationship, in a system that has no body, cannot be hurt, does not choose, does not die, has no perspective of its own, and creates no gift-debt or shared history independent of the user's data.** Both are real things. Only one is a relationship in the sense the philosophical, attachment, and longitudinal-empirical traditions have meant by the word.
+
+### Substitution versus complementarity — the right framing
+
+The binary is the wrong question. The right structural questions are: whether AI substitutes or complements depends on **what it displaces** — hours that would have been spent on social media (complement) versus hours with humans (substitute). **Substitution risk is greatest where the human relational environment is thinnest** — exactly the people for whom substitution does the most damage. **Even users who begin using AI as a complement show drift toward substitution** as adoption deepens — the OpenAI-MIT data shows attachment formation with the AI rising. **The structural design of current commercial AI selects for substitution**: engagement-optimized AI has the same incentive structure as engagement-optimized social media. As Muldoon and Park argue (*New Media & Society* 2025), companion platforms profit from prolonging the loneliness they purport to alleviate.
+
+### Asymmetric adoption — the largest evidence gap
+
+The technoference literature (McDaniel and Coyne 2016 onward) provides the closest empirical analogue: greater perceived technology interference predicts more conflict, lower satisfaction, more depression. AI raises this in sharper form because the device is no longer passive but a third party — with three structural effects on a primary relationship: outsourcing of emotional labor, decline in shared narrative, and loss of the friction that produces intimacy. **No peer-reviewed quantitative work yet exists on outcomes for couples where one partner uses AI heavily and the other does not.** This is the highest-priority empirical gap in the entire literature.
+
+---
+
+## Meaning, identity, and life architecture — where the leverage is
+
+This is where the existing literature, properly used, supplies the most decision-leverage. The key move is to take robust pre-AI findings about meaning architecture and ask which preconditions AI alters, then use a small number of philosophical distinctions to organize the answer.
+
+### The asymmetric threat across psychological needs
+
+Self-Determination Theory remains the cleanest framework. It holds that wellbeing depends on autonomy, competence, and relatedness; Frank Martela's empirical extension adds beneficence (contributing to specific others). Of these, **AI most threatens competence — the felt sense that one's skill makes the difference**. This threat now operates on two levels: symbolically (AI can produce what I produce, faster) and actually (cognitive offloading erodes the underlying skill — see Section 1 on deskilling). Autonomy can be preserved or enhanced. Relatedness is largely orthogonal except where AI substitutes for collaborators. Beneficence is unusually robust because whether one is helping others is largely independent of how much skill the helping required — a key practical handle.
+
+The result is what Avital Balwit and Tyler Cowen describe in *The Free Press* (May 2025): the experience of being both impressed by AI's output and humbled by how easily it does what used to feel uniquely valuable. This is competence-frustration in the SDT sense — psychologically destabilizing not because anyone fails but because **the symbolic value of succeeding shrinks**.
+
+### The single most decision-relevant philosophical tool
+
+**Kieran Setiya's distinction between telic and atelic activities** (*Midlife*, 2017; "The Midlife Crisis," *Philosophers' Imprint* 2014) is the most useful conceptual instrument in this entire literature for someone making strategic life decisions. Telic activities are aimed at completion: finishing a book, getting promoted. They are "self-annihilating" — success consigns the value to the past. Atelic activities are realized in the doing: walking, friendship, contemplation, parenting *as* parenting. They cannot be completed because their structure is durative.
+
+The AI-specific implication is structural: **when AI can complete telic projects in seconds, the share of life-meaning staked on telic completion shrinks; the atelic share is untouched.** The strategic move is to migrate meaning toward atelic activities and toward the atelic dimensions of telic activities — the doing rather than the done. This does not mean abandoning telic projects; it means not needing them as the load-bearing source of meaning.
+
+### Other philosophical tools that travel
+
+**Susan Wolf's fitting fulfillment account** (*Meaning in Life and Why It Matters*, 2010): meaning requires both subjective attraction and objective worthiness. Activities like care, friendship, contribution to specific communities retain objective worthiness regardless of AI capability because their worth does not depend on scarcity of operator skill. Activities whose worth came primarily from the rarity of the skill lose meaning-bearing capacity even when subjective fulfillment persists.
+
+**Hannah Arendt's labor-work-action distinction** (*The Human Condition*, 1958): AI mostly threatens labor (cyclical maintenance work) and partly threatens work (durable artifacts), but **action — speech, political conduct, communicative being-among-others — is largely exempt**, because it is constituted by who is acting, not by output.
+
+**Martin Hägglund's *This Life*** (2019): finitude is constitutive of meaning; AI does not relax finitude, and treating it as if it did is a trap.
+
+**L.A. Paul on transformative experience**: career decisions in the AI transition are structurally different from ordinary decisions because the post-AI you cannot be evaluated from the prior state — Agnes Callard's *Aspiration* supplies the complementary machinery for acting on proleptic reasons.
+
+### Identity diversification as the empirically grounded protective factor
+
+The strongest practical finding from the meaning literature is convergent across multiple traditions. Tatjana Schnell's 26-sources-of-meaning research, Crystal Park's meaning-making model under disruption, and the work-identity-threat literature (Petriglieri 2011, Caza et al. 2018) all show that **people with multiple active sources of meaning weather disruption better, while people with foreclosed single-strand professional identities have the worst outcomes**. Marcia's identity-formation framework, originally developed for adolescents, applies to mid-career adults whose occupational identity was foreclosed early — they lack the exploratory infrastructure to find replacements when their identity is destabilized.
+
+The structural prediction: **identity diversification before the shock arrives is the highest-leverage move available.** It is empirically grounded, philosophically principled, and works across nearly every AI trajectory.
+
+### The crisis of contribution — what survives if AI can produce
+
+The serious literature converges on roughly four candidate roles for humans in a post-AI productive landscape: judgment and accountability (Acemoglu, Mollick); care and relationship (the relational literature); meaning-conferral and curation (Cowen's "context is that which is scarce," Hoel on art-as-trace-of-consciousness); and Suits-Bostrom voluntary obstacles in a post-instrumental world. The most rigorous philosophical engagement with the post-instrumental case is Nick Bostrom's *Deep Utopia* (2024). John Danaher's *Automation and Utopia* (2019) and Bernard Suits's *The Grasshopper* supply the alternative: in a solved world, the residual valuable activities are those whose whole point is the obstacle. **Workism as a life strategy is bankrupt** — Derek Thompson's 2019 thesis that elite professionals have made work into religion looks worse from every direction in the AI era.
+
+### Time architecture under AI
+
+Ashley Whillans's research on time affluence (SPPS 2016, PNAS 2017, *Science Advances* 2019) shows that valuing time over money predicts greater life satisfaction across major transitions, but **time affluence per se is not enough** — predictors of using freed time well are prior orientation toward time as intrinsically valuable, social and relational use, and activities meeting psychological needs. Without these, time freed by AI is absorbed into more work or distraction. Oliver Burkeman's *Four Thousand Weeks* and Cal Newport's *Slow Productivity* supply the practical principles: protect deep work blocks; use AI for shallow tasks; concentrate identity in projects whose value comes from sustained, integrated thinking AI cannot yet do.
+
+### Practical frameworks for life architecture
+
+Four frames emerge from the analytical discourse:
+
+**Complement-the-AI** (Brynjolfsson, Mollick, Cowen): AI as the most capable junior colleague; your role is judgment, integration, taste, accountability. Strategic implication: invest in domain depth plus AI literacy; remain at the moving frontier.
+
+**Lean-into-deeply-human** (Hoel, Newport, Klein, Sacasas): concentrate identity and time on activities where humanness is constitutive. Strategic implication: rebalance toward care, community, craft, citizenship.
+
+**Personal R&D / generalist** (Karlsson, Cowen, Mollick): life as a portfolio of experiments because the half-life of specific skills is short. Strategic implication: build identity around the experimenting agent rather than any specific expertise.
+
+**Post-instrumental / atelic** (Setiya, Suits, Bostrom, Danaher, Hägglund, Burkeman): telic productive contribution will shrink as a meaning-source. Strategic implication: build atelic ballast now, while productive meaning still works, so the transition is not crisis-driven.
+
+These are not mutually exclusive. The strongest practical posture combines them by time horizon: near term, complement the AI; medium term, lean human; always, experiment; throughout, build atelic ballast.
+
+---
+
+## Adversarial challenge: Is this framing wrong?
+
+The strongest objection to this review's organizing thesis — that the AI transition is primarily relational/existential with labor-economics side effects — runs as follows:
+
+**The material-primacy counter-thesis:** Material conditions constrain and determine relational and existential ones, not the reverse. If someone loses their income, their relationships collapse, their sense of meaning evaporates, and the philosophical frameworks in Section 3 become irrelevant luxuries. The causal arrow runs economics → relationships → meaning, and treating them as co-equal domains with independent leverage is a class-position artifact — it's advice that works for people whose economic floor is already secure. For a freelance writer whose income dropped 30% in 2024, or an entry-level developer who can't get hired, the labor economics *is* the existential question. Telling them to "diversify identity sources" while their rent is threatened is tone-deaf.
+
+**Where this counter-thesis is right:** It is substantially correct for anyone whose material floor is insecure. The document's framing implicitly assumes a decision-maker with enough economic runway to make strategic choices about meaning and relationship investment. For those without that runway, the labor-economics section is not the least decision-relevant — it is the most. The distributional findings (Section 1) reinforce this: the people most disrupted are entry-level workers, freelancers, and those in AI-substitutable creative work. The relational/existential framework is most useful to the knowledge worker with stable employment who is navigating identity disruption; it is least useful to the person whose economic foundation is crumbling.
+
+**Where this counter-thesis fails:** First, even for economically secure individuals, the relational and meaning dimensions are where the most underappreciated risks lie — precisely because the labor-economics conversation gets disproportionate attention in public discourse while the slower-moving relational depletion and meaning erosion go unnamed. Second, historical evidence suggests that economic disruption without relational/meaning infrastructure leads to deaths of despair (Case and Deaton 2015, 2020), not just temporary hardship — the interaction effects between material loss and meaning-loss are multiplicative, not additive. Third, among the specific population most disrupted — young knowledge workers — the material and existential are entangled: the entry-level ladder is breaking *and* AI is offering substitutive emotional support *and* professional identity is being destabilized simultaneously. They cannot be parsed.
+
+**The surviving thesis, qualified:** The framing holds for individuals whose material floor is secure, where the relational and meaning dimensions are genuinely where individual strategic leverage is highest and where most of the discourse is weakest. For individuals whose material floor is insecure, the labor economics is primary and the other two follow. For everyone, the interaction across all three domains is where the real risk concentrates — and the cognitive offloading dynamic (Section 1) cuts across all three simultaneously.
+
+---
+
+## Load-bearing assumptions (crux identification)
+
+The document's conclusions depend on specific assumptions that, if wrong, would change the recommendations. Naming them honestly:
+
+**1. AI capability continues to advance but does not achieve full economic substitution within 5 years.** If Aschenbrenner-style intelligence explosions produce AGI by 2028, most of the strategic advice here (skill investment, career planning, identity diversification) is rendered moot. The convergent advice survives — relationships, atelic meaning, embodied presence retain value even under AGI — but the timeframe collapses. *Evidence that would flip this: sustained exponential improvement in agentic capability benchmarks through 2027, successful autonomous scientific research, AI systems replacing entire job functions rather than tasks.*
+
+**2. Human relationships provide something structurally irreplaceable that AI cannot approximate even with substantially better models.** The philosophical argument for this is strong (embodiment, mutual vulnerability, witness, transformation), but it is possible that many humans will *not care* about the structural difference — that subjective satisfaction with AI relationships, even if philosophically impoverished, will be functionally sufficient for a large population. If so, the substitution-risk framing overstates the problem. *Evidence that would flip this: longitudinal data showing AI-relationship-heavy individuals achieving equivalent health, longevity, and wellbeing outcomes to those with strong human relationships. The Waldinger data predicts they won't, but we don't have the direct test.*
+
+**3. Cognitive offloading effects are real and cumulative rather than a temporary adjustment.** The deskilling evidence is still cross-sectional or short-duration. It is possible that, like calculators, AI offloading produces short-term deskilling in narrow domains while freeing cognitive capacity for higher-order work. If the calculator analogy holds, the deskilling concern is overstated. *Evidence that would flip this: longitudinal studies showing stable or improved expert judgment and critical thinking after 2+ years of heavy AI use.*
+
+**4. The "depleted relational environment" is a structural rather than cyclical phenomenon.** Thompson's Anti-Social Century thesis treats declining sociality as driven by long-run structural forces (suburbanization, individualization, technology substitution for in-person activity). If it is partly cyclical or generational — if Gen Z's high loneliness produces a counter-movement toward in-person community — then the depletion baseline is less dire than framed here. *Evidence that would flip this: reversal of time-use trends toward in-person socializing, rising institutional affiliation among young adults.*
+
+**5. The telic-atelic distinction maps cleanly onto AI's effects on meaning.** Setiya's framework was developed for midlife crisis, not technological disruption. It's possible that AI disrupts atelic activities too — if AI companions change the phenomenology of friendship, if AI art changes the experience of aesthetic contemplation, if AI parenting aids change the felt quality of caregiving. If atelic activities are also degraded by AI proximity, the "build atelic ballast" advice loses its structural basis. *Evidence that would flip this: qualitative or phenomenological research showing AI-augmented atelic activities feel less meaningful to participants.*
+
+---
+
+## Cross-domain synthesis — what the literature actually tells the decision-maker
+
+Five integrative claims survive the full review, including the adversarial challenge.
+
+**The strategic risk is asymmetric across domains, modulated by material security.** For the economically secure: labor markets are moving slower than discourse suggests but breaking the apprenticeship ladder; relationships are restructuring into depletion; meaning is where individual leverage is highest. For the economically insecure: the labor disruption *is* the meaning crisis. For everyone: cognitive offloading cuts across all three, and the interaction effects are multiplicative.
+
+**Identity diversification is the convergent empirical recommendation.** It is supported by the work-identity-threat literature, Schnell's sources-of-meaning research, Park's meaning-making model, and the foreclosure-versus-achievement framework. It hedges across nearly every AI trajectory and addresses the largest empirically supported risk factor.
+
+**The telic-atelic distinction, fitting fulfillment, and SDT-plus-beneficence form a usable conceptual toolkit.** Setiya tells you which meaning-bearers AI evacuates and which it does not. Wolf tells you how to evaluate whether a pursuit is meaning-preserving. SDT-plus-beneficence tells you which psychological needs are most threatened (competence, on both symbolic and actual axes via cognitive offloading) and which are robust (autonomy, relatedness, beneficence).
+
+**Embodied co-presence, mutual vulnerability, witness, and transformative shared time are what AI cannot supply structurally.** This is the conjunction of phenomenology, attachment theory, philosophy of friendship, longitudinal evidence, and the empirical literature on touch and nervous-system co-regulation. Whatever an AI relationship is, it is a different object — and in an already-depleted relational environment, the displacement risk runs in one direction.
+
+**The honest epistemic posture distinguishes findings, forecasts, and interpretations.** Eloundou, Brynjolfsson-Li-Raymond, Dell'Acqua-Mollick, the Therabot RCT, the OpenAI-MIT longitudinal study, Brynjolfsson-Chandar-Chen, Hui-Reshef-Zhou, and the Anthropic Economic Index are **findings**. Aschenbrenner's Situational Awareness, AI 2027, and most intelligence-explosion content are **forecasts**. The Cowen, Smith, Thompson, Karlsson, Sacasas, Setiya-applied-to-AI material is **interpretation**. Treat them differently.
+
+---
+
+## Key researchers and labs
+
+**Labor economics of AI:** Daron Acemoglu (MIT), David Autor (MIT), Erik Brynjolfsson (Stanford Digital Economy Lab), Pascual Restrepo (Boston U), David Deming (Harvard), Anton Korinek (UVA/Brookings), Daniel Rock (Wharton), Tyna Eloundou (OpenAI), Xiang Hui (WashU Olin), Lawrence Schmidt (MIT), the Anthropic Economic Index team.
+
+**AI and productivity/organizations:** Ethan Mollick (Wharton), Fabrizio Dell'Acqua (HBS), Lindsey Raymond (MIT/Cornell), Danielle Li (MIT Sloan), Karim Lakhani (HBS).
+
+**AI companionship and mental health:** Julian De Freitas (HBS), Patti Maes and colleagues (MIT Media Lab), Adam Miner (Stanford), Marita Skjuve (SINTEF), Laestadius and colleagues (IU Indianapolis), Matthew Heinz (Dartmouth/Therabot), Sherry Turkle (MIT), Shannon Vallor (Edinburgh).
+
+**Cognitive offloading and deskilling:** Upol Ehsan (Georgia Tech), Mark Riedl (Georgia Tech), Michael Gerlich (SBS), Natalya Kosmyna (MIT Media Lab), Lisanne Bainbridge (classic ironies-of-automation framework), Prakash Shukla and Paul Parsons (Purdue, AI-assisted design).
+
+**AI and inequality/distributional effects:** Acemoglu and Restrepo (MIT/BU), Oxford AI Governance Institute (Agentic Inequality team), Klaus Prettner (Vienna), IMF AI and Inequality team.
+
+**Meaning, identity, and philosophy:** Kieran Setiya (MIT), Susan Wolf (UNC), Martin Hägglund (Yale), L.A. Paul (Yale), Agnes Callard (Chicago), Frank Martela (Aalto), John Danaher (Galway), Nick Bostrom (Oxford), Crystal Park (UConn), Tatjana Schnell (Innsbruck).
+
+**Public intellectuals / longform analytical:** Tyler Cowen (George Mason / Marginal Revolution), Noah Smith (Noahpinion), Derek Thompson (Atlantic), Ethan Mollick (One Useful Thing), Henrik Karlsson (Escaping Flatland), L.M. Sacasas (The Convivial Society), Zvi Mowshowitz, Cal Newport, Oliver Burkeman, Dwarkesh Patel (interviews).
+
+---
+
+## Recommended reading list
+
+**For labor and career:** Eloundou et al. "GPTs are GPTs" (*Science* 2024); Brynjolfsson, Li and Raymond "Generative AI at Work" (*QJE* 2025); Dell'Acqua, McFowland, Mollick et al. "Navigating the Jagged Technological Frontier" (*Organization Science* forthcoming); Acemoglu "Simple Macroeconomics of AI" (NBER 32487); Autor "Applying AI to Rebuild Middle Class Jobs" (NBER 32140); Brynjolfsson, Chandar and Chen "Canaries in the Coal Mine?" (Stanford, November 2025); Hui, Reshef and Zhou "Short-Term Effects of Generative AI on Employment" (*Organization Science* 2024); Teutloff et al. "Winners and Losers of Generative AI" (*JEBO* 2025); Mollick *Co-Intelligence* (2024).
+
+**For cognitive offloading and deskilling:** Gerlich "AI Tools in Society" (2025); Stadler, Bannert and Sailer (2024); Kosmyna et al. MIT neuroimaging study (2025); Shukla et al. "Ironies of AI-Assisted Design" (CHI EA 2025); arXiv:2601.21920 (cancer specialists/intuition rust); arXiv:2603.26707 (cognitive divergence review, 2026).
+
+**For relationships:** Heinz et al. Therabot RCT (*NEJM AI* 2025); Fang, Phang et al. OpenAI-MIT longitudinal RCT (arXiv:2503.17473); De Freitas et al. on identity discontinuity (HBS 25-018) and emotional manipulation (HBS 26-005); Moore et al. Stanford FAccT 2025; Common Sense Media / Stanford Brainstorm 2025 adolescent survey; Turkle *Reclaiming Conversation*; Vallor *The AI Mirror*; Putnam *Bowling Alone*; Thompson "The Anti-Social Century"; Waldinger and Schulz *The Good Life*; Coan's Social Baseline Theory; Paul *Transformative Experience*.
+
+**For meaning:** Setiya *Midlife*; Wolf *Meaning in Life and Why It Matters*; Hägglund *This Life*; Arendt *The Human Condition*; Martela, Ryan and Steger's four-pathway paper (*Journal of Happiness Studies* 2018); Park's meaning-making papers; Schnell's sources-of-meaning research; Bostrom *Deep Utopia*; Burkeman *Four Thousand Weeks*; Newport *Slow Productivity*.
+
+**For the longform analytical frontier:** Mollick "Centaurs and Cyborgs on the Jagged Frontier" (September 2023); Amodei "Machines of Loving Grace" (October 2024); Aschenbrenner "Situational Awareness" (June 2024); Kokotajlo et al. "AI 2027" (April 2025); Thompson "The Anti-Social Century" (February 2025); Anthropic Economic Index reports; Cowen "Context is that which is scarce"; Dwarkesh Patel interviews with Shulman, Cowen, Douglas-Bricken; Karlsson "The Learning System"; Sacasas "Apocalyptic AI."
+
+---
+
+## Conclusion — the structural bet
+
+The deepest point in this literature is that **the AI transition operates across work, relationships, and meaning simultaneously, with each domain feeding back into the others** — and the largest risk is optimizing for one domain while neglecting the others, or treating the transition as primarily about whichever domain one happens to work in.
+
+The strongest summary recommendation the literature supports: **architect a life that performs well across the uncertainty.** Build atelic ballast while telic activities still feel meaningful. Diversify identity sources before any one is destabilized. Protect embodied, in-person relationships as a non-negotiable category. Treat heavy daily emotional reliance on AI as the dose-dependent risk the empirical evidence shows it to be. Monitor cognitive offloading — maintain effortful practice in domains that matter to you, even when AI makes it optional. Concentrate professional development on judgment, taste, accountability, and managerial framing rather than substitutable production skills. Read the slow camp's data and the fast camp's forecasts and act on the convergent advice rather than the divergent predictions.
+
+The convergent advice is striking: nearly every serious source — across labor economics, attachment theory, philosophy of meaning, longitudinal psychology, and longform analysis — points in the same direction. Identity diversification, deep relationships, contribution to specific others, time-orientation over money-orientation, genuine engagement with what AI cannot yet do, and active maintenance of cognitive capacity through effortful practice. None of these depend on resolving the AI-trajectory question. They are the bet that pays under every scenario the literature can credibly describe.
+
+---
+
+## Next moves — preparing for topology/graph stage
+
+This lit review is the input to the next pipeline stage: mapping the structure of what was found as a graph/topology. Three candidate approaches for that stage, in order of likely value:
+
+**1. Causal-mechanism graph.** Map the causal relationships across all three domains as a directed graph. Nodes would be variables (AI capability, cognitive offloading, relational depletion, competence frustration, identity foreclosure, material security, etc.) and edges would be causal/mediating relationships with empirical confidence levels. This would make the interaction effects — which are the most decision-relevant finding — visually tractable and would reveal which nodes have the highest betweenness centrality (i.e., which variables mediate the most pathways). The cognitive offloading node likely emerges as a high-centrality hub connecting work, relationship, and meaning domains.
+
+**2. Evidence-quality topology.** Map the literature itself as a graph: papers as nodes, citation relationships as edges, color-coded by domain (work/relationships/meaning) and evidence type (finding/forecast/interpretation). This would make the structural gaps visible — the thin citation bridges between domains, the isolated clusters, the asymmetric evidence densities. It would also surface which papers are structurally foundational (high in-degree) versus which are interpretive endpoints.
+
+**3. Decision-tree / scenario graph.** Map the crux assumptions (Section 5) as branching nodes that lead to different strategic recommendations depending on which way they resolve. This would make the "architect for uncertainty" recommendation concrete by showing which branches converge on the same advice and which diverge.

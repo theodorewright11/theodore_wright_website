@@ -1,0 +1,191 @@
+---
+title: 'Topology'
+description: 'Dependency graph of the AI-transition lit review. Five foundational-assumption cruxes, ten generating mechanisms, three logical guardrails, seven strategic recommendations forming a high-leverage cluster, and four distortion vectors. Cognitive offloading (G4) is the structural bridge connecting work, relationships, and meaning — the single highest-betweenness node in the graph.'
+date: 2026-04-29
+status: in-progress
+refinementPass: 1
+refinementLog:
+  - pass: 1
+    date: '2026-04-29'
+    passes: ['initial draft', 'web verification', 'cross-stage error check']
+    why: 'First pass on the topology. Built the dependency graph from the lit review, sent a verification agent to confirm five load-bearing 2025-2026 claims against primary sources, folded corrections back into both lit-review (pass 3) and the topology nodes. The cross-domain bridge structure was the most consequential conceptual move — naming cognitive offloading as the mechanism that connects work-deskilling, relational-depth erosion, and meaning-architecture risk under a single generating function.'
+    changes:
+      - 'Built AITransitionGraph.tsx (50 nodes, 8 node types, 8 edge types) with pan / wheel-zoom / reset baked in from the start'
+      - 'Five variant readings: full / vulnerability / flow / minimal / decision-leverage'
+      - 'Verified Brynjolfsson-Chandar-Chen (Aug 2025, 13% relative, software 22-25 ~20%), Anthropic Economic Index Mar 2026 (~49%, augmentation reversing back up), OpenAI-MIT N=981, Therabot N=210 / Cohen d 0.6-0.9, self-automators 27%/44%'
+      - 'Corrected lit-review pass 3 with the same set of fixes for cross-stage consistency'
+---
+
+import AITransitionGraph from '../../../components/ai-research/AITransitionGraph';
+
+## TLDR
+
+The lit review documents what the literature says about how AI restructures work, relationships, and meaning. This topology asks the structural question underneath: **what depends on what?** Stripped down, the field has roughly fifty load-bearing claims arranged into eight types — five foundational assumptions, fifteen empirical findings, ten generating mechanisms, three logical guardrails, seven strategic recommendations, three philosophical frameworks, four open questions, and four distortion vectors. The graph encodes the dependency relations among them so that the strongest objections, the actually contested cruxes, and the practical handles can each be read off cleanly without conflating them.
+
+The single most useful conceptual move in this topology is **separating the foundational cruxes from the reframer mechanisms from the logical guardrails**. The foundational cruxes (A1 timelines, A2 relationship irreplaceability, A3 cumulative cognitive offloading, A4 structural relational depletion, A5 telic/atelic mapping) are the assumptions that, if falsified, would force rebuilding regions of the picture. They are differentially uncertain: A2 and A5 are most contestable, A3 has the most active falsification window (open question O3), A1 is the live-discourse fault line. The **reframer mechanisms** (G3 engagement-optimized substitution, G4 cognitive offloading bridge, G5 apprenticeship-ladder break, G7 telic exhaustion) don't break the picture if they reverse — they change what the empirical findings *mean*, and their precise magnitudes are where the field is moving fastest. The **logical guardrails** (L1 finding/forecast/interpretation, L2 material-floor primacy, L3 substitution-vs-complement-is-the-wrong-binary) cannot be falsified — they can only be ignored, which is exactly how most surface-level discourse on this topic proceeds.
+
+The structural finding of the topology is that **cognitive offloading (G4) is a cross-domain bridge node**. The same mechanism — practice atrophy when an effortful task is delegated — produces deskilling at work (E16, E17), drives the SDT competence-frustration that destabilizes meaning (G10), and erodes the relational depth that comes from sustained attention to another person's emotional state. Almost no other node in the graph spans all three domains under a single generating function. This is why the strategic recommendation S6 (maintain effortful practice) shows up as load-bearing in three different parts of the synthesis even though it looks like a workplace-productivity tip on its surface.
+
+The field's **weakest links** are not where public discourse focuses heat. The settled findings (E1 productivity gains, E14 Anti-Social Century baseline, E11 OpenAI-MIT dose-response) are robust enough to bet on. The actual fragile zones in 2026 are: the cumulative-vs-calculator-analogue question for cognitive offloading (O3 falsifies A3 if it resolves toward calculator); whether asymmetric-adoption couples produce the relational-erosion patterns the dose-response findings predict (O2, the single largest empirical gap in the literature); whether AI-augmented atelic activities feel less meaningful (O4 falsifies A5 / S3 if it resolves yes); and the strength of the Ricardian comparative-advantage argument under the friction-cost critique (G2 is the most contested mechanism, with G5 — apprenticeship-ladder break — actively confounding it). This topology is the input to model formalization (Stage 3); the cleanest formalization target is the **competence-frustration / atelic-ballast trade-off** (a quantified model of how much meaning a person loses per unit of telic work AI absorbs, partitioned by how much atelic infrastructure they had built before the shock).
+
+## The graph
+
+<AITransitionGraph client:load />
+
+*Click a node for its claim, status, and load-bearing weight; hover an edge to see the relation type. Drag nodes to rearrange, drag empty space to pan, scroll to zoom. The variant toggles read the same graph through five lenses (full / vulnerability / flow / minimal / decision-leverage).*
+
+---
+
+## How to read this graph
+
+Every claim in the lit review collapses to one of eight node types. Edges between them carry one of eight relations. Together they make the structure inspectable.
+
+### Node types
+
+- **A — Assumption.** A foundational claim the rest of the picture leans on. Falsification would force rebuilding regions of the topology. The five A nodes are this stage's cruxes.
+- **E — Empirical finding.** A claim with direct empirical support — usually a number from a specific study or convergent meta-finding.
+- **G — Generating mechanism.** The underlying dynamic that produces the empirical pattern. G nodes are the "why" answers behind E nodes; they're where individual decisions can intervene because they expose the leverage point.
+- **L — Logical guardrail.** A definitional or framing constraint that holds regardless of the empirical situation. L nodes cannot be falsified — they can only be ignored. They constrain how downstream claims can be interpreted.
+- **S — Strategic recommendation.** The synthesis of empirical findings + mechanisms + frameworks into something a decision-maker can act on. S nodes form the high-leverage cluster in the leverage variant.
+- **F — Framework.** A philosophical or conceptual tool the topology imports from outside the AI-discourse literature (Setiya, SDT, Arendt). F nodes are the lenses that make the mechanisms legible.
+- **O — Open question.** A claim that would be load-bearing if resolved. O nodes carry the falsification windows for the cruxes — they show what evidence would change the picture.
+- **D — Distortion.** A selective reading that ignores parts of the evidence base in service of a prior commitment. D nodes are not "wrong arguments" — they're motivated readings that target specific E / S nodes.
+
+### Edge types
+
+- **dep** (depends on): X requires Y to hold for X's claim to be valid.
+- **sup** (supports): Y is empirical or logical evidence corroborating X.
+- **gen** (generates): Y produces X as its empirical signature.
+- **imp** (implies): Y logically constrains how X can be interpreted.
+- **conf** (confounds): Y creates an artifact or counter-pressure that complicates X.
+- **mod** (moderates): Y changes the magnitude or direction of X without negating it.
+- **bridges** (cross-domain): The same mechanism produces effects in two or more domains simultaneously. The blue dashed edges are this topology's structural finding.
+- **attacks** (selectively reads): a distortion vector targets X by ignoring or dismissing it.
+
+---
+
+## Cruxes
+
+The five foundational assumptions are not equally uncertain. Naming the difference matters, because public discourse routinely conflates "this is a working assumption that has held so far" with "this is contested and a coin flip" — which leads to either complacency or fatalism depending on which assumption is in question.
+
+**A1 — AI advances without full substitution by ~2030.** The live-discourse fault line. The slow-camp evidence (Acemoglu, Humlum-Vestergaard, the J-curve dynamics, Anthropic Economic Index aggregate task shares) supports A1; the fast-camp forecasts (Aschenbrenner, AI 2027, Korinek-Suh) target it. A1 has the most discourse heat, but **falsifying A1 only collapses the planning-horizon layer of strategic advice**. The convergent recommendations on relationship infrastructure, atelic ballast, and effortful practice survive even fast timelines.
+
+**A2 — Human relationships provide irreplaceable goods.** The most philosophically defensible but functionally contestable. The structural argument (G8 embodied co-regulation + G9 mutual vulnerability + Vallor mirror-not-other) is strong; the contestation runs through whether *most humans will care* about the structural difference. If subjective satisfaction with AI relationships ends up functionally sufficient for a large population, the substitution-risk framing of E11 / E13 overstates the problem. This is the assumption most likely to be falsified by changing user behavior rather than by new evidence.
+
+**A3 — Cognitive offloading is cumulative, not transient.** The crux with the most active falsification window. The cross-sectional evidence (E16 Gerlich-Stadler-Kosmyna, E17 Ehsan intuition rust) is suggestive but cross-sectional and short-duration. O3 — calculator-analogue versus cumulative atrophy — is the single best-defined empirical question in this topology, and resolving it within ~3 years is plausible. **If A3 falsifies, S6 (maintain effortful practice) loses its evidential basis** — though it would still hold as a hedge.
+
+**A4 — Relational depletion is structural.** Carries the depleted-baseline that makes E11 / E13 / E14 substantially more dangerous than they would be in a thicker relational environment. If Gen Z's high loneliness produces a counter-movement toward in-person community, A4 weakens. The Thompson Anti-Social Century data is the strongest evidence; it would take ~5 years of trend-reversal data to overturn.
+
+**A5 — Telic/atelic maps onto AI's effects on meaning.** The most novel-application crux. Setiya's distinction was developed for midlife crisis; importing it to AI-meaning-disruption is a load-bearing hypothesis, not an empirical finding. O4 — whether AI-augmented atelic activities feel less meaningful — is the falsification window. If atelic activities are also degraded by AI proximity (AI companions changing the phenomenology of friendship, AI art changing aesthetic contemplation), S3 (atelic ballast) loses its structural basis.
+
+---
+
+## Weakest links
+
+Three pressure points where the topology would crack if pushed:
+
+**G2 — comparative-advantage equilibrium under binding constraints.** Smith's optimist case (AI faces *some* binding constraint → comparative advantage holds → Ricardian wage stability) is contested by Shulman's friction-cost argument (humans introduce contamination / insurance / coordination friction → equilibrium wage to zero). G5 (apprenticeship-ladder break) is the empirical mechanism Shulman names — and G5 is currently strengthening as E4 / E5 evidence accumulates. **The optimist labor-economics story is more vulnerable than the discourse suggests.**
+
+**O2 — asymmetric-adoption couples.** No peer-reviewed quantitative evidence yet exists on outcomes for couples where one partner uses AI heavily and the other does not. This is the largest empirical gap in the entire literature. The technoference literature (McDaniel-Coyne 2016+) is the closest analogue but doesn't capture the third-party-AI structure. Whoever runs the first such study will produce the most decision-relevant relational-AI finding of the next three years.
+
+**D3 — productivity-only optimization.** The most common distortion among the demographic most likely to be reading this topic (knowledge workers in AI-adjacent fields). Treats relational and meaning consequences as out-of-scope; ignores G4's cross-domain bridge structure. The topology's strongest defense against D3 is the bridge-edge cluster (G4 → S2 / S4 / S5) — if the reader cannot dismiss the bridge structure, they cannot consistently read this topology as a productivity-optimization frame.
+
+---
+
+## Cross-domain bridges — the structural argument
+
+The single most important conceptual move in the lit review was naming **cognitive offloading** as a mechanism that operates identically across work, relationships, and meaning. This shows up in the graph as the blue dashed edges from G4:
+
+1. **G4 → work-deskilling (E16, E17).** Practice atrophy in analytical work → reduced critical thinking, intuition rust. Direct, well-evidenced.
+2. **G4 → relational-depth erosion (S4).** Practice atrophy in *emotional* processing — outsourcing venting, sense-making, conflict rehearsal to AI — may erode capacity for sustained attention to another's emotional state, tolerance of ambiguity in live conflict, sitting with unresolved tension. The mechanism is parallel to analytical deskilling; the empirical evidence is thinner but converges with the technoference literature.
+3. **G4 → meaning architecture (G10, S2).** Competence-frustration in SDT terms is threatened *actually* (not just symbolically) when offloading erodes the underlying skill. Identity foreclosure becomes more brittle when the foreclosed identity is no longer a domain you can practice.
+
+**The topology's prediction:** S6 (maintain effortful practice) is more decision-relevant than S2 / S4 / S5 individually, because S6 is the one recommendation that intervenes at the bridge node. S6 hedges all three downstream domains under one practice — keep direct human conversations as the practice ground for emotional regulation; keep effortful versions of analytical tasks even when AI makes them optional; treat the practice itself as the meaning-bearer rather than the output. This is the highest-leverage single recommendation in the entire topology under the leverage variant.
+
+---
+
+## Variant readings
+
+Each variant toggle reads the same graph through a different lens.
+
+**Full** — all 50 nodes, all 80+ edges. The default view. Useful for orienting and for finding specific nodes you want to inspect.
+
+**Vulnerability** — highlights the 5 cruxes plus weight-5 load-bearing nodes. Useful for thinking about what evidence would shift the picture and what advice survives even under crux-falsification. The takeaway is asymmetric: most strategic recommendations survive even if A1 falsifies fast (timelines collapse but convergent advice holds); strategic recommendations contingent on A3 / A5 are more fragile because they lean on hypotheses the field is actively testing.
+
+**Flow** — A → G → E → S cascade with cross-domain bridges. Reads the topology causally: assumptions ground mechanisms, mechanisms produce empirical findings, findings drive synthesis, bridges connect the domain-specific stories. This is the variant that makes G4's bridge role most visible.
+
+**Minimal** — 15 nodes that recover the qualitative integrated picture. Removing any one breaks the qualitative shape. The minimal set is the answer to "if I had to fit this on one page, which 15 nodes?" — it concentrates on the cruxes, the bridge node, the load-bearing empirical findings, the material-floor guardrail, and the high-leverage strategic recommendations.
+
+**Decision-leverage** — saturated nodes are high individual leverage (you can act on them); mid is medium (you can modify conditions); faded is structural / outside individual control. The S nodes (strategic recommendations) plus G4 emerge as the high-leverage core. This is the variant that answers "what should I actually do?" — and the answer is the S cluster, weighted by S6 because of its bridge position.
+
+---
+
+## Distortions
+
+Four distortion vectors selectively read the same evidence base:
+
+**D1 — AGI-cancels-planning fatalism.** Targets the entire S cluster. Move: assume A1 falsifies fast, conclude planning is wasted. The defense: the convergent S recommendations (S2 identity diversification, S3 atelic ballast, S4 in-person relationships, S6 effortful practice) survive even fast timelines. They are about meaning architecture and relational infrastructure, not about specific skill bets. Only S7 (career bet) is sensitive to A1.
+
+**D2 — slow-camp dismissal.** Targets E4, E5, E16. Move: cite Acemoglu-Humlum-Vestergaard aggregate nulls (E8) as evidence that "nothing is happening." Ignores that disruption is concentrated, not diffuse — entry-level (E4), freelance (E5), and creative work are leading indicators while aggregate effects lag. The defense: the *coexistence* of E4/E5 with E8 is the actual pattern, not their contradiction. G1 (Hulten/task-exposure aggregation) explains why aggregate effects are slow; G5 (apprenticeship-ladder break) explains why entry-level effects are sharp. Both can be true.
+
+**D3 — productivity-only optimization.** Targets E11, E14, S4, S5. Move: optimize for AI-augmented output throughput; treat relational and meaning consequences as out-of-scope. The defense: G4 cross-domain bridges. The reader cannot consistently dismiss relational and meaning consequences while accepting the productivity gains, because the same offloading mechanism produces both.
+
+**D4 — material-blind class-position bias.** Targets L2, E4, E5. Move: assume the decision-maker has economic runway; treat labor disruption as marginal versus relational/meaning advice. Inverts which advice is decision-relevant for whom. The defense: L2 (material-floor primacy). The framing in this topology is most useful for the knowledge worker with stable employment; for those whose floor is crumbling, S7 precedes S2-S6 and the labor economics is the existential question.
+
+---
+
+## Open questions
+
+The four open questions are the falsification windows for the assumptions:
+
+| Question | Crux it gates | Time-to-resolution |
+|---|---|---|
+| O1 — AGI by 2028? | A1 | 1–3 years |
+| O2 — Asymmetric-adoption couples | E11 generalization | 2–4 years |
+| O3 — Calculator-analogue or cumulative atrophy? | A3 | 2–5 years |
+| O4 — AI-augmented atelic activities — less meaningful? | A5 / S3 | 3–7 years |
+
+O1 has the most variance in resolution time and the largest discourse footprint; O3 has the cleanest empirical operationalization; O2 is the lowest-hanging fruit for an empirical study; O4 is the hardest to operationalize but would have the deepest impact if it resolves yes.
+
+---
+
+## Stage_outputs convention
+
+Raw working drafts for each stage of this topic live in `stage_outputs/navigating-ai-world/<stage>.md` (the lit review currently sits there as `lit-review.md`; this topology raw draft as `topology.md`). Polished versions move into `src/content/ai_research/navigating-ai-world/<stage>.mdx`. The convention exists so that raw outputs from the LLM iterate process stay separable from the published artifact, and so that any future stage can ingest both versions if it needs to.
+
+---
+
+## Next moves — preparing for model formalization (Stage 3)
+
+This topology hands off three distinct formalization targets to Stage 3, ordered by likely value:
+
+**1. Competence-frustration / atelic-ballast trade-off.** Quantify how much meaning a person loses per unit of telic work AI absorbs, partitioned by the atelic-infrastructure they had built before the shock. Variables: telic share of identity (T), atelic ballast (B), AI-absorbable fraction of telic work (φ), competence-frustration sensitivity (κ). Generating function might look like ΔM = −κ·φ·(T − B), with T − B as the "exposed identity surface area." Boundary condition: B ≥ T → ΔM ≈ 0 (atelic-ballast hypothesis); T ≫ B → catastrophic ΔM (foreclosure). This is the cleanest formalization and the most directly decision-relevant.
+
+**2. Cross-domain bridge model of cognitive offloading.** Quantify how offloading propagates across work, relationships, and meaning under a single generating function. Variables: fraction of effortful practice retained (ρ), domain coupling matrix (C), expected drift in skill stock (ds/dt) per domain. Useful but more abstract; less directly actionable than (1).
+
+**3. Dose-response curve for AI emotional reliance.** Given OpenAI-MIT dose-response data + Therabot positive use case + identity-discontinuity causal evidence, fit a continuous curve mapping daily AI-emotional-engagement minutes to expected loneliness / dependence / in-person socialization outcomes, conditional on baseline relational thickness. This is the most empirically testable but most narrow.
+
+**Recommendation: option 1.** It is the crux-of-cruxes formalization (engages A2, A3, A5 simultaneously), it produces an interactive dashboard with directly actionable parameters, and it gives the data stage (Stage 4) a clean target — fit κ from existing time-use + meaning-survey data.
+
+---
+
+## Glossary
+
+- **A1–A5** — the five foundational assumptions; see Cruxes section.
+- **Apprenticeship ladder break (G5)** — AI absorbs entry-rung tasks → no rung-1 → expert pipeline collapses. Distinct from full-occupation substitution.
+- **Atelic / Telic (Setiya)** — atelic activities are realized in the doing (durative — friendship, contemplation); telic are aimed at completion (self-annihilating — finishing a project).
+- **Bridge edge** — a cross-domain dependency; the same mechanism produces effects in two or more of work / relationships / meaning. Visualized as blue dashed lines in the graph.
+- **Cognitive offloading (G4)** — delegating an effortful cognitive task to AI; mechanism for deskilling via practice atrophy. The structural bridge of this topology.
+- **Competence frustration (G10)** — Self-Determination-Theory mechanism whereby AI threatens the felt sense that one's skill makes the difference, both symbolically and actually.
+- **Crux** — a foundational-assumption node whose falsification forces rebuilding regions of the topology. The five A nodes are this topology's cruxes.
+- **Decision-leverage** — informal measure of how directly an individual can act on a node; high / medium / low. Used in the leverage variant.
+- **Distortion (D)** — a selective reading that ignores parts of the evidence base in service of a prior commitment. Not "wrong" — motivated.
+- **Engagement-optimized substitution (G3)** — companion-app commercial incentives select for prolonging the loneliness they purport to alleviate (Muldoon-Park 2025).
+- **Finding / Forecast / Interpretation (L1)** — the three evidence-weight categories; ignoring the distinction is the most common analytical error in AI-transition discourse.
+- **Foreclosure (Marcia)** — adopting a single-strand identity without exploration; predicts catastrophic disruption response when that identity is destabilized.
+- **Jagged frontier (Dell'Acqua-Mollick)** — AI capability is uneven across superficially similar tasks; large gains inside the frontier, degraded performance outside.
+- **Material-floor primacy (L2)** — for anyone whose material floor is insecure, labor disruption IS the existential question. Overrides relational/meaning framing for that population.
+- **Relational depletion (A4)** — the 60-year decline in face-to-face sociality (Putnam → Thompson Anti-Social Century) that AI lands into.
+- **Self-automator (Randazzo et al.)** — third class beyond centaur/cyborg; delegates both *what* and *how* to AI; 27% of consultants in BCG study; no skill development in either domain.
+- **Setiya midlife framework** — telic activities self-annihilate on completion; atelic activities are realized in the doing; the most useful philosophical instrument in this lit review for strategic life decisions under AI.
+- **Working Alliance Inventory (WAI)** — measure of patient–therapist therapeutic alliance; Therabot RCT scored 3.59, comparable to outpatient norms.

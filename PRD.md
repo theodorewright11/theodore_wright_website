@@ -91,8 +91,9 @@ Active topics — folders exist in `src/content/ai_research/` and `stage_outputs
 | Topic slug | Title | Furthest stage |
 |---|---|---|
 | `human-psych-variation` | Psychology of Individual Differences | writeup (pass 2) |
+| `navigating-ai-world` | Navigating an AI World | topology (pass 1) |
 
-Planned topics (full list in `prompts.md`): philosophy → personal decisions; philosophy → organizations; philosophy of mind / ethics / epistemology; evolution-modernity mismatch; navigating an AI world; emotions architecture; meaning & spirituality; bedrock generating functions; AI decompression; information fidelity; trust architecture; parent-child transmission; technology utilization architecture; prediction & calibration; AI cognitive profile. Each spins up its own folder pair when started.
+Planned topics (full list in `prompts.md`): philosophy → personal decisions; philosophy → organizations; philosophy of mind / ethics / epistemology; evolution-modernity mismatch; emotions architecture; meaning & spirituality; bedrock generating functions; AI decompression; information fidelity; trust architecture; parent-child transmission; technology utilization architecture; prediction & calibration; AI cognitive profile. Each spins up its own folder pair when started.
 
 ## Dashboards
 
@@ -137,6 +138,8 @@ Word documents (.docx) should be converted to PDF before upload (Word: File → 
 
 ## Decisions log
 
+- **2026-04-29**: `navigating-ai-world` topic spun up. Lit review (already drafted as `ai_transition_lit_review_v2.md`) migrated into `stage_outputs/navigating-ai-world/lit-review.md`, polished into `src/content/ai_research/navigating-ai-world/lit-review.mdx` (refinementPass 3 — the +1 pass folded in cross-stage corrections from web verification: Brynjolfsson-Chandar-Chen "Canaries" date Aug 2025 not Nov 2025, ~13% as relative-to-less-exposed-peers, Anthropic Economic Index Mar 2026 ~49% with augmentation reversing back up on both surfaces). Topology stage shipped at pass 1: 50-node dependency graph (5 foundational-assumption cruxes / 15 empirical findings / 10 generating mechanisms / 3 logical guardrails / 7 strategic recommendations / 3 frameworks / 4 open questions / 4 distortion vectors), with cognitive offloading (G4) named as the cross-domain bridge connecting work, relationships, and meaning — the structural finding of the stage. Five variant readings: full / vulnerability / flow / minimal / decision-leverage. Interactive component at `src/components/ai-research/AITransitionGraph.tsx`. Topology proposes three formalization targets for Stage 3, recommending option 1 (competence-frustration / atelic-ballast trade-off — engages cruxes A2, A3, A5 simultaneously).
+- **2026-04-29**: AI-research force-directed graphs gained pan & wheel-zoom. Both `PsychVariationGraph` and `AITransitionGraph` now support drag-empty-space-to-pan, scroll-to-zoom (cursor-anchored), and a `reset view` button. The previous limitation — nodes that drifted outside the viewBox were unreachable — is fixed. Implementation pattern: full-size transparent `<rect>` as pan capture surface (sits behind nodes/edges in render order so node clicks still hit nodes), inner `<g transform="translate(...) scale(...)">` wraps the simulation; node `pointerToGraph` helper applies inverse transform; `e.stopPropagation()` on node `pointerDown` prevents pan from triggering during drag. Pattern documented in ARCHITECTURE.md.
 - **2026-04-27**: Section originally named `/iterate` renamed to `/ai-research` ("AI's Research") to make AI-authorship explicit to visitors.
 - **2026-04-27**: Three writing tiers chosen (mine / collab / ai-led) with display labels Me / Me + AI / AI.
 - **2026-04-28**: Home and About merged into a single `/` page; `/about` redirects to `/`.

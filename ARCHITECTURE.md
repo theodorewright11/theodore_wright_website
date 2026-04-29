@@ -33,9 +33,11 @@
 │   │   ├── models/                      ← React components for interactive models
 │   │   │   └── OptionValueDashboard.tsx
 │   │   └── ai-research/                 ← React components for AI-research stage visualizations
-│   │       ├── PsychVariationGraph.tsx  ← topology graph (force-directed via d3-force)
+│   │       ├── PsychVariationGraph.tsx  ← topology graph (force-directed via d3-force) — pan + wheel-zoom + reset
 │   │       ├── PsychVariationModel.tsx  ← model dashboard (variance decomposition + multivariate sex-difference tabs)
-│   │       └── PsychVariationData.tsx   ← data findings panel (six-tab H1–H6 prediction tests, hand-rolled SVG charts)
+│   │       ├── PsychVariationData.tsx   ← data findings panel (six-tab H1–H6 prediction tests, hand-rolled SVG charts)
+│   │       ├── PsychVariationExplorer.tsx ← build-stage reader's tool (trait lookup + traps + asymmetric environmental effects)
+│   │       └── AITransitionGraph.tsx    ← topology graph for navigating-ai-world (~50 nodes, 5 variants, pan + wheel-zoom + reset)
 │   ├── content/
 │   │   ├── blog/<slug>.mdx              ← essays
 │   │   ├── research/<slug>.mdx          ← formal research entries
@@ -142,6 +144,17 @@ For the data stage specifically, raw working drafts can be accompanied by a sibl
 **Public data convention.** Once a data-stage CSV is finalized for publication it is copied to `public/data/<topic>/<file>.csv`. Astro serves `public/` as-is, so the file is downloadable at `/data/<topic>/<file>.csv` on the live site. This (a) makes the audit trail visible to visitors, (b) provides a stable URL Stage 5 build artifacts can fetch, and (c) keeps the file tracked in git (the `stage_outputs/` folder is gitignored as raw working state). The pipeline source (`pipeline.py`) and intermediate `out/` files stay in `stage_outputs/` as they are working artifacts, not publication artifacts.
 
 Stage-specific interactive components (D3 graphs for topology, dashboards for model/data) live at `src/components/ai-research/<ComponentName>.tsx` and are mounted in the stage's MDX with `client:load` (wrap in `not-prose` so Tailwind Typography doesn't override styles).
+
+**Topology-graph pan/zoom pattern.** Force-directed topology graphs (`PsychVariationGraph`, `AITransitionGraph`) share a pan-and-zoom interaction. Implementation:
+
+- A full-size transparent `<rect>` is rendered first inside the SVG as the pan capture surface. Because nodes/edges are rendered after, in SVG render order they sit on top — node clicks hit nodes, empty-space clicks hit the rect.
+- Nodes and edges are wrapped in an inner `<g transform="translate(${panX},${panY}) scale(${scale})">`. Positions are stored in graph coordinates; the transform handles display.
+- A `pointerToGraph` helper applies the inverse transform: `(svgCoord - pan) / scale`. Used inside node drag handlers so dragging continues to feel correct at any zoom.
+- `e.stopPropagation()` on node `pointerDown` prevents pan from starting during a node drag (defensive — render order alone already prevents it).
+- Wheel handler computes a new scale (clamped to `[0.4, 3]`) and adjusts pan so the cursor's graph position stays fixed under the pointer.
+- A `reset view` button restores `panX=panY=0, scale=1`.
+
+Future force-directed components in this directory should follow the same pattern. Both `<svg>` and the pan rect set `touchAction: 'none'` so trackpad gestures don't fight the pan/zoom logic.
 
 Refinement history is stored as an array in frontmatter:
 

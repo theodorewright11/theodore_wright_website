@@ -299,9 +299,14 @@ export default function PsychVariationGraph() {
   const [selected, setSelected] = useState<string | null>(null);
   const [hoveredEdge, setHoveredEdge] = useState<number | null>(null);
   const [positions, setPositions] = useState<Map<string, Pos>>(new Map());
+  const [panX, setPanX] = useState(0);
+  const [panY, setPanY] = useState(0);
+  const [scale, setScale] = useState(1);
+  const [isPanning, setIsPanning] = useState(false);
   const svgRef = useRef<SVGSVGElement | null>(null);
   const dragRef = useRef<{ id: string; offsetX: number; offsetY: number; moved: boolean } | null>(null);
   const simRef = useRef<Simulation<GraphNode, GraphLink> | null>(null);
+  const panRef = useRef<{ startSvgX: number; startSvgY: number; startPanX: number; startPanY: number } | null>(null);
 
   const width = 920;
   const height = 640;
@@ -338,7 +343,7 @@ export default function PsychVariationGraph() {
     return () => { sim.stop(); };
   }, []);
 
-  // Convert pointer screen coordinates into the SVG's coordinate system.
+  // Convert pointer screen coordinates into the SVG's viewBox coordinate system.
   function pointerToSvg(e: { clientX: number; clientY: number }): Pos | null {
     const svg = svgRef.current;
     if (!svg) return null;
@@ -351,11 +356,19 @@ export default function PsychVariationGraph() {
     return { x: cursor.x, y: cursor.y };
   }
 
+  // Convert pointer to graph coordinates (the inner <g>'s coord system before pan/scale).
+  function pointerToGraph(e: { clientX: number; clientY: number }): Pos | null {
+    const svg = pointerToSvg(e);
+    if (!svg) return null;
+    return { x: (svg.x - panX) / scale, y: (svg.y - panY) / scale };
+  }
+
   // Pointer-capture drag on each node. The `<g>` captures the pointer on down,
   // then receives all subsequent move/up events even if the cursor leaves the
   // shape — the standard fix for "drag stops working halfway."
   function handlePointerDown(e: React.PointerEvent<SVGGElement>, id: string) {
-    const cursor = pointerToSvg(e);
+    e.stopPropagation();
+    const cursor = pointerToGraph(e);
     const pos = positions.get(id);
     if (!cursor || !pos) return;
     (e.currentTarget as Element).setPointerCapture(e.pointerId);
@@ -371,7 +384,7 @@ export default function PsychVariationGraph() {
   function handlePointerMove(e: React.PointerEvent<SVGGElement>) {
     const drag = dragRef.current;
     if (!drag) return;
-    const cursor = pointerToSvg(e);
+    const cursor = pointerToGraph(e);
     if (!cursor) return;
     const newX = cursor.x - drag.offsetX;
     const newY = cursor.y - drag.offsetY;
@@ -393,6 +406,46 @@ export default function PsychVariationGraph() {
     }
   }
 
+  // Pan: pointer-down on the background rect translates the inner <g>.
+  function handleBgPointerDown(e: React.PointerEvent<SVGRectElement>) {
+    const cursor = pointerToSvg(e);
+    if (!cursor) return;
+    (e.currentTarget as Element).setPointerCapture(e.pointerId);
+    panRef.current = { startSvgX: cursor.x, startSvgY: cursor.y, startPanX: panX, startPanY: panY };
+    setIsPanning(true);
+    e.preventDefault();
+  }
+  function handleBgPointerMove(e: React.PointerEvent<SVGRectElement>) {
+    const pan = panRef.current;
+    if (!pan) return;
+    const cursor = pointerToSvg(e);
+    if (!cursor) return;
+    setPanX(pan.startPanX + (cursor.x - pan.startSvgX));
+    setPanY(pan.startPanY + (cursor.y - pan.startSvgY));
+  }
+  function handleBgPointerUp(e: React.PointerEvent<SVGRectElement>) {
+    (e.currentTarget as Element).releasePointerCapture?.(e.pointerId);
+    panRef.current = null;
+    setIsPanning(false);
+  }
+
+  // Wheel: zoom around the cursor so its graph point stays fixed.
+  function handleWheel(e: React.WheelEvent<SVGSVGElement>) {
+    const cursor = pointerToSvg(e);
+    if (!cursor) return;
+    const next = Math.max(0.4, Math.min(3, scale * Math.exp(-e.deltaY * 0.0015)));
+    if (next === scale) return;
+    setPanX(cursor.x - ((cursor.x - panX) * next) / scale);
+    setPanY(cursor.y - ((cursor.y - panY) * next) / scale);
+    setScale(next);
+  }
+
+  function resetView() {
+    setPanX(0);
+    setPanY(0);
+    setScale(1);
+  }
+
   const selectedNode = useMemo(
     () => (selected ? NODES.find(n => n.id === selected) ?? null : null),
     [selected]
@@ -408,8 +461,8 @@ export default function PsychVariationGraph() {
 
   return (
     <div className="not-prose font-sans text-ink" style={{ background: '#f7f3ec' }}>
-      {/* Variant toggle */}
-      <div className="flex flex-wrap gap-2 mb-3 text-[12px] font-mono uppercase tracking-wider">
+      {/* Variant toggle + view reset */}
+      <div className="flex flex-wrap gap-2 mb-3 text-[12px] font-mono uppercase tracking-wider items-center">
         {(['full', 'vulnerability', 'flow', 'minimal', 'politicization'] as Variant[]).map(v => (
           <button
             key={v}
@@ -424,9 +477,20 @@ export default function PsychVariationGraph() {
             {v}
           </button>
         ))}
+        <button
+          onClick={resetView}
+          className="px-3 py-1.5 border transition-colors ml-auto"
+          style={{ borderColor: '#d9d0bf', background: 'transparent', color: '#7a7166' }}
+          title="Reset pan & zoom"
+        >
+          reset view
+        </button>
       </div>
       <p className="font-serif text-[14px] text-ink-soft italic mb-3 leading-snug">
         {variantBlurb[variant]}
+        <span className="not-italic font-mono text-[11px] text-muted ml-2">
+          · drag empty space to pan · scroll to zoom
+        </span>
       </p>
 
       <div className="flex flex-col lg:flex-row gap-4">
@@ -435,6 +499,7 @@ export default function PsychVariationGraph() {
             ref={svgRef}
             viewBox={`0 0 ${width} ${height}`}
             preserveAspectRatio="xMidYMid meet"
+            onWheel={handleWheel}
             style={{ width: '100%', height: 'auto', display: 'block', userSelect: 'none', touchAction: 'none' }}
           >
             <defs>
@@ -448,6 +513,22 @@ export default function PsychVariationGraph() {
                 <path d="M0,-5L10,0L0,5" fill="#5c7cfa" />
               </marker>
             </defs>
+
+            {/* Pan capture surface — sits behind nodes/edges in render order so node clicks still hit nodes. */}
+            <rect
+              x={0}
+              y={0}
+              width={width}
+              height={height}
+              fill="transparent"
+              onPointerDown={handleBgPointerDown}
+              onPointerMove={handleBgPointerMove}
+              onPointerUp={handleBgPointerUp}
+              onPointerCancel={handleBgPointerUp}
+              style={{ cursor: isPanning ? 'grabbing' : 'grab', touchAction: 'none' }}
+            />
+
+            <g transform={`translate(${panX},${panY}) scale(${scale})`}>
 
             {/* Edges */}
             {LINKS.map((link, i) => {
@@ -569,6 +650,8 @@ export default function PsychVariationGraph() {
                 </g>
               );
             })}
+
+            </g>
           </svg>
         </div>
 
@@ -625,7 +708,7 @@ export default function PsychVariationGraph() {
               </>
             ) : (
               <div className="font-serif italic text-[13px]" style={{ color: '#7a7166' }}>
-                Click a node to see its claim, status, and load-bearing weight. Hover an edge to see the relation type. Drag nodes to rearrange.
+                Click a node to see its claim, status, and load-bearing weight. Hover an edge to see the relation type. Drag nodes to rearrange, drag empty space to pan, scroll to zoom.
               </div>
             )}
           </div>
