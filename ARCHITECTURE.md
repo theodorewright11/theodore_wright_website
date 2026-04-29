@@ -33,7 +33,8 @@
 │   │   │   └── OptionValueDashboard.tsx
 │   │   └── ai-research/                 ← React components for AI-research stage visualizations
 │   │       ├── PsychVariationGraph.tsx  ← topology graph (force-directed via d3-force)
-│   │       └── PsychVariationModel.tsx  ← model dashboard (variance decomposition + multivariate sex-difference tabs)
+│   │       ├── PsychVariationModel.tsx  ← model dashboard (variance decomposition + multivariate sex-difference tabs)
+│   │       └── PsychVariationData.tsx   ← data findings panel (six-tab H1–H6 prediction tests, hand-rolled SVG charts)
 │   ├── content/
 │   │   ├── blog/<slug>.mdx              ← essays
 │   │   ├── research/<slug>.mdx          ← formal research entries
@@ -115,6 +116,8 @@ Each topic is a folder under `src/content/ai_research/<topic>/`. Inside:
 - `build.mdx` — stage 5
 
 `stage_outputs/<topic>/<stage>.md` holds raw LLM outputs that feed each stage. Topic slugs are kebab-case; stage filenames are exactly one of `lit-review`, `topology`, `model`, `data`, `build` (no version suffixes — git provides history). Polished versions move into `src/content/ai_research/<topic>/<stage>.mdx`.
+
+For the data stage specifically, raw working drafts can be accompanied by a sibling `stage_outputs/<topic>/data/` folder containing the curated input CSVs, the runnable Python pipeline, and a `data/out/` folder with derived outputs. The CSVs are the canonical artifact (one source-cited row per estimate); the Python script is reference code that reproduces every chart on the published `data.mdx`. Stage-5 build artifacts consume the CSVs directly.
 
 Stage-specific interactive components (D3 graphs for topology, dashboards for model/data) live at `src/components/ai-research/<ComponentName>.tsx` and are mounted in the stage's MDX with `client:load` (wrap in `not-prose` so Tailwind Typography doesn't override styles).
 
