@@ -1,5 +1,6 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import DownloadMd from '../../components/DownloadMd.astro';
 import { getCollection } from 'astro:content';
 
 export async function getStaticPaths() {
@@ -23,11 +24,14 @@ const statusLabel: Record<string, string> = {
 const fmtYear = (date: Date) => String(date.getFullYear());
 ---
 
-<BaseLayout title={`${entry.data.title} — Research`} description={entry.data.description}>
+<BaseLayout title={`${entry.data.title} — My Research`} description={entry.data.description}>
   <article class="max-w-[760px] mx-auto px-8 pt-14 pb-24">
-    <a href="/research"
-       class="font-mono text-[11px] uppercase text-muted no-underline hover:text-accent transition-colors"
-       style="letter-spacing: 0.08em">← Research</a>
+    <div class="flex items-center justify-between gap-4 flex-wrap">
+      <a href="/research"
+         class="font-mono text-[11px] uppercase text-muted no-underline hover:text-accent transition-colors"
+         style="letter-spacing: 0.08em">← My Research</a>
+      <DownloadMd href={`/research/${entry.slug}.md`} label="download as .md" align="right" />
+    </div>
 
     <header class="mt-5 mb-10 pb-8 border-b border-rule">
       <div class="flex items-baseline gap-3 mb-3 flex-wrap">

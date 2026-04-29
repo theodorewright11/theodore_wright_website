@@ -12,9 +12,14 @@ const updated = new Date(now.updated + 'T00:00:00').toLocaleDateString('en-US', 
        style="letter-spacing: 0.06em">
     <div class="flex items-baseline gap-4 flex-wrap">
       <span>updated {updated}</span>
-      <a href="/content-bundle.md"
+      <span class="text-muted/60">·</span>
+      <span class="text-ink-soft">download all</span>
+      <a href="/bundle-mine.md"
          class="text-accent no-underline hover:underline"
-         download>download all content (.md) ↓</a>
+         download>mine ↓</a>
+      <a href="/bundle-ai-research.md"
+         class="text-accent no-underline hover:underline"
+         download>ai's research ↓</a>
     </div>
     <div class="flex items-baseline gap-3 flex-wrap">
       <a href={`mailto:${bio.email}`} class="text-ink-soft no-underline hover:text-accent transition-colors">email</a>

@@ -1,6 +1,7 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import TierChip from '../../components/TierChip.astro';
+import DownloadMd from '../../components/DownloadMd.astro';
 import { getCollection } from 'astro:content';
 import bio from '../../data/bio.json';
 
@@ -21,9 +22,12 @@ const fmt = (date: Date) =>
 
 <BaseLayout title={`${entry.data.title} — Writing`} description={entry.data.description}>
   <article class="max-w-[640px] mx-auto px-8 pt-14 pb-24">
-    <a href="/writing"
-       class="font-mono text-[11px] uppercase text-muted no-underline hover:text-accent transition-colors"
-       style="letter-spacing: 0.08em">← Writing</a>
+    <div class="flex items-center justify-between gap-4 flex-wrap">
+      <a href="/writing"
+         class="font-mono text-[11px] uppercase text-muted no-underline hover:text-accent transition-colors"
+         style="letter-spacing: 0.08em">← Writing</a>
+      <DownloadMd href={`/writing/${entry.slug}.md`} label="download as .md" align="right" />
+    </div>
 
     <header class="mt-5 mb-10 pb-8 border-b border-rule">
       <div class="flex items-baseline gap-3 mb-4 flex-wrap">

@@ -1,34 +1,60 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import GroupHeader from '../../components/GroupHeader.astro';
 import dashboards from '../../data/dashboards.json';
+
+type Status = 'planned' | 'in-progress' | 'finished';
+type Dashboard = { slug: string; title: string; desc: string; status: Status };
+
+const order: Array<[Status, string]> = [
+  ['in-progress', 'In Progress'],
+  ['planned', 'Planned'],
+  ['finished', 'Finished'],
+];
+
+const groups = order
+  .map(([k, l]) => ({
+    k,
+    l,
+    items: (dashboards as Dashboard[]).filter(d => d.status === k),
+  }))
+  .filter(g => g.items.length > 0);
 ---
 
 <BaseLayout title="Dashboards — Teddy Wright"
-  description="Interactive dashboards for decision-making, finance, well-being, and social environment.">
+  description="Usable interactive dashboards to help navigate modern life with its complexities.">
   <section class="max-w-[760px] mx-auto px-8 pt-14 pb-24">
     <h1 class="font-display font-semibold text-[48px] leading-none m-0 mb-3 text-ink"
         style="letter-spacing: -0.03em">Dashboards</h1>
-    <p class="font-serif text-[17px] text-muted leading-[1.55] max-w-[580px] m-0 mb-3">
-      Interactive dashboards for personal models. Each will ship in two tiers — a public demo and a private version with my own data.
+    <p class="font-serif text-[17px] text-muted leading-[1.55] max-w-[580px] m-0 mb-14">
+      Usable interactive dashboards to help navigate modern life with its complexities.
     </p>
-    <p class="font-serif italic text-[14px] text-muted m-0 mb-14">None are live yet. Planned:</p>
 
-    <div>
-      {dashboards.map((d, i) => (
-        <article class:list={[
-          'py-5 border-t border-rule grid grid-cols-[1fr_auto] gap-4 items-baseline',
-          i === dashboards.length - 1 ? 'border-b border-rule' : '',
-        ]}>
-          <div>
-            <h2 class="font-display font-semibold text-[20px] m-0 mb-1.5 text-ink"
-                style="letter-spacing: -0.01em">{d.title}</h2>
-            <p class="font-serif text-[15px] text-ink-soft leading-[1.55] m-0"
-               style="text-wrap: pretty">{d.desc}</p>
-          </div>
-          <span class="font-mono text-[10px] uppercase text-muted border border-rule rounded-sm px-2 py-px self-start mt-1"
-                style="letter-spacing: 0.12em">Planned</span>
-        </article>
-      ))}
-    </div>
+    {groups.length === 0 ? (
+      <div class="text-center py-16 font-serif italic text-muted">
+        <p>No dashboards yet.</p>
+      </div>
+    ) : (
+      groups.map(g => (
+        <section class="mb-14">
+          <GroupHeader label={g.l} count={g.items.length} />
+          {g.items.map((d, i) => {
+            const live = d.status !== 'planned';
+            return (
+              <article class:list={[
+                'py-5',
+                i < g.items.length - 1 ? 'border-b border-rule-soft' : '',
+                live ? '' : 'opacity-70',
+              ]}>
+                <h3 class="font-display font-semibold text-[22px] m-0 mb-1.5 text-ink"
+                    style="letter-spacing: -0.015em">{d.title}</h3>
+                <p class="font-serif text-[15px] text-ink-soft leading-[1.55] m-0"
+                   style="text-wrap: pretty">{d.desc}</p>
+              </article>
+            );
+          })}
+        </section>
+      ))
+    )}
   </section>
 </BaseLayout>

@@ -1,6 +1,7 @@
 ---
 import BaseLayout from '../../../layouts/BaseLayout.astro';
 import RefinementLog from '../../../components/RefinementLog.astro';
+import DownloadMd from '../../../components/DownloadMd.astro';
 import { getCollection } from 'astro:content';
 
 export async function getStaticPaths() {
@@ -33,9 +34,12 @@ const stageLabel: Record<string, string> = {
 
 <BaseLayout title={`${entry.data.title} — ${topic}`} description={entry.data.description}>
   <article class="max-w-[760px] mx-auto px-8 pt-14 pb-24">
-    <a href={`/ai-research/${topic}`}
-       class="font-mono text-[11px] uppercase text-muted no-underline hover:text-accent transition-colors"
-       style="letter-spacing: 0.08em">← {topic}</a>
+    <div class="flex items-center justify-between gap-4 flex-wrap">
+      <a href={`/ai-research/${topic}`}
+         class="font-mono text-[11px] uppercase text-muted no-underline hover:text-accent transition-colors"
+         style="letter-spacing: 0.08em">← {topic}</a>
+      <DownloadMd href={`/ai-research/${topic}/${stage}.md`} label="download stage (.md)" align="right" />
+    </div>
 
     <header class="mt-5 mb-10 pb-8 border-b border-rule">
       <div class="flex items-baseline gap-3 mb-3 flex-wrap">

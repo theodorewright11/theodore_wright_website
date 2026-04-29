@@ -1,0 +1,17 @@
+---
+interface Props {
+  href: string;
+  label?: string;
+  align?: 'left' | 'right';
+}
+const { href, label = 'download as .md', align = 'right' } = Astro.props;
+---
+
+<div class:list={[
+  'mb-6',
+  align === 'right' ? 'text-right' : 'text-left',
+]}>
+  <a href={href} download
+     class="inline-block font-mono text-[11px] uppercase text-accent no-underline hover:underline border border-rule rounded-sm px-2.5 py-1 transition-colors hover:border-accent"
+     style="letter-spacing: 0.1em">↓ {label}</a>
+</div>

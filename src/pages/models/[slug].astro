@@ -1,5 +1,6 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import DownloadMd from '../../components/DownloadMd.astro';
 import { getCollection } from 'astro:content';
 
 export async function getStaticPaths() {
@@ -17,16 +18,19 @@ const live = entry.data.status === 'published';
 
 <BaseLayout title={`${entry.data.title} — Models`} description={entry.data.description}>
   <article class="max-w-[760px] mx-auto px-8 pt-14 pb-24">
-    <a href="/models"
-       class="font-mono text-[11px] uppercase text-muted no-underline hover:text-accent transition-colors"
-       style="letter-spacing: 0.08em">← Models</a>
+    <div class="flex items-center justify-between gap-4 flex-wrap">
+      <a href="/models"
+         class="font-mono text-[11px] uppercase text-muted no-underline hover:text-accent transition-colors"
+         style="letter-spacing: 0.08em">← Models</a>
+      <DownloadMd href={`/models/${entry.slug}.md`} label="download as .md" align="right" />
+    </div>
 
     <header class="mt-5 mb-10 pb-8 border-b border-rule">
       <div class="flex items-baseline gap-3 mb-3 flex-wrap">
         <span class:list={[
           'font-mono text-[10px] uppercase rounded-sm border px-2 py-px',
           live ? 'text-accent border-accent' : 'text-muted border-rule',
-        ]} style="letter-spacing: 0.12em">{live ? 'Live' : 'Draft'}</span>
+        ]} style="letter-spacing: 0.12em">{live ? 'In Progress' : 'Planned'}</span>
       </div>
       <h1 class="font-display font-semibold text-[42px] leading-[1.08] m-0 mb-3 text-ink"
           style="letter-spacing: -0.025em; text-wrap: balance">{entry.data.title}</h1>

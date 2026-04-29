@@ -1,6 +1,7 @@
 ---
 import BaseLayout from '../../../layouts/BaseLayout.astro';
 import RefinementLog from '../../../components/RefinementLog.astro';
+import DownloadMd from '../../../components/DownloadMd.astro';
 import { getCollection } from 'astro:content';
 
 export async function getStaticPaths() {
@@ -69,9 +70,12 @@ for (const id of stageOrder) {
 
 <BaseLayout title={`${overview.data.title} — AI’s Research`} description={overview.data.description}>
   <section class="max-w-[760px] mx-auto px-8 pt-14 pb-24">
-    <a href="/ai-research"
-       class="font-mono text-[11px] uppercase text-muted no-underline hover:text-accent transition-colors"
-       style="letter-spacing: 0.08em">← AI’s Research</a>
+    <div class="flex items-center justify-between gap-4 flex-wrap">
+      <a href="/ai-research"
+         class="font-mono text-[11px] uppercase text-muted no-underline hover:text-accent transition-colors"
+         style="letter-spacing: 0.08em">← AI’s Research</a>
+      <DownloadMd href={`/ai-research/${topic}.md`} label="download all stages (.md)" align="right" />
+    </div>
 
     <h1 class="font-display font-semibold text-[42px] leading-[1.05] m-0 mt-5 mb-3 text-ink"
         style="letter-spacing: -0.025em">{overview.data.title}</h1>

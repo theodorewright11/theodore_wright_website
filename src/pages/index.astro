@@ -67,6 +67,8 @@ const statusToLabel = (status: string) =>
               style="letter-spacing: -0.035em">
             Teddy Wright
           </h1>
+          <p class="font-serif italic text-[14px] text-muted leading-[1.5] m-0 mt-4 max-w-[480px]"
+             style="text-wrap: pretty">{bio.credentials}</p>
         </div>
         <div>
           <p class="font-serif text-base leading-[1.6] text-ink-soft m-0 mb-3"
@@ -117,7 +119,7 @@ const statusToLabel = (status: string) =>
         )}
 
         <div class="mt-9">
-          <SectionLabel label="Research" href="/research" />
+          <SectionLabel label="My Research" href="/research" />
           {research.slice(0, 4).map(r => (
             <article class="py-2.5">
               <h4 class="font-serif text-[15px] font-semibold m-0 mb-[3px] text-ink leading-[1.3]">
@@ -215,9 +217,5 @@ const statusToLabel = (status: string) =>
       </div>
     </div>
 
-    {/* Bottom colophon */}
-    <div class="mt-16 pt-3.5 border-t border-rule font-serif italic text-[13px] text-muted text-center">
-      Set in Fraunces &amp; Source Serif
-    </div>
   </div>
 </BaseLayout>

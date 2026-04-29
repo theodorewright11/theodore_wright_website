@@ -1,13 +1,17 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import GroupHeader from '../../components/GroupHeader.astro';
+import DownloadMd from '../../components/DownloadMd.astro';
 import { getCollection } from 'astro:content';
 
 const all = await getCollection('models');
 
+// Map content-collection statuses → display categories.
+// 'published' = it has a real page and dashboard, but model work is ongoing → In Progress.
+// 'draft' = stub only → Planned. (No model is currently Finished.)
 const order: Array<['published' | 'draft', string]> = [
-  ['published', 'Live'],
-  ['draft', 'Drafts'],
+  ['published', 'In Progress'],
+  ['draft', 'Planned'],
 ];
 
 const groups = order
@@ -26,14 +30,15 @@ const groups = order
 ---
 
 <BaseLayout title="Models — Teddy Wright"
-  description="Interactive quantitative models — formalizations of relational, emotional, and decision-theoretic problems.">
+  description="Interactive models that break phenomena down into quantified, isolated logic.">
   <section class="max-w-[760px] mx-auto px-8 pt-14 pb-24">
     <h1 class="font-display font-semibold text-[48px] leading-none m-0 mb-3 text-ink"
         style="letter-spacing: -0.03em">Models</h1>
     <p class="font-serif text-[17px] text-muted leading-[1.55] max-w-[580px] m-0 mb-14">
-      Interactive quantitative models — formalizations of relational, emotional, and decision-theoretic problems.
-      Slide the inputs and watch the output move.
+      Interactive models that break phenomena down into quantified, isolated logic. Useful for getting a grasp on complex things in the world.
     </p>
+
+    <DownloadMd href="/models.md" label="download all models (.md)" />
 
     {groups.length === 0 ? (
       <div class="text-center py-16 font-serif italic text-muted">

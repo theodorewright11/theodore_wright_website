@@ -24,10 +24,11 @@
 ├── src/
 │   ├── components/
 │   │   ├── Nav.astro                    ← V4 nav (brand + horizontal links, accent active state)
-│   │   ├── Footer.astro                 ← global footer (updated date + content bundle download + contact)
+│   │   ├── Footer.astro                 ← global footer (updated date + two bundle downloads + contact)
 │   │   ├── SectionLabel.astro           ← Fraunces 18px label + accent "see all →" link, hairline rule below
-│   │   ├── GroupHeader.astro            ← shared status-group header used on /research, /models, /ai-research
+│   │   ├── GroupHeader.astro            ← shared status-group header used on /research, /models, /ai-research, /dashboards
 │   │   ├── TierChip.astro               ← me / me x ai / ai chip (writing tiers)
+│   │   ├── DownloadMd.astro             ← uniform "download as .md" button mounted on every content page
 │   │   ├── RefinementLog.astro
 │   │   ├── models/                      ← React components for interactive models
 │   │   │   └── OptionValueDashboard.tsx
@@ -43,9 +44,11 @@
 │   │   └── ai_research/<topic>/<stage>.mdx
 │   ├── content.config.ts
 │   ├── data/                            ← singletons (not collections — small, edited-by-hand)
-│   │   ├── bio.json                     ← name, blurb, location, contact links
+│   │   ├── bio.json                     ← name, credentials (subtitle), blurb, location, contact links
 │   │   ├── now.json                     ← `updated` date drives the global Footer (NowStrip retired)
-│   │   └── dashboards.json              ← roster of planned dashboards
+│   │   └── dashboards.json              ← roster of dashboards with status (planned/in-progress/finished)
+│   ├── lib/
+│   │   └── bundle.ts                    ← shared markdown rendering helpers (bundleHeader, blogToMd, researchToMd, modelToMd, updateToMd, aiStageToMd, section, sortByDate, stripImports)
 │   ├── layouts/BaseLayout.astro         ← Nav + slot + Footer, paper bg, flex-column for sticky footer
 │   ├── pages/
 │   │   ├── index.astro                  ← V4 editorial home (masthead + 3-col index + colophon)
@@ -60,11 +63,21 @@
 │   │   │   ├── index.astro
 │   │   │   └── [slug].astro
 │   │   ├── dashboards/index.astro
-│   │   ├── content-bundle.md.ts         ← static endpoint emitting /content-bundle.md (all content as one markdown file)
+│   │   ├── bundle-mine.md.ts            ← /bundle-mine.md (writing + research + models + updates)
+│   │   ├── bundle-ai-research.md.ts     ← /bundle-ai-research.md (every AI-Research stage)
+│   │   ├── writing.md.ts                ← /writing.md (all blog as one md file)
+│   │   ├── writing/[slug].md.ts         ← /writing/<slug>.md (single post)
+│   │   ├── research.md.ts               ← /research.md
+│   │   ├── research/[slug].md.ts        ← /research/<slug>.md
+│   │   ├── models.md.ts                 ← /models.md
+│   │   ├── models/[slug].md.ts          ← /models/<slug>.md
+│   │   ├── ai-research.md.ts            ← /ai-research.md
 │   │   └── ai-research/
 │   │       ├── index.astro
 │   │       ├── [topic]/index.astro      ← topic page with stage tabs (Overview + per-stage)
-│   │       └── [topic]/[stage].astro    ← deep-link standalone stage page
+│   │       ├── [topic]/[stage].astro    ← deep-link standalone stage page
+│   │       ├── [topic].md.ts            ← /ai-research/<topic>.md (whole topic in stage order)
+│   │       └── [topic]/[stage].md.ts    ← /ai-research/<topic>/<stage>.md (single stage)
 │   └── styles/global.css                ← font imports, design tokens, .essay-prose / .paper-prose
 ├── astro.config.mjs
 ├── tailwind.config.mjs
@@ -199,9 +212,25 @@ Both styles use ink/ink-soft/muted/rule/accent tokens consistently.
 
 `Footer.astro` is mounted in `BaseLayout.astro` after the main slot. It reads `src/data/now.json` for the `updated` date (the previous top-of-page NOW strip is retired) and `src/data/bio.json` for contact links. Three slots: left (`updated <date>` + a download link to `/content-bundle.md`), right (email / substack / github). Border-top `rule`, `font-mono text-[11px]`, all in muted/ink-soft.
 
-### Content bundle
+### Content bundles + per-page downloads
 
-`src/pages/content-bundle.md.ts` is a static endpoint that prerenders to `dist/content-bundle.md` at build time. It pulls every collection (`blog`, `research`, `models`, `updates`, `ai_research`), strips MDX `import` lines, and emits one big markdown file. Linked from the Footer with `download` so a visitor — or an LLM the visitor pastes it into — can grab the whole site in one file. No frontmatter or component embeds in the output; just title/date/status header and the body.
+Static endpoints that prerender to `.md` files at build time. All endpoints share helpers in `src/lib/bundle.ts` (header/footer rendering, MDX import-stripping, per-collection serializers).
+
+**Top-level bundles** linked from the global Footer:
+
+- `/bundle-mine.md` — `blog` + `research` + `models` + `updates` (the user's own writing/research). Source: `src/pages/bundle-mine.md.ts`.
+- `/bundle-ai-research.md` — every stage of every `ai_research` topic (the full LLM Iterate output). Source: `src/pages/bundle-ai-research.md.ts`.
+
+**Per-page downloads** mounted on every content page via `DownloadMd.astro` (a uniform top-of-page button):
+
+- `/writing.md`, `/writing/<slug>.md` — all writing / single post.
+- `/research.md`, `/research/<slug>.md` — all research / single entry.
+- `/models.md`, `/models/<slug>.md` — all models / single model.
+- `/ai-research.md`, `/ai-research/<topic>.md`, `/ai-research/<topic>/<stage>.md` — all AI's Research / whole topic / single stage.
+
+The per-stage AI's Research endpoint excludes `overview` entries from `getStaticPaths`; the topic-level endpoint pulls all stages in pipeline order (`lit-review → topology → model → data → build → writeup`).
+
+Bundle output strips MDX `import` lines and component embeds — just title/date/status header plus the body. Designed for an LLM to ingest as one document.
 
 ## Interactive components
 

@@ -2,16 +2,19 @@
   {
     "slug": "decision-helper",
     "title": "Decision Helper",
-    "desc": "Helps make complex decisions better by breaking them down qualitatively."
+    "desc": "Helps make complex decisions better by breaking them down qualitatively.",
+    "status": "planned"
   },
   {
     "slug": "finance",
     "title": "Finance",
-    "desc": "Personal finance dashboard. Public demo lets you plug in your own numbers; private version pulls my data."
+    "desc": "A personal finance dashboard.",
+    "status": "planned"
   },
   {
     "slug": "emotional-wellbeing",
     "title": "Emotional Well-being",
-    "desc": "Helps you recognize and take action on your emotional needs."
+    "desc": "Helps you recognize and prioritize which emotional needs to take action on, based on what has the highest leverage.",
+    "status": "planned"
   }
 ]
