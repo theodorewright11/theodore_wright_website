@@ -3,8 +3,18 @@ title: 'Model'
 description: 'Generating function for human psychological variation. One equation per person; variance decomposition follows. Closed-form pieces: Crow–Felsenstein AM inflation, Wilson-Effect saturation, genetic-nurture additive split, multivariate sex-difference Mahalanobis D. Twin / SNP / within-family heritability are projections of the same decomposition. Interactive dashboard included.'
 date: 2026-04-28
 status: in-progress
-refinementPass: 5
+refinementPass: 6
 refinementLog:
+  - pass: 6
+    date: '2026-04-29'
+    passes: ['error check', 'cross-stage consistency']
+    why: 'A reviewer caught a real and consequential error in pass 5''s framing of section §2.2 and §3.1. The method-gradient table claimed Falconer''s twin formula `2·(rMZ − rDZ)` estimates `V(A_d) + V(A_LD)` cleanly. That is true ONLY under random mating. Under positive AM, fraternal twins share more than 50% of trait-relevant alleles (because their parents are genetically more similar than chance), which raises rDZ relative to rMZ and biases Falconer downward by factor (1 − m_A). So Falconer estimates `V(A_AM)/V(P) · (1 − m_A)`, not `V(A_AM)/V(P)`. The section §3.1 partition formula `V(A_LD) = m·h²_obs` is mathematically valid as a Crow-Felsenstein population-level decomposition of V(A) at AM equilibrium, but it was being applied as if h²_obs equaled the twin estimate, which conflates two quantities biased in opposite directions. The corrected reading: AM is real at the population level (V(A) inflation via LD; Yengo 2018 measures 14–23% V(A_LD)/V(A) for height empirically, matching the formula prediction) but it does NOT explain the gap between twin h² and within-family h² for socially-structured traits — that gap is dominated by genetic nurture and equal-environments-assumption violations, partially OFFSET by AM''s downward bias on Falconer.'
+    changes:
+      - 'Added clarifying note in §2.2 after the method-gradient table explaining Falconer''s downward bias under AM and the corrected interpretation of the twin-vs-within-family gap (genetic nurture + EEA violations dominate, AM partially offsets)'
+      - 'Added clarifying note in §3.1 after the partition formula explaining that h²_obs there represents AM-equilibrium V(A)/V(P), with different estimators recovering this with different biases (SNP-based unbiased, Falconer biased downward by AM with partial upward offset from EEA / genetic nurture)'
+      - 'Updated the §3.1 worked anchors with caveats acknowledging the Falconer-vs-SNP discrepancy: for EA, applying the formula to twin h² gives a different absolute V(A_LD) than applying it to SNP h²; for height the discrepancy is smaller because EEA + genetic-nurture biases on Falconer are smaller for height than for socially-structured traits'
+      - 'Preserved the cross-trait AM (Border 2022) result independently — that is about between-trait LD inflating reported cross-disorder rg, a separate and well-supported phenomenon'
+      - 'Did not change the dashboard logic: re-deriving the bucket numbers under the corrected interpretation would require either (a) substituting SNP-based h² for Wilson-fit twin h² as input, or (b) explicitly modeling Falconer''s AM-bias correction. Both are larger changes than this corrective pass aims for. The dashboard''s outputs should now be read with the §2.2 / §3.1 caveats in mind. Same for the empirical numbers cited in the prose'
   - pass: 1
     date: '2026-04-28'
     passes: ['decomposition', 'generating function', 'integration', 'gap scan']
@@ -165,7 +175,11 @@ twin h² ≥ WGS h² ≥ SNP h² ≥ within-family h²
 
 The gaps are not measurement error. They are the data's way of telling you how much of "heritability" is structural (AM-LD), how much is environmental-via-parents (`A_i`), and how much depends on rare variants common-variant arrays cannot tag.
 
-For educational attainment in 2025: classical twin h² ≈ 0.40, common-variant SNP h² ≈ 0.20–0.25, WGS h² ≈ 0.30 (with rare-variant contribution), within-family additive ≈ 0.15. The 0.25 gap between twin and within-family is the structural `A_LD` contribution plus AM-induced bias plus partial `A_i` leakage; the 0.10 gap between WGS and within-family is the AM-LD plus partial `A_i` contributions captured by population-level SNP heritability methods.
+For educational attainment in 2025: classical twin h² ≈ 0.40, common-variant SNP h² ≈ 0.20–0.25, WGS h² ≈ 0.30 (with rare-variant contribution), within-family additive ≈ 0.15.
+
+**Important caveat on Falconer's AM bias** (added in pass 6 after a reviewer correction). The "What it estimates" column above is exact only under random mating. Under positive AM, Falconer's formula `2·(rMZ − rDZ)` is biased *downward* by factor (1 − m_A) where m_A ≈ m·h² — fraternal twins share more than 50% of trait-relevant alleles because their parents are genetically more similar than chance, raising rDZ relative to rMZ and shrinking the formula's output. So Falconer estimates `[V(A_d) + V(A_LD)] · (1 − m_A) / V(P)`, not `V(A_AM)/V(P)` directly.
+
+This matters for interpreting the gap. When classical twin h² > within-family h² for socially-structured traits (EA: 0.40 vs 0.15), the gap is dominated by *other* classical-ACE biases — primarily the equal-environments assumption (MZ co-twins are treated more similarly than DZ co-twins, inflating MZ correlation) and genetic-nurture leakage (V(A_i) leaks into A under model misspecification rather than landing cleanly in C) — *partially offset* by the AM downward bias. AM is a real phenomenon at the population level (Crow-Felsenstein V(A_LD) inflation; see §3.1 below) but it does not, on net, drive the twin-vs-within-family gap. The dominant inflation source is genetic nurture and EEA, with direct empirical anchors in Kong 2018 (non-transmitted PGS effect = 29.9% of transmitted for EA) and Okbay 2022 EA4 (within-family direct ~50% of population PGI). Within-family designs control for AM, EEA, and genetic nurture simultaneously.
 
 This is the single calculation a careful reader of "twin studies vs molecular studies" headlines should be able to do. The numbers don't disagree; they answer different questions.
 
@@ -179,7 +193,7 @@ There are two ways to use the AM-inflation formula, and they answer different qu
 
 **Forward problem** (rarely the relevant one): given the random-mating heritability `h²_rm` of a trait, what is the equilibrium heritability after stable AM? The answer is a fixed-point coupling `r_δ = m · h²*`, `V_A* = V_A / (1 − r_δ)`, `h²* = V_A* / (V_A* + V_E)`, reached in ~5–10 generations of stable assortment (Crow & Felsenstein 1968). One-iteration approximation: `r_δ ≈ m · h²_rm`, inflation `≈ 1 / (1 − m·h²_rm)`.
 
-**Inverse / partition problem** (what the dashboard does): given the *observed* heritability `h²_obs` (which is what twin and SNP studies report from real, AM-equilibrium populations), partition it into the random-mating-equivalent direct component `V(A_d)` and the AM-induced LD inflation `V(A_LD)`:
+**Inverse / partition problem** (what the dashboard does): given the AM-equilibrium population additive variance `V(A_AM)/V(P) = h²_obs`, partition it into the random-mating-equivalent direct component `V(A_d)` and the AM-induced LD inflation `V(A_LD)`:
 
 ```
 r_δ      ≈ m · h²_obs
@@ -189,11 +203,13 @@ V(A_LD)  = h²_obs − V(A_d)  =  h²_obs · r_δ
 
 The Wilson curve gives `h²_obs(t)` directly, so the partition uses `r_δ = m · h²_obs(t)` with no iteration needed. This is what the dashboard implements. Pass-2 versions of the dashboard erroneously inflated `h²_obs` *on top of itself*, pushing twin h² above 1.0 at high parameter values; pass-4 corrected this.
 
-Worked anchors:
-- **Educational attainment** with `m ≈ 0.4`, `h²_obs ≈ 0.40` (twin) → `r_δ ≈ 0.16`, `V(A_d) ≈ 0.34`, `V(A_LD) ≈ 0.06`. The dashboard's "cognitive" trait class with reduced parameters approximates this regime.
-- **Height** with `m ≈ 0.25`, `h²_obs ≈ 0.85` → `r_δ ≈ 0.21`, `V(A_d) ≈ 0.67`, `V(A_LD) ≈ 0.18` — matches the 14–23% empirical "AM-inflated" share Border et al. and Yengo et al. report.
+**Note on what `h²_obs` should represent here** (added in pass 6 after a reviewer correction). The partition formula is a clean population-level decomposition of `V(A_AM)`. Different estimators recover `V(A_AM)/V(P)` with different biases: SNP-based heritability (GREML / LDSC on unrelated individuals) recovers it approximately unbiased; classical twin h² (Falconer) recovers `V(A_AM)/V(P) · (1 − m_A)` — biased downward by AM, partially offset upward by EEA violations and genetic-nurture leakage. The dashboard's Wilson-fit twin estimates conflate these biases. The partition formula's empirical validation is the match against SNP-based AM-LD estimates: Yengo 2018 measures `V(A_LD)/V(A)` for height at 14–23% empirically, matching the formula's prediction of `m·h² = 20%`. For socially-structured traits where Falconer twin h² is itself substantially inflated by EEA + genetic nurture, applying the partition formula to twin h² over-attributes the partition share to AM relative to its true population-level magnitude.
 
-Cross-trait AM (`m_xy ≠ 0`) extends the same logic to off-diagonal entries of the genetic-covariance matrix and is the formal reason E7 finds `R² = 0.74` between phenotypic-cross-mate correlations and genetic-correlation estimates.
+Worked anchors:
+- **Educational attainment** with `m ≈ 0.4`, `h²_obs ≈ 0.40` (twin) → `r_δ ≈ 0.16`, `V(A_d) ≈ 0.34`, `V(A_LD) ≈ 0.06`. Caveat: the `h²_obs ≈ 0.40` here is the Falconer twin estimate, which is a biased proxy for the AM-equilibrium V(A)/V(P); applying the partition to the SNP-based estimate (~0.13) would give a smaller absolute V(A_LD).
+- **Height** with `m ≈ 0.25`, `h²_obs ≈ 0.85` → `r_δ ≈ 0.21`, `V(A_d) ≈ 0.67`, `V(A_LD) ≈ 0.18` — matches the 14–23% empirical "AM-inflated" share Border et al. and Yengo et al. report (this is the trait where the partition's empirical validation is cleanest, because Falconer-bias vs SNP-h² discrepancies are smaller for height than for socially-structured traits).
+
+Cross-trait AM (`m_xy ≠ 0`) extends the same logic to off-diagonal entries of the genetic-covariance matrix and is the formal reason E7 finds `R² = 0.74` between phenotypic-cross-mate correlations and genetic-correlation estimates. The cross-trait AM result (Border 2022) survives independently of the within-trait Falconer-bias issue: it's about between-trait LD inflating reported genetic correlations between disorders, which is empirically validated and not in dispute.
 
 ### 3.2 Wilson-Effect saturation curve
 
