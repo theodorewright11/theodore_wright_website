@@ -3,8 +3,17 @@ title: 'Build'
 description: 'A reader''s tool for the psychology of individual differences. Pick a trait, see the three plain-language buckets (direct genes / family setup / environment + chance) instead of the V(A_d)/V(A_LD)/V(A_i) decomposition. Plus the four motivated-reasoning traps the field gets caught in, the asymmetric environmental-effects finding, three "heritability ≠ destiny" misreadings, and a seven-bullet take-away. Translates the formalization and data pipeline into something a non-specialist can actually use.'
 date: 2026-04-28
 status: in-progress
-refinementPass: 2
+refinementPass: 3
 refinementLog:
+  - pass: 3
+    date: '2026-04-29'
+    passes: ['internal consistency check', 'cross-stage sync']
+    why: 'On a careful pass over the explorer with the writeup at hand, I caught four places where the explorer''s prose carried forward old imprecise numbers that I had already corrected in the writeup at pass 2 (smoking 80% should be 70% over sixty years; Flynn Effect "+30 points" should have cohort scope; PGS portability "30-80%" should be the precise Martin 2019 numbers). Plus the writeup at pass 3 added a Wilson Effect section as a new big idea, but the explorer''s take-away 5 still framed "high heritability is fully compatible with large environmental shifts" only as cohort-level shifts without including the within-life-course developmental version. These are cross-stage internal-consistency issues that an academic reader would catch immediately.'
+    changes:
+      - 'Take-away 5 retitled and rewritten: "Heritability is contextual: it shifts across the life course and across cohorts." Body now covers both the Wilson Effect (cognitive-ability h² rising from ~0.20 at age 5 to ~0.80 in adulthood as imposed environments give way to self-selected ones) and the cross-cohort shifts (height +10 cm, IQ +25-30 points across mid-20th-century cohorts, smoking US prevalence falling from ~42% to ~12% over sixty years)'
+      - 'Take-away 7 (Lewontin firewall): replaced "polygenic scores lose 30-80% of their accuracy across ancestries" with the precise Martin 2019 numbers (37% / 50% / 78% in South Asian / East Asian / African ancestries) plus the Ding 2023 r = -0.95 continuous-distance result'
+      - 'Heritability ≠ destiny "Misreading 2" example: replaced the imprecise "Flynn Effect raised IQ ~30 points over the 20th century in most populations" with the cohort-scoped "+25-30 points across mid-20th-century cohorts in most measured populations (Pietschnig & Voracek 2015 meta), with plateaus and partial reversals in some countries from the 1990s onward"'
+      - '"Misreading 3" within-population claim: replaced "PGS lose 30-80% accuracy" with the precise Martin 2019 ancestry breakdown'
   - pass: 2
     date: '2026-04-29'
     passes: ['error check', 'gap scan', 'adversarial + steelman']

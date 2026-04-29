@@ -824,14 +824,14 @@ const MISREADINGS: Misreading[] = [
     correct:
       "Heritability tells you how variance in a trait *currently* tracks genetic variance in the *current* environmental range. Hold the genes constant and shift the environment outside its current range, and the population mean can move dramatically. High heritability is fully compatible with large environmental shifts.",
     example:
-      "Height is 80–85% heritable within any modern Western country. Average adult height has risen about 10 cm in the last century — entirely from environmental change (nutrition, infection control, prenatal care). The same heritability that 'shows height is genetic' coexists with one of the largest environmental shifts in any biological trait. The same logic applies to cognitive ability, where the Flynn Effect raised IQ ~30 points over the 20th century in most populations.",
+      "Height is 80–85% heritable within any modern Western country. Average adult height has risen about 10 cm in the last century — entirely from environmental change (nutrition, infection control, prenatal care). The same heritability that 'shows height is genetic' coexists with one of the largest environmental shifts in any biological trait. The same logic applies to cognitive ability, where the Flynn Effect raised average IQ by ~25–30 points across mid-20th-century cohorts in most measured populations (Pietschnig & Voracek 2015 meta), with plateaus and partial reversals in some countries from the 1990s onward.",
   },
   {
     headline: 'Misreading 3 — Within-population h² applied to between-population means',
     misread:
       "'Trait is heritable within population A. Trait differs in mean between population A and population B. Therefore the difference between A and B is genetic.'",
     correct:
-      "This inference is logically blocked. Within-population heritability — even if it's 0.99 — provides no information about whether between-population mean differences are genetic. The math literally does not connect the two quantities. Empirically, the methods that would license such a comparison (polygenic scores) lose 30–80% of their accuracy across ancestries, so even putting aside the logical block, the tools to make the claim do not work.",
+      "This inference is logically blocked. Within-population heritability — even if it's 0.99 — provides no information about whether between-population mean differences are genetic. The math literally does not connect the two quantities. Empirically, the methods that would license such a comparison (polygenic scores) lose substantial accuracy across ancestries — Martin 2019 reports 37%, 50%, and 78% accuracy reductions in South Asian, East Asian, and African ancestries respectively vs. European-trained scores — so even putting aside the logical block, the tools to make the claim do not work.",
     example:
       "Plant the same genetic mix of corn in fertile soil A and depleted soil B. Within each plot, height heritability is high (variation tracks genetics within each environment). Between plots, the mean difference is entirely environmental (the soil). The within-plot h² tells you nothing about why the plot means differ. Lewontin's original argument from 1970, restated empirically every time someone does the calculation.",
   },
@@ -859,8 +859,8 @@ const TAKEAWAYS: { title: string; body: string }[] = [
     body: "Severe insults — lead, fetal alcohol, severe deprivation, malnutrition — cost 10–30 IQ points each. Removing them recovers those points. Enrichment above the Western normal range — better parenting, breastfeeding, supplements — yields a few points at most. The big policy and parenting levers are at the negative tail (preventing severe insults), not at the positive tail (optimizing within normal).",
   },
   {
-    title: 'High heritability is fully compatible with large environmental shifts.',
-    body: 'Height: h² ≈ 0.85 within any cohort, +10 cm secular rise over the 20th century from nutrition. IQ: h² ≈ 0.80 in adulthood, +30 points from the Flynn Effect. Smoking: h² ≈ 0.50, prevalence collapsed 80% in 50 years. Same population, same genes, environment shifted, the mean moved. "Heritable means fixed" is the wrong inference.',
+    title: 'Heritability is contextual: it shifts across the life course and across cohorts.',
+    body: 'Within-life-course (the Wilson Effect): cognitive-ability heritability rises from ~0.20 at age 5 to ~0.80 in adulthood as imposed family-of-origin environments give way to self-selected environments matching the child\'s genotypes. Across cohorts: height h² ≈ 0.85 within any cohort coexists with +10 cm secular rise over the 20th century from nutrition; IQ h² ≈ 0.80 coexists with +25–30 points across mid-20th-century cohorts (Flynn Effect); smoking h² ≈ 0.50 coexists with US adult prevalence falling from ~42% to ~12% over sixty years. Same genes, different environmental conditions, different population statistics. "Heritable means fixed" is the wrong inference.',
   },
   {
     title: 'Sex differences are small per-dimension and large multivariate. Both are true.',
@@ -868,7 +868,7 @@ const TAKEAWAYS: { title: string; body: string }[] = [
   },
   {
     title: 'Within-population heritability does not license between-population claims.',
-    body: 'This is the Lewontin firewall and it is unfalsifiable — a logical/algebraic point, not an empirical claim. The empirical buttress is that polygenic scores lose 30–80% of their accuracy across ancestries (Ding 2023, Martin 2019), so even the methods that would attempt such a comparison do not currently work. Mean differences between groups exist on many traits; whether they have a genetic component is, in 2026, scientifically unanswered with available methods.',
+    body: 'This is the Lewontin firewall and it is unfalsifiable — a logical/algebraic point, not an empirical claim. The empirical buttress is that polygenic scores lose substantial accuracy across ancestries — Martin 2019 reports 37%, 50%, and 78% accuracy reductions in South Asian, East Asian, and African ancestries respectively, with Ding 2023 finding r = −0.95 between continuous genetic distance and PGS accuracy across 84 traits — so even the methods that would attempt such a comparison do not currently work. Mean differences between groups exist on many traits; whether they have a genetic component is, in 2026, scientifically unanswered with available methods.',
   },
 ];
 
