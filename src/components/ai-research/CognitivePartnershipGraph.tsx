@@ -261,9 +261,9 @@ const EDGE_LABEL: Record<EdgeType, string> = {
 
 const MINIMAL_SET = new Set(['A2', 'A3', 'E3', 'E8', 'L2', 'G1', 'G3', 'S1']);
 // Cruxes: load-bearing primitives whose collapse rebuilds regions.
-// Foundational assumptions (A1/A2/A3/A6) and logical guardrails (L1/L3).
+// Every weight-5 foundational assumption (A1/A2/A3/A6) plus every weight-5 logical guardrail (L1/L2/L3).
 // S1 is the *headline conclusion*, not a crux. G1 is a *consequence* of A1, not an independent axiom.
-const CRUX_IDS = new Set(['A1', 'A2', 'A3', 'A6', 'L1', 'L3']);
+const CRUX_IDS = new Set(['A1', 'A2', 'A3', 'A6', 'L1', 'L2', 'L3']);
 
 // Capability-regime fragility classification.
 // Stale-on-jump: invert if frontier capability discontinuously improves.
@@ -501,7 +501,7 @@ export default function CognitivePartnershipGraph() {
 
   const variantBlurb: Record<Variant, string> = {
     full: 'All 65 nodes and their dependencies. Click a node for detail; drag to rearrange.',
-    vulnerability: 'The 6 crux nodes (A1/A2/A3/A6 foundational assumptions + L1/L3 logical guardrails) plus weight-5 load-bearing nodes — where collapse propagates farthest. Highlights open questions too.',
+    vulnerability: 'The 7 crux nodes (A1/A2/A3/A6 foundational assumptions + L1/L2/L3 logical guardrails — every weight-5 A node + every weight-5 L node) plus weight-5 load-bearing nodes. Highlights open questions too.',
     flow: 'How causation propagates: foundational assumptions → methods → empirical claims → mechanisms → synthesis, with practitioner frameworks (P) operationalizing the academic claims.',
     minimal: 'The 8-node minimal claim set that yields the headline conclusion (S1: workflow architecture > model capability). Removing any one breaks the qualitative shape.',
     'capability-regime': 'Capability-regime fragility — which nodes go stale if frontier capability jumps. Red ring = stale on jump (the empirical productivity-distribution claims plus the centaur typology). Blue = structurally invariant (definitions, principal-agent properties, control-surface architecture). Sienna = regime-dependent (the direction of inversion depends on which way capability shifts).',
