@@ -1,9 +1,62 @@
 ---
 title: 'Build'
-description: 'Useful artifact built from the formalization and data — a tool for someone who wants to understand how and why people differ without being captured by motivated reasoning from any direction.'
+description: 'A reader''s tool for the psychology of individual differences. Pick a trait, see the three plain-language buckets (direct genes / family setup / environment + chance) instead of the V(A_d)/V(A_LD)/V(A_i) decomposition. Plus the four motivated-reasoning traps the field gets caught in, the asymmetric environmental-effects finding, three "heritability ≠ destiny" misreadings, and a seven-bullet take-away. Translates the formalization and data pipeline into something a non-specialist can actually use.'
 date: 2026-04-28
-status: not-started
-refinementPass: 0
+status: in-progress
+refinementPass: 1
+refinementLog:
+  - pass: 1
+    date: '2026-04-28'
+    passes: ['decomposition', 'translation', 'integration']
+    why: 'First draft of the build artifact. The model stage produced a parametric variance-decomposition dashboard with V(A_d), V(A_LD), V(A_i), V(C), V(E_m), V(E_s), V(I) sliders; the data stage produced an eight-tab findings panel with hand-rolled SVG charts of the H1–H8 prediction tests. Both are genuinely useful for the reader who already knows the vocabulary, but neither delivers what the topic statement actually asked for: "useful for someone who wants to understand how and why people differ" with "implications for understanding the world or for action." This build draws straight lines from the formalization+data into a reader''s tool that translates the seven decomposition terms into three plain-language buckets, surfaces the four directions of motivated reasoning explicitly, and ends with seven take-aways that hold up across the field.'
+    changes:
+      - 'Built PsychVariationExplorer.tsx with five views: trait lookup (default), four-traps map, the asymmetry, heritability ≠ destiny, take-aways. ~720 lines, V4 design tokens, no new chart libraries (only the existing tailwind+SVG palette)'
+      - 'Trait lookup translates the seven model-formalization variance components into three plain-language buckets — Direct genes (V(A_d)), Family setup (V(A_LD) + V(A_i) + V(C)), Environment + chance (V(E_m) + V(E_s) + V(I)). For each of 10 traits (cognition adult/child, EA, Big Five, schizophrenia, MDD, ADHD, autism, height, political orientation), the bucket numbers are computed from the Stage-4 CSV (h²_observed, V(A_LD)/h² share, β_i/β_d, c²_adult)'
+      - 'Each trait has: one-sentence plain-language framing, breakdown of what is in the family-setup bucket (AM-LD vs. nurture vs. shared env), key environmental levers (insults / enrichments) where relevant, two trap callouts (one from each direction), one take-away, primary sources with paper URLs'
+      - 'Four-traps view materializes the topology''s D1–D4 distortion vectors as full cards: what the position cites correctly, what it ignores, integrated reading. The "integrated reading" is what survives when both the cited and the ignored evidence are added back. This is the closest the artifact comes to the topic statement''s "minefield of motivated reasoning on all sides" framing'
+      - 'The Asymmetry view is the H7 environmental-effects finding (severe insults cost 10–30 IQ pts; enrichment yields 1–5 pts) rendered as a single forest-plot-style chart with worked implications for parents and policy. This is the single most useful action-oriented insight in the whole topic'
+      - 'Heritability ≠ Destiny view formalizes the three most common public-discourse misreadings: (a) population variance treated as individual partition (L1 firewall), (b) heritable treated as fixed (height +10 cm in a century at h² = 0.85), (c) within-population h² applied to between-population means (L4 / Lewontin firewall). Each gets a worked example'
+      - 'Take-aways view is seven bullets that hold up across mainstream behavior genetics in 2026. Footer links back to the model and data stages'
+      - 'Updated PRD topic registry from "data (pass 6)" to "build (pass 1)"; added decisions log entry'
+      - 'Did not duplicate the model dashboard or data findings panel — those remain the technical/parametric layer; this build is the lay translation layer. A reader can move from the explorer into the model dashboard if they want to see what happens when the seven model parameters move'
 ---
 
-> Pipeline status: not yet generated. Run **Step 5** of the LLM Iterate prompt once the data stage is complete.
+import PsychVariationExplorer from '../../../components/ai-research/PsychVariationExplorer';
+
+## TLDR
+
+The model formalization produced one equation per person and seven variance components. The data pipeline produced eight tested predictions and seven downloadable CSVs. Both are correct, both are useful for someone who already speaks the vocabulary, and neither does what the topic statement asked: produce something useful for someone who wants to understand how and why people differ without being captured by motivated reasoning from any direction.
+
+This build is that translation layer. It collapses the seven-component variance decomposition into three plain-language buckets — *direct genes*, *family setup*, *environment + chance* — picks the ten traits a reader most likely cares about, and for each one shows the bucket breakdown, the key environmental levers (when relevant), and the two specific ways the most common political readings of that trait go wrong. Plus four secondary views: the four motivated-reasoning traps the field gets caught in (with what each side cites correctly and ignores), the asymmetric environmental-effects finding (severe insults cost 10–30 IQ points; enrichment above normal yields a few at most — the single most useful action-oriented insight), three "heritability ≠ destiny" misreadings with worked examples, and a seven-bullet take-away that holds up across mainstream behavior genetics in 2026.
+
+If you want to engage with the math, the [model stage](/ai-research/human-psych-variation/model) has the parametric dashboard and the [data stage](/ai-research/human-psych-variation/data) has the prediction-by-prediction empirical tests. This page is for the reader who wants to come away knowing what to actually believe.
+
+<PsychVariationExplorer client:load />
+
+## How to use this
+
+The default view is **trait lookup**. Pick a trait — adult cognitive ability, schizophrenia, height, political orientation — and see the three-bucket breakdown plus the trait-specific traps and take-away. Most readers should start there, then move through the four secondary views in order.
+
+A few framing notes:
+
+The **three buckets are not orthogonal categories of cause**. They are three plain-language groupings of the seven model-formalization variance terms (`A_d`, `A_LD`, `A_i`, `C`, `E_m`, `E_s`, `I`). Direct genes is the within-family direct-effect slice — the part that is unambiguously direct biological causation. Family setup combines AM-induced LD, genetic nurture, and residual shared environment — all the things that get counted as "genetic" in twin studies but are not direct biological causation. Environment + chance combines measured non-shared environment and stochastic developmental noise. The split is pedagogical; the [model](/ai-research/human-psych-variation/model) shows the underlying seven-term decomposition.
+
+The **four-traps view is opinionated** in a way the other views are not. The label "trap" assumes that motivated reasoning is what produces these positions, which is not entirely fair — most people cite the evidence they have seen and have not personally vetted what they have not seen. The integrated reading at the bottom of each trap card is the closest the artifact comes to a normative claim about how the field should be read, and it is not algorithmically derivable from the data alone. If you disagree with one of the integrated readings, the [topology stage](/ai-research/human-psych-variation/topology) has the underlying graph.
+
+The **asymmetry finding** is the most action-relevant single insight in the topic. If you only take one thing away from this work, take that one — the population-level cognitive levers run almost entirely through preventing severe insults, not through optimizing within normal. Most parental anxiety and policy expenditure on enrichment is misallocated relative to where the empirical effect sizes are.
+
+The **seven take-aways** are calibrated to be the things a behavior-geneticist in 2026 would actually defend in a public talk. Finer-grained claims (specific magnitudes per trait, mechanism per finding, what polygenic scores measure causally) sit downstream of these and are more contested.
+
+## What this is not
+
+It is not a prediction tool. There is no model that takes your demographics, your parents' phenotypes, or your DNA and outputs a predicted trait value. The science does not currently support that for psychological traits, and the [data stage](/ai-research/human-psych-variation/data#h5--pgs-portability-decay-supported) shows why — polygenic scores trained on European-ancestry data lose 30–80% of their accuracy across other ancestries, and within-family direct effects are often less than half of population-level prediction.
+
+It is not policy advice. The asymmetry finding has clear implications for cognitive intervention (lead remediation has higher effect-per-dollar than enrichment programs), but turning empirical asymmetries into policy involves trade-offs the science does not adjudicate.
+
+It is not a complete picture. Three open questions named in the [model stage](/ai-research/human-psych-variation/model#8-open-questions-that-the-model-exposes-stage-4-inputs) (the Plomin/Turkheimer dispute about what polygenic scores measure, the mechanism behind the Gender Equality Paradox, the magnitude of assortative-mating correction across the full psychiatric cross-disorder rg matrix) are not answered here because the field has not answered them. The honest reading is "we don't know yet"; the artifact does not pretend otherwise.
+
+## Connection to the rest of the pipeline
+
+The trait-lookup numbers are computed directly from `public/data/human-psych-variation/heritability_estimates.csv` (the Stage-4 input), with the H2 partition (`V(A_LD) = m·h²`) and the genetic-nurture identity (`V(A_i) = (β_i/β_d)² · V(A_d)`) applied as in the [model formalization §3.3 pass 5](/ai-research/human-psych-variation/model). The asymmetry view's exposure list comes from `environmental_effects.csv` (the H7 input). The four-traps view materializes the [topology stage's](/ai-research/human-psych-variation/topology#variant-d-politicization-map--where-does-motivated-reasoning-concentrate) Variant D distortion-to-target matrix (D1–D4) into reader-facing cards.
+
+A future stretch would promote some of this to `/dashboards/human-psych-variation` as a public dashboard that lets the visitor enter their own per-trait estimates and see the buckets recompute. That is one of the planned dashboard slots in the site PRD but is out of scope for the first build.
