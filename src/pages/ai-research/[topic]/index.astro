@@ -118,14 +118,12 @@ for (const id of stageOrder) {
 
     {stages.map(s => (
       <div data-panel={s.id} hidden>
-        <div class="flex gap-3 items-baseline mb-4">
-          <span class="font-mono text-[11px] uppercase text-muted"
-                style="letter-spacing: 0.08em">Status</span>
-          <span class:list={[
-            'font-mono text-[11px]',
-            s.status === 'complete' ? 'text-ink' : s.status === 'in-progress' ? 'text-accent' : 'text-muted',
-          ]} style="letter-spacing: 0.06em">{s.status}</span>
-        </div>
+        {s.data && s.data.refinementPass > 0 && (
+          <div class="flex gap-3 items-baseline mb-4">
+            <span class="font-mono text-[11px] text-muted"
+                  style="letter-spacing: 0.06em">pass {s.data.refinementPass}</span>
+          </div>
+        )}
 
         {s.data ? (
           <>

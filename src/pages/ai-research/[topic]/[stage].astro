@@ -45,14 +45,9 @@ const stageLabel: Record<string, string> = {
       <div class="flex items-baseline gap-3 mb-3 flex-wrap">
         <span class="font-mono text-[10px] uppercase text-accent"
               style="letter-spacing: 0.12em">{stageLabel[stage ?? ''] ?? stage}</span>
-        <span class:list={[
-          'font-mono text-[11px]',
-          entry.data.status === 'complete' ? 'text-ink'
-            : entry.data.status === 'in-progress' ? 'text-accent'
-            : 'text-muted',
-        ]} style="letter-spacing: 0.06em">{entry.data.status}</span>
         {entry.data.refinementPass > 0 && (
-          <span class="font-mono text-[11px] text-muted">pass {entry.data.refinementPass}</span>
+          <span class="font-mono text-[11px] text-muted"
+                style="letter-spacing: 0.06em">pass {entry.data.refinementPass}</span>
         )}
       </div>
       <h1 class="font-display font-semibold text-[36px] leading-[1.1] m-0 mb-3 text-ink"

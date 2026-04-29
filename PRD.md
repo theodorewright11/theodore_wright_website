@@ -78,6 +78,8 @@ Raw working drafts live in `stage_outputs/<topic>/<stage>.md` (kebab-case topic 
 
 The topic-level `overview.mdx` is **not written during the pipeline** — it is produced (or revised) only after all six stages are complete, since the writeup itself supersedes the overview as the canonical synthesis.
 
+Per-stage pages do not surface the `status` frontmatter field as label text. Each stage page shows only the **refinement pass number** (`pass N`); pass 0 stubs render no pass label. The `status` field still drives the binary draft-vs-stub coloring of the stage bars on the `/ai-research` index page (any non-stub status renders the bar dark; stub renders grey), but it is never displayed as text.
+
 A topic's stage-3 model can be **promoted** to `/models` when polished — copy the formalization to a new `src/content/models/<slug>.mdx` entry.
 
 ### Topic registry
