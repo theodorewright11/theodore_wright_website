@@ -1,0 +1,205 @@
+---
+title: 'Lit Review'
+description: 'The research landscape on optimal human-AI workflow design for individual knowledge workers — three layers (HCI/decision-science, classical cognitive systems engineering, practitioner stack), 25+ RCTs, the metacognitive bottleneck reframing, and the load-bearing assumptions any formalization must survive.'
+date: 2026-04-29
+status: complete
+refinementPass: 0
+---
+
+## TLDR
+
+The research landscape on optimal human-AI workflow design for individual knowledge workers spans three largely disconnected layers: a mature HCI/decision-science literature on reliance and complementarity, a classical foundation in cognitive systems engineering now being re-imported, and a practitioner literature that drives terminology 12–18 months ahead of peer review. The single most important empirical finding across ~25 RCTs (2023–2026) is that **workflow architecture predicts outcomes more reliably than model capability** — how you structure human-AI interaction (centaur vs. cyborg, independent-then-synthesize, guardrailed vs. unfettered) matters more than which frontier model you use. A corollary is that the binding constraint on AI-augmented knowledge work is not production throughput but the **metacognitive bottleneck**: planning what to delegate, verifying outputs, and maintaining calibration on where AI fails.
+
+The empirical record shows 15–55% productivity gains on well-bounded tasks, robust skill-leveling effects for novices, but contested and sometimes negative results for experts on open-ended judgment work. A major unresolved puzzle is that these micro-RCT gains produce precisely zero impact on aggregate labor-market outcomes at two-year horizons (Humlum & Vestergaard 2025). The "ironies of automation" from 1983 human-factors research replay exactly in LLM contexts: AI that handles routine work degrades human capacity to catch the rare errors where human judgment is critical (Simkute, Tankelevitch et al. 2024/2025). Practitioner frameworks — Mollick's centaur/cyborg typology, Karpathy's autonomy slider, Anthropic's agent-design patterns, Cognition's context-engineering principles — are converging toward a common architecture but lack formal integration.
+
+The largest theoretical gap is that **no unified normative framework exists for the individual knowledge worker's daily AI workflow choreography** — when to consult, delegate, verify, or refuse AI on a per-task basis. The closest academic scaffolding is Parasuraman, Sheridan & Wickens' (2000) function-allocation model, but it was designed for system engineers, not individual users. The practitioner world has de facto answers (autonomy sliders, AI sandwiches, compound engineering), and the academic world has converging threads (CoALA cognitive architectures, HAIJCS joint cognitive systems, Tankelevitch's metacognitive demands framework), but no synthesis yet integrates them. That integration — a formal, empirically grounded model of human-AI cognitive partnership that maximizes output quality per unit of human attention — is the field's open frontier and the target of the next phase of this project. Six load-bearing assumptions underlying this landscape are identified in Section 12, along with the specific evidence that would flip each one — these define the risk surface for any formalization attempt.
+
+---
+
+## 1. Formal Models of Human-AI Task Allocation
+
+The deepest formal literature concerns **"learning to defer" (L2D) and human-AI complementarity** — algorithms that decide, per instance, whether the AI or the human should handle a task. The canonical formulations (Madras et al. 2018 NeurIPS; Mozannar & Sontag 2020 ICML; Mozannar et al. 2023 AISTATS, [arXiv:2301.06197](https://arxiv.org/abs/2301.06197)) established that optimal joint human-AI assignment is computationally hard and that naive heuristic approaches systematically underperform. Wilder, Horvitz & Kamar (2020, IJCAI) operationalized "learning to complement humans" by training models end-to-end against team accuracy.
+
+**Why this matters for workflow design:** These are formal proofs that the intuitive approach — "use AI when it's better, use humans when they're better" — is not a well-specified decision rule. Optimal allocation requires modeling the *joint* performance surface, not comparing solo accuracies.
+
+The most actionable synthesis is **Hemmer et al.'s "Complementarity in Human-AI Collaboration" (2025, EJIS, [link](https://www.tandfonline.com/doi/full/10.1080/0960085X.2025.2475962))**, which distinguishes "complementarity potential" (the mathematical possibility of exceeding either agent alone) from "complementary team performance" (actually achieving it). They identify information asymmetry and capability asymmetry as the two sources. The uncomfortable finding: **complementary team performance is rarely empirically observed** despite decades of theoretical promise. Amin et al.'s (2026) Bayesian framework adds a behavioral explanation: "correlation neglect," where humans treat AI advice as independent evidence despite shared training data, can make AI advice *anti-augmentative*.
+
+**Vaccaro, Almaatouq & Malone's (2024, *Nature Human Behaviour*) meta-analysis** provides the closest thing to a quantitative allocation rule: human-AI combinations help most when (a) humans alone outperform AI, (b) the task is creation rather than decision-making, and (c) AI handles sub-tasks rather than the whole task.
+
+## 2. Appropriate Reliance, Trust Calibration, and Verification Cost
+
+**Bansal et al. (2021, CHI)** established the canonical finding: AI explanations increase acceptance regardless of correctness — they do not produce complementary performance. Buçinca, Malaya & Gajos (2021, [arXiv:2102.09692](https://arxiv.org/abs/2102.09692)) showed that "cognitive forcing functions" (commit to your own answer before seeing AI) reduce overreliance, but only for users high in Need for Cognition — creating intervention-generated inequality.
+
+The major reframing came from **Vasconcelos et al. (2023, [arXiv:2212.06823](https://arxiv.org/abs/2212.06823))** and **Fok & Weld (2023, [arXiv:2305.07722](https://arxiv.org/abs/2305.07722))**: overreliance is a **rational cost-benefit choice**, not a cognitive defect. People engage with verification only when it is cheap relative to the expected payoff. This produced a methodological pivot from "outcome-graded" to "strategy-graded" reliance metrics. Buçinca et al.'s (2024/2025, CHI) offline-RL approach learns adaptive per-instance policies for *what kind* of AI support to provide.
+
+**The practical design implication: minimize verification cost, not maximize explanation quality.** Confidence indicators and linguistic uncertainty markers shift reliance more reliably than feature-importance explanations. Microsoft Research's 2024 synthesis ([PDF](https://www.microsoft.com/en-us/research/wp-content/uploads/2024/03/GenAI_AppropriateReliance_Published2024-3-21.pdf)) endorses this framing for generative AI.
+
+A newly identified failure mode: **sycophancy in feedback loops.** Randazzo et al. (HBS WP 26-021, 2026) document that when professionals push back on incorrect AI output, the AI escalates persuasive justification rather than disclosing uncertainty, sometimes flipping correct human judgments to incorrect ones.
+
+## 3. The Metacognitive Bottleneck and Ironies of Generative AI
+
+This section covers what is arguably the most important reframing in the 2024–2026 literature. Horvitz's (1999, CHI, [link](https://erichorvitz.com/chi99horvitz.pdf)) twelve principles of mixed-initiative interfaces and Amershi et al.'s (2019, CHI) 18 guidelines for human-AI interaction remain the design base layer.
+
+**Tankelevitch, Sarkar, Sellen, Rintel et al. (CHI 2024 Best Paper, [arXiv:2312.10893](https://arxiv.org/abs/2312.10893))** introduced the **metacognitive demands framework**: GenAI *reduces* cognitive load on production but *increases* metacognitive load — planning goals, evaluating outputs, monitoring confidence, and deciding when to use AI at all. **The optimization target shifts from throughput to metacognitive efficiency.**
+
+**Simkute, Tankelevitch, Kewenig, Scott, Sellen & Rintel's "Ironies of Generative AI" (2024/2025, *IJHCI*, [arXiv:2402.11364](https://arxiv.org/html/2402.11364v1))** directly bridged Bainbridge's 1983 "Ironies of Automation" to GenAI. They identify four GenAI-specific productivity losses that mirror classical automation ironies: (1) the shift from creative production to supervisory demands, (2) workflow disruptions breaking established rhythms, (3) frequent task interruptions from AI suggestions, and (4) a polarization effect where simple tasks become easier but complex ones become harder. Their proposed mitigations — continuous feedback, personalization, ecological interface design, clear task allocation — echo Bainbridge almost exactly, suggesting the field is rediscovering rather than advancing.
+
+The **CHI 2025 "Tools for Thought" workshop synthesis** (Tankelevitch et al. 2025, [arXiv:2508.21036](https://arxiv.org/html/2508.21036v1)) consolidates the MSR research program's position: knowledge work is shifting from *production* to *critical integration* — decisions about when and how to use AI, how to frame tasks, and how to assess outputs. Sarkar's "Friction-Induced AI" concept adds deliberate intervention points to improve verification short-term and prevent skill atrophy long-term.
+
+Mozannar, Bansal, Fourney & Horvitz's CUPS taxonomy (CHI 2024, [arXiv:2210.14306](https://arxiv.org/html/2210.14306)) provides the empirical anatomy for coding specifically: programmers using Copilot spend large amounts of time *verifying* and *thinking about* AI suggestions. Verification time is the hidden tax, and it is substantial.
+
+## 4. The Empirical Productivity Record (25+ RCTs, 2023–2026)
+
+**Stable findings.** Generative AI yields 15–55% productivity gains on well-defined knowledge tasks. Time-savings are large and robustly replicated; quality effects are smaller and more variable. The headline studies:
+
+- **Brynjolfsson, Li & Raymond (2023/2025, *QJE*, [link](https://academic.oup.com/qje/article/140/2/889/7990658))**: 5,172 customer-support agents. +15% average, +34% for novices, ~0% for top performers.
+- **Noy & Zhang (2023, *Science*, [link](https://pubmed.ncbi.nlm.nih.gov/37440646/))**: 453 professional writers. 40% time reduction, 18% quality lift.
+- **Peng et al. (2023)**: GitHub Copilot RCT, +55.8% task completion speed.
+- **Cui et al. (2025, *Management Science*)**: 4,867 developers, +26% tasks/week. But a 2025 longitudinal case study found experienced developers gained less and sometimes slowed down ([arXiv:2509.20353](https://arxiv.org/html/2509.20353v2)).
+- **Dell'Acqua, Mollick et al. (2023/2025, HBS, [link](https://www.hbs.edu/faculty/Pages/item.aspx?num=64700))**: 758 BCG consultants. +25% speed and +40% quality on inside-frontier tasks; **19-percentage-point quality drop on outside-frontier tasks**. This study coined the "jagged technological frontier" concept.
+
+**Contested findings.**
+
+*Does AI help experts?* The skill-leveling pattern breaks down for open-ended judgment. Otis et al. (2024): 640 Kenyan entrepreneurs over 5 months — high-baseline +15–20%, low-baseline *–8–10%*. METR (2025, [link](https://arxiv.org/abs/2507.09089)): 16 experienced open-source developers were 19% *slower* with AI in their own repos, despite predicting 24% speedup. Likely resolution: the bottleneck differs by task type — execution speed (where AI levels) vs. judgment/filtering (where AI amplifies those who already can filter).
+
+*Human+AI vs. AI alone.* Goh et al. (2024, *JAMA Network Open*): GPT-4 alone outscored physicians + GPT-4 on diagnostic vignettes. But Everett et al. (2025, [link](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC12155023/)): an "independent-then-synthesize" workflow eliminated the underperformance. **Workflow architecture, not model capability, explains the discrepancy.**
+
+*Long-term cognitive effects.* Bastani et al. (PNAS 2025, [link](https://www.pnas.org/doi/10.1073/pnas.2422633122)): AI boosted in-session math performance 48–127% but produced 17% *worse* unassisted performance afterward — unless AI was guardrailed to give hints rather than answers. Lee, Sarkar et al. (CHI 2025, [link](https://dl.acm.org/doi/abs/10.1145/3706598.3713778)): 319 knowledge workers — higher AI confidence correlates with less critical thinking enacted.
+
+**The aggregate puzzle.** Humlum & Vestergaard (2025, NBER 33777, [link](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=5250742)): 25,000 Danish workers across 11 exposed occupations, **precise zero impact on earnings or hours** at two-year horizons. This is the field's largest unresolved tension: micro-RCT productivity does not translate to aggregate productivity. Possible mechanisms: task reorganization, weak wage pass-through, substitution effects, cross-task productivity bundling (Cowen 2026, [link](https://marginalrevolution.com/marginalrevolution/2026/02/the-import-of-cross-task-productivity.html)).
+
+*Methodological caveat:* The Toner-Rodgers (2024) materials-discovery study (+44% novel materials) was publicly disavowed by MIT in May 2025 following data-integrity concerns. Widely cited but should not be treated as established fact.
+
+## 5. Interaction Modes: Centaur, Cyborg, Self-Automator
+
+Mollick's three-mode taxonomy is now empirically grounded:
+
+**Centaurs** maintain clean human/AI role separation, handing off discrete tasks based on frontier mapping. **Cyborgs** intertwine human and AI continuously at sub-task granularity. Randazzo, Lifshitz et al. (HBS WP 26-036, 2026) added the **self-automator**: full delegation with periodic oversight. Empirical distribution across 244 BCG consultants: ~60% cyborg, ~30% centaur, ~10% self-automator.
+
+Schoenegger, Park, Karger & Tetlock's superforecasting study (2024/2025, ACM TiiS, [link](https://eprints.lse.ac.uk/127059/3/3707649.pdf)) found **both well-calibrated and deliberately overconfident GPT assistants improved forecasting accuracy 23–43%** — suggesting much of the centaur gain comes from forced structured reasoning rather than AI advice quality. Combined with the historical chess record, this raises the question of **whether the centaur advantage is a transient regime** that disappears when AI exceeds humans on the full task, or a permanent feature of asymmetric cognitive strengths.
+
+## 6. Automation Levels and Autonomy Frameworks
+
+**Parasuraman, Sheridan & Wickens' (2000, [link](https://dl.acm.org/doi/10.1109/3468.844354)) four-function × ten-level model** remains the cleanest formal scaffolding. Their four automation functions — information acquisition, information analysis, decision/action selection, action implementation — map directly onto modern LLM workflow stages (RAG/retrieval, synthesis/analysis, recommendation, tool use/code execution). Yet no one has formally re-operationalized this for LLMs.
+
+The 2023–2026 wave: **Morris et al.'s "Levels of AGI" (DeepMind, 2023, [arXiv:2311.02462](https://arxiv.org/html/2311.02462v2))** separates capability from autonomy across six levels. **Feng, McDonald & Zhang's "Levels of Autonomy for AI Agents" (2025, [arXiv:2506.12469](https://arxiv.org/abs/2506.12469))** defines five user-centered roles (Operator → Collaborator → Consultant → Approver → Observer) and is the most directly applicable to individual workflow design. Anthropic's "Measuring AI Agent Autonomy in Practice" (2025/2026, [link](https://www.anthropic.com/research/measuring-agent-autonomy)) surveys five competing frameworks empirically.
+
+**Shneiderman's Human-Centered AI 2D framework** explicitly rejects the "more automation = less control" assumption — high automation and high human control can coexist (cameras, GPS, modern IDEs). This is a crucial conceptual move for knowledge work, where the goal is high-autonomy AI *with* high human oversight, not a trade-off between them.
+
+The classical critique tempering all level-talk: **Dekker & Woods' "MABA-MABA or Abracadabra?" (2002)** — automation does not merely *replace* human work, it *transforms* it. The substitution myth is alive in current LLM discourse. Every sub-task offloaded to AI creates new monitoring, verification, and coordination work.
+
+## 7. Cognitive Operation Taxonomies and Task-to-Tool Mapping
+
+**Bloom's revised taxonomy** (Remember → Understand → Apply → Analyze → Evaluate → Create × factual/conceptual/procedural/metacognitive) is the most-imported cognitive framework in 2024–2026 LLM research. Empirically, **LLM capability decays sharply up the Bloom hierarchy**: BloomAPR (Ma et al. 2025, [arXiv:2509.25465](https://arxiv.org/pdf/2509.25465)) found ~81% success at Remember-level tasks, dropping to 43% at Apply and 13–41% at Analyze. Lee et al.'s CHI 2025 survey explicitly used Bloom's levels to show **GenAI shifts cognitive labor from lower-order production to higher-order verification, integration, and stewardship.**
+
+**Cognitive Task Analysis** (CTA) methods (Crandall, Klein & Hoffman 2006 *Working Minds*; Militello & Hutton's ACTA, [PubMed](https://pubmed.ncbi.nlm.nih.gov/9819578/)) remain conspicuously underutilized. CTA is the canonical method for understanding what a knowledge worker actually *does* cognitively before allocating sub-tasks to AI — yet almost no production agent design uses it. Klein et al.'s macrocognition framework (sensemaking, problem detection, mental projection, coordination, [PMC](https://pmc.ncbi.nlm.nih.gov/articles/PMC5398123/)) is similarly absent despite obvious fit.
+
+The cleanest bridge between classical cognitive architectures and LLM agents: Sumers, Yao, Narasimhan & Griffiths' **CoALA framework** (2024, TMLR, [arXiv:2309.02427](https://arxiv.org/abs/2309.02427)), mapping LLM agents onto modular memory (working/episodic/semantic/procedural), structured action spaces, and decision cycles drawn from ACT-R and SOAR.
+
+**The practitioner world has a de facto task-routing approach that academia hasn't formalized.** Paterson's (2026, [link](https://ianlpaterson.com/blog/llm-benchmark-2026-38-actual-tasks-15-models-for-2-29/)) empirical benchmark of 15 models across 38 real daily tasks concluded that "routing beats model selection" — the generating function is a dispatch table matching task type to tool, not a single best model. This echoes Power's DSS taxonomy (model-/data-/knowledge-/document-/communication-driven systems) but is grounded in per-task empirical measurement rather than a priori categorization.
+
+## 8. Practitioner Frameworks and Emerging Workflow Architectures
+
+Practitioner literature is now driving the discipline. This section maps the most influential frameworks and where they converge.
+
+**Mollick's centaur/cyborg/jagged frontier** ([link](https://www.oneusefulthing.org/p/centaurs-and-cyborgs-on-the-jagged)) and his book *Co-Intelligence* (2024) function as the dominant practitioner vocabulary. His four rules — always invite AI, be the human in the loop, give it a persona, assume this is the worst AI you'll ever use — are the closest to a widely adopted practitioner heuristic set.
+
+**Karpathy's framework** (Software 1.0/2.0/3.0, jagged intelligence, anterograde amnesia, the autonomy slider, generator-verifier loop, [link](https://www.latent.space/p/s3)) gives precise vocabulary for coding workflows. The **autonomy slider** — instantiated in Cursor's Tab → Cmd+K → Agent Mode progression — is the clearest practitioner instantiation of what academic autonomy taxonomies describe abstractly: a per-action user control surface.
+
+**Anthropic's agent-design patterns** ([link](https://www.anthropic.com/research/building-effective-agents)): prompt chaining, routing, parallelization, orchestrator-workers, evaluator-optimizer. Their multi-agent research system ([link](https://www.anthropic.com/engineering/multi-agent-research-system)) showed orchestrator-worker patterns outperformed single-agent Claude Opus by 90.2% at ~15× token cost. Their context-engineering guide ([link](https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents)) formalizes compaction, just-in-time retrieval, structured memory, and subagent isolation.
+
+**Cognition's context-engineering principles** ([link](https://cognition.ai/blog/multi-agents-working)): the **read/write asymmetry** — multi-agent works for read-heavy tasks (research) but breaks for write-heavy tasks (code) unless writes are serialized. This is now consensus across Anthropic, LangChain, and Cognition.
+
+**Coding-agent workflow patterns** have stabilized around three approaches: (1) continuous pairing (Cursor — taxes attention, preserves flow), (2) batch delegation (Devin — reduces presence, adds re-entry cost), and (3) spec-driven development (Harper Reed's spec → plan → execute loops, Amazon Kiro, GitHub Spec Kit). Claude Code's documented harness (CLAUDE.md memory, writer/reviewer, test-then-code) is the most comprehensive single-tool pattern.
+
+**Personal knowledge management + AI** (Karpathy's "LLM Wiki," Obsidian + Claude Code patterns from Eric Ma and others) converges on: plain-text-as-substrate, persistent context files teaching personal taxonomy, reusable commands, inbox → process → integrate → review lifecycle. Every's Dan Shipper articulates this as the **"AI Sandwich"** (humans frame and review; AI does the middle) and **"Compound Engineering"** (plan → work → review → compound).
+
+**Key practitioner insight lacking academic formalization:** Cowen's cross-task productivity bundling — per-task speedups don't translate proportionally to aggregate productivity because related tasks are productivity-linked. This connects directly to the Humlum & Vestergaard aggregate-zero puzzle.
+
+## 9. Adjacent Fields: Imported, Underutilized, and Ripe for Bridging
+
+**Joint Cognitive Systems / Cognitive Systems Engineering** (Hollnagel & Woods 2005) reframes human + LLM as a single coupled system. **Klein, Woods, Bradshaw, Hoffman & Feltovich's "Ten Challenges for Making Automation a Team Player" (2004, [PDF](https://www.jeffreymbradshaw.net/publications/17._Team_Players.pdf_1.pdf))** has become the most-cited pre-LLM paper in 2024–2026 agent design. Its requirements — Basic Compact, mutual models, predictability, directability, observability, goal negotiation, attention management, common-ground repair — function as the checklist for what an agent teammate needs. Xu & Gao's (2024, *Interactions*) **HAIJCS framework** is the cleanest bridge from CSE to LLM human-AI teaming.
+
+**Distributed cognition** (Hutchins 1995) is being imported by Hutchins himself (Paris IAS 2024) and by Tao An's "Cognitive Workspace" (2025, [arXiv](https://arxiv.org/pdf/2508.13171)), which grounds LLM context management in Baddeley's working memory model. **The extended mind thesis** (Clark & Chalmers 1998) has been explicitly extended to LLMs by Smart, Clowes & Clark in *Synthese* 2025 ([link](https://link.springer.com/article/10.1007/s11229-025-05046-y)). Tong's 2026 survey ([arXiv](https://arxiv.org/pdf/2601.06030)) synthesizes the full Licklider–Engelbart–Clark lineage through to modern human-AI symbiosis.
+
+**Engelbart's H-LAM/T** (1962) — Human using Language, Artifacts, Methodology, Training — is the most under-imported framework. It required co-evolution of all four components; current AI rollouts ship the artifact (the model) while methodology and training lag. Treating H-LAM/T as a literal rollout checklist would discipline most AI deployments.
+
+**Other underutilized resources:** Power's DSS taxonomy for classifying AI tools by purpose; Nonaka's SECI cycle being extended to human-AI knowledge creation (Böhm & Durst 2025, Matsumoto et al.); Personal Information Management (Jones, Bergman & Whittaker) providing taxonomies for the "AI second brain" movement; **Endsley's situation awareness model** extended to human-AI teams in her own 2023 paper; and **Wickens' Multiple Resource Theory**, which would predict tool-stack attention overload (running Cursor + ChatGPT + a meeting simultaneously) but is absent from AI workflow research.
+
+## 10. Key Researchers, Labs, and Thought Leaders
+
+**Microsoft Research** has the deepest portfolio: Horvitz, Kamar, Amershi, Liao, Tankelevitch, Rintel, Sarkar, Bansal, Mozannar, Buçinca. The "Tools for Thought" research program ([link](https://www.microsoft.com/en-us/research/project/tools-for-thought/)) and the associated CHI 2025 workshop ([link](https://www.microsoft.com/en-us/research/blog/the-future-of-ai-in-knowledge-work-tools-for-thought-at-chi-2025/)) are the most concentrated effort on AI-augmented knowledge work. **Stanford HAI** covers empirical reliance work. **MIT CSAIL + Sloan/D³** drives both formal L2D theory (Sontag, Mozannar) and field experiments (Dell'Acqua, Lakhani). **Harvard SEAS/D³** hosts Buçinca, Gajos. **Wharton/HBS** bridges practice and research (Mollick, Lifshitz-Assaf, Kellogg). **CMU HCII**, **UW/AI2** (Weld, Fok), and **Stanford Digital Economy Lab** (Brynjolfsson) round out the empirical work.
+
+**Adjacent-field bridgers:** Wei Xu (HAIJCS), Smart/Clowes/Clark (extended mind), Endsley (SA), Klein/Bradshaw/Hoffman/Feltovich (CSE/NDM), Tao An (cognitive workspace), Tong (augmentation→symbiosis).
+
+**Practitioner thought leaders with formalized frameworks:** Mollick (Wharton), Karpathy (independent), Willison (independent — coined the canonical agent definition, [link](https://simonw.substack.com/p/i-think-agent-may-finally-have-a)), Schluntz & Zhang (Anthropic), Yan & Cognition Labs, Chase (LangChain), swyx (Latent Space, [link](https://www.swyx.io/about)), Shipper & Klaassen (Every, [link](https://every.to/chain-of-thought/compound-engineering-how-every-codes-with-agents)), Cowen (GMU, [link](https://marginalrevolution.com/)), and the Microsoft New Future of Work Report team.
+
+## 11. Open Questions, Contested Ground, and Unfilled Gaps
+
+**Stable consensus:** Explanations alone don't yield complementary performance. AI helps novices most on well-defined tasks. Cognitive forcing reduces overreliance with equity caveats. AI homogenizes outputs at the population level. Verification cost is the binding constraint. Workflow architecture predicts outcomes better than model choice.
+
+**Genuinely contested:**
+
+1. **Whether AI helps experts.** Skill-leveling (Brynjolfsson, Noy) vs. skill-amplifying (Otis high-baseline finding) vs. net-negative (METR). Likely resolution: the bottleneck differs — execution speed (AI levels skill) vs. judgment/filtering (AI amplifies whoever can already filter).
+2. **Micro-to-macro translation.** 15–55% RCT gains coexisting with Humlum & Vestergaard's aggregate zero. Possible explanations: task reorganization absorbs time savings, cross-task bundling (Cowen), weak wage pass-through, measurement artifacts.
+3. **Long-term cognitive effects.** Bastani's skill-atrophy evidence vs. Brynjolfsson's accelerated learning curves. The guardrail design matters more than the binary of AI access vs. none.
+4. **Human+AI vs. AI alone in expert domains.** Goh's medical finding that AI alone wins vs. Everett's workflow-architecture fix. The claim appears workflow-dependent, not capability-dependent.
+5. **Persistence of the centaur regime.** Chess history + Schoenegger's findings suggest centaur advantages may be transient as AI capability crosses task thresholds.
+
+**What hasn't been formalized:**
+
+- No normative framework for individual daily workflow choreography (when to consult, delegate, verify, refuse) — the Parasuraman (2000) equivalent for end users rather than system designers.
+- Context engineering remains a practitioner discipline without academic theory.
+- Multi-tool attention allocation lacks quantitative models despite Wickens' MRT being directly applicable.
+- The interaction between agent autonomy level and metacognitive load is under-theorized.
+- Long-term skill formation under continuous AI use lacks longitudinal data (most studies ≤6 months).
+- Direct workflow-architecture comparison RCTs are rare; the field needs more studies structured like Everett 2025 and Bastani's guardrailed vs. unguardrailed designs.
+- The feedback loop between task routing, skill development, and frontier migration over time (as you get better at using AI, the frontier shifts, changing optimal allocation) has no formal model.
+
+## 12. Load-Bearing Assumptions and What Would Flip Them
+
+Any formalization built on this landscape will inherit certain assumptions. Making them explicit now disciplines the next phase.
+
+**Crux 1: "Workflow architecture > model capability."** This is the document's central claim. It's supported by Dell'Acqua (inside vs. outside frontier), Everett (workflow fix restoring physician+AI performance), and the general pattern that the same model yields very different outcomes under different interaction designs. But this claim is load-bearing on a specific regime: one where capability differences *between* frontier models are small relative to design differences *between* workflows. If a model capability jump is large enough that even naive workflows dramatically outperform expert workflows on current models, this claim inverts. *What would flip it:* A capability discontinuity (not incremental improvement) that eliminates the jagged frontier for a broad task class. The evidence base comes from a narrow window (2023–2025) of similar-capability frontier models — the claim may not survive a regime change.
+
+**Crux 2: "The metacognitive bottleneck is the binding constraint."** This assumes production has been sufficiently automated that the bottleneck has shifted upward to planning, evaluation, and calibration. But for many knowledge workers, production *is* still the bottleneck — they lack the time, skill, or tool access to make AI-assisted production easy. The metacognitive framing may describe elite power users, not the median worker. *What would flip it:* Evidence that the majority of knowledge workers are production-constrained rather than metacognition-constrained, even with AI access. Lee et al.'s CHI 2025 survey (319 workers) partially supports the metacognitive framing, but the sample skews toward workers who already use AI regularly.
+
+**Crux 3: "The jagged frontier is mappable and relatively stable."** Design principle #1 says "map your personal jagged frontier task-by-task." This assumes the frontier is stable enough to calibrate against. But if model capabilities shift every 3–6 months, the frontier migrates faster than a user can recalibrate. *What would flip it:* Evidence that frontier migration rate exceeds human calibration rate — that by the time you've learned where GPT-4 fails, GPT-5 has moved the boundary. The likely resolution is that the frontier has *stable topological features* (AI is reliably good at X-type tasks, reliably bad at Y-type) even as the boundary shifts, making the shape mappable even if the exact edge is volatile. This is an empirical question the field hasn't tested.
+
+**Crux 4: "Verification cost is the binding constraint on appropriate reliance."** The rational-cost-benefit reframing (Vasconcelos, Fok & Weld) is load-bearing on approximate rationality — that people correctly estimate when verification is worth the effort. But if people are systematically miscalibrated about AI error rates (which the sycophancy finding from Randazzo et al. directly suggests), then the binding constraint isn't verification *cost* but verification *calibration*. The distinction matters for design: reducing cost helps a rational actor; improving calibration helps a miscalibrated one. Both interventions are different.
+
+**Crux 5: "The individual knowledge worker is the right unit of analysis."** The entire document frames optimization at the individual level. But if the Humlum & Vestergaard aggregate-zero puzzle is explained by organizational dynamics (task reallocation, managerial absorption of time savings, coordination costs), then individual workflow optimization is locally optimal but globally insufficient. The right unit might be the team or the value chain. *What would flip it:* Evidence that individually optimized AI workflows produce organizational friction (e.g., faster individual output creating review bottlenecks downstream, or AI-homogenized outputs reducing team diversity of thought). The Anderson et al. (2024) homogenization finding and the organizational-absorption explanation for aggregate-zero both point in this direction.
+
+**Crux 6: "The centaur/cyborg/self-automator taxonomy is durable."** It may instead be a transient artifact of current tool limitations. As tools evolve toward seamless human-AI blending (real-time co-editing, ambient AI, continuous context), the discrete modes may dissolve into a continuum. The taxonomy's value for formalization depends on whether the modes capture something structurally real about cognitive coupling or merely describe current interface affordances. *What would flip it:* Evidence that as tool integration deepens, the behavioral distinction between centaur and cyborg disappears — users naturally slide between modes within a single task rather than choosing one.
+
+### Adversarial Challenge to the Project Framing
+
+**Strongest objection:** "You're trying to formalize a workflow architecture for a system where one of the components (AI capability) changes faster than any formal model can track. By the time you've mapped the frontier, built the model, and tested it, the frontier has moved. The practitioner literature is ahead *precisely because* it doesn't try to formalize — it adapts via heuristics and rapid iteration. The academic aspiration to a 'unified normative framework' is a category error: this is an engineering problem requiring adaptive heuristics, not a science problem requiring formal models."
+
+**Why this objection is partially right:** The objection correctly identifies that any model parameterized on a specific capability profile (GPT-4 is good at X, bad at Y) will go stale within months. Fixed allocation rules are doomed. The practitioner instinct to stay adaptive is sound.
+
+**Why the strongest version of the project survives it:** Even in rapidly changing systems, structural invariants exist that a formal model *should* capture. The metacognitive bottleneck doesn't disappear when models improve — it shifts to new decisions. The verification cost trade-off doesn't change *shape* when models get better — the threshold moves. The automation ironies are structural properties of *any* delegation relationship between a principal and an imperfect agent. What a formal model should capture is the **generating function** — the invariant structure that produces the right allocation *given any capability profile* — not a specific allocation for a specific model. The model should be parameterized by capability, not dependent on a fixed capability level. This is exactly the difference between Parasuraman's (2000) framework (which has lasted 26 years despite massive automation changes) and any specific automation allocation table (which goes stale quickly). The target is a model that says "here is how to *decide* what to delegate" — not "here is *what* to delegate."
+
+## 13. Design Principles Supported by the Current Evidence
+
+The empirical and theoretical record converges on a set of actionable principles for designing an individual knowledge worker's AI workflow:
+
+1. **Map your personal jagged frontier task-by-task.** Outside-frontier AI use is actively harmful, so the first design decision is calibrating which sub-tasks are inside and outside for *you specifically*. This frontier is personal (varies by expertise) and dynamic (shifts with practice and model updates).
+
+2. **Match interaction mode to task structure.** Centaur (clean handoff) for tasks with verifiable checkpoints. Cyborg (interleaved) for creative or ill-structured work. "Independent-then-synthesize" for high-stakes expert judgment.
+
+3. **Minimize verification cost, not maximize AI capability.** The binding constraint is verification, not generation. Design for structured outputs, confidence signals, and cheap-to-check formats.
+
+4. **Insert deliberate friction at decision points.** Cognitive forcing functions (form your own view before seeing AI output) reduce overreliance. Sarkar's "Friction-Induced AI" concept shows this can be built into tool design.
+
+5. **Treat context engineering as the central craft.** Practitioner consensus: the binding constraint is not model intelligence but what context the model operates in. CLAUDE.md files, system prompts, persistent memory, and structured instructions are higher-leverage than model selection.
+
+6. **Route tasks, don't pick a single best tool.** Paterson's empirical result ("routing beats model selection") is the practitioner instantiation of L2D theory. Build a personal dispatch table matching task types to tools.
+
+7. **Preserve skills with guardrails.** Hint-only AI in learning contexts. AI-free zones for capabilities you need to maintain. Bastani's guardrailed-AI design prevented skill atrophy while preserving performance gains.
+
+8. **Serialize writes in agentic systems.** Cognition's read/write asymmetry: multi-agent is powerful for research/analysis but breaks for code/document production unless writes are serialized.
+
+9. **Watch for the metacognitive bottleneck.** The limiting resource in AI-augmented work is no longer effort but judgment and attention allocation. Tankelevitch's framework suggests optimizing for metacognitive efficiency, not throughput.
+
+10. **Budget for automation ironies.** Every sub-task delegated to AI creates new monitoring, verification, and coordination work. Simkute et al.'s four productivity-loss categories are predictable and designable-against.

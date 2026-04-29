@@ -1,0 +1,15 @@
+---
+title: 'Technology Utilization Architecture'
+description: 'Optimal workflow architecture for an individual knowledge worker given the current AI / agent / automation toolset. Not "use AI" but the specific choreography — which tools for which cognitive operations, where human judgment is essential vs. bottleneck, and how to structure the feedback loops.'
+date: 2026-04-29
+status: in-progress
+refinementPass: 0
+---
+
+The topic running through the LLM Iterate pipeline. The question is not "does AI help" — that has been answered (15–55% productivity gains on well-bounded tasks, replicated across ~25 RCTs). The question is which workflow architecture maximizes output quality per unit of human attention, given that the binding constraint has shifted from production throughput to metacognitive load.
+
+Stage 1 (lit review) maps three layers: a mature HCI / decision-science literature on appropriate reliance and complementarity; a classical foundation in cognitive systems engineering being re-imported (Bainbridge 1983, Klein et al. 2004, Hollnagel & Woods 2005); and a practitioner stack (Mollick, Karpathy, Anthropic, Cognition, Claude Code) that runs 12–18 months ahead of peer review. The headline finding across the empirical record is that workflow architecture predicts outcomes more reliably than which frontier model you use.
+
+Stage 2 (topology) is the dependency graph — three foundational assumptions (attention-as-binding-constraint, jagged frontier exists, verification cost is comparable to generation cost) carry most of the inferential weight. Six crux nodes are where collapse propagates farthest. The graph also encodes how practitioner frameworks and academic theory map onto the same underlying structure.
+
+Stages 3–5 will formalize the workflow choreography into a parameterized model (capability-by-operation × verification-cost × autonomy level → routing decision), test it against the available task-level evidence, and ship a small interactive tool for individual workflow design.

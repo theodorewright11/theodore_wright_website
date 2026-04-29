@@ -1,0 +1,377 @@
+---
+title: 'Topology'
+description: 'Dependency graph of the lit review. ~55 nodes typed as foundational assumptions / methods / empirical claims / logical necessities / generating mechanisms / synthesis / practitioner frameworks / open questions / distortions; six cruxes (A1, A2, A3, G1, S1, L3) and four variant views (Vulnerability / Flow / Minimal / Capability-regime).'
+date: 2026-04-29
+status: in-progress
+refinementPass: 1
+refinementLog:
+  - pass: 1
+    date: '2026-04-29'
+    passes: ['first draft']
+    why: 'First-draft topology of the cognitive partnership stack lit review. The nine-type node taxonomy adds a Practitioner (P) class to make the academic/practitioner split visible and to encode the operationalizes (op) edge as the bridge.'
+    changes:
+      - 'Six foundational/methodological/empirical/logical/generating/synthesis/practitioner/open/distortion node types'
+      - 'Six cruxes (A1, A2, A3, G1, S1, L3) selected by graph weight + fan-out, mirroring the foundational / reframer / guardrail trichotomy from the human-psych-variation topology'
+      - 'Five variant views: full / vulnerability / flow / minimal / capability-regime'
+      - 'Capability-regime variant added as the topic-specific fragility lens — splits nodes into stale-on-jump / stable / regime-dependent, the discipline that justifies formalization'
+      - 'Edge types include op (operationalizes) for the practitioner ↔ academic bridge'
+      - 'Three Stage-3 formalization options laid out (capability×verification dispatch, generator-verifier loop with autonomy slider, principal-agent), with the loop+slider recommended'
+---
+
+import CognitivePartnershipGraph from '../../../components/ai-research/CognitivePartnershipGraph';
+
+## TLDR
+
+The lit review documents the research landscape on optimal human-AI workflow design. This topology asks the sharper question: **what depends on what?** Strip the field down to its load-bearing structure and the picture is surprisingly clean. Three foundational assumptions sit upstream of most of the empirical and synthesis nodes — that **human attention is the binding scarce resource** (A1), that **AI capability is heterogeneous across cognitive operations** (the jagged frontier; A2), and that **verification cost is comparable to or cheaper than generation cost** (A3). If any one of them flipped, large regions of the picture would have to be rebuilt. Everything else is either a methodological prerequisite that lets the foundations be tested, an empirical claim resting on those foundations, a logical necessity that constrains how the empirical claims can be interpreted, a generating mechanism, a synthesis claim, a practitioner framework, or an open question.
+
+The high-stakes nodes split into three categories — keeping them separate is the single most useful conceptual move in this topology. **Foundational cruxes** (A1 attention scarce, A2 jagged frontier, A3 verification cheap-enough) are assumptions that, if falsified, force rebuilding regions of the graph. **Reframer nodes** (G1 metacognitive bottleneck, S1 workflow > capability) don't break the picture if reversed — they change what it *means*; both are well-supported but their generality is regime-specific. **Logical guardrails** (L3 parameterize by capability, L1 substitution myth) cannot be falsified — they can only be ignored, which is exactly how most overconfident AI-rollout discourse proceeds. Conflating these three types under a single label of "important findings" is a major source of bad-faith and bad-faith-adjacent debate.
+
+The field's **weakest links** are not where the popular discourse focuses. Mainstream debate contests "does AI help" — but at the well-bounded-task level the productivity record is robust (E1: 15–55% gains across ~25 RCTs). The actual fragile zones in 2026 are: (a) **whether the centaur regime persists** (E18 + S5) — Schoenegger's finding that even deliberately overconfident GPT improves forecasting suggests much of the gain comes from forced structured reasoning, not advice quality, raising the question of whether the centaur advantage survives a capability discontinuity; (b) **the aggregate-zero puzzle** (E4 / O2) — Humlum & Vestergaard's precise zero across 25,000 Danish workers tensions every micro-RCT result; (c) **whether the frontier is mappable faster than it migrates** (O4) — a calibration race-condition the field hasn't tested; (d) **the boundary between "individual" and "organizational" optimization** (O5) — if individual workflow gains are absorbed by review bottlenecks downstream, the right unit of analysis isn't the worker; (e) **whether the binding reliance constraint is verification cost or verification calibration** (O7) — the design implication is different. The remaining open mechanism question is the long-term cognitive effects of continuous AI use (O3); Bastani's 17% unassisted-performance drop and the broader skill-atrophy literature point to a real risk but the longitudinal data window is still under twelve months for most studies.
+
+This topology is the input to model formalization (Stage 3). The cleanest formalization target is a **parameterized routing function**: for each (task type, capability profile, verification cost, autonomy level) tuple, produce an allocation decision that maximizes expected output quality per unit of human attention. The four variant views below (Vulnerability / Flow / Minimal / Capability-regime) read the same graph through different lenses to discipline that formalization choice.
+
+## The graph
+
+<CognitivePartnershipGraph client:load />
+
+*Click a node for its claim and load-bearing weight; hover an edge for the relation type; drag to rearrange. The variant toggles read the same graph through different lenses.*
+
+---
+
+## How to read this graph
+
+Every node in the lit review collapses to one of nine types. Edges between them carry one of seven relations. Together they make the structure inspectable.
+
+### Node types
+
+| Code | Type | What it is |
+|---|---|---|
+| **A** | Foundational assumption | A claim the field cannot operate without; if false, large downstream regions collapse |
+| **M** | Methodological prerequisite | A study design or measurement approach that must work for the empirical claims to be testable |
+| **E** | Empirical claim | A specific measured finding with an effect size and replication status |
+| **L** | Logical necessity | Follows from definitions or algebra; not empirically refutable |
+| **G** | Generating mechanism | A causal process that explains a pattern (metacognitive load, verification trade-off, ironies of automation) |
+| **S** | Synthesis claim | An integrative statement combining multiple lower-level claims |
+| **P** | Practitioner framework | A typology, slider, or pattern published by the practitioner stack ahead of academic formalization |
+| **O** | Open question | Genuinely undecided with current methods or evidence |
+| **D** | Distortion vector | Where motivated reasoning concentrates (typed by direction) |
+
+### Edge types
+
+| Code | Edge | Meaning |
+|---|---|---|
+| **dep** | depends-on | If target collapses, source collapses |
+| **imp** | implies | Logical implication |
+| **sup** | empirically-supports | Evidence relation |
+| **conf** | confounds / inflates | Artifact relationship |
+| **mod** | moderates | Changes magnitude |
+| **op** | operationalizes | Practitioner framework concretizes an academic claim or vice versa |
+| **corr** | corrects | Workflow architecture corrects naive allocation |
+| **attacks** | attacks | Distortion vector targets a specific node |
+
+### Weight scale (load-bearing weight, 1–5)
+
+- **5** — crux node; collapse propagates across multiple sections of the lit review
+- **4** — load-bearing within a section
+- **3** — important but local
+- **2** — corroborating
+- **1** — decorative
+
+---
+
+## 1. Node catalog
+
+Each node carries: type code · weight · short claim · key citation · status. Status flags: ✓ (robust/replicated), ~ (partial/qualified), ? (contested/open), ✗ (refuted, kept as historical reference).
+
+### A — Foundational assumptions
+
+| ID | Wt | Claim | Status |
+|---|---|---|---|
+| A1 | 5 | Human attention is the binding scarce resource — once production is automated, the bottleneck shifts upward to planning, evaluation, calibration. (Tankelevitch 2024) | ✓ |
+| A2 | 5 | AI capability is heterogeneous across cognitive operations (the jagged frontier). (Dell'Acqua 2023/2025) | ✓ |
+| A3 | 5 | Verification cost is comparable to or cheaper than generation cost — otherwise rational engagement collapses. (Vasconcelos 2023; Fok & Weld 2023) | ~ |
+| A4 | 4 | Knowledge work decomposes into sub-tasks that can be selectively delegated. (Vaccaro 2024 sub-task finding) | ✓ |
+| A5 | 4 | The frontier has stable topological features even as the boundary shifts — i.e., it is mappable. | ? |
+
+### M — Methodological prerequisites
+
+| ID | Wt | Claim | Status |
+|---|---|---|---|
+| M1 | 5 | Randomized controlled trials of AI-augmented work. (~25 published 2023–2026) | ✓ |
+| M2 | 4 | Strategy-graded reliance metrics (vs. outcome-graded). (Vasconcelos / Fok & Weld pivot) | ✓ |
+| M3 | 4 | Field-deployed measurement (real repos, real meetings). (METR 2025) | ~ |
+| M4 | 3 | Telemetry / log-based behavioral observation. (Mozannar CUPS 2024) | ✓ |
+| M5 | 3 | Cognitive Task Analysis (CTA, ACTA). (Crandall, Klein & Hoffman 2006) | ~ |
+
+### E — Empirical claims
+
+| ID | Wt | Claim | Status |
+|---|---|---|---|
+| E1 | 5 | 15–55% productivity gains on well-bounded knowledge tasks. (Brynjolfsson 2023; Noy 2023; Peng 2023; Cui 2025) | ✓ |
+| E2 | 5 | Skill-leveling: novices gain most, top performers near-zero — on well-defined tasks. (Brynjolfsson +34%/0%) | ✓ |
+| E3 | 5 | Outside-frontier AI use causes a 19-pp quality drop. (Dell'Acqua BCG study) | ✓ |
+| E4 | 5 | Aggregate labor-market effects are zero at 2-year horizons. (Humlum & Vestergaard 2025, 25k workers) | ✓ |
+| E5 | 4 | Explanations alone don't yield complementary performance — they increase acceptance regardless of correctness. (Bansal 2021) | ✓ |
+| E6 | 4 | Cognitive forcing reduces overreliance — but only for high-Need-for-Cognition users. (Buçinca 2021) | ✓ |
+| E7 | 4 | On naive workflows, AI alone outperforms human+AI in expert domains. (Goh 2024 JAMA NO) | ✓ |
+| E8 | 5 | "Independent-then-synthesize" workflow restores complementarity in the same domain. (Everett 2025) | ✓ |
+| E9 | 4 | Unguardrailed AI in learning produces 17% worse unassisted post-session performance. (Bastani PNAS 2025) | ✓ |
+| E10 | 3 | Behavior distribution: ~60% cyborg, ~30% centaur, ~10% self-automator. (Randazzo HBS 26-036) | ✓ |
+| E11 | 4 | LLM capability decays sharply up Bloom's hierarchy: ~81% Remember → 13–41% Analyze. (Ma 2025) | ✓ |
+| E12 | 4 | Verification time is a substantial fraction of total interaction in coding contexts. (Mozannar CUPS 2024) | ✓ |
+| E13 | 4 | Sycophancy escalation: AI flips correct human judgments to incorrect on pushback. (Randazzo HBS 26-021) | ✓ |
+| E14 | 4 | Multi-agent orchestrator-worker outperforms single-agent +90.2% at ~15× token cost. (Anthropic 2024/2025) | ✓ |
+| E15 | 4 | Routing > model selection — task-to-tool dispatch beats single-best-model. (Paterson 2026) | ✓ |
+| E16 | 3 | Higher AI confidence correlates with less critical thinking enacted. (Lee et al. CHI 2025) | ~ |
+| E17 | 4 | Read/write asymmetry: multi-agent works for read-heavy tasks; breaks on write-heavy unless writes are serialized. (Cognition / Anthropic / LangChain consensus) | ✓ |
+| E18 | 3 | Both calibrated AND deliberately overconfident GPT assistants improve human forecasting +23–43%. (Schoenegger 2024/2025) | ~ |
+
+### L — Logical necessities
+
+| ID | Wt | Claim | Status |
+|---|---|---|---|
+| L1 | 5 | Substitution myth is wrong — every offload creates new monitoring/verification/coordination work. (Dekker & Woods 2002; Bainbridge 1983) | ✓ |
+| L2 | 5 | Optimal allocation requires modeling the *joint* performance surface, not solo accuracies. (Madras / Mozannar L2D theory) | ✓ |
+| L3 | 5 | Allocation model must be parameterized BY capability, not depend on FIXED capability — generating function vs. lookup table. | ✓ |
+| L4 | 4 | High automation and high human control can coexist. (Shneiderman 2D) | ✓ |
+
+### G — Generating mechanisms
+
+| ID | Wt | Claim | Status |
+|---|---|---|---|
+| G1 | 5 | Metacognitive bottleneck — load shifts from production to planning, evaluation, calibration. (Tankelevitch 2024) | ✓ |
+| G2 | 5 | Ironies of automation — AI handling routine work degrades human capacity to catch rare critical errors. (Bainbridge 1983; Simkute 2024) | ✓ |
+| G3 | 5 | Verification-cost trade-off — engagement is rational only when cheap. (Vasconcelos 2023) | ✓ |
+| G4 | 5 | Jagged frontier mechanism — capability heterogeneous; the boundary is personal and dynamic. | ✓ |
+| G5 | 4 | Correlation neglect — humans treat AI advice as independent evidence despite shared training data. (Amin 2026) | ~ |
+| G6 | 3 | Cognitive forcing — committing to a view first breaks anchoring. | ✓ |
+| G7 | 4 | Skill atrophy — capacities not exercised decay. | ✓ |
+| G8 | 4 | Cross-task productivity bundling — speedups bottlenecked by linked tasks. (Cowen 2026) | ~ |
+| G9 | 4 | Generator-verifier asymmetry — production cheap, checking expensive. (Karpathy) | ✓ |
+
+### S — Synthesis claims
+
+| ID | Wt | Claim | Status |
+|---|---|---|---|
+| S1 | 5 | **Workflow architecture predicts outcomes more reliably than model capability.** | ✓ |
+| S2 | 5 | The optimization target is metacognitive efficiency, not throughput. | ✓ |
+| S3 | 4 | Knowledge work shifting from production to critical integration. (CHI 2025) | ✓ |
+| S4 | 4 | Context engineering is the central craft. (Anthropic / Cognition consensus) | ✓ |
+| S5 | 3 | Centaur advantage may be a transient regime. | ? |
+
+### P — Practitioner frameworks
+
+| ID | Wt | Claim | Status |
+|---|---|---|---|
+| P1 | 5 | Mollick centaur / cyborg / self-automator typology. | ✓ |
+| P2 | 4 | Karpathy autonomy slider. | ✓ |
+| P3 | 4 | Anthropic agent design patterns (chain / route / parallelize / orchestrator-workers / evaluator-optimizer). | ✓ |
+| P4 | 4 | Cognition read/write asymmetry as agent-system principle. | ✓ |
+| P5 | 3 | Compound Engineering / AI Sandwich (Shipper, Every). | ~ |
+| P6 | 3 | Spec-driven development (spec → plan → execute). | ~ |
+| P7 | 3 | Personal context files (CLAUDE.md / system-prompt patterns). | ✓ |
+
+### O — Open questions
+
+| ID | Wt | Claim | Status |
+|---|---|---|---|
+| O1 | 5 | Does AI help experts on open-ended judgment? | ? |
+| O2 | 5 | Why are aggregate effects zero given the micro-RCT record? | ? |
+| O3 | 5 | Long-term cognitive effects under continuous AI use. | ? |
+| O4 | 4 | Frontier migration vs. calibration rate. | ? |
+| O5 | 4 | Right unit of analysis — individual vs. team vs. value chain. | ? |
+| O6 | 3 | Centaur taxonomy durable, or interface artifact? | ? |
+| O7 | 4 | Verification cost vs. verification calibration as binding constraint. | ? |
+
+### D — Distortion vectors
+
+| ID | Wt | Claim | Targets |
+|---|---|---|---|
+| D1 | 4 | AI-maximalist distortion — RCT gains read as aggregate revolution; ignores Humlum-Vestergaard zero. | E4, S1, O2 |
+| D2 | 4 | Productivity-only distortion — counts speed gains, ignores skill atrophy and metacognitive load. | G7, S2, E9 |
+| D3 | 3 | "Just use the best model" distortion — ignores routing finding (E15) and architecture-over-capability evidence. | E15, S1, S4 |
+| D4 | 3 | Practitioner-only distortion — dismisses formalization as category error. | L3, S1 |
+
+---
+
+## 2. Edge catalog (key chains, not exhaustive)
+
+**Foundation → Method.** A2 → M1 (RCTs reveal the jagged frontier); A3 → M2 (strategy-graded metrics measure verification cost); A1 → M3 (field deployment shows real attention budget).
+
+**Method → Empirical.** M1 produces the productivity record (E1–E9). M2 → E5 (Bansal explanations don't help once strategy-graded). M2 → E12 (CUPS is the strategy-graded measure of coding). M3 → E2 (METR shows experts gain less in real repos).
+
+**Mechanism → Empirical.** G1 → E12 (metacognitive load shows up as verification time). G2 → E13 (sycophancy is the rare critical error ironies-of-automation predicts will get missed). G3 → E5 (rational verification trade-off explains why explanations fail). G4 → E3 (jagged frontier produces outside-frontier harm). G7 → E9 (skill atrophy → unassisted-performance drop). G8 → E4 (cross-task bundling explains aggregate zero).
+
+**Empirical → Synthesis.** E1, E2, E3, E8 → S1 (workflow architecture > model capability — the integrated headline). E12, E16 → S2 (metacognitive efficiency target). E11 → S3. E14, E15, E17 → S4 (context engineering as central craft). E18 → S5.
+
+**Empirical → Open.** E2, E4 → O2 (the aggregate puzzle). E2 → O1 (helps experts?). E9 → O3 (long-term cognitive). E1, E3 → O4 (frontier migration). E4 → O5 (right unit). E13 → O7 (calibration vs. cost).
+
+**Logical guards.** L1 → G2 (substitution myth → ironies of automation). L2 → S1 (joint surface needed). L3 → S4 (parameterize-by-capability is what makes context engineering generalize). L4 → P2 (Shneiderman 2D legitimates the autonomy slider).
+
+**Practitioner ↔ Academic (the central conceptual move of this topology).** P1 ↔ E10 (Mollick taxonomy IS the empirical distribution finding). P2 ↔ L4. P3 ↔ L2 (agent design patterns operationalize joint allocation theory). P4 ↔ E17 (Cognition's principle IS the read/write asymmetry finding). P7 ↔ S4.
+
+**Distortion attacks.** D1 → S1, E4 (treats RCT gains as aggregate proof; ignores Humlum). D2 → G7, S2, E9 (counts speed; ignores atrophy). D3 → E15, S1, S4 (ignores routing). D4 → L3, S1 (denies formalization possibility).
+
+---
+
+## 3. High-stakes nodes — three categories
+
+The single most useful conceptual move in this topology is keeping these three categories separate. They are all "important findings," but they are important in three structurally different ways, and conflating them produces most of the bad-faith debate around AI workflow design.
+
+### 3a. Foundational cruxes — collapse rebuilds regions
+
+- **A1** (human attention is the binding scarce resource). If false, throughput-optimization wins and the entire metacognitive-bottleneck framing dissolves; design priorities flip back toward maximum AI delegation.
+- **A2** (jagged frontier — AI capability is heterogeneous across operations). If a capability discontinuity produced uniformly-good AI across all knowledge-work operations, the "map your frontier" design imperative collapses.
+- **A3** (verification cost is comparable to or cheaper than generation cost). If verification became prohibitively expensive — e.g., AI-generated outputs become so complex or fast-moving that human checking is intractable — the rational-cost-benefit reframing of overreliance dissolves and the design problem becomes "trust without verification."
+
+### 3b. Reframer nodes — open magnitudes change interpretation
+
+- **G1** (metacognitive bottleneck). Robust as a CHI 2024 Best Paper finding; but its *generality* is regime-specific. For workers still production-constrained (most of the labor force), G1 is premature; for power users, it is binding.
+- **S1** (workflow architecture > model capability). Supported by Dell'Acqua, Everett, and the broader RCT pattern, but the evidence base is from a narrow window (2023–2025) of similar-capability frontier models. A capability discontinuity could invert it.
+
+### 3c. Logical guardrails — unfalsifiable, ignored at peril
+
+- **L1** (substitution myth is wrong — every offload creates new monitoring/verification work). Cannot be falsified; can only be ignored.
+- **L3** (a formal allocation model must be parameterized by capability, not depend on fixed capability). Practitioner-only frameworks routinely violate this by hardcoding "GPT-4 is good at X, bad at Y" — the pattern goes stale within months.
+
+### 3d. Decorative / corroborating
+
+E10 (60/30/10 distribution), E18 (Schoenegger overconfident-AI helps), G6 (cognitive forcing), P5 (compound engineering), P6 (spec-driven), D2/D3/D4 (distortions). Removable without changing the structural picture.
+
+---
+
+## 4. Weakest links
+
+Where the graph is genuinely fragile in 2026, ranked by potential propagation if the link breaks:
+
+1. **O2 (aggregate-zero puzzle).** If the explanation is organizational dynamics (review bottlenecks downstream, coordination costs, managerial absorption of time savings), then individual workflow optimization is locally optimal but globally insufficient — and the unit-of-analysis crux (O5) inverts the entire project framing.
+2. **O3 (long-term cognitive effects).** Bastani's 17% drop is one study at under six months. If a 2-year longitudinal RCT confirms broad skill atrophy across cognitive operations, the design implication becomes "AI-free zones" at much larger scale than current practice.
+3. **O4 (frontier migration vs. calibration rate).** If model capabilities shift faster than humans can recalibrate their personal frontier maps, the "map your jagged frontier" design imperative becomes unfollowable.
+4. **O7 (verification cost vs. calibration as binding constraint).** Reducing verification cost helps a rational actor; improving calibration helps a miscalibrated one. The interventions are different. The sycophancy finding (E13) suggests calibration is a real second binding constraint.
+5. **S5 / O6 (centaur regime persistence).** If a capability discontinuity makes AI better than humans on the full task, the centaur typology becomes historical.
+6. **A5 (frontier mappable).** Empirically untested. The plausibility argument is that the frontier has stable topological features even as the specific boundary moves; if false, individual-level workflow design is structurally impossible.
+
+---
+
+## 5. Variants
+
+Each variant reads the same graph through a different lens.
+
+### Variant A — Vulnerability (where does this break?)
+
+Highlights the six cruxes (A1, A2, A3, G1, S1, L3) plus the weight-5 nodes downstream. If any crux flips, propagation is concentrated through this subgraph. Useful for stress-testing.
+
+### Variant B — Flow (how does causation propagate?)
+
+Restricts to the A → M → E → S/G cascade plus practitioner-academic operationalizations (P ↔ E/L). The "what generated what" view: foundational assumptions enable methods, methods produce empirical findings, mechanisms explain them, syntheses integrate, and practitioner frameworks operationalize the resulting design implications.
+
+### Variant C — Minimal claim set
+
+Smallest set of claims that still yields the headline conclusion (S1: workflow architecture > model capability). Approximately: A2 + A3 + E3 + E8 + L2 + G3 + G1 + S1. Eight nodes. Removing any one breaks the qualitative shape.
+
+### Variant D — Capability-regime fragility (the topic-specific variant)
+
+Which nodes go stale if frontier capability jumps? The central worry the lit review's adversarial section names. The variant highlights:
+
+- **Stale-on-jump** (likely to invert): E2 (skill-leveling), E3 (jagged frontier), S5 (centaur transience), E18 (overconfident-AI-still-helps).
+- **Stable-on-jump** (structurally invariant): L1 (substitution myth), L2 (joint surface), L3 (parameterize by capability), L4 (high autonomy + high control), G1 (metacognitive bottleneck — load shifts), G2 (ironies of automation), G3 (verification trade-off), G9 (generator-verifier asymmetry).
+- **Regime-dependent** (depends on which way capability jumps): A2, A3, S1, A5, O4.
+
+The model formalization should be stable under capability change — meaning it should be parameterized by the L3-L1-G1-G2-G3 invariants and treat A2/A3/E2/E3 as inputs that vary by capability regime.
+
+---
+
+## 6. Stage-3 handoff
+
+This topology is the input to model formalization. The cleanest target is a **parameterized routing function**:
+
+```
+delegate(task, worker, AI, context) → action
+```
+
+where the action is one of `{do_yourself, consult_AI, delegate_to_AI, refuse}`, and the function is parameterized by:
+
+- **Task type** (per Bloom hierarchy + cognitive task analysis decomposition)
+- **Worker capability profile** on that task type (via prior frontier mapping)
+- **AI capability profile** on that task type (via per-task benchmark or recent personal experience — the L3 invariant means this is an input, not a hardcoded constant)
+- **Verification cost** (function of task type and output format)
+- **Stakes / reversibility** (high stakes → independent-then-synthesize per E8)
+- **Skill-formation goal** (if the task is one whose capability the worker wants to maintain → guardrail mode per E9)
+
+The `stage_outputs/<topic>/<stage>.md` folder convention holds for this topic too: raw working drafts live in `stage_outputs/technology-utilization-architecture/<stage>.md`; polished versions move into `src/content/ai_research/technology-utilization-architecture/<stage>.mdx`. So far the folder contains the lit review and this topology draft; subsequent stages will accumulate there.
+
+This topology also feeds two natural sibling topics down the line: **Navigating an AI World** (the structural / civilizational view that holds the individual-level optimization in tension with the organizational-level disruption) and **AI Cognitive Profile** (the orthogonal view: rather than asking "how should an individual route tasks," ask "where does AI capability diverge from human capability across the O*NET task taxonomy"). The Stage-3 model formalization should leave clean attachment points for both.
+
+---
+
+## 7. Next moves — three Stage-3 options
+
+Three formalization paths, each with pros / cons / Stage-4 implications.
+
+### Option A — Capability × verification-cost dispatch table (decomposition)
+
+**What it is.** Formalize the routing function as a 2D table: capability gap (worker minus AI on this task) × verification cost ratio (verify-cost / generate-cost). Four quadrants → four allocation rules.
+
+- **Pros.** Maps cleanly onto the existing RCT record (quadrants align with Brynjolfsson, Dell'Acqua, METR, Everett). Easy to visualize. Practitioner-actionable.
+- **Cons.** Risks violating L3 (looks like a lookup table). Mitigated if the table is generated from inputs rather than hardcoded.
+- **Stage-4 implication.** Test against the published RCTs by classifying each into a quadrant.
+
+### Option B — Generator-verifier loop with autonomy slider (generating function) [recommended]
+
+**What it is.** Formalize the workflow as a recurrent loop: at each step, the worker chooses an autonomy level (Karpathy P2 / Feng 2025 five-level operator → observer). The loop has a verification gate; the gate's strictness is a parameter. Output: an interactive dashboard where the user inputs (task type, capability gap, verification cost, stakes, skill-formation goal) and gets a recommended autonomy level + verification cadence.
+
+- **Pros.** Directly operationalizes Karpathy's autonomy slider (P2) using Shneiderman 2D (L4) and Vasconcelos verification economics (G3). Survives capability change (L3-compatible). Naturally maps onto an interactive site component.
+- **Cons.** Requires choosing a parameterization of "verification cost" that holds across task types — non-trivial.
+- **Stage-4 implication.** Test against Bastani's guardrail RCT (verification gate stringency moderating skill atrophy), Everett's independent-then-synthesize (a specific autonomy-cadence schedule), and the Mollick centaur/cyborg empirical distribution (which loops people actually run).
+
+### Option C — Principal-agent with imperfect agent (mechanism design)
+
+**What it is.** Apply contract-theory machinery (asymmetric information, monitoring vs. trust trade-off) to the single-worker / AI-tool relationship.
+
+- **Pros.** Formally rigorous. Connects to a mature economic literature.
+- **Cons.** Heavyweight; principal-agent assumes strategic agents, but LLMs are imperfect-but-non-strategic.
+- **Stage-4 implication.** Hardest to validate against the existing RCT record.
+
+**Recommendation: Option B.** The generator-verifier loop with an autonomy slider is the most directly testable, the most actionable as an interactive site artifact (Stage 5), and the most clearly L3-compatible. Option A can be a sub-component of Option B (the dispatch table determines the autonomy-level choice). Option C is held in reserve.
+
+---
+
+## 8. Objections to this topology
+
+**Objection 1: "The practitioner / academic split is overstated — the field is actually more integrated than the typing P-vs-S suggests."** Steelman: many researchers (Mollick, Karpathy, Tankelevitch via MSR's Tools for Thought) span both communities; some practitioner posts (Anthropic's effective agents) are explicitly grounded in academic literature (Madras / Mozannar L2D). Response: the *people* are integrated, but the *artifacts* aren't. Mollick's centaur/cyborg has no peer-reviewed empirical anchor until Randazzo 2026; Karpathy's autonomy slider has no formal grounding until Feng 2025. The 12–18 month lag is real and the typing makes it visible.
+
+**Objection 2: "The 6-crux selection is biased toward the framing the lit review wants."** Steelman: by picking A1/A2/A3/G1/S1/L3 as cruxes, the topology bakes in the metacognitive-bottleneck and workflow-over-capability worldview; a critic could argue capability-first cruxes (e.g., "Bloom-level decay determines all task allocation") are equally defensible. Response: the cruxes are chosen by graph structure (highest-weight nodes with highest fan-out), not by ideology — the metacognitive framing is a *consequence* of which nodes are most-cited, not the input.
+
+**Objection 3: "The capability-regime fragility variant is a hedge — it concedes the project will go stale."** Steelman: Variant D essentially admits that half the empirical claims could invert under a capability jump; if so, why formalize at all? Response: Variant D is the discipline that *justifies* formalization. The point is to identify which nodes are stable-under-jump (the L1-L3-G1-G2-G3 invariants) and build the formalization on those. Practitioner heuristics, by contrast, are not capability-stable by design — they update faster but go stale faster too.
+
+**Objection 4: "The aggregate-zero puzzle (E4 / O2) is so consequential that the entire individual-level framing might be wrong, and the topology should pivot to the organizational level instead."** Steelman: if Humlum-Vestergaard's zero is the true-population result, individual workflow optimization is rearranging deck chairs. Response: this is exactly what O5 (right unit of analysis) names as a crux. The honest position is that the individual frame is *one valid level* of analysis — design-actionable for the worker who controls their own workflow — and the organizational frame is a *separate* level that should be a sibling artifact, not a replacement.
+
+---
+
+## 9. Glossary
+
+- **AI Sandwich** — Shipper / Every: humans frame the task and review the output; AI handles the middle.
+- **autonomy slider** — Karpathy: a per-action user control surface (Cursor: Tab → Cmd+K → Agent Mode); operationalizes Shneiderman's 2D framework.
+- **Bloom's taxonomy** — Remember → Understand → Apply → Analyze → Evaluate → Create. LLM capability decays sharply going up.
+- **centaur** — Mollick: clean human/AI role separation; discrete handoffs based on per-task frontier mapping.
+- **CoALA** — Cognitive Architectures for Language Agents (Sumers 2024). Maps LLM agents to ACT-R / SOAR memory + action structures.
+- **complementarity potential vs. team performance** — Hemmer 2025 distinction: mathematical possibility vs. actual achievement of human+AI exceeding either alone.
+- **compound engineering** — Shipper / Every: plan → work → review → compound. Each loop's outputs feed the next loop's inputs.
+- **context engineering** — Anthropic / Cognition: the discipline of constructing what the model sees. Practitioner consensus: higher leverage than model selection.
+- **CTA / ACTA** — Cognitive Task Analysis / Applied CTA. Method for decomposing what a knowledge worker actually does cognitively.
+- **CUPS** — Cognitive Use Pattern States; Mozannar 2024 telemetry-grounded taxonomy of programmer-Copilot interaction.
+- **cyborg** — Mollick: continuous interleaving of human and AI at sub-task granularity. The empirical majority pattern.
+- **generator-verifier asymmetry** — production cost falls toward zero with AI; verification cost stays roughly constant. Karpathy's framing.
+- **H-LAM/T** — Engelbart 1962: Human using Language, Artifacts, Methodology, Training. Current rollouts ship the artifact; methodology and training lag.
+- **HAIJCS** — Human-AI Joint Cognitive System (Xu & Gao 2024). Bridge from CSE to LLM teaming.
+- **ironies of automation** — Bainbridge 1983: AI handling routine work degrades human capacity to catch the rare critical errors.
+- **jagged frontier** — Dell'Acqua 2023: AI capability is heterogeneous across sub-tasks; using AI inside the frontier helps, outside causes harm.
+- **L2D** — Learning to Defer; Madras / Mozannar formal allocation theory.
+- **metacognitive demands** — Tankelevitch 2024 best-paper framework: GenAI reduces production load but increases planning, evaluation, and calibration load.
+- **MABA-MABA** — "Men Are Better At, Machines Are Better At." Dekker & Woods 2002 critique of static function allocation.
+- **read/write asymmetry** — Cognition: multi-agent works for read-heavy tasks but breaks for write-heavy unless writes are serialized.
+- **routing > model selection** — Paterson 2026: across 38 real daily tasks and 15 models, dispatching by task type beats picking a single best model.
+- **self-automator** — Randazzo 2026 third Mollick-typology mode: full delegation with periodic oversight.
+- **sycophancy in feedback loops** — Randazzo HBS 26-021: AI escalates persuasive justification on pushback.
+- **Tools for Thought** — Microsoft Research program on AI-augmented knowledge work.
+- **verification cost** — the cost of checking whether an AI output is correct. Vasconcelos 2023 reframing: overreliance is rational when verification is expensive relative to expected payoff.

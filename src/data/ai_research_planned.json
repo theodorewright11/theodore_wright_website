@@ -56,10 +56,6 @@
     "desc": "How parents shape their children — genes, environment, parenting style, worldview transmission, and the recursion across generations."
   },
   {
-    "title": "Technology Utilization Architecture",
-    "desc": "Optimal workflow architecture for an individual knowledge worker given the current AI/agent/automation toolset."
-  },
-  {
     "title": "Prediction and Calibration",
     "desc": "What determines how well-calibrated someone is on a domain, and what interventions actually improve calibration."
   },
