@@ -37,6 +37,7 @@ const NODES: GraphNode[] = [
   { id: 'A3', type: 'A', weight: 5, label: 'Verification cost ≲ generation cost', detail: 'Otherwise rational engagement collapses and the field needs a "trust without verification" framing. (Vasconcelos 2023; Fok & Weld 2023).', status: '~' },
   { id: 'A4', type: 'A', weight: 4, label: 'Knowledge work decomposes', detail: 'Sub-tasks can be selectively delegated. Vaccaro 2024: AI helps most when it handles sub-tasks rather than the whole task.', status: '✓' },
   { id: 'A5', type: 'A', weight: 4, label: 'Frontier mappable', detail: 'Has stable topological features (AI reliably good at retrieval/synthesis, reliably bad at long-horizon planning) even as the boundary shifts. Empirically untested.', status: '?' },
+  { id: 'A6', type: 'A', weight: 5, label: 'Individual optimization aggregates', detail: 'Individual-level workflow gains aren\'t fully absorbed by organizational dynamics (review bottlenecks, managerial reabsorption, coordination costs). The load-bearing assumption behind the entire individual-level framing — without it, individual workflow optimization is locally-but-not-globally meaningful. Humlum & Vestergaard\'s aggregate-zero is direct evidence against. Status open until O2 / O5 are resolved.', status: '?' },
 
   // Methodological prerequisites
   { id: 'M1', type: 'M', weight: 5, label: 'RCTs of AI-augmented work', detail: '~25 published RCTs 2023–2026. Brynjolfsson, Noy, Peng, Dell\'Acqua, Cui, Bastani, etc.', status: '✓' },
@@ -193,6 +194,10 @@ const LINKS: GraphLink[] = [
   { source: 'A1', target: 'G1', type: 'sup' },
   { source: 'A2', target: 'G4', type: 'sup' },
   { source: 'A3', target: 'G3', type: 'sup' },
+  { source: 'A6', target: 'S1', type: 'imp', label: 'individual frame is meaningful' },
+  { source: 'E4', target: 'A6', type: 'conf', label: 'aggregate-zero attacks individual frame' },
+  { source: 'O2', target: 'A6', type: 'imp', label: 'resolves A6 either way' },
+  { source: 'O5', target: 'A6', type: 'imp', label: 'unit-of-analysis crux' },
 
   // Distortion attacks
   { source: 'D1', target: 'E4', type: 'attacks' },
@@ -255,15 +260,18 @@ const EDGE_LABEL: Record<EdgeType, string> = {
 };
 
 const MINIMAL_SET = new Set(['A2', 'A3', 'E3', 'E8', 'L2', 'G1', 'G3', 'S1']);
-const CRUX_IDS = new Set(['A1', 'A2', 'A3', 'G1', 'S1', 'L3']);
+// Cruxes: load-bearing primitives whose collapse rebuilds regions.
+// Foundational assumptions (A1/A2/A3/A6) and logical guardrails (L1/L3).
+// S1 is the *headline conclusion*, not a crux. G1 is a *consequence* of A1, not an independent axiom.
+const CRUX_IDS = new Set(['A1', 'A2', 'A3', 'A6', 'L1', 'L3']);
 
 // Capability-regime fragility classification.
 // Stale-on-jump: invert if frontier capability discontinuously improves.
-const REGIME_STALE = new Set(['E2', 'E3', 'E18', 'S5']);
-// Stable-on-jump: structurally invariant (definitions, principal-agent properties).
-const REGIME_STABLE = new Set(['L1', 'L2', 'L3', 'L4', 'G1', 'G2', 'G3', 'G9']);
+const REGIME_STALE = new Set(['E2', 'E3', 'E18', 'S5', 'P1', 'E10']);
+// Stable-on-jump: structurally invariant (definitions, principal-agent properties, control-surface architecture).
+const REGIME_STABLE = new Set(['L1', 'L2', 'L3', 'L4', 'G1', 'G2', 'G3', 'G9', 'A1', 'S2', 'S3', 'S4', 'P2', 'P3', 'P5', 'P6', 'P7']);
 // Regime-dependent: depends on direction of capability change.
-const REGIME_DEPENDENT = new Set(['A2', 'A3', 'S1', 'A5', 'O4']);
+const REGIME_DEPENDENT = new Set(['A2', 'A3', 'A5', 'A6', 'S1', 'O4', 'E14', 'E15', 'E17', 'P4', 'G4']);
 
 function nodeRadius(weight: number): number {
   return 6 + weight * 2.5;  // weight 1 → 8.5, weight 5 → 18.5
@@ -492,11 +500,11 @@ export default function CognitivePartnershipGraph() {
   );
 
   const variantBlurb: Record<Variant, string> = {
-    full: 'All ~55 nodes and their dependencies. Click a node for detail; drag to rearrange.',
-    vulnerability: 'The 6 crux nodes plus weight-5 load-bearing nodes — where collapse propagates farthest if any single one flips. Highlights open questions too.',
+    full: 'All 65 nodes and their dependencies. Click a node for detail; drag to rearrange.',
+    vulnerability: 'The 6 crux nodes (A1/A2/A3/A6 foundational assumptions + L1/L3 logical guardrails) plus weight-5 load-bearing nodes — where collapse propagates farthest. Highlights open questions too.',
     flow: 'How causation propagates: foundational assumptions → methods → empirical claims → mechanisms → synthesis, with practitioner frameworks (P) operationalizing the academic claims.',
     minimal: 'The 8-node minimal claim set that yields the headline conclusion (S1: workflow architecture > model capability). Removing any one breaks the qualitative shape.',
-    'capability-regime': 'Capability-regime fragility — which nodes go stale if frontier capability jumps. Red ring = stale on jump (likely to invert). Blue = stable (structurally invariant). Sienna = regime-dependent.',
+    'capability-regime': 'Capability-regime fragility — which nodes go stale if frontier capability jumps. Red ring = stale on jump (the empirical productivity-distribution claims plus the centaur typology). Blue = structurally invariant (definitions, principal-agent properties, control-surface architecture). Sienna = regime-dependent (the direction of inversion depends on which way capability shifts).',
   };
 
   return (

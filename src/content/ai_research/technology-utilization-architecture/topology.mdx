@@ -1,34 +1,48 @@
 ---
 title: 'Topology'
-description: 'Dependency graph of the lit review. ~55 nodes typed as foundational assumptions / methods / empirical claims / logical necessities / generating mechanisms / synthesis / practitioner frameworks / open questions / distortions; six cruxes (A1, A2, A3, G1, S1, L3) and four variant views (Vulnerability / Flow / Minimal / Capability-regime).'
+description: 'Dependency graph of the lit review. 65 nodes typed across nine classes (foundational assumptions / methods / empirical claims / logical necessities / generating mechanisms / synthesis / practitioner frameworks / open questions / distortions); six cruxes (A1, A2, A3, A6, L1, L3) and four variant views (Vulnerability / Flow / Minimal / Capability-regime). The genuinely novel structural move for this topic: encoding the practitioner ↔ academic operationalization bridge that runs 12–18 months out of phase.'
 date: 2026-04-29
 status: in-progress
-refinementPass: 1
+refinementPass: 2
 refinementLog:
   - pass: 1
     date: '2026-04-29'
     passes: ['first draft']
     why: 'First-draft topology of the cognitive partnership stack lit review. The nine-type node taxonomy adds a Practitioner (P) class to make the academic/practitioner split visible and to encode the operationalizes (op) edge as the bridge.'
     changes:
-      - 'Six foundational/methodological/empirical/logical/generating/synthesis/practitioner/open/distortion node types'
-      - 'Six cruxes (A1, A2, A3, G1, S1, L3) selected by graph weight + fan-out, mirroring the foundational / reframer / guardrail trichotomy from the human-psych-variation topology'
+      - 'Nine node types A/M/E/L/G/S/P/O/D'
+      - 'Six cruxes selected (A1, A2, A3, G1, S1, L3) — first-draft cut, defended weakly'
       - 'Five variant views: full / vulnerability / flow / minimal / capability-regime'
-      - 'Capability-regime variant added as the topic-specific fragility lens — splits nodes into stale-on-jump / stable / regime-dependent, the discipline that justifies formalization'
+      - 'Capability-regime variant added as topic-specific fragility lens'
       - 'Edge types include op (operationalizes) for the practitioner ↔ academic bridge'
       - 'Three Stage-3 formalization options laid out (capability×verification dispatch, generator-verifier loop with autonomy slider, principal-agent), with the loop+slider recommended'
+  - pass: 2
+    date: '2026-04-29'
+    passes: ['fresh-eyes audit', 'error check', 'internal consistency', 'truth/accuracy override on bias']
+    why: 'On rereading the published draft, four real problems compound: the node-count claim was wrong (55 vs. actual 64), the crux selection conflated the headline conclusion (S1) with a load-bearing primitive, the individual-as-unit-of-analysis assumption was unencoded despite being the lit review''s explicit Crux 5, and the TLDR forced the foundational/reframer/guardrail trichotomy from the prior topology when the genuinely novel structural move for *this* topic is the practitioner-academic bridge.'
+    changes:
+      - 'Added A6 (individual-level optimization aggregates) as a 4th foundational crux — encodes the "individual is the right unit of analysis" assumption that the lit review names explicitly. Weight 5, status ?, attacked by E4 (Humlum-Vestergaard aggregate-zero) and resolved by O2 / O5'
+      - 'Restructured crux set from {A1, A2, A3, G1, S1, L3} to {A1, A2, A3, A6, L1, L3} — dropped S1 (it''s the *headline conclusion*, not a load-bearing primitive — cruxes are inputs, conclusions are outputs); dropped G1 from cruxes (it''s a *consequence* of A1, not an independent axiom — kept as a reframer mechanism); promoted L1 (substitution myth) into the crux set alongside L3'
+      - 'Fixed node-count claim 55 → 65 across TLDR, frontmatter description, and component blurb'
+      - 'Rewrote TLDR para 2: leads with the practitioner ↔ academic operationalization bridge as the topic-specific structural finding (Mollick ↔ Randazzo, Karpathy ↔ Feng, Cognition ↔ read/write asymmetry), with the foundational/guardrail/reframer trichotomy as a §3 organizing principle rather than the headline structural move'
+      - 'Restructured §3 into 3a Foundational cruxes / 3b Logical guardrails / 3c Reframer mechanisms (the high-weight non-crux mechanism nodes G1, G3, G4) / 3d Headline conclusion (S1) / 3e Corroborating / 3f Distortion vectors. Pulled the "decorative" framing for D nodes — distortions are pedagogically intentional, not droppable'
+      - 'Rewrote Objection 2 defense — the new crux set is structurally clean (foundational A nodes + logical L nodes), and the defense actually holds: cruxes are inputs whose collapse rebuilds regions; the headline (S1) and the metacognitive mechanism (G1) live in different categories of structural role'
+      - 'Tightened "↔" notation in prose to directional "P operationalizes E/L" framing — the React graph encodes these as one-directional op edges, and the ↔ shorthand was loose. Where bidirectional connection is real (P2 ↔ L4), encoded as two distinct edges'
+      - 'Expanded capability-regime variant classification: 6 stale (was 4) — added P1 (centaur typology becomes historical post-jump) and E10 (the 60/30/10 distribution is regime-bound); 17 stable (was 8) — added A1, S2/S3/S4, P2/P3/P5/P6/P7 (all architectural / control-surface / principal-agent invariants); 11 regime-dependent (was 5) — added A6, E14/E15/E17, P4, G4 (the jagged frontier mechanism follows A2)'
+      - 'Updated component CRUX_IDS, REGIME_STALE / REGIME_STABLE / REGIME_DEPENDENT sets, and variant blurbs'
 ---
 
 import CognitivePartnershipGraph from '../../../components/ai-research/CognitivePartnershipGraph';
 
 ## TLDR
 
-The lit review documents the research landscape on optimal human-AI workflow design. This topology asks the sharper question: **what depends on what?** Strip the field down to its load-bearing structure and the picture is surprisingly clean. Three foundational assumptions sit upstream of most of the empirical and synthesis nodes — that **human attention is the binding scarce resource** (A1), that **AI capability is heterogeneous across cognitive operations** (the jagged frontier; A2), and that **verification cost is comparable to or cheaper than generation cost** (A3). If any one of them flipped, large regions of the picture would have to be rebuilt. Everything else is either a methodological prerequisite that lets the foundations be tested, an empirical claim resting on those foundations, a logical necessity that constrains how the empirical claims can be interpreted, a generating mechanism, a synthesis claim, a practitioner framework, or an open question.
+The lit review documents the research landscape on optimal human-AI workflow design. This topology asks the sharper question: **what depends on what?** Strip the field down to its load-bearing structure and the picture is surprisingly clean. Four foundational assumptions sit upstream of most of the empirical and synthesis nodes — that **human attention is the binding scarce resource** (A1), that **AI capability is heterogeneous across cognitive operations** (the jagged frontier; A2), that **verification cost is comparable to or cheaper than generation cost** (A3), and that **individual-level workflow optimization aggregates upward rather than being absorbed by organizational dynamics** (A6). If any one of them flipped, large regions of the picture would have to be rebuilt. Two logical guardrails (L1 substitution myth is wrong; L3 parameterize by capability) cannot be falsified at all — they can only be ignored, which is exactly how most overconfident AI-rollout discourse proceeds. Everything else is methodology, empirical claim, generating mechanism, synthesis, practitioner framework, open question, or distortion vector.
 
-The high-stakes nodes split into three categories — keeping them separate is the single most useful conceptual move in this topology. **Foundational cruxes** (A1 attention scarce, A2 jagged frontier, A3 verification cheap-enough) are assumptions that, if falsified, force rebuilding regions of the graph. **Reframer nodes** (G1 metacognitive bottleneck, S1 workflow > capability) don't break the picture if reversed — they change what it *means*; both are well-supported but their generality is regime-specific. **Logical guardrails** (L3 parameterize by capability, L1 substitution myth) cannot be falsified — they can only be ignored, which is exactly how most overconfident AI-rollout discourse proceeds. Conflating these three types under a single label of "important findings" is a major source of bad-faith and bad-faith-adjacent debate.
+The genuinely novel structural move for this topic is the **practitioner ↔ academic operationalization bridge** that the new node type **P** and the new edge type **op** make explicit. The practitioner stack (Mollick, Karpathy, Anthropic, Cognition, Claude Code) runs 12–18 months ahead of academic peer review. Each practitioner framework operationalizes an academic claim that the field had already half-formulated: Mollick's centaur/cyborg typology operationalizes the empirical behavior distribution (P1 → E10, finally measured by Randazzo 2026); Karpathy's autonomy slider operationalizes Shneiderman's 2D framework (P2 → L4, finally formalized by Feng 2025); Anthropic's agent design patterns operationalize Madras / Mozannar L2D theory (P3 → L2); Cognition's read/write asymmetry IS the empirical write-bottleneck finding (P4 → E17). Reading the topology through this bridge — rather than as a single integrated literature — disciplines the Stage-3 formalization: the model should encode the *invariants the practitioners are tracking* (autonomy levels, verification gates, context structure) parameterized by inputs the academic literature measures (capability gap, verification cost, skill-formation goals).
 
-The field's **weakest links** are not where the popular discourse focuses. Mainstream debate contests "does AI help" — but at the well-bounded-task level the productivity record is robust (E1: 15–55% gains across ~25 RCTs). The actual fragile zones in 2026 are: (a) **whether the centaur regime persists** (E18 + S5) — Schoenegger's finding that even deliberately overconfident GPT improves forecasting suggests much of the gain comes from forced structured reasoning, not advice quality, raising the question of whether the centaur advantage survives a capability discontinuity; (b) **the aggregate-zero puzzle** (E4 / O2) — Humlum & Vestergaard's precise zero across 25,000 Danish workers tensions every micro-RCT result; (c) **whether the frontier is mappable faster than it migrates** (O4) — a calibration race-condition the field hasn't tested; (d) **the boundary between "individual" and "organizational" optimization** (O5) — if individual workflow gains are absorbed by review bottlenecks downstream, the right unit of analysis isn't the worker; (e) **whether the binding reliance constraint is verification cost or verification calibration** (O7) — the design implication is different. The remaining open mechanism question is the long-term cognitive effects of continuous AI use (O3); Bastani's 17% unassisted-performance drop and the broader skill-atrophy literature point to a real risk but the longitudinal data window is still under twelve months for most studies.
+The field's **weakest links** are not where the popular discourse focuses. Mainstream debate contests "does AI help" — but at the well-bounded-task level the productivity record is robust (E1: 15–55% gains across ~25 RCTs). The actual fragile zones in 2026 are: (a) **the aggregate-zero puzzle** (E4 / O2 attacks A6) — Humlum & Vestergaard's precise zero across 25,000 Danish workers tensions every micro-RCT result and is direct evidence against the individual-aggregation assumption that the entire individual-level frame depends on; (b) **whether the centaur regime persists** (E18 + S5) — Schoenegger's finding that even deliberately overconfident GPT improves forecasting suggests much of the gain comes from forced structured reasoning, not advice quality, raising the question of whether the centaur advantage survives a capability discontinuity; (c) **whether the frontier is mappable faster than it migrates** (O4) — a calibration race-condition the field hasn't tested; (d) **whether the binding reliance constraint is verification cost or verification calibration** (O7) — the design implication is different; (e) **long-term cognitive effects of continuous AI use** (O3) — Bastani's 17% unassisted-performance drop and the broader skill-atrophy literature point to a real risk but the longitudinal data window is still under twelve months for most studies.
 
-This topology is the input to model formalization (Stage 3). The cleanest formalization target is a **parameterized routing function**: for each (task type, capability profile, verification cost, autonomy level) tuple, produce an allocation decision that maximizes expected output quality per unit of human attention. The four variant views below (Vulnerability / Flow / Minimal / Capability-regime) read the same graph through different lenses to discipline that formalization choice.
+This topology is the input to model formalization (Stage 3). The cleanest target is a **parameterized routing function**: for each (task type, capability profile, verification cost, autonomy level) tuple, produce an allocation decision that maximizes expected output quality per unit of human attention. The four variant views below (Vulnerability / Flow / Minimal / Capability-regime) read the same graph through different lenses to discipline that formalization choice — the capability-regime variant in particular sorts every node into stale-on-jump / structurally invariant / regime-dependent, which directly tells the model formalization which terms must be parameters (the regime-dependent ones) and which can be invariants (the stable ones).
 
 ## The graph
 
@@ -92,6 +106,7 @@ Each node carries: type code · weight · short claim · key citation · status.
 | A3 | 5 | Verification cost is comparable to or cheaper than generation cost — otherwise rational engagement collapses. (Vasconcelos 2023; Fok & Weld 2023) | ~ |
 | A4 | 4 | Knowledge work decomposes into sub-tasks that can be selectively delegated. (Vaccaro 2024 sub-task finding) | ✓ |
 | A5 | 4 | The frontier has stable topological features even as the boundary shifts — i.e., it is mappable. | ? |
+| A6 | 5 | Individual-level workflow optimization aggregates upward — gains aren't fully absorbed by organizational dynamics (review bottlenecks, managerial reabsorption, coordination costs). The load-bearing assumption behind the entire individual-level framing. Humlum-Vestergaard aggregate-zero is direct evidence against. | ? |
 
 ### M — Methodological prerequisites
 
@@ -208,35 +223,53 @@ Each node carries: type code · weight · short claim · key citation · status.
 
 **Logical guards.** L1 → G2 (substitution myth → ironies of automation). L2 → S1 (joint surface needed). L3 → S4 (parameterize-by-capability is what makes context engineering generalize). L4 → P2 (Shneiderman 2D legitimates the autonomy slider).
 
-**Practitioner ↔ Academic (the central conceptual move of this topology).** P1 ↔ E10 (Mollick taxonomy IS the empirical distribution finding). P2 ↔ L4. P3 ↔ L2 (agent design patterns operationalize joint allocation theory). P4 ↔ E17 (Cognition's principle IS the read/write asymmetry finding). P7 ↔ S4.
+**Practitioner → Academic (the central conceptual move of this topology, encoded as op edges).** P1 → E10 (Mollick taxonomy operationalizes the behavior distribution that Randazzo 2026 finally measured). P2 → L4 (Karpathy's autonomy slider operationalizes Shneiderman's 2D framework as a per-action user control surface), with the reverse edge L4 → P2 (Shneiderman legitimates the slider design). P3 → L2 (Anthropic's agent design patterns operationalize joint-allocation L2D theory). P4 → E17 (Cognition's read/write principle is the design-actionable form of the read/write asymmetry finding). P5 → S2 (compound engineering applies metacognitive-efficiency optimization at the workflow level). P6 → S4 (spec-driven development applies context-engineering at the task-framing level). P7 → S4 (CLAUDE.md / personal context files apply context-engineering at the project level).
+
+**Foundation → Foundation (the project-frame edges).** A6 → S1 (S1 is meaningful only if individual optimization aggregates). E4 → A6 (aggregate-zero is the direct attack on A6). O2 → A6 and O5 → A6 (the open questions whose resolution will close A6 either way).
 
 **Distortion attacks.** D1 → S1, E4 (treats RCT gains as aggregate proof; ignores Humlum). D2 → G7, S2, E9 (counts speed; ignores atrophy). D3 → E15, S1, S4 (ignores routing). D4 → L3, S1 (denies formalization possibility).
 
 ---
 
-## 3. High-stakes nodes — three categories
+## 3. High-stakes nodes — by structural role
 
-The single most useful conceptual move in this topology is keeping these three categories separate. They are all "important findings," but they are important in three structurally different ways, and conflating them produces most of the bad-faith debate around AI workflow design.
+Six categories of structural role, sorted by how their failure modes propagate. The single most useful conceptual move is keeping the cruxes (inputs) separate from the headline (an output) and from the reframers (mechanisms whose magnitude is open). Conflating these three under a single label of "important findings" produces most of the bad-faith debate around AI workflow design.
 
 ### 3a. Foundational cruxes — collapse rebuilds regions
 
-- **A1** (human attention is the binding scarce resource). If false, throughput-optimization wins and the entire metacognitive-bottleneck framing dissolves; design priorities flip back toward maximum AI delegation.
-- **A2** (jagged frontier — AI capability is heterogeneous across operations). If a capability discontinuity produced uniformly-good AI across all knowledge-work operations, the "map your frontier" design imperative collapses.
-- **A3** (verification cost is comparable to or cheaper than generation cost). If verification became prohibitively expensive — e.g., AI-generated outputs become so complex or fast-moving that human checking is intractable — the rational-cost-benefit reframing of overreliance dissolves and the design problem becomes "trust without verification."
+These are the **input assumptions** the entire individual-level framing rests on. Falsification doesn't change interpretation; it forces rebuilding. All four are weight-5 foundational-assumption nodes (the A class).
 
-### 3b. Reframer nodes — open magnitudes change interpretation
+- **A1** (human attention is the binding scarce resource). If false, throughput-optimization wins and the entire metacognitive-bottleneck framing dissolves; design priorities flip back toward maximum AI delegation. The metacognitive-bottleneck mechanism G1 is the *consequence* of A1 + production-automation, not a separate axiom — which is why G1 isn't itself a crux.
+- **A2** (jagged frontier — AI capability is heterogeneous across operations). If a capability discontinuity produced uniformly-good AI across all knowledge-work operations, the "map your frontier" design imperative collapses and outside-frontier harm (E3) dissolves.
+- **A3** (verification cost is comparable to or cheaper than generation cost). If verification became prohibitively expensive — AI outputs so complex or fast-moving that human checking is intractable — the rational-cost-benefit reframing of overreliance (G3) dissolves and the design problem becomes "trust without verification."
+- **A6** (individual-level optimization aggregates upward). If gains are absorbed by organizational dynamics — review bottlenecks downstream, managerial reabsorption, coordination costs — individual workflow optimization is locally optimal but globally insufficient. Humlum-Vestergaard's aggregate zero is direct evidence against. **This is the project-frame crux**: the entire individual-level optimization target only matters if A6 holds, and its status is genuinely open.
 
-- **G1** (metacognitive bottleneck). Robust as a CHI 2024 Best Paper finding; but its *generality* is regime-specific. For workers still production-constrained (most of the labor force), G1 is premature; for power users, it is binding.
-- **S1** (workflow architecture > model capability). Supported by Dell'Acqua, Everett, and the broader RCT pattern, but the evidence base is from a narrow window (2023–2025) of similar-capability frontier models. A capability discontinuity could invert it.
+### 3b. Logical guardrails — unfalsifiable, ignored at peril
 
-### 3c. Logical guardrails — unfalsifiable, ignored at peril
+Cannot be falsified — only ignored. Both are weight-5 logical-necessity nodes (the L class).
 
-- **L1** (substitution myth is wrong — every offload creates new monitoring/verification work). Cannot be falsified; can only be ignored.
-- **L3** (a formal allocation model must be parameterized by capability, not depend on fixed capability). Practitioner-only frameworks routinely violate this by hardcoding "GPT-4 is good at X, bad at Y" — the pattern goes stale within months.
+- **L1** (substitution myth is wrong — every offload creates new monitoring/verification/coordination work). Bainbridge 1983 / Dekker & Woods 2002. The structural property of any principal-agent delegation; AI-rollout discourse routinely treats it as if it could be ignored.
+- **L3** (allocation model must be parameterized by capability, not depend on fixed capability). The generating-function-vs-lookup-table commitment. Practitioner-only frameworks routinely violate this by hardcoding "GPT-4 is good at X, bad at Y" — the pattern goes stale within months.
 
-### 3d. Decorative / corroborating
+### 3c. Reframer mechanisms — magnitude is the live question
 
-E10 (60/30/10 distribution), E18 (Schoenegger overconfident-AI helps), G6 (cognitive forcing), P5 (compound engineering), P6 (spec-driven), D2/D3/D4 (distortions). Removable without changing the structural picture.
+High-weight non-crux mechanism nodes whose *magnitude* (not existence) is what reshapes interpretation. Each is well-supported as a phenomenon; the open question is the share of variance they explain.
+
+- **G1** (metacognitive bottleneck). CHI 2024 Best Paper finding; robust phenomenologically. The open magnitude question: what share of the labor force is in the regime where G1 is binding? For workers still production-constrained, G1 is premature; for power users, it is binding. The size of each population determines whether the metacognitive-efficiency target (S2) is the right design priority for "individual workers" generically or only for a subset.
+- **G3** (verification-cost trade-off). Vasconcelos / Fok-Weld reframing. The mechanism is real; the open question is whether it captures most of the variance in reliance behavior, or whether verification *calibration* (O7) is doing the rest of the work.
+- **G4** (jagged frontier mechanism). The capability-heterogeneity story is robust; the open magnitude question is the rate at which the boundary shifts (O4) and whether the topological features are stable (A5).
+
+### 3d. Headline conclusion — a synthesis output, not a crux
+
+- **S1** (workflow architecture > model capability). The integrated finding the topology is organized around. **S1 is what the cruxes plus mechanisms produce, not a load-bearing input.** It is a weight-5 synthesis node, but distinguishing "headline conclusion" from "crux" matters: cruxes are inputs whose falsification rebuilds the graph; conclusions are outputs whose falsification only means the rebuild was downward (the conclusion was wrong) rather than upward (an input was wrong).
+
+### 3e. Corroborating / illustrative
+
+Genuinely droppable without changing the structural picture: E10 (60/30/10 distribution — illustrative datum), E18 (Schoenegger overconfident-AI-still-helps — interesting but tangential to S1), G6 (cognitive forcing as mechanism — local, not load-bearing), P5 (compound engineering), P6 (spec-driven development).
+
+### 3f. Distortion vectors
+
+D1–D4 are pedagogically intentional, not decorative. Each names a real motivated-reasoning pattern and the specific empirical/logical claims it targets. Distortions are useful for readers calibrating where their own priors might be selecting against the evidence.
 
 ---
 
@@ -244,12 +277,12 @@ E10 (60/30/10 distribution), E18 (Schoenegger overconfident-AI helps), G6 (cogni
 
 Where the graph is genuinely fragile in 2026, ranked by potential propagation if the link breaks:
 
-1. **O2 (aggregate-zero puzzle).** If the explanation is organizational dynamics (review bottlenecks downstream, coordination costs, managerial absorption of time savings), then individual workflow optimization is locally optimal but globally insufficient — and the unit-of-analysis crux (O5) inverts the entire project framing.
-2. **O3 (long-term cognitive effects).** Bastani's 17% drop is one study at under six months. If a 2-year longitudinal RCT confirms broad skill atrophy across cognitive operations, the design implication becomes "AI-free zones" at much larger scale than current practice.
-3. **O4 (frontier migration vs. calibration rate).** If model capabilities shift faster than humans can recalibrate their personal frontier maps, the "map your jagged frontier" design imperative becomes unfollowable.
+1. **A6 / O2 / O5 (the aggregate-zero / unit-of-analysis cluster).** The most consequential weakness in the graph. Humlum-Vestergaard's precise zero across 25,000 Danish workers is direct evidence that individual workflow gains may not aggregate; if true, A6 falsifies, the project-frame inverts, and individual workflow optimization becomes locally optimal but globally insufficient. Possible mechanisms (cross-task bundling per Cowen 2026, organizational reabsorption, weak wage pass-through) are testable but untested. Until O2 is resolved, every claim about *organizational* benefit downstream of S1 is contingent.
+2. **O3 (long-term cognitive effects).** Bastani's 17% drop is one study at under six months. If a 2-year longitudinal RCT confirms broad skill atrophy across cognitive operations, the design implication becomes "AI-free zones" at much larger scale than current practice — and the productivity-only distortion (D2) goes from intellectually wrong to materially harmful.
+3. **O4 (frontier migration vs. calibration rate).** If model capabilities shift faster than humans can recalibrate their personal frontier maps, the "map your jagged frontier" design imperative becomes unfollowable. The likely partial resolution is that the frontier has stable topological features (A5) even when the boundary moves, but A5 is empirically untested.
 4. **O7 (verification cost vs. calibration as binding constraint).** Reducing verification cost helps a rational actor; improving calibration helps a miscalibrated one. The interventions are different. The sycophancy finding (E13) suggests calibration is a real second binding constraint.
 5. **S5 / O6 (centaur regime persistence).** If a capability discontinuity makes AI better than humans on the full task, the centaur typology becomes historical.
-6. **A5 (frontier mappable).** Empirically untested. The plausibility argument is that the frontier has stable topological features even as the specific boundary moves; if false, individual-level workflow design is structurally impossible.
+6. **A5 (frontier mappable).** Empirically untested. If false, individual-level workflow design is structurally impossible at the per-task granularity the practitioner stack assumes.
 
 ---
 
@@ -259,11 +292,11 @@ Each variant reads the same graph through a different lens.
 
 ### Variant A — Vulnerability (where does this break?)
 
-Highlights the six cruxes (A1, A2, A3, G1, S1, L3) plus the weight-5 nodes downstream. If any crux flips, propagation is concentrated through this subgraph. Useful for stress-testing.
+Highlights the six cruxes (A1, A2, A3, A6 foundational; L1, L3 logical guardrails) plus the weight-5 nodes downstream. If any crux flips, propagation is concentrated through this subgraph. Useful for stress-testing: pick a crux, imagine it inverts, and trace the consequences through the highlighted subgraph.
 
 ### Variant B — Flow (how does causation propagate?)
 
-Restricts to the A → M → E → S/G cascade plus practitioner-academic operationalizations (P ↔ E/L). The "what generated what" view: foundational assumptions enable methods, methods produce empirical findings, mechanisms explain them, syntheses integrate, and practitioner frameworks operationalize the resulting design implications.
+Restricts to the A → M → E → S/G cascade plus practitioner operationalizations (P → E/L/S via op edges). The "what generated what" view: foundational assumptions enable methods, methods produce empirical findings, mechanisms explain them, syntheses integrate, and practitioner frameworks operationalize the resulting design implications.
 
 ### Variant C — Minimal claim set
 
@@ -271,13 +304,15 @@ Smallest set of claims that still yields the headline conclusion (S1: workflow a
 
 ### Variant D — Capability-regime fragility (the topic-specific variant)
 
-Which nodes go stale if frontier capability jumps? The central worry the lit review's adversarial section names. The variant highlights:
+Which nodes go stale if frontier capability jumps? The central worry the lit review's adversarial section names. Of the 65 nodes, 34 sort into one of three regime-fragility classes; the rest (methods, supporting empirical findings, distortions) are regime-orthogonal. The classification:
 
-- **Stale-on-jump** (likely to invert): E2 (skill-leveling), E3 (jagged frontier), S5 (centaur transience), E18 (overconfident-AI-still-helps).
-- **Stable-on-jump** (structurally invariant): L1 (substitution myth), L2 (joint surface), L3 (parameterize by capability), L4 (high autonomy + high control), G1 (metacognitive bottleneck — load shifts), G2 (ironies of automation), G3 (verification trade-off), G9 (generator-verifier asymmetry).
-- **Regime-dependent** (depends on which way capability jumps): A2, A3, S1, A5, O4.
+- **Stale-on-jump (6 nodes — likely to invert).** E2 (skill-leveling: if AI exceeds top performers, the +34/0 pattern flips). E3 (outside-frontier harm: dissolves if frontier becomes uniform). E10 (60/30/10 behavior distribution: regime-bound to current tool affordances). E18 (overconfident-AI-still-helps: if AI is reliably correct, the "structured reasoning is the gain" reading dissolves). S5 (centaur transience: literally about transitioning out). P1 (Mollick taxonomy: becomes historical the way the chess centaur literature reads as historical now).
 
-The model formalization should be stable under capability change — meaning it should be parameterized by the L3-L1-G1-G2-G3 invariants and treat A2/A3/E2/E3 as inputs that vary by capability regime.
+- **Stable-on-jump (17 nodes — structurally invariant).** All four logical necessities: L1 (substitution myth), L2 (joint performance surface), L3 (parameterize-by-capability), L4 (autonomy + control coexist). The mechanism invariants: G1 (metacognitive load just shifts to new decisions), G2 (ironies of automation are a property of any principal-agent delegation), G3 (verification trade-off — the threshold moves but the shape is invariant), G9 (generator-verifier asymmetry). The foundational A1 (attention-as-binding-constraint is a fact about humans, not about AI). The synthesis claims that follow from the invariants: S2 (metacognitive efficiency target), S3 (production → critical integration), S4 (context engineering as central craft). The control-surface practitioner patterns: P2 (autonomy slider), P3 (Anthropic agent design patterns), P5 (compound engineering), P6 (spec-driven development), P7 (CLAUDE.md context files).
+
+- **Regime-dependent (11 nodes — depends on which way capability jumps).** Foundational A2 (jagged frontier could become smooth or fragment into a different jagged shape), A3 (verification cost could fall further or rise as outputs become more complex), A5 (frontier-mappability depends on rate of migration), A6 (aggregation could go either way as tools get integrated). The headline S1 (workflow > capability could invert if a capability gap dominates). The high-leverage empirical claims: E14 (multi-agent could become moot if single-agent matches), E15 (routing depends on heterogeneity A2), E17 (read/write asymmetry depends on whether AI handles serial writes natively). The mechanism G4 (jagged frontier follows A2). The open question O4 (frontier migration rate IS the regime question).
+
+The model formalization should be stable under capability change — meaning it should be parameterized by the L1/L2/L3/L4 + G1/G2/G3/G9 + A1 invariants and treat A2/A3/A6/E14/E15/E17 as inputs that vary by capability regime. The 6 stale nodes are the ones the formalization should *not* hardcode.
 
 ---
 
@@ -340,7 +375,7 @@ Three formalization paths, each with pros / cons / Stage-4 implications.
 
 **Objection 1: "The practitioner / academic split is overstated — the field is actually more integrated than the typing P-vs-S suggests."** Steelman: many researchers (Mollick, Karpathy, Tankelevitch via MSR's Tools for Thought) span both communities; some practitioner posts (Anthropic's effective agents) are explicitly grounded in academic literature (Madras / Mozannar L2D). Response: the *people* are integrated, but the *artifacts* aren't. Mollick's centaur/cyborg has no peer-reviewed empirical anchor until Randazzo 2026; Karpathy's autonomy slider has no formal grounding until Feng 2025. The 12–18 month lag is real and the typing makes it visible.
 
-**Objection 2: "The 6-crux selection is biased toward the framing the lit review wants."** Steelman: by picking A1/A2/A3/G1/S1/L3 as cruxes, the topology bakes in the metacognitive-bottleneck and workflow-over-capability worldview; a critic could argue capability-first cruxes (e.g., "Bloom-level decay determines all task allocation") are equally defensible. Response: the cruxes are chosen by graph structure (highest-weight nodes with highest fan-out), not by ideology — the metacognitive framing is a *consequence* of which nodes are most-cited, not the input.
+**Objection 2: "The 6-crux selection is biased toward the framing the lit review wants."** Steelman: a critic could argue capability-first cruxes (e.g., "Bloom-level decay determines all task allocation") are equally defensible, or that the lit-review-driven framing inherits whatever bias the lit review has. Response: the crux set is **structurally typed**, not picked by impact. The criterion is "claims whose collapse rebuilds regions of the graph," and that maps cleanly onto exactly two node classes — foundational assumptions (A) and logical guardrails (L). The cruxes are A1, A2, A3, A6 (every weight-5 A node) plus L1, L3 (every weight-5 L node). No mechanism (G), synthesis (S), empirical (E), practitioner (P), or open (O) node is a crux, because their structural role is downstream of the cruxes — mechanisms explain, syntheses integrate, empirical findings test, practitioner frameworks operationalize, open questions sit at the frontier. The headline conclusion S1 (workflow > capability) is *not* a crux even though it is weight-5; it's an output of the graph, and excluding it from the crux set is the discipline that distinguishes "what the graph rests on" from "what the graph concludes." A capability-first alternative would have to add a foundational A node like "Bloom-level decay is the dominant capability gradient" — which the lit review doesn't support; LLMs decay sharply on Bloom, but task allocation is also shaped by verification cost, autonomy level, and skill-formation goals. The selection is therefore lit-review-driven, but the *typing rule* (A + L only) is independent of the lit review's framing.
 
 **Objection 3: "The capability-regime fragility variant is a hedge — it concedes the project will go stale."** Steelman: Variant D essentially admits that half the empirical claims could invert under a capability jump; if so, why formalize at all? Response: Variant D is the discipline that *justifies* formalization. The point is to identify which nodes are stable-under-jump (the L1-L3-G1-G2-G3 invariants) and build the formalization on those. Practitioner heuristics, by contrast, are not capability-stable by design — they update faster but go stale faster too.
 
