@@ -3,7 +3,7 @@ title: 'Data'
 description: 'Empirical pipeline that confronts the model''s seven testable predictions with currently-published consortium estimates. Six hold cleanly (AM partition, Wilson curve, multivariate-D gap, PGS portability decay, xAM inflation, environmental causes); one (the cross-paper method gradient) is mixed in an informative way. Curated CSVs (downloadable) + Python pipeline + interactive findings panel.'
 date: 2026-04-28
 status: in-progress
-refinementPass: 4
+refinementPass: 5
 refinementLog:
   - pass: 1
     date: '2026-04-28'
@@ -51,6 +51,15 @@ refinementLog:
       - 'Rewrote the H1 panel visualization as SVG-per-row: 4 colored circles (different sizes per estimator: twin = largest, WF = smallest) at the actual h² values along a 0–1 axis, with a faint grey bar spanning min(observed) to max(observed) showing cross-paper noise width. Sienna marker at trait label = predicted ordering holds for that trait, muted marker = fails (informative pattern). Drops the unreadable 6%-opacity bars and 1px ticks of pass 1–3'
       - 'Updated React component AM_PARTITION constants for SCZ/BIP/ADHD/autism to match the corrected CSV'
       - 'PRD topic registry advanced from "data (pass 1)" — actually advanced through the intervening passes too; corrected to "data (pass 4)" along with a decisions-log entry'
+  - pass: 5
+    date: '2026-04-28'
+    passes: ['error check (cross-stage)', 'housekeeping', 'cell labeling']
+    why: 'Pass 4''s psychiatric-m correction created an internal inconsistency between Stage 3 (model) and Stage 4 (data): the model dashboard at /ai-research/human-psych-variation/model still had psychopathology m_default = 0.20, but the data stage now reports SCZ/ADHD/autism m = 0.45 and BIP/MDD m = 0.15-0.18. Visitors moving between stages would see contradictory numbers. Plus the working-draft data.md was two passes out of sync with data.mdx, and several CSV cells flagged simply as "assumed" had opaque labels that didn''t convey what the assumption was.'
+    changes:
+      - 'Cross-stage fix: bumped PsychVariationModel.tsx psychopathology m_default from 0.20 to 0.30 (midpoint of the heterogeneous AM landscape: AM-strong SCZ/ADHD/ASD ≈ 0.45 vs. AM-weak BIP/MDD/anxiety ≈ 0.15) with an inline comment in the trait-defaults block explaining that users testing AM-strong psychiatric should slide m to ~0.45 and AM-weak to ~0.15'
+      - 'Synced stage_outputs/human-psych-variation/data.md TLDR to the post-pass-4 numbers (SCZ V(A_LD) 36%, ADHD 33%, autism 36% — was reporting the pre-correction 24% across all three)'
+      - 'Improved opaque "assumed" CSV cell labels with assumption-type-explicit names: "assumed" → "assumed_no_WF_GWAS_at_scale" for psychiatric β_i/β_d (no published within-family GWAS for SCZ/BIP/ADHD/autism at the Howe-2022 scale), "extrapolated" → "extrapolated_from_EA_WF_and_EA_IQ_rg" with the actual extrapolation arithmetic shown in the notes column, "Horwitz_2023_imputed" → "m_imputed_no_meta_analytic_value" for risk_tolerance (not in Horwitz''s 22-trait panel), "Horwitz_2023_avg" → "Horwitz_2023_5_factor_avg" for big_five m'
+      - 'After 5 passes the data stage is reaching diminishing returns on this kind of refinement. The remaining "open" items (cell-by-cell audit of the 18×20 CSV, individual-level Ding 2023 replication, full Border γ̂ verification across alternative AM dynamics models) require capabilities outside a content-site pipeline. Stage is ready for handoff to Stage 5 (build) unless a future pass surfaces a substantively new gap.'
 ---
 
 import PsychVariationData from '../../../components/ai-research/PsychVariationData';

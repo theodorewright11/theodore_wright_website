@@ -39,10 +39,16 @@ const TRAIT_DEFAULTS: Record<TraitClass, {
     age_default: 30, age_label: 'adulthood',
   },
   psychopathology: {
-    // Mood/anxiety/SCZ aggregate. Moderate h², C tail persists.
+    // Aggregate of psychiatric / mood / anxiety conditions. Moderate h², C tail persists.
+    // m_default = 0.30 is a midpoint over a heterogeneous AM landscape:
+    // Nordsletten 2016 reports tetrachoric spousal correlations >0.40 for
+    // schizophrenia, ADHD, autism — and 0.14–0.19 for affective disorders
+    // (bipolar, MDD). The category does not have a single "right" m; users
+    // testing AM-strong psychiatric (SCZ/ADHD/ASD) should slide m up to ~0.45,
+    // and AM-weak (MDD/BIP/anxiety) down to ~0.15.
     h2_inf: 0.50, t_50: 8, k_h: 0.30,
     c2_0: 0.20, c2_inf: 0.05, k_c: 0.15,
-    ratio_i_default: 0.20, m_default: 0.20,
+    ratio_i_default: 0.20, m_default: 0.30,
     age_default: 30, age_label: 'adulthood',
   },
 };
