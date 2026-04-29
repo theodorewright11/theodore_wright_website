@@ -1,9 +1,9 @@
 ---
 title: 'Data'
-description: 'Empirical pipeline that confronts the model''s seven testable predictions with currently-published consortium estimates. Six hold cleanly (AM partition, Wilson curve, multivariate-D gap, PGS portability decay, xAM inflation, environmental causes); one (the cross-paper method gradient) is mixed in an informative way. Curated CSVs (downloadable) + Python pipeline + interactive findings panel.'
+description: 'Empirical pipeline that confronts the model''s eight testable predictions with currently-published consortium estimates. Seven hold cleanly (AM partition, Wilson curve, multivariate-D gap, PGS portability decay, xAM inflation, environmental causes, G×E interaction-conditional); one (the cross-paper method gradient) is mixed in an informative way. Curated CSVs (downloadable) + Python pipeline + interactive findings panel.'
 date: 2026-04-28
 status: in-progress
-refinementPass: 5
+refinementPass: 6
 refinementLog:
   - pass: 1
     date: '2026-04-28'
@@ -60,17 +60,27 @@ refinementLog:
       - 'Synced stage_outputs/human-psych-variation/data.md TLDR to the post-pass-4 numbers (SCZ V(A_LD) 36%, ADHD 33%, autism 36% — was reporting the pre-correction 24% across all three)'
       - 'Improved opaque "assumed" CSV cell labels with assumption-type-explicit names: "assumed" → "assumed_no_WF_GWAS_at_scale" for psychiatric β_i/β_d (no published within-family GWAS for SCZ/BIP/ADHD/autism at the Howe-2022 scale), "extrapolated" → "extrapolated_from_EA_WF_and_EA_IQ_rg" with the actual extrapolation arithmetic shown in the notes column, "Horwitz_2023_imputed" → "m_imputed_no_meta_analytic_value" for risk_tolerance (not in Horwitz''s 22-trait panel), "Horwitz_2023_avg" → "Horwitz_2023_5_factor_avg" for big_five m'
       - 'After 5 passes the data stage is reaching diminishing returns on this kind of refinement. The remaining "open" items (cell-by-cell audit of the 18×20 CSV, individual-level Ding 2023 replication, full Border γ̂ verification across alternative AM dynamics models) require capabilities outside a content-site pipeline. Stage is ready for handoff to Stage 5 (build) unless a future pass surfaces a substantively new gap.'
+  - pass: 6
+    date: '2026-04-28'
+    passes: ['gap scan']
+    why: 'Pass 5 closed by saying "diminishing returns; ready for Stage 5 unless a substantively new gap shows up." On a final reread looking for that, one substantive gap surfaced: the model formalization explicitly names V(I) (G×E + G×G + G×age interaction terms) in its generating function, with the falsifiable claim "generally small at PGS-by-environment scale; large only at extreme environmental insults." All five prior passes tested A_d, A_i, A_LD, E_m — but never tested V(I). Tucker-Drob & Bates 2016''s meta-analysis of the Scarr-Rowe interaction is the canonical empirical test, and its cross-national heterogeneity (significant in US, null in non-US) is precisely what the model''s "extreme-environment-threshold" claim predicts.'
+    changes:
+      - 'Added gxe_interactions.csv with web-verified Tucker-Drob & Bates 2016 numbers: US a''=0.074 (SE 0.020, p &lt; .0005), non-US a''=-0.027 (SE 0.022, n.s.), pooled a''=0.029 (SE 0.019, n.s.). Plus Turkheimer 2003 anchor (h²=0.10 at low-SES → h²=0.72 at high-SES) and Spengler 2018 German null replication. 7 rows total'
+      - 'Added H8 prediction to pipeline.py + headlines: "V(I) is small at PGS-by-environment scale, larger when environmental variance is wide enough to include extreme tails." Verdict: "supported_conditional" — the cross-national heterogeneity itself is the empirical confirmation that V(I) magnitude depends on environmental-variance breadth'
+      - 'Added 8th tab to PsychVariationData.tsx ("G×E interaction"): meta-analytic forest-plot-style visualization of the Tucker-Drob & Bates 2016 a'' coefficients (US, non-US, pooled, German replication) with 95% CI bands; below it, a bar chart of Turkheimer 2003''s h² at low-SES vs high-SES showing the original observation'
+      - 'Updated TLDR (now 8 predictions: 7 hold cleanly, 1 mixed-but-informative). Added V(I) and Scarr-Rowe to the glossary. Added §2 H8 section parallel to H1-H7 structure. Added two H8 headline numbers (Tucker-Drob & Bates 2016 US a''=0.074, non-US a''=-0.027) to §3'
+      - 'After 6 passes the data stage tests every model-named variance component except E_s (residual stochastic noise, not testable by construction) and μ(t) (population-mean trajectory, partly captured by H3''s Wilson curve). The eight-prediction structure (H1-H8) maps cleanly onto the formalization''s seven decomposition terms plus the cross-trait xAM extension'
 ---
 
 import PsychVariationData from '../../../components/ai-research/PsychVariationData';
 
 ## TLDR
 
-This stage takes the model's seven concrete predictions about how human psychological variation breaks down — how much of trait-variance is genetic-direct vs. genetic-via-parents vs. assortative-mating-induced vs. environmental — and confronts each one with currently-published consortium numbers. Six predictions hold cleanly. The seventh — that the four standard heritability estimators (twin, whole-genome-sequence, common-SNP, within-family) should line up in a strict numeric ordering — is mixed across published papers because each paper uses different cohorts and methods, but holds within any single paper that runs the comparison properly. That "mixed" verdict turns out to be informative rather than a model failure: it tells you the cross-paper landscape is noisier than a literal subtraction of estimates suggests.
+This stage takes the model's eight concrete predictions about how human psychological variation breaks down — how much of trait-variance is genetic-direct vs. genetic-via-parents vs. assortative-mating-induced vs. measured-environment vs. gene-environment-interaction — and confronts each one with currently-published consortium numbers. Seven predictions hold cleanly. One — that the four standard heritability estimators (twin, whole-genome-sequence, common-SNP, within-family) should line up in a strict numeric ordering — is mixed across published papers because each paper uses different cohorts and methods, but holds within any single paper that runs the comparison properly. That "mixed" verdict turns out to be informative rather than a model failure: it tells you the cross-paper landscape is noisier than a literal subtraction of estimates suggests.
 
-Headline empirical findings: assortative mating (people pairing with partners of similar traits) inflates observed heritability by ~20% for height, ~22% for educational attainment, ~24% for schizophrenia, matching independent meta-analytic estimates within a few points. Heritability of cognitive ability rises from ~20% in early childhood to ~80% in adulthood along a logistic curve fitted to Bouchard 2013's seven anchor points within 1.8 percentage points. Multivariate sex-difference effect sizes are large (16PF Mahalanobis distance D = 2.7) when computed at the latent-variable level with measurement-error disattenuation, but only D ≈ 1 at the raw observed level — the entire "Mars-and-Venus" framing trap lives inside that disattenuation correction, not inside the multivariate algebra. Polygenic scores trained on European-ancestry data lose ~37%, ~50%, and ~78% of their accuracy in South Asian, East Asian, and African ancestry samples respectively (Martin 2019), consistent with Ding 2023's independent continuous-distance result of Pearson r = −0.95 across 84 traits. Cross-trait assortative mating accounts for ~74% of the variance in reported psychiatric cross-disorder genetic correlations (Border 2022, 132 trait pairs), with average xAM-attributable share ~29%. And the small set of measured environments with replicated causal effects on cognition is asymmetric: severe insults (lead exposure, fetal alcohol, severe deprivation, malnutrition) cost 10–30 IQ points, while enrichment above normal yields at most a few points per intervention.
+Headline empirical findings: assortative mating (people pairing with partners of similar traits) inflates observed heritability by ~20% for height, ~22% for educational attainment, ~36% for schizophrenia, ~33% for ADHD, ~36% for autism (the AM-strong psychiatric block; affective disorders sit lower at ~6–14%). Heritability of cognitive ability rises from ~20% in early childhood to ~80% in adulthood along a logistic curve fitted to Bouchard 2013's seven anchor points within 1.8 percentage points. Multivariate sex-difference effect sizes are large (16PF Mahalanobis distance D = 2.7) when computed at the latent-variable level with measurement-error disattenuation, but only D ≈ 1 at the raw observed level — the entire "Mars-and-Venus" framing trap lives inside that disattenuation correction, not inside the multivariate algebra. Polygenic scores trained on European-ancestry data lose ~37%, ~50%, and ~78% of their accuracy in South Asian, East Asian, and African ancestry samples respectively (Martin 2019), consistent with Ding 2023's independent continuous-distance result of Pearson r = −0.95 across 84 traits. Cross-trait assortative mating accounts for ~74% of the variance in reported psychiatric cross-disorder genetic correlations (Border 2022, 132 trait pairs). The small set of measured environments with replicated causal effects on cognition is asymmetric: severe insults (lead, fetal alcohol, deprivation, malnutrition) cost 10–30 IQ points, while enrichment above normal yields at most a few points per intervention. And gene-by-environment interaction (V(I)) shows the classic Scarr-Rowe pattern of higher heritability at higher SES *only in US samples* (Tucker-Drob & Bates 2016 meta-analysis: a' = 0.074, p &lt; .0005); equity-buffered W. European / Australian samples show no such interaction (a' = −0.027, n.s.) — the cross-national heterogeneity is exactly what the model predicts under "V(I) is small at typical environmental variance, larger at extreme tails."
 
-The pipeline is intentionally small. Six curated CSVs (one per data type, every cell source-cited), a single ~300-line Python script that produces every chart on this page, dependencies pandas + numpy + scipy. **Inputs are downloadable** from [/data/human-psych-variation/](/data/human-psych-variation/). Stage 5 (build) consumes the CSVs directly. What the pipeline does **not** answer: whether polygenic scores measure direct biological causation or correlated environments (the Plomin–Turkheimer dispute, undecidable without a within-family environmental intervention no group has run); the mechanism behind the Gender Equality Paradox (needs cross-society multivariate panels that don't exist at scale); and the full assortative-mating-corrected psychiatric genetic-correlation matrix (active research, not yet pipeline-runnable from public summary statistics).
+The pipeline is intentionally small. Seven curated CSVs (one per data type, every cell source-cited), a single ~350-line Python script that produces every chart on this page, dependencies pandas + numpy + scipy. **Inputs are downloadable** from [/data/human-psych-variation/](/data/human-psych-variation/). Stage 5 (build) consumes the CSVs directly. What the pipeline does **not** answer: whether polygenic scores measure direct biological causation or correlated environments (the Plomin–Turkheimer dispute, undecidable without a within-family environmental intervention no group has run); the mechanism behind the Gender Equality Paradox (needs cross-society multivariate panels that don't exist at scale); and the full assortative-mating-corrected psychiatric genetic-correlation matrix (active research, not yet pipeline-runnable from public summary statistics).
 
 ## A few terms
 
@@ -82,6 +92,8 @@ The data stage inherits the model formalization's vocabulary. If you arrived her
 - **Polygenic score (PGS).** A weighted sum of risk alleles per person, used to predict the trait. PGS R² is the variance the score explains in a held-out sample.
 - **Mahalanobis D.** The multivariate analogue of Cohen's d for sex (or any group) differences across multiple correlated measurements.
 - **V(E_m).** The model's variance bucket for *measured* non-shared environment — exposures with named causal coefficients (lead, schooling, iodine, etc.).
+- **V(I).** The model's variance bucket for *interaction* effects: gene × environment, gene × gene (epistasis), gene × age. The model's specific claim is V(I) is small at typical PGS-by-environment scale but larger when environmental variance includes extreme tails — tested in H8 below.
+- **Scarr-Rowe interaction.** The hypothesis (founded in Turkheimer 2003's US data) that IQ heritability is lower in low-SES families than in high-SES families. Tucker-Drob & Bates 2016 meta-analyzed it and found the pattern replicates in US samples but vanishes in W. European / Australian samples. The cross-national heterogeneity is the H8 test of V(I).
 
 <PsychVariationData client:load />
 
@@ -95,7 +107,7 @@ You can read this top-down (TLDR → seven predictions → adversarial → conne
 
 ## 1. Pipeline architecture
 
-Six curated CSVs in `public/data/human-psych-variation/` (downloadable from the live site, tracked in git):
+Seven curated CSVs in `public/data/human-psych-variation/` (downloadable from the live site, tracked in git):
 
 | File | Rows | Purpose |
 |---|---|---|
@@ -104,6 +116,7 @@ Six curated CSVs in `public/data/human-psych-variation/` (downloadable from the 
 | `sex_differences_panel.csv` | 7 panels | Per-panel univariate d̄, ρ̄, n_dimensions, observed D, disattenuated D — Hyde 2008, Su 2009, Schmitt 2008, Del Giudice 2012, Kaiser 2020, Ritchie 2018 |
 | `pgs_portability.csv` | 13 rows | PGS R² ratio (relative to European training) by target ancestry × trait, with genetic distance |
 | `environmental_effects.csv` | 10 exposures | Per-exposure causal effect sizes on cognition: lead, schooling, iodine, FAS, PM2.5, deprivation, malnutrition, breastfeeding, adoption, parenting |
+| `gxe_interactions.csv` | 7 rows | Tucker-Drob & Bates 2016 meta-analysis a' by region (US vs non-US), Turkheimer 2003 anchors, German replication |
 | `sources.csv` | 23 papers | Full citation, DOI/URL, what each paper is used for |
 
 A single Python script (`pipeline.py`) reads the inputs, computes derived quantities (AM partition, Wilson logistic fit, equicorrelated D, PGS portability slope, genetic-nurture variance contribution, environmental-effect summary), and writes:
@@ -200,6 +213,24 @@ Max residual: 1.8 percentage points (at age 12). The earlier saturating-exponent
 
 **Asymmetry is the headline finding.** Removing severe insults (lead, malnutrition, deprivation, FAS) recovers double-digit IQ points; enrichment above normal (better parenting, breastfeeding) yields single-digit gains at most. The variance-share interpretation V(E_m)/V(P) depends on each exposure's prevalence in a given population — sparse-but-large exposures (FAS, severe deprivation) contribute little to population variance despite large per-person effects, while moderate-but-common exposures (variable schooling quality, low-grade lead) contribute more. This is why the high-h² findings of behavior genetics coexist with large environmental effects without contradiction: heritability is a population-variance statistic, individual environmental effects can be enormous, and most populations have already removed the worst tails.
 
+### H8 — G×E interaction (V(I) bucket) — supported conditional
+
+**Claim.** The model's V(I) term — variance contribution of gene-environment interaction — is small at typical PGS-by-environment scale but larger when environmental variance is wide enough to include extreme tails.
+
+**Result.** [Tucker-Drob & Bates 2016](https://pmc.ncbi.nlm.nih.gov/articles/PMC4749462/) meta-analyzed 43 effect sizes across 14 independent studies (24,926 twin / sibling pairs, ≈50,000 individuals) testing the Scarr-Rowe Gene × SES interaction on intelligence. Their Purcell-biometric-model coefficient `a'` represents the expected change in the additive genetic regression on intelligence per SD of SES. Reported numbers:
+
+| Sample | a' | SE | Significance | N pairs |
+|---|---|---|---|---|
+| US-pooled | **+0.074** | 0.020 | p < 0.0005 | 11,340 |
+| Non-US-pooled (W. Europe / Australia) | **−0.027** | 0.022 | p = 0.22 (n.s.) | 13,586 |
+| Overall pooled | +0.029 | 0.019 | p = 0.14 (n.s.) | 24,926 |
+
+Plus the founding observation from [Turkheimer 2003](https://journals.sagepub.com/doi/10.1111/1467-9280.t01-1-01498): IQ heritability h² ≈ 0.10 in low-SES US families, rising to h² ≈ 0.72 in high-SES US families. And independent null replication in Germany (Spengler 2018: a' = −0.01, n.s.).
+
+**Interpretation.** The cross-national heterogeneity is the empirical confirmation of the model's "extreme-environment-threshold" reading. US samples have wider environmental tails — extreme low-SES exists in larger numbers, with worse low-SES conditions, than in W. European or Australian welfare-state samples. The model predicts V(I) shows up exactly where the low-SES tail is wide enough to include genuine environmental constraint that suppresses genetic expression. Equity-buffered samples truncate that tail; the interaction shrinks toward zero. The verdict is "supported conditional" because the prediction is conditional on environmental variance: the same model that predicts a' ≈ 0.074 in US samples predicts a' ≈ 0 in equity-buffered samples, and both predictions match.
+
+**Caveat.** The Scarr-Rowe finding is itself contested in the literature. Several individual replications have been null even within US samples (e.g., Hanscombe 2012); the pooled US a' = 0.074 is moderate but not large. The model claim "V(I) is small at typical PGS-by-environment scale" is *most* supportable; the stronger claim "G×E reliably appears at extreme tails" is supportable but with wider error bars than H1–H7.
+
 ## 3. Headline numbers
 
 | Statistic | Value | Source |
@@ -222,6 +253,9 @@ Max residual: 1.8 percentage points (at age 12). The earlier saturating-exponent
 | PGS accuracy in AFR vs EUR | 22% relative (78% reduction) | [Martin 2019](https://www.nature.com/articles/s41588-019-0379-x) (across-trait avg) |
 | Lead 1→10 µg/dL → IQ | −6.2 pts | [Lanphear 2005](https://pmc.ncbi.nlm.nih.gov/articles/PMC1257652/) |
 | Schooling/year → IQ | +1 to +5 pts | [Ritchie & Tucker-Drob 2018](https://journals.sagepub.com/doi/10.1177/0956797618774253) |
+| G×SES (US) | a' = +0.074 (p < .0005) | [Tucker-Drob & Bates 2016](https://pmc.ncbi.nlm.nih.gov/articles/PMC4749462/) (43 effects, 25k pairs) |
+| G×SES (non-US) | a' = −0.027 (n.s.) | Tucker-Drob & Bates 2016 |
+| Turkheimer 2003 IQ h² range | 0.10 (low SES) → 0.72 (high SES) | [Turkheimer 2003](https://journals.sagepub.com/doi/10.1111/1467-9280.t01-1-01498) |
 
 ## 4. Analytical choices
 

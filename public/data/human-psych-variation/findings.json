@@ -1176,6 +1176,95 @@
     "lead": -6.2,
     "largest_negative": -30.0
   },
+  "gxe_interactions": {
+    "rows": [
+      {
+        "study": "Tucker_Drob_Bates_2016_US",
+        "sample": "US",
+        "a_prime": 0.074,
+        "se": 0.02,
+        "n_pairs": "11340",
+        "outcome_metric": "a_prime_Purcell_biometric",
+        "significance": "p_lt_0.0005",
+        "source": "Tucker_Drob_Bates_2016",
+        "notes": "Pooled across US studies; a' = expected change in additive genetic regression coefficient per SD of SES; significant moderate Gene-by-SES"
+      },
+      {
+        "study": "Tucker_Drob_Bates_2016_nonUS",
+        "sample": "non_US",
+        "a_prime": -0.027,
+        "se": 0.022,
+        "n_pairs": "13586",
+        "outcome_metric": "a_prime_Purcell_biometric",
+        "significance": "p_eq_0.223",
+        "source": "Tucker_Drob_Bates_2016",
+        "notes": "Pooled across non-US (W. Europe / Australia / Israel); essentially zero, possibly slight reverse"
+      },
+      {
+        "study": "Tucker_Drob_Bates_2016_pooled",
+        "sample": "pooled_all",
+        "a_prime": 0.029,
+        "se": 0.019,
+        "n_pairs": "24926",
+        "outcome_metric": "a_prime_Purcell_biometric",
+        "significance": "p_eq_0.136",
+        "source": "Tucker_Drob_Bates_2016",
+        "notes": "Overall non-significant with substantial cross-national heterogeneity \u2014 the heterogeneity is the headline"
+      },
+      {
+        "study": "Turkheimer_2003",
+        "sample": "US_low_SES",
+        "a_prime": 0.1,
+        "se": null,
+        "n_pairs": "N_A",
+        "outcome_metric": "h2_at_low_SES",
+        "significance": "observational",
+        "source": "Turkheimer_2003",
+        "notes": "Famous original \u2014 IQ h2 ~0.10 in poorest US families"
+      },
+      {
+        "study": "Turkheimer_2003_high",
+        "sample": "US_high_SES",
+        "a_prime": 0.72,
+        "se": null,
+        "n_pairs": "N_A",
+        "outcome_metric": "h2_at_high_SES",
+        "significance": "observational",
+        "source": "Turkheimer_2003",
+        "notes": "...rising to ~0.72 in wealthiest US families"
+      },
+      {
+        "study": "Harden_2007",
+        "sample": "US",
+        "a_prime": 0.06,
+        "se": 0.03,
+        "n_pairs": "839",
+        "outcome_metric": "a_prime_replication",
+        "significance": "p_lt_0.05",
+        "source": "Harden_2007",
+        "notes": "Within-family adolescent twin US replication"
+      },
+      {
+        "study": "Spengler_2018_Germany",
+        "sample": "Germany",
+        "a_prime": -0.01,
+        "se": 0.02,
+        "n_pairs": "1640",
+        "outcome_metric": "a_prime_replication",
+        "significance": "p_eq_0.6",
+        "source": "Spengler_2018",
+        "notes": "German twin replication; null result consistent with non-US Tucker-Drob & Bates"
+      }
+    ],
+    "US_a_prime": 0.074,
+    "US_se": 0.02,
+    "nonUS_a_prime": -0.027,
+    "nonUS_se": 0.022,
+    "pooled_a_prime": 0.029,
+    "pooled_se": 0.019,
+    "n_total_pairs": 24926,
+    "interpretation": "G\u00d7SES interaction is significant in the US (a'=0.074) but null in non-US samples (a'=-0.027). The cross-national heterogeneity is consistent with the model's claim that V(I) is small at typical PGS-by-environment scale and surfaces only when environmental variance is wide enough to include extreme tails."
+  },
   "headlines": {
     "H1_method_gradient": {
       "claim": "twin h\u00b2 \u2265 SNP h\u00b2 \u2265 within-family h\u00b2 holds per-trait",
@@ -1223,6 +1312,12 @@
       "schooling_effect_per_year": 3.4,
       "lead_effect_1_to_10": -6.2,
       "verdict": "supported"
+    },
+    "H8_gxe_interaction": {
+      "claim": "V(I) is small at typical PGS-by-environment scale, larger when environmental variance is wide enough to include extreme tails. Tucker-Drob & Bates 2016 meta-analysis: a' = 0.074 (US, p<.0005); a' = -0.027 (non-US, p=.22); cross-national heterogeneity consistent with the threshold-conditional reading.",
+      "US_a_prime": 0.074,
+      "nonUS_a_prime": -0.027,
+      "verdict": "supported_conditional"
     }
   }
 }

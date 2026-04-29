@@ -131,6 +131,25 @@ type EnvRow = {
   source: string;
 };
 
+type GxERow = {
+  study: string;
+  sample: string;
+  a_prime: number;
+  se: number | null;
+  n_pairs: number | null;
+  significance: string;
+  source: string;
+};
+
+const GXE_INTERACTIONS: GxERow[] = [
+  { study: 'Tucker-Drob & Bates 2016 (US-pooled)',     sample: 'US',         a_prime:  0.074, se: 0.020, n_pairs: 11340, significance: 'p < 0.0005',     source: 'Psych Science 2016' },
+  { study: 'Tucker-Drob & Bates 2016 (non-US-pooled)', sample: 'non-US',     a_prime: -0.027, se: 0.022, n_pairs: 13586, significance: 'p = 0.22 (n.s.)', source: 'Psych Science 2016' },
+  { study: 'Tucker-Drob & Bates 2016 (overall)',       sample: 'pooled',     a_prime:  0.029, se: 0.019, n_pairs: 24926, significance: 'p = 0.14 (n.s.)', source: 'Psych Science 2016' },
+  { study: 'Turkheimer 2003 (low-SES h²)',             sample: 'US-low-SES', a_prime:  0.10,  se: null,  n_pairs: null,  significance: 'observational', source: 'Psych Science 2003' },
+  { study: 'Turkheimer 2003 (high-SES h²)',            sample: 'US-high-SES',a_prime:  0.72,  se: null,  n_pairs: null,  significance: 'observational', source: 'Psych Science 2003' },
+  { study: 'Spengler 2018 Germany',                    sample: 'Germany',    a_prime: -0.01,  se: 0.02,  n_pairs: 1640,  significance: 'p = 0.6 (null)',  source: 'Intelligence 2018' },
+];
+
 const ENV_EFFECTS: EnvRow[] = [
   { exposure: 'schooling per year',                effect_size:  3.4, ci_low:  1.0, ci_high:  5.0, design: 'quasi-experimental meta',  causal_evidence: 'strong',   source: 'Ritchie & Tucker-Drob 2018' },
   { exposure: 'breastfeeding (PROBIT RCT)',        effect_size:  3.2, ci_low:  1.5, ci_high:  5.0, design: 'cluster RCT',              causal_evidence: 'strong',   source: 'Kramer 2008 PROBIT' },
@@ -146,7 +165,7 @@ const ENV_EFFECTS: EnvRow[] = [
 
 // ---- Tabs --------------------------------------------------------------
 
-type Tab = 'gradient' | 'am' | 'wilson' | 'sex' | 'portability' | 'xam' | 'env';
+type Tab = 'gradient' | 'am' | 'wilson' | 'sex' | 'portability' | 'xam' | 'env' | 'gxe';
 
 const TABS: { key: Tab; label: string; symbol: string }[] = [
   { key: 'gradient',    label: 'Method gradient',     symbol: 'H1' },
@@ -156,6 +175,7 @@ const TABS: { key: Tab; label: string; symbol: string }[] = [
   { key: 'portability', label: 'PGS portability',     symbol: 'H5' },
   { key: 'xam',         label: 'xAM inflation',       symbol: 'H6' },
   { key: 'env',         label: 'Environmental causes', symbol: 'H7' },
+  { key: 'gxe',         label: 'G×E interaction',     symbol: 'H8' },
 ];
 
 // ---- Top-level component -----------------------------------------------
@@ -188,6 +208,7 @@ export default function PsychVariationData() {
       {tab === 'portability' && <PortabilityPanel />}
       {tab === 'xam' && <XamPanel />}
       {tab === 'env' && <EnvPanel />}
+      {tab === 'gxe' && <GxEPanel />}
     </div>
   );
 }
@@ -718,6 +739,143 @@ function EnvPanel() {
 
       <p className="text-[11px] text-muted mt-4 leading-relaxed">
         Asymmetry is a real finding: removing severe insults (lead, malnutrition, deprivation, FAS) recovers double-digit IQ points; enrichment above normal (better parenting, breastfeeding) yields single-digit gains at most. The variance-share "V(E_m)" depends on each exposure's prevalence in a given population — sparse-but-large exposures (FAS, severe deprivation) contribute little to population variance despite large per-person effects, while moderate-but-common exposures (variable schooling, low-grade lead) contribute more.
+      </p>
+    </div>
+  );
+}
+
+// ---- H8 G×E interaction ---------------------------------------------
+
+function GxEPanel() {
+  // a' axis: -0.05 to +0.15 covers the meta-analytic + Turkheimer h²-shift bars.
+  // We render two charts: the Tucker-Drob & Bates a' meta-analytic estimates
+  // (with CIs), and the Turkheimer 2003 h²-by-SES shift as context.
+  const meta = GXE_INTERACTIONS.filter(r => r.study.startsWith('Tucker-Drob') || r.study.startsWith('Spengler'));
+  const turkheimer = GXE_INTERACTIONS.filter(r => r.study.startsWith('Turkheimer'));
+
+  const aMin = -0.05;
+  const aMax = 0.12;
+  const aSpan = aMax - aMin;
+  const zeroPct = ((0 - aMin) / aSpan) * 100;
+
+  return (
+    <div>
+      <PanelHeader
+        title="H8. G×E interaction (V(I) bucket)"
+        claim="The model's V(I) term is claimed to be small at typical PGS-by-environment scale, larger when environmental variance is wide enough to include extreme tails. Tucker-Drob & Bates 2016 meta-analysis (43 effect sizes, ~25k pairs, 14 studies): a' = 0.074 in US samples (p<.0005), a' = -0.027 in non-US samples (n.s.). The cross-national heterogeneity is the headline; the prediction holds conditional on environmental variance."
+        verdict="conditional support"
+        verdictKind="caveat"
+      />
+
+      <h5 className="text-[11px] font-mono uppercase tracking-wider text-muted mt-2 mb-3">
+        Tucker-Drob & Bates 2016 — Gene × SES interaction (a' coefficient)
+      </h5>
+
+      <div className="space-y-2 text-[12px]">
+        <div className="grid grid-cols-[200px_1fr_140px] gap-3 text-[10px] font-mono uppercase tracking-wider text-muted pb-1 border-b border-rule-soft">
+          <span>study</span>
+          <span>a' on intelligence</span>
+          <span className="text-right">significance</span>
+        </div>
+        {meta.map(r => {
+          const aPct = ((r.a_prime - aMin) / aSpan) * 100;
+          const ciLow = r.se != null ? r.a_prime - 1.96 * r.se : null;
+          const ciHigh = r.se != null ? r.a_prime + 1.96 * r.se : null;
+          const ciLowPct = ciLow != null ? ((ciLow - aMin) / aSpan) * 100 : null;
+          const ciHighPct = ciHigh != null ? ((ciHigh - aMin) / aSpan) * 100 : null;
+          const isPositive = r.a_prime > 0;
+          return (
+            <div key={r.study} className="grid grid-cols-[200px_1fr_140px] gap-3 items-center">
+              <span className="text-ink text-[12px] leading-tight">{r.study}</span>
+              <div className="relative h-5 bg-paper border border-rule-soft rounded-sm">
+                {/* zero line */}
+                <div className="absolute top-0 bottom-0 w-px bg-rule" style={{ left: `${zeroPct}%` }} />
+                {/* CI band */}
+                {ciLowPct != null && ciHighPct != null && (
+                  <div
+                    className="absolute top-1.5 bottom-1.5 rounded-sm"
+                    style={{
+                      left: `${Math.min(ciLowPct, ciHighPct)}%`,
+                      width: `${Math.abs(ciHighPct - ciLowPct)}%`,
+                      backgroundColor: isPositive ? '#8a4a2b' : '#a89677',
+                      opacity: 0.3,
+                    }}
+                  />
+                )}
+                {/* point estimate marker */}
+                <div
+                  className="absolute top-0 bottom-0 w-1 rounded"
+                  style={{ left: `${aPct}%`, backgroundColor: isPositive ? '#8a4a2b' : '#a89677' }}
+                />
+                <span
+                  className="absolute top-0.5 text-[10px] font-mono text-ink-soft"
+                  style={{ left: `${Math.min(Math.max(aPct + 1.5, 1), 85)}%` }}
+                >
+                  {r.a_prime > 0 ? '+' : ''}{r.a_prime.toFixed(3)}
+                </span>
+              </div>
+              <span className="text-[10px] font-mono text-muted text-right leading-tight">
+                {r.significance}<br />
+                <span className="text-ink-soft">N = {r.n_pairs?.toLocaleString() ?? '—'}</span>
+              </span>
+            </div>
+          );
+        })}
+        {/* x-axis ticks */}
+        <div className="grid grid-cols-[200px_1fr_140px] gap-3 pt-1">
+          <span></span>
+          <div className="relative h-3 text-[9px] font-mono text-muted">
+            {[-0.05, 0, 0.05, 0.10].map(t => (
+              <span key={t} className="absolute" style={{ left: `${((t - aMin) / aSpan) * 100}%`, transform: 'translateX(-50%)' }}>
+                {t > 0 ? '+' : ''}{t.toFixed(2)}
+              </span>
+            ))}
+          </div>
+          <span></span>
+        </div>
+      </div>
+
+      <h5 className="text-[11px] font-mono uppercase tracking-wider text-muted mt-6 mb-3">
+        Turkheimer 2003 — IQ heritability by SES (US, 7-year-olds)
+      </h5>
+
+      <div className="space-y-1.5 text-[12px]">
+        {turkheimer.map(r => {
+          const h2Pct = r.a_prime * 100; // a_prime field reused for h² value here
+          return (
+            <div key={r.study} className="grid grid-cols-[200px_1fr_140px] gap-3 items-center">
+              <span className="text-ink text-[12px] leading-tight">{r.sample.replace('US-', '').replace('-', ' ')}</span>
+              <div className="relative h-5 bg-paper border border-rule-soft rounded-sm">
+                <div
+                  className="absolute top-0 bottom-0 rounded-sm"
+                  style={{
+                    left: 0,
+                    width: `${h2Pct}%`,
+                    backgroundColor: '#1a1614',
+                    opacity: 0.7,
+                  }}
+                />
+                <span className="absolute right-2 top-0.5 text-[10px] font-mono text-ink-soft">
+                  h² = {r.a_prime.toFixed(2)}
+                </span>
+              </div>
+              <span className="text-[10px] font-mono text-muted text-right leading-tight">
+                Turkheimer 2003<br />
+                <span className="text-ink-soft">observational</span>
+              </span>
+            </div>
+          );
+        })}
+      </div>
+
+      <Legend items={[
+        { label: 'positive a\' (G×E in US samples)', color: '#8a4a2b' },
+        { label: 'null/negative a\' (non-US, equity-buffered)', color: '#a89677' },
+        { label: 'observed h² at SES extremes (Turkheimer)', color: '#1a1614' },
+      ]} />
+
+      <p className="text-[11px] text-muted mt-4 leading-relaxed">
+        The original Turkheimer 2003 result — h² rising from 0.10 in low-SES to 0.72 in high-SES US 7-year-olds — was the founding empirical observation. The Tucker-Drob & Bates 2016 meta-analysis tested whether the pattern generalizes: it does in US samples (a' = 0.074), it doesn't in W. European or Australian samples (a' = -0.027). The model's reading: V(I) is real but conditional on environmental variance — equity-buffered societies clip the low-SES tail where genetic expression is most constrained, so the interaction shrinks toward zero. This is the data-stage test of the model's "extreme-environment-threshold" claim about V(I).
       </p>
     </div>
   );
