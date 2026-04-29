@@ -48,43 +48,55 @@ function computeDecomposition(
 ) {
   const T = TRAIT_DEFAULTS[trait];
 
-  // Wilson curve: h²(t) (this is total broad-additive at developmental age t)
-  const h2_total = T.h2_inf - (T.h2_inf - T.h2_0) * Math.exp(-T.k_h * age);
-  // Shared-env decay
+  // Wilson curve: h²(t). Treat this as the upper-bound additive
+  // (V(A_d) + V(A_LD)) under random-mating assumption; we then add
+  // V(A_i) on top via genetic-nurture coupling, as a separate component.
+  const h2_random_mating = T.h2_inf - (T.h2_inf - T.h2_0) * Math.exp(-T.k_h * age);
   const c2 = T.c2_0 * Math.exp(-T.k_c * age);
 
-  // Crow-Felsenstein AM-LD inflation. r_δ ≈ m · h²; inflation factor 1/(1−r_δ).
-  const r_delta = Math.min(m * h2_total, 0.5);
-  const am_inflation = 1 / (1 - r_delta);
+  // Crow–Felsenstein AM equilibrium: solve r_δ = m · h²*(r_δ) as a fixed point.
+  // h²*(r_δ) = h²_rm / (1 − r_δ + r_δ · h²_rm)  (after one substitution).
+  // We use ~6 fixed-point iterations; converges fast for m·h² < 0.5.
+  let r_delta = m * h2_random_mating;
+  for (let i = 0; i < 6; i++) {
+    const inflation_iter = 1 / Math.max(1 - r_delta, 0.05);
+    const v_a_eq = h2_random_mating * inflation_iter;
+    const h2_eq = v_a_eq / (v_a_eq + (1 - h2_random_mating)); // fix V_E at random-mating level
+    r_delta = Math.min(m * h2_eq, 0.6);
+  }
+  const am_inflation = 1 / Math.max(1 - r_delta, 0.05);
 
-  // Decompose total h² into direct, indirect, AM-LD components.
-  // Indirect contributes to the population-additive variance via
-  //   V(A_i) + 2·Cov(A_d, A_i) ≈ ratio_i · V(A_d)·(1 + r_parents)
-  // We use a simplified split: indirect-share = ratio_i / (1 + ratio_i),
-  // direct-share = 1 / (1 + ratio_i) of the non-AM additive variance.
-  const additive_total = h2_total;
-  const am_share = additive_total * (1 - 1 / am_inflation); // share attributable to AM-LD
-  const non_am_additive = additive_total - am_share;
-  const v_Ad = non_am_additive / (1 + ratio_i);
+  // Build the variance components.
+  // V(A_d) is the direct genetic; under AM equilibrium V(A_d) inflates to V(A_d)·inflation.
+  // We treat the inflation as the V(A_LD) component (so V(A_d) is the random-mating direct).
+  const v_Ad_total_with_LD = h2_random_mating * am_inflation;
+  const v_ALD = v_Ad_total_with_LD - h2_random_mating;
+  const v_Ad = h2_random_mating;
+  // V(A_i) sits on top and adds to total variance (this is the genetic-nurture environmental contribution).
   const v_Ai = ratio_i * v_Ad;
-  const v_ALD = am_share;
 
-  // Rare-variant slice peels off the direct term
+  // Rare-variant slice peels off V(A_d).
   const v_Ad_rare = v_Ad * shareRare;
   const v_Ad_common = v_Ad - v_Ad_rare;
 
-  // Residuals
-  const v_C = c2;
-  const v_E = Math.max(0, 1 - v_Ad - v_Ai - v_ALD - v_C);
+  // Residual environment (V(C) + V(E)) fills to 1 once we've accounted for additive + indirect.
+  const total_genetic_plus_LD = v_Ad + v_ALD;
+  const v_C_with_nurture = c2 + v_Ai;            // V(A_i) lands in C under correctly specified ACE
+  const v_E = Math.max(0, 1 - total_genetic_plus_LD - v_C_with_nurture);
 
-  // Estimator views
-  const twin_h2 = v_Ad + v_Ai + v_ALD; // picks up the whole top
-  const snp_h2 = v_Ad_common + v_ALD;  // common-variant additive + LD
-  const wf_h2 = v_Ad;                  // direct only (within-family)
+  // Estimator views (corrected per pass-2 method-gradient discussion):
+  //   Twin h² (classical ACE) = V(A_d) + V(A_LD); V(A_i) lands in C.
+  //   SNP h² (LDSC on population GWAS) = V(A_d, common) + V(A_LD) + a fraction of V(A_i)·k.
+  //     We approximate the V(A_i) leakage at 0.5 (mid-range AM coupling).
+  //   Within-family h² = V(A_d) only.
+  const twin_h2 = v_Ad + v_ALD;
+  const snp_h2 = v_Ad_common + v_ALD + 0.5 * v_Ai;
+  const wf_h2 = v_Ad;
 
   return {
-    h2_total, c2, r_delta, am_inflation,
-    v_Ad, v_Ai, v_ALD, v_Ad_rare, v_Ad_common, v_C, v_E,
+    h2_random_mating, c2, r_delta, am_inflation,
+    v_Ad, v_Ai, v_ALD, v_Ad_rare, v_Ad_common,
+    v_C_baseline: c2, v_C_with_nurture, v_E,
     twin_h2, snp_h2, wf_h2,
   };
 }
@@ -222,9 +234,9 @@ function VariancePanel() {
   const segments = [
     { label: 'V(A_d) common', value: d.v_Ad_common, color: '#1a1614' },
     { label: 'V(A_d) rare',   value: d.v_Ad_rare,   color: '#3a342c' },
-    { label: 'V(A_i) genetic nurture', value: d.v_Ai, color: '#8a4a2b' },
     { label: 'V(A_LD) AM-induced', value: d.v_ALD, color: '#c98a6e' },
-    { label: 'V(C) shared env',  value: d.v_C, color: '#a89677' },
+    { label: 'V(A_i) → lands in C', value: d.v_Ai, color: '#8a4a2b' },
+    { label: 'V(C) shared env',  value: d.v_C_baseline, color: '#a89677' },
     { label: 'V(E) non-shared',  value: d.v_E, color: '#d9d0bf' },
   ];
 
@@ -289,19 +301,19 @@ function VariancePanel() {
 
         <h4 className="text-[11px] font-mono uppercase tracking-wider text-muted mt-6 mb-3">Method gradient</h4>
         <div className="grid grid-cols-3 gap-2">
-          <NumberCard label="Twin h²" value={d.twin_h2.toFixed(2)} formula="A_d + A_i + A_LD" />
-          <NumberCard label="SNP h²" value={d.snp_h2.toFixed(2)} formula="A_d,common + A_LD" />
-          <NumberCard label="Within-family" value={d.wf_h2.toFixed(2)} formula="A_d (direct only)" />
+          <NumberCard label="Twin h² (ACE)" value={d.twin_h2.toFixed(2)} formula="A_d + A_LD" hint="A_i lands in C" />
+          <NumberCard label="SNP h² (LDSC)" value={d.snp_h2.toFixed(2)} formula="A_d,common + A_LD + ½·A_i" />
+          <NumberCard label="Within-family" value={d.wf_h2.toFixed(2)} formula="A_d only" />
         </div>
 
-        <h4 className="text-[11px] font-mono uppercase tracking-wider text-muted mt-6 mb-3">Assortative mating</h4>
+        <h4 className="text-[11px] font-mono uppercase tracking-wider text-muted mt-6 mb-3">Assortative mating (fixed point)</h4>
         <div className="grid grid-cols-2 gap-2">
-          <NumberCard label="r_δ" value={d.r_delta.toFixed(3)} formula="≈ m · h²" />
+          <NumberCard label="r_δ equilibrium" value={d.r_delta.toFixed(3)} formula="r_δ = m · h²(r_δ)" />
           <NumberCard label="V_A inflation" value={d.am_inflation.toFixed(2) + '×'} formula="1 / (1 − r_δ)" />
         </div>
 
         <p className="text-[11px] text-muted mt-5 leading-relaxed">
-          The gap between twin h² and within-family h² is the share of "heritability" that is genetic-nurture (A_i) and assortative-mating-induced LD (A_LD), not direct biological causation. The gap between SNP h² and within-family h² is mostly AM-LD plus rare-variant contribution.
+          Under correctly specified ACE, V(A_i) is shared identically by MZ and DZ co-twins (same parents) and lands in C, not in twin h². Empirical twin h² for EA exceeds within-family by ~0.20–0.25 mostly because AM and unmodeled genetic nurture leak into A. The honest method gradient: twin h² ≥ SNP h² ≥ within-family h², with each estimator answering a slightly different question.
         </p>
       </div>
     </div>
@@ -317,10 +329,10 @@ function SexDiffPanel() {
 
   const { D, overlapPct } = useMemo(() => computeMahalanobisD(n, dAvg, rho), [n, dAvg, rho]);
 
-  const setPreset = (p: 'math' | 'big5' | '16pf' | 'people_things') => {
+  const setPreset = (p: 'math' | 'big5' | '16pf_obs' | 'people_things') => {
     if (p === 'math') { setN(1); setDAvg(0.05); setRho(0); }
     else if (p === 'big5') { setN(5); setDAvg(0.40); setRho(0.20); }
-    else if (p === '16pf') { setN(15); setDAvg(0.50); setRho(0.18); }
+    else if (p === '16pf_obs') { setN(15); setDAvg(0.50); setRho(0.18); }
     else if (p === 'people_things') { setN(1); setDAvg(0.93); setRho(0); }
   };
 
@@ -350,13 +362,16 @@ function SexDiffPanel() {
           <div className="flex flex-wrap gap-1.5">
             <button onClick={() => setPreset('math')} className="px-2 py-1 text-[11px] font-mono border border-rule rounded text-muted hover:text-accent hover:border-accent">Math d=0.05</button>
             <button onClick={() => setPreset('big5')} className="px-2 py-1 text-[11px] font-mono border border-rule rounded text-muted hover:text-accent hover:border-accent">Big Five</button>
-            <button onClick={() => setPreset('16pf')} className="px-2 py-1 text-[11px] font-mono border border-rule rounded text-muted hover:text-accent hover:border-accent">16PF (Del Giudice)</button>
+            <button onClick={() => setPreset('16pf_obs')} className="px-2 py-1 text-[11px] font-mono border border-rule rounded text-muted hover:text-accent hover:border-accent">16PF observed</button>
             <button onClick={() => setPreset('people_things')} className="px-2 py-1 text-[11px] font-mono border border-rule rounded text-muted hover:text-accent hover:border-accent">People-things d=0.93</button>
           </div>
         </div>
 
         <p className="text-[11px] text-muted mt-5 leading-relaxed">
           Same data, two numbers: a single dimension gives a univariate d; many weakly correlated dimensions give a multivariate D much larger than any individual d. Both are correct about different objects. D3 distortions cite small d's; D4 distortions cite large D's.
+        </p>
+        <p className="text-[11px] text-muted mt-3 leading-relaxed">
+          The "16PF observed" preset gives D ≈ 1.0. Del Giudice 2012's reported D = 2.71 used latent-variable modeling with measurement-error disattenuation, which the equicorrelated approximation here cannot reproduce. The gap between observed and disattenuated D is itself a substantive piece of the field's debate.
         </p>
       </div>
 

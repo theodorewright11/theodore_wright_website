@@ -3,7 +3,7 @@ title: 'Model'
 description: 'Generating function for human psychological variation. One equation per person; variance decomposition follows. Closed-form pieces: Crow–Felsenstein AM inflation, Wilson-Effect saturation, genetic-nurture additive split, multivariate sex-difference Mahalanobis D. Twin / SNP / within-family heritability are projections of the same decomposition. Interactive dashboard included.'
 date: 2026-04-28
 status: in-progress
-refinementPass: 1
+refinementPass: 2
 refinementLog:
   - pass: 1
     date: '2026-04-28'
@@ -20,6 +20,19 @@ refinementLog:
       - 'Boundary conditions: severe psychiatric tail, L4 between-pop firewall, environmental thresholds, AM equilibrium, individual-level (L1)'
       - 'Distortion-aware reading: term-by-term failure modes for each component'
       - 'Interactive dashboard with two tabs (variance decomposition + multivariate sex-difference)'
+  - pass: 2
+    date: '2026-04-28'
+    passes: ['error check', 'adversarial + steelman', 'crux identification', 'compression']
+    why: 'Pass-1 had three real technical errors and was missing two structural pieces. The method-gradient table over-claimed what twin h² captures (V(A_i) is shared identically by MZ and DZ co-twins so it lands in C under classical ACE, not A — leakage into A is via AM-related model misspecification, not by design). The Crow–Felsenstein formula was stated as a one-shot when it is a fixed-point. The genetic-nurture variance equation was written as ≈ when it is approximate at best. And the strongest objection to the whole formalization (variance bookkeeping is not the same as a causal mechanism) was not engaged head-on. Plus the 16PF Del Giudice preset in the dashboard misled by giving D ≈ 1.0 when Del Giudice reported 2.71.'
+    changes:
+      - 'Method-gradient table rewritten: classical twin h² captures V(A_d) + V(A_LD); V(A_i) lands in C under correctly specified ACE, leaks into A under AM/genetic-nurture model misspecification — separated these explicitly'
+      - 'Crow–Felsenstein r_δ ≈ m·h² flagged as a one-iteration approximation to a fixed-point; equilibrium r_δ* solves r_δ = m · h²(r_δ); approximation is tight at small r_δ, breaks at high m × h²'
+      - 'Genetic-nurture variance equation softened: V(A_i) + 2·Cov(A_d, A_i) is approximated by, not equal to, V_PGS,population − V_PGS,within-family; the exact identity has β_i·k cross-terms that depend on AM coupling between transmitted and non-transmitted alleles'
+      - 'Added §6.5 Adversarial + steelman — four objections (variance bookkeeping vs causal model, ACE assumptions are unrealistic, additive form misses dominance/epistasis, multivariate-D conflates measurement with reality), each with a steelman and the model''s honest response'
+      - 'Added §11 Cruxes for the model itself — five load-bearing claims (within-family GWAS validity, AM equilibrium approximation, hyperpolygenic architecture, identifiability of A_d/A_i/A_LD, equicorrelation as a useful Σ approximation) and what evidence would flip each'
+      - 'Renamed dashboard 16PF preset to "16PF observed" with an explanatory note that reaching D=2.71 requires latent-variable modeling with disattenuation, not the equicorrelated approximation'
+      - 'Twin h² card in dashboard relabeled to "Twin h² (classical ACE)" with the corrected formula A_d + A_LD; helper text below the method gradient updated to match'
+      - 'Compressed TLDR para 2 (V(P) cross-term mention now matches body) and tightened §3.1 worked example by removing redundancy'
 ---
 
 import PsychVariationModel from '../../../components/ai-research/PsychVariationModel';
@@ -28,7 +41,7 @@ import PsychVariationModel from '../../../components/ai-research/PsychVariationM
 
 The topology answered "what depends on what?". The formalization answers a sharper question: **given a person, where does their phenotype come from in expectation?** The answer is a single generating function that, once written down, dissolves several apparent paradoxes in the field — most importantly the gap between twin heritability, SNP heritability, and within-family heritability (they estimate different sums of the same underlying components, and the differences are informative).
 
-The spine of this stage is one equation. Phenotype `P` for a person in a population is `P = A_d + A_i + A_LD + C + E_m + E_s + I`, with each term a contribution from a distinct mechanism: direct genetic effects from the person's own transmitted alleles, indirect genetic effects from parental (and broader-family) genomes operating through the environment they create, assortative-mating-induced linkage among causal variants, residual shared environment, measured non-shared environment, stochastic developmental noise, and gene-environment interaction terms. Variance decomposition follows directly: `V(P) = V(A_d) + V(A_i) + V(A_LD) + V(C) + V(E_m) + V(E_s) + 2·Cov(G,E) + V(I)`. Three closed-form pieces drop out — the Crow–Felsenstein assortative-mating inflation factor `V_A* = V_A / (1 − r_δ)`, the Wilson-Effect saturation curve `h²(t) = h²_∞ − (h²_∞ − h²_0)·e^(−kt)`, and the method gradient that says twin h² ≥ SNP h² ≥ within-family h² with the gaps decomposable into AM-LD, indirect-genetic, and rare-variant pieces.
+The spine of this stage is one equation. Phenotype `P` for a person in a population is `P = A_d + A_i + A_LD + C + E_m + E_s + I`, with each term a contribution from a distinct mechanism: direct genetic effects from the person's own transmitted alleles, indirect genetic effects from parental (and broader-family) genomes operating through the environment they create, assortative-mating-induced linkage among causal variants, residual shared environment, measured non-shared environment, stochastic developmental noise, and gene-environment interaction terms. Variance decomposition follows directly, and is **block-orthogonal** rather than fully orthogonal: `V(P) = ΣV(component) + 2·Cov(A_d, A_i) + 2·Cov(A_d, E_m) + 2·Cov(A_d, C) + V(I)`. The cross-terms are the formal home of every gene-environment correlation finding in the literature; pretending they are zero is the most common modeling error. Three closed-form pieces drop out — the Crow–Felsenstein assortative-mating inflation factor `V_A* = V_A / (1 − r_δ)` (a fixed-point at AM equilibrium), the Wilson-Effect saturation curve `h²(t) = h²_∞ − (h²_∞ − h²_0)·e^(−kt)`, and the method gradient that says twin h² ≥ SNP h² ≥ within-family h² with the gaps decomposable into AM-LD, indirect-genetic, and rare-variant pieces.
 
 A second module handles the multivariate sex-difference algebra, because the single largest framing trap in this field is the gap between univariate Cohen's d (typically 0.2–0.6 across personality dimensions) and the multivariate Mahalanobis distance `D² = Δμᵀ·Σ⁻¹·Δμ` (which can hit 2.7 when traits are weakly correlated and you stack 15 of them, as in Del Giudice 2012). The same data, two numbers, opposite-sounding stories — both correct. The formalization makes the bridge explicit so the reader can dial univariate d's and inter-trait correlations and watch D move.
 
@@ -84,23 +97,28 @@ The off-diagonal `Cov` terms are why "orthogonal decomposition" is the wrong fra
 
 ### 2.2 Heritability identities
 
-Three quantities are estimable from data; each picks up a different subset of the variance terms.
+Three quantities are estimable from data; each picks up a different subset of the variance terms. The mapping is more subtle than a casual reading of the literature suggests, and it is worth getting right because the public-discourse confusion about "twin studies overestimate" turns on this exact algebra.
 
-| Estimator | What it estimates | Picks up |
+**The non-obvious point about twin h²**: `V(A_i)` (genetic nurture) is shared identically by MZ and DZ co-twins, because they share the same parents. Under a correctly specified ACE model, this variance lands in `C`, not `A`. So a faithful classical twin model **does not** count genetic nurture as heritability. The empirical observation that twin h² > within-family h² (e.g., for EA: 0.40 vs ~0.15) is therefore *not* due to twin h² capturing `A_i` directly. It is mostly due to two model-misspecification leakages: the ACE assumption rDZ_A = 0.5 fails under assortative mating (true sibling additive correlation under AM is `0.5·(1+r_δ)`), and the assumption that genetic nurture's contribution is fully shared between siblings can fail if parents differentially treat MZ vs DZ pairs.
+
+| Estimator | What it estimates (correctly specified) | Practical leakages |
 |---|---|---|
-| **Twin h²** (`2·(rMZ − rDZ)`) | Total additive genetic variance under EEA + random-mating assumption | `V(A_d) + V(A_i) + V(A_LD) + 2·Cov(A_d, A_i)` |
-| **SNP h²** (GREML, LDSC) | Common-variant additive genetic variance | `V(A_d, common) + V(A_LD, common)` (excludes `A_i` fully, excludes rare variants) |
-| **Within-family h²** (sib-FE, MZ-discordant, trio designs) | Direct additive genetic variance | `V(A_d)` (or `V(A_d) + V(A_d, rare)` with WGS) |
+| **Twin h²** (classical ACE: `2·(rMZ − rDZ)`) | `V(A_d) + V(A_LD)` | Under unmodeled AM, some `V(A_i)` and `V(C)` bleed into A. Empirically, classical twin h² for EA exceeds within-family by ~0.20–0.25. |
+| **SNP h²** (GREML, LDSC on population GWAS) | `V(A_d, common) + V(A_LD, common) + V(A_i, common)·attenuated` | Population GWAS effect sizes `β_pop = β_d + k·β_i` (where `k` is the AM coupling between transmitted and non-transmitted alleles), so SNP h² is **inflated by some `V(A_i)`**, but attenuated relative to the full `V(A_i)` because `k < 1`. Excludes rare variants. |
+| **WGS h²** (Wainschtein 2025) | SNP h² + `V(A_d, rare) + V(A_LD, rare)` | Closes the rare-variant gap; same `A_i` contamination as SNP h² unless within-family. |
+| **Within-family h²** (sib-FE, MZ-discordant, parent-offspring trios) | `V(A_d)` | Removes `A_i` and `A_LD` cleanly; leaves direct additive only. With WGS: `V(A_d) + V(A_d, rare)`. |
 
-This is the **method gradient** (S2 in the topology). Concretely:
+This is the **method gradient** (S2 in the topology):
 
 ```
-twin h²  ≥  SNP h² (with Wainschtein 2025 adjustment for rare variants)  ≥  within-family h²
+twin h² ≥ WGS h² ≥ SNP h² ≥ within-family h²
 ```
 
-The gaps are not measurement error — they are the data's way of telling you how much of "heritability" is `A_i`, how much is `A_LD`, and how much depends on rare variants common-variant arrays don't tag.
+The gaps are not measurement error. They are the data's way of telling you how much of "heritability" is structural (AM-LD), how much is environmental-via-parents (`A_i`), and how much depends on rare variants common-variant arrays cannot tag.
 
-For educational attainment in 2025: twin h² ≈ 0.40, SNP h² ≈ 0.25 (common-variant, LDSC), within-family additive ≈ 0.15. The gap between twin and within-family (0.25) is the AM-LD plus genetic-nurture contribution. The gap between WGS-h² and SNP-h² is rare-variant contribution.
+For educational attainment in 2025: classical twin h² ≈ 0.40, common-variant SNP h² ≈ 0.20–0.25, WGS h² ≈ 0.30 (with rare-variant contribution), within-family additive ≈ 0.15. The 0.25 gap between twin and within-family is the structural `A_LD` contribution plus AM-induced bias plus partial `A_i` leakage; the 0.10 gap between WGS and within-family is the AM-LD plus partial `A_i` contributions captured by population-level SNP heritability methods.
+
+This is the single calculation a careful reader of "twin studies vs molecular studies" headlines should be able to do. The numbers don't disagree; they answer different questions.
 
 ## 3. Closed-form pieces
 
@@ -108,19 +126,17 @@ Three components admit clean equations. The rest are calibrated empirically.
 
 ### 3.1 Assortative-mating inflation (Crow–Felsenstein)
 
-For a polygenic trait under cross-spouse phenotypic correlation `m` and (single-generation) heritability `h²`, the spousal correlation among the genetic component is:
+For a polygenic trait under cross-spouse phenotypic correlation `m` at AM equilibrium, the spousal correlation among additive genetic values `r_δ` and the equilibrium heritability `h²*` solve a coupled fixed-point:
 
 ```
-r_δ ≈ m · h²
+r_δ  =  m · h²*
+h²*  =  V_A* / (V_A* + V_E)
+V_A* =  V_A / (1 − r_δ)
 ```
 
-At AM equilibrium (reached in ~5–10 generations of stable assortment), the additive genetic variance inflates by:
+A one-iteration approximation, plugging in random-mating `h²` for `h²*`, gives `r_δ ≈ m · h²` and inflation factor `≈ 1 / (1 − m·h²)`. The approximation is tight when `m · h²` is small (typical for personality, BMI) and looser when both are large (height with `m ≈ 0.25`, `h² ≈ 0.7` is at the edge of where one iteration suffices). The dashboard solves the fixed-point numerically; the prose uses the one-iteration form for tractability. AM equilibrium itself is reached within ~5–10 generations of stable assortment (Crow & Felsenstein 1968).
 
-```
-V_A* / V_A  =  1 / (1 − r_δ)
-```
-
-Worked example — educational attainment in modern populations: `m ≈ 0.4`, base `h² ≈ 0.25`, so `r_δ ≈ 0.10`, equilibrium inflation factor ≈ `1.11`. For height: `m ≈ 0.25`, `h² ≈ 0.7`, `r_δ ≈ 0.18`, inflation ≈ `1.21` — matches the 14–23% empirical inflation Border et al. and Yengo et al. report for SNP-h² of height.
+Worked anchors: educational attainment with `m ≈ 0.4`, `h² ≈ 0.25` → `r_δ ≈ 0.10`, inflation ≈ `1.11`. Height with `m ≈ 0.25`, `h² ≈ 0.7` → `r_δ ≈ 0.18` (one-iteration), `0.21` after fixed-point convergence, inflation ≈ `1.21–1.27` — matches the 14–23% empirical inflation Border et al. and Yengo et al. report for SNP-h² of height.
 
 Cross-trait AM (`m_xy ≠ 0`) extends the same logic to off-diagonal entries of the genetic-covariance matrix and is the formal reason E7 finds `R² = 0.74` between phenotypic-cross-mate correlations and genetic-correlation estimates.
 
@@ -163,7 +179,7 @@ The variance contribution from indirect effects, accounting for their correlatio
 V(A_i) + 2·Cov(A_d, A_i)  ≈  V_PGS,population − V_PGS,within-family
 ```
 
-This is the single equation that turns "missing heritability after within-family correction" from a puzzle into a measurement. The right-hand side is now directly observable for any trait with both population-level and within-family GWAS at scale.
+The relation is approximate, not exact. The fully expanded right-hand side is `(β_pop² − β_d²)·V(g) = β_i·k·(2β_d + β_i·k)·V(g)`, where `k` is the AM-induced correlation between transmitted and non-transmitted alleles. The approximation drops the `β_i²·k²` term (small when `β_i/β_d < 1` and AM coupling is moderate) and treats `k` as ~1. It's a serviceable identity in the parameter regime relevant to most psychological traits but should not be treated as an exact equality. The closed form is most useful as the equation that turns "missing heritability after within-family correction" from a puzzle into an order-of-magnitude measurement: the right-hand side is now directly observable for any trait with both population-level and within-family GWAS at scale.
 
 ### 3.4 Multivariate sex-difference algebra (Module B)
 
@@ -186,7 +202,9 @@ D² ≈ d² · 1ᵀ · Σ⁻¹ · 1
    D ≈ 1.0
 ```
 
-To recover Del Giudice 2012's `D = 2.71` you need either larger univariate `d`s, lower inter-trait correlations, or — what actually drives the result — sex-difference vectors that don't align with the principal components of `Σ`. The intuition: if men and women differ on dimensions that are *uncorrelated* with each other, every dimension contributes independent information, and `D` grows with `√n`. If they differ on correlated dimensions, the differences carry redundant information and `D` plateaus.
+The equicorrelated approximation undershoots Del Giudice 2012's reported `D = 2.71`, and this gap is informative rather than a bug. To recover 2.71 in the equicorrelated form would require average univariate `|d| ≈ 1.3`, far above what 16PF or NEO papers report at the observed level. What Del Giudice actually did was use **multigroup latent-variable modeling with measurement-error disattenuation**: he corrected each factor's `d` for unreliability and then computed `D` on the latent (true-score) means. Disattenuation magnifies effect sizes when reliability is well below 1.0, and aggregating across 15 factors then compounds the magnification. The honest summary is: at the level of *observed* (raw, pre-disattenuation) measurement, multivariate sex-difference `D` for personality is ~1.0–1.5; Del Giudice's 2.71 is the *latent-true-score* analogue.
+
+The intuition behind the algebra still holds: if men and women differ on dimensions that are weakly correlated with each other, every dimension contributes independent information, and `D` grows with `√n`. If they differ on highly correlated dimensions, the differences carry redundant information and `D` plateaus. But the gap between observed and disattenuated `D` is itself a substantive piece of the field's debate — and worth flagging rather than papering over.
 
 **Why this matters for distortions.** D3 (the "gender similarities" framing) cites univariate `d ≈ 0.05` for math performance and reads it as evidence of broad similarity. D4 (pop-evpsych framing) cites multivariate `D ≈ 2.71` and reads it as evidence of broad difference. Both citations are correct. The bridge equation shows that they are about different objects: a single dimension vs. a 15-dimensional space. Anyone who hasn't internalized this algebra can be silently captured by either framing.
 
@@ -248,6 +266,42 @@ Each component of the decomposition has a public-discourse failure mode. The mod
 
 D1 and D2 (the two heaviest distortions) both operate by selecting a subset of these readings. The model doesn't resolve the political dispute, but anyone running the dashboard should be able to see why each side is technically correct about the term they're highlighting and incomplete about the rest.
 
+## 6.5 Adversarial + steelman
+
+Four objections to the formalization itself. The strongest version of each, then the model's honest response.
+
+### Objection 1 — Variance bookkeeping is not a causal model
+
+The decomposition partitions variance into named components, but it never specifies *why* `A_d` produces phenotype `P` rather than the reverse. A regression coefficient `β_d` from a within-family GWAS is not a causal effect; it is a statistical association under specific design assumptions. Calling the decomposition a "generating function" is false advertising — it generates *expected variance* given parameters, not *actual phenotype* given a causal mechanism.
+
+**Steelman**: This is the strongest objection because it is the same disagreement that drives O1 (Plomin vs Turkheimer). The model accommodates both readings rather than picking one: under the Plomin reading, `β_d` is a causal coefficient and the decomposition is generative in the strong sense; under the Turkheimer reading, `β_d` is a regression coefficient that happens to be unbiased under within-family identification, but the underlying biology is unspecified. Both readings predict the same variance budget, which is why the data hasn't yet decided between them.
+
+**Response**: Acknowledged. The model is more accurately described as a **conditional variance generating function** — given parameters, it generates the expected variance pattern. The causal interpretation of those parameters is exactly what's contested, and the decomposition's value is precisely that it lets both interpretations be expressed in a shared language. Stage 4 (data) is where the disagreement gets sharper: the test is whether `β_d, within-family` moves under environmental intervention. Plomin predicts no, Turkheimer predicts yes, and the model can express both predictions cleanly.
+
+### Objection 2 — ACE assumptions are unrealistic enough that "twin h²" is not really estimating anything physical
+
+EEA fails (MZ co-twins are treated more similarly than DZ); shared-environment effects vary by zygosity; non-shared environment for siblings is correlated with shared parental treatment. Stack the violations and the entire ACE framework is just a parametric reparameterization of the data, not an estimation of underlying components.
+
+**Steelman**: Joseph and Richardson's critique of behavior genetics rests partly on this argument: the assumptions that make twin h² meaningful are violated enough to make the resulting numbers epistemically empty. The strongest version isn't that twin studies are "wrong" but that they're under-determined — multiple causal worlds produce the same `rMZ` and `rDZ` patterns.
+
+**Response**: Partially conceded. Classical ACE is under-determined and the assumption-violation issue is real. However, two empirical findings constrain the under-determination: (a) **SNP-based heritability** (which bypasses EEA entirely) converges within ~30–50% of within-family twin estimates for most traits, suggesting the EEA bias is bounded, not unbounded; (b) **MZ-reared-apart studies** (Bouchard 1990 and updates) reproduce the basic Wilson Effect pattern with EEA structurally absent. The model takes twin h² as an *upper bound* on direct + indirect additive variance, not as a precise estimate. The method gradient is what makes the imprecision survivable: comparing twin to within-family bounds the gap.
+
+### Objection 3 — Additive form misses dominance and epistasis
+
+Dominance variance `V_D` and epistatic variance `V_I` (gene-gene interactions) are real and measurable. Twin studies fitting ADE models routinely find non-trivial `V_D`. The additive-only generating function is a simplification that loses information.
+
+**Steelman**: For some traits — height (`V_D ≈ 0`), educational attainment (`V_D ≈ 0–0.05`) — dominance is small and the additive simplification is fine. For others — psychiatric disorders, where ADE models often outperform ACE — non-additive variance is potentially substantial. The additive-only model is not "wrong" so much as inappropriate for that subset of traits.
+
+**Response**: Concede the scope limit. The generating function as written is for traits where polygenic-additive architecture dominates (which is most psychological traits, per Hill, Goddard & Visscher 2008's argument that even where dominance exists, additive variance often captures most of the variance because of allele-frequency distributions). For severe psychopathology and other traits with substantial `V_D`, an extended model would replace `A_d` with `A_d + D_d` and add `Cov(A_d, D_d)` cross-terms. The dashboard does not currently expose this; the prose acknowledges the boundary in §5.
+
+### Objection 4 — Multivariate `D` conflates measurement structure with reality
+
+Mahalanobis `D` depends on `Σ`. `Σ` is the within-sex covariance of measured traits, which depends on which traits you measure, how you measure them, and how the population varies. Different measurement panels produce different `D`s for the *same underlying difference*. The disattenuated `D = 2.71` from Del Giudice is not a property of human nature; it's a property of the 16PF + the U.S. sample + the latent-variable model.
+
+**Steelman**: This is correct and underappreciated. `D` is not a population parameter in the way that `μ_F − μ_M` is. It is a model-relative summary statistic. Two researchers using different but equally defensible measurement panels can produce `D` values that differ by a factor of two or more.
+
+**Response**: Conceded fully. The multivariate-D module's value is comparative, not absolute. It tells you *given a measurement structure*, how multivariate aggregation magnifies the apparent sex difference relative to any single dimension. The module's pedagogical purpose is to show why the same data (panel of dimensions) supports both "small per-dimension differences" and "large multivariate distance" — neither claim is wrong, but neither is the *whole* answer. The dashboard surfaces the dependency on `Σ` via the `ρ̄` slider so users can see how `D` moves under different correlation structures.
+
 ## 7. Open questions that the model exposes (Stage-4 inputs)
 
 The formal apparatus makes four open questions sharper than verbal discussion alone:
@@ -296,3 +350,17 @@ The single highest-value Stage-4 deliverable: a per-trait table of `(twin h², S
 | `Mahalanobis D` | Multivariate generalization of Cohen's d: `√(Δμᵀ Σ⁻¹ Δμ)` |
 | `block-orthogonal` | Decomposition where major-component blocks are orthogonal to the residual but cross-terms within blocks (e.g. `Cov(A_d, A_i)`) are explicit, not zero |
 | `method gradient` | The relationship `twin h² ≥ SNP h² ≥ within-family h²` driven by which components each estimator includes |
+
+## 11. Cruxes for this model
+
+The topology had cruxes for the field. This stage's cruxes are different — they are the load-bearing assumptions of the *formalization* itself. If any one flips, the model needs to be restructured.
+
+| Crux | Load-bearing claim | What would flip it |
+|---|---|---|
+| **C1** | Within-family GWAS effect estimates are an unbiased estimate of `β_d`. The whole `A_d` / `A_i` separation depends on this. | A demonstration that within-family designs have a systematic confound (e.g., differential parental treatment that correlates with offspring genotype) that biases `β_d` by more than ~10%. So far Howe 2022 / Okbay 2022 within-sibship GWAS are mutually consistent and consistent with trio-based estimates, suggesting the confound is bounded. |
+| **C2** | AM equilibrium has been reached or is close enough that the Crow–Felsenstein fixed point applies. | A demonstration that recent population-scale shifts in assortment (educational stratification expansion since 1970, online dating since 2010) have moved populations far from equilibrium for psychologically-relevant traits. Currently no direct evidence; would require longitudinal `m`-by-cohort data. |
+| **C3** | Hyperpolygenic architecture: `A_d = Σ β_k g_{ik}` over thousands of small effects, no single locus dominates. | Discovery that for a major psychological trait class, ~5–10 large-effect variants account for >50% of `V(A_d)`. Currently true only for the severe psychiatric tail (autism with ID, severe schizophrenia spectrum), where the model already concedes scope (§5.1). Would generalize to mainstream cognition only if a CRISPR-era discovery overturned the polygenic consensus. |
+| **C4** | `A_d`, `A_i`, `A_LD` are jointly identifiable given the available designs. | A demonstration that twin/SNP/within-family/WGS estimators are *not* sufficient to disentangle all three (e.g., that AM-LD and rare-variant contributions are mutually confounded in a way no current design can break). This would force collapsing the decomposition or treating one component as a residual. Active concern: rare-variant heritability in WGS may itself be inflated by AM-LD among rare variants, which would muddy C4. |
+| **C5** | Equicorrelated `Σ` is a useful approximation for the multivariate sex-difference module. | A demonstration that real personality covariance matrices have block-structured (or low-rank) `Σ` that produces qualitatively different `D` from the equicorrelated approximation. Already partially true: 16PF has known higher-order factor structure, which is why the equicorrelated approximation undershoots Del Giudice's latent-variable result. Crux holds in a weakened form: equicorrelated is useful pedagogically but not quantitatively for high-dimensional panels. |
+
+The most consequential of these is **C4**. If `A_d`, `A_i`, and `A_LD` cannot be jointly identified by current designs, the variance decomposition reduces to a coarser partition (genetic-additive vs everything else), and the field-level dispute about how much "genetic" effect is environment-mediated remains parametrically unresolvable rather than just empirically pending.
