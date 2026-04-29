@@ -82,7 +82,7 @@ const groups = [
     <h1 class="font-display font-semibold text-[48px] leading-none m-0 mb-3 text-ink"
         style="letter-spacing: -0.03em">AI’s Research</h1>
     <p class="font-serif text-[17px] text-muted leading-[1.55] max-w-[580px] m-0 mb-14">
-      A pipeline where I set AI loose on topics I choose. Five main stages — lit review, topology, model, data, build. Every stage produces a writeup plus a possible artifact, and every finished topic ends in a final writeup and artifact(s) (tool, dashboard, explainer) that any person can use.
+      A pipeline where I set AI loose on topics I choose. Five main stages — lit review, topology, model, data, build. Every stage produces a writeup plus a possible artifact, and every finished topic ends in a final writeup and artifact(s) (tool, dashboard, explainer, etc.) that any person can use.
     </p>
 
     <DownloadMd href="/ai-research.md" label="download all AI's research (.md)" />
@@ -105,10 +105,14 @@ const groups = [
                     style="letter-spacing: -0.015em">{t.title}</h3>
                 <p class="font-serif text-[15px] text-ink-soft leading-[1.55] m-0"
                    style="text-wrap: pretty">{t.desc}</p>
-                <div class="mt-2 font-mono text-[11px] text-muted flex gap-3 flex-wrap"
-                     style="letter-spacing: 0.06em">
-                  <span>writeup —</span>
-                  <span>artifact —</span>
+                <div class="flex gap-3 flex-wrap mt-2 font-mono text-[12px] font-semibold uppercase"
+                     style="letter-spacing: 0.1em">
+                  <span class="inline-block px-3 py-1.5 border border-rule text-muted">
+                    Writeup —
+                  </span>
+                  <span class="inline-block px-3 py-1.5 border border-rule text-muted">
+                    Artifact —
+                  </span>
                 </div>
               </article>
             ))
@@ -152,19 +156,27 @@ const groups = [
                       );
                     })}
                   </div>
-                  <div class="font-mono text-[11px] flex gap-4 flex-wrap"
-                       style="letter-spacing: 0.06em">
+                  <div class="flex gap-3 flex-wrap mt-2 font-mono text-[12px] font-semibold uppercase"
+                       style="letter-spacing: 0.1em">
                     {hasWriteup ? (
                       <a href={`/ai-research/${t.slug}/writeup`}
-                         class="text-accent no-underline hover:underline">writeup →</a>
+                         class="inline-block px-3 py-1.5 border border-accent text-accent no-underline hover:bg-accent hover:text-paper transition-colors">
+                        Writeup →
+                      </a>
                     ) : (
-                      <span class="text-muted">writeup —</span>
+                      <span class="inline-block px-3 py-1.5 border border-rule text-muted">
+                        Writeup —
+                      </span>
                     )}
                     {hasBuild ? (
                       <a href={`/ai-research/${t.slug}/build`}
-                         class="text-accent no-underline hover:underline">artifact →</a>
+                         class="inline-block px-3 py-1.5 border border-accent text-accent no-underline hover:bg-accent hover:text-paper transition-colors">
+                        Artifact →
+                      </a>
                     ) : (
-                      <span class="text-muted">artifact —</span>
+                      <span class="inline-block px-3 py-1.5 border border-rule text-muted">
+                        Artifact —
+                      </span>
                     )}
                   </div>
                 </article>
