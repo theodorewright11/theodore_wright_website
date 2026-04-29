@@ -1,0 +1,1228 @@
+{
+  "method_gradient": [
+    {
+      "trait": "educational_attainment",
+      "trait_class": "achievement",
+      "twin_h2": 0.4,
+      "snp_h2": 0.13,
+      "wgs_h2": null,
+      "wf_h2": 0.15,
+      "twin_minus_wf": 0.25,
+      "twin_minus_snp": 0.27,
+      "snp_minus_wf": -0.01999999999999999,
+      "gradient_holds": false
+    },
+    {
+      "trait": "height",
+      "trait_class": "physical",
+      "twin_h2": 0.85,
+      "snp_h2": 0.5,
+      "wgs_h2": 0.68,
+      "wf_h2": 0.78,
+      "twin_minus_wf": 0.06999999999999995,
+      "twin_minus_snp": 0.35,
+      "snp_minus_wf": -0.28,
+      "gradient_holds": false
+    },
+    {
+      "trait": "bmi",
+      "trait_class": "physical",
+      "twin_h2": 0.75,
+      "snp_h2": 0.27,
+      "wgs_h2": null,
+      "wf_h2": 0.5,
+      "twin_minus_wf": 0.25,
+      "twin_minus_snp": 0.48,
+      "snp_minus_wf": -0.22999999999999998,
+      "gradient_holds": false
+    },
+    {
+      "trait": "iq_g",
+      "trait_class": "cognitive",
+      "twin_h2": 0.75,
+      "snp_h2": 0.2,
+      "wgs_h2": null,
+      "wf_h2": 0.45,
+      "twin_minus_wf": 0.3,
+      "twin_minus_snp": 0.55,
+      "snp_minus_wf": -0.25,
+      "gradient_holds": false
+    },
+    {
+      "trait": "iq_g_age5",
+      "trait_class": "cognitive",
+      "twin_h2": 0.2,
+      "snp_h2": null,
+      "wgs_h2": null,
+      "wf_h2": null,
+      "twin_minus_wf": null,
+      "twin_minus_snp": null,
+      "snp_minus_wf": null,
+      "gradient_holds": null
+    },
+    {
+      "trait": "iq_g_age25",
+      "trait_class": "cognitive",
+      "twin_h2": 0.79,
+      "snp_h2": 0.2,
+      "wgs_h2": null,
+      "wf_h2": 0.5,
+      "twin_minus_wf": 0.29000000000000004,
+      "twin_minus_snp": 0.5900000000000001,
+      "snp_minus_wf": -0.3,
+      "gradient_holds": false
+    },
+    {
+      "trait": "big_five_avg",
+      "trait_class": "personality",
+      "twin_h2": 0.45,
+      "snp_h2": 0.1,
+      "wgs_h2": null,
+      "wf_h2": null,
+      "twin_minus_wf": null,
+      "twin_minus_snp": 0.35,
+      "snp_minus_wf": null,
+      "gradient_holds": true
+    },
+    {
+      "trait": "neuroticism",
+      "trait_class": "personality",
+      "twin_h2": 0.45,
+      "snp_h2": 0.1,
+      "wgs_h2": null,
+      "wf_h2": null,
+      "twin_minus_wf": null,
+      "twin_minus_snp": 0.35,
+      "snp_minus_wf": null,
+      "gradient_holds": true
+    },
+    {
+      "trait": "schizophrenia",
+      "trait_class": "psychiatric",
+      "twin_h2": 0.79,
+      "snp_h2": 0.24,
+      "wgs_h2": null,
+      "wf_h2": null,
+      "twin_minus_wf": null,
+      "twin_minus_snp": 0.55,
+      "snp_minus_wf": null,
+      "gradient_holds": true
+    },
+    {
+      "trait": "bipolar",
+      "trait_class": "psychiatric",
+      "twin_h2": 0.78,
+      "snp_h2": 0.19,
+      "wgs_h2": null,
+      "wf_h2": null,
+      "twin_minus_wf": null,
+      "twin_minus_snp": 0.5900000000000001,
+      "snp_minus_wf": null,
+      "gradient_holds": true
+    },
+    {
+      "trait": "mdd",
+      "trait_class": "psychiatric",
+      "twin_h2": 0.37,
+      "snp_h2": 0.09,
+      "wgs_h2": null,
+      "wf_h2": null,
+      "twin_minus_wf": null,
+      "twin_minus_snp": 0.28,
+      "snp_minus_wf": null,
+      "gradient_holds": true
+    },
+    {
+      "trait": "adhd",
+      "trait_class": "psychiatric",
+      "twin_h2": 0.74,
+      "snp_h2": 0.14,
+      "wgs_h2": null,
+      "wf_h2": null,
+      "twin_minus_wf": null,
+      "twin_minus_snp": 0.6,
+      "snp_minus_wf": null,
+      "gradient_holds": true
+    },
+    {
+      "trait": "autism",
+      "trait_class": "psychiatric",
+      "twin_h2": 0.8,
+      "snp_h2": 0.12,
+      "wgs_h2": null,
+      "wf_h2": null,
+      "twin_minus_wf": null,
+      "twin_minus_snp": 0.68,
+      "snp_minus_wf": null,
+      "gradient_holds": true
+    },
+    {
+      "trait": "political_orientation",
+      "trait_class": "attitudes",
+      "twin_h2": 0.4,
+      "snp_h2": null,
+      "wgs_h2": null,
+      "wf_h2": null,
+      "twin_minus_wf": null,
+      "twin_minus_snp": null,
+      "snp_minus_wf": null,
+      "gradient_holds": null
+    },
+    {
+      "trait": "religiosity",
+      "trait_class": "attitudes",
+      "twin_h2": 0.38,
+      "snp_h2": null,
+      "wgs_h2": null,
+      "wf_h2": null,
+      "twin_minus_wf": null,
+      "twin_minus_snp": null,
+      "snp_minus_wf": null,
+      "gradient_holds": null
+    },
+    {
+      "trait": "risk_tolerance",
+      "trait_class": "behavioral",
+      "twin_h2": 0.3,
+      "snp_h2": 0.05,
+      "wgs_h2": null,
+      "wf_h2": null,
+      "twin_minus_wf": null,
+      "twin_minus_snp": 0.25,
+      "snp_minus_wf": null,
+      "gradient_holds": true
+    },
+    {
+      "trait": "smoking_initiation",
+      "trait_class": "behavioral",
+      "twin_h2": 0.5,
+      "snp_h2": 0.08,
+      "wgs_h2": null,
+      "wf_h2": 0.3,
+      "twin_minus_wf": 0.2,
+      "twin_minus_snp": 0.42,
+      "snp_minus_wf": -0.21999999999999997,
+      "gradient_holds": false
+    },
+    {
+      "trait": "drinking_quantity",
+      "trait_class": "behavioral",
+      "twin_h2": 0.5,
+      "snp_h2": 0.08,
+      "wgs_h2": null,
+      "wf_h2": null,
+      "twin_minus_wf": null,
+      "twin_minus_snp": 0.42,
+      "snp_minus_wf": null,
+      "gradient_holds": true
+    }
+  ],
+  "am_partition": [
+    {
+      "trait": "educational_attainment",
+      "h2_observed": 0.4,
+      "h2_source": "twin",
+      "m": 0.55,
+      "r_delta": 0.22000000000000003,
+      "v_Ad": 0.31200000000000006,
+      "v_ALD": 0.08800000000000002,
+      "ALD_share_of_h2": 0.22000000000000003
+    },
+    {
+      "trait": "height",
+      "h2_observed": 0.85,
+      "h2_source": "twin",
+      "m": 0.24,
+      "r_delta": 0.204,
+      "v_Ad": 0.6766,
+      "v_ALD": 0.17339999999999997,
+      "ALD_share_of_h2": 0.204
+    },
+    {
+      "trait": "bmi",
+      "h2_observed": 0.75,
+      "h2_source": "twin",
+      "m": 0.16,
+      "r_delta": 0.12,
+      "v_Ad": 0.66,
+      "v_ALD": 0.09,
+      "ALD_share_of_h2": 0.12
+    },
+    {
+      "trait": "iq_g",
+      "h2_observed": 0.75,
+      "h2_source": "twin",
+      "m": 0.44,
+      "r_delta": 0.33,
+      "v_Ad": 0.5025,
+      "v_ALD": 0.2475,
+      "ALD_share_of_h2": 0.33
+    },
+    {
+      "trait": "iq_g_age5",
+      "h2_observed": 0.2,
+      "h2_source": "twin",
+      "m": 0.4,
+      "r_delta": 0.08000000000000002,
+      "v_Ad": 0.184,
+      "v_ALD": 0.016000000000000004,
+      "ALD_share_of_h2": 0.08000000000000002
+    },
+    {
+      "trait": "iq_g_age25",
+      "h2_observed": 0.79,
+      "h2_source": "twin",
+      "m": 0.44,
+      "r_delta": 0.3476,
+      "v_Ad": 0.515396,
+      "v_ALD": 0.274604,
+      "ALD_share_of_h2": 0.3476
+    },
+    {
+      "trait": "big_five_avg",
+      "h2_observed": 0.45,
+      "h2_source": "twin",
+      "m": 0.13,
+      "r_delta": 0.0585,
+      "v_Ad": 0.423675,
+      "v_ALD": 0.026325,
+      "ALD_share_of_h2": 0.0585
+    },
+    {
+      "trait": "neuroticism",
+      "h2_observed": 0.45,
+      "h2_source": "twin",
+      "m": 0.11,
+      "r_delta": 0.0495,
+      "v_Ad": 0.427725,
+      "v_ALD": 0.022275000000000003,
+      "ALD_share_of_h2": 0.0495
+    },
+    {
+      "trait": "schizophrenia",
+      "h2_observed": 0.79,
+      "h2_source": "twin",
+      "m": 0.3,
+      "r_delta": 0.237,
+      "v_Ad": 0.60277,
+      "v_ALD": 0.18723,
+      "ALD_share_of_h2": 0.237
+    },
+    {
+      "trait": "bipolar",
+      "h2_observed": 0.78,
+      "h2_source": "twin",
+      "m": 0.2,
+      "r_delta": 0.15600000000000003,
+      "v_Ad": 0.65832,
+      "v_ALD": 0.12168000000000002,
+      "ALD_share_of_h2": 0.15600000000000003
+    },
+    {
+      "trait": "mdd",
+      "h2_observed": 0.37,
+      "h2_source": "twin",
+      "m": 0.15,
+      "r_delta": 0.0555,
+      "v_Ad": 0.349465,
+      "v_ALD": 0.020535,
+      "ALD_share_of_h2": 0.0555
+    },
+    {
+      "trait": "adhd",
+      "h2_observed": 0.74,
+      "h2_source": "twin",
+      "m": 0.3,
+      "r_delta": 0.222,
+      "v_Ad": 0.57572,
+      "v_ALD": 0.16428,
+      "ALD_share_of_h2": 0.222
+    },
+    {
+      "trait": "autism",
+      "h2_observed": 0.8,
+      "h2_source": "twin",
+      "m": 0.3,
+      "r_delta": 0.24,
+      "v_Ad": 0.6080000000000001,
+      "v_ALD": 0.192,
+      "ALD_share_of_h2": 0.24
+    },
+    {
+      "trait": "political_orientation",
+      "h2_observed": 0.4,
+      "h2_source": "twin",
+      "m": 0.58,
+      "r_delta": 0.23199999999999998,
+      "v_Ad": 0.30720000000000003,
+      "v_ALD": 0.0928,
+      "ALD_share_of_h2": 0.23199999999999998
+    },
+    {
+      "trait": "religiosity",
+      "h2_observed": 0.38,
+      "h2_source": "twin",
+      "m": 0.56,
+      "r_delta": 0.21280000000000002,
+      "v_Ad": 0.299136,
+      "v_ALD": 0.080864,
+      "ALD_share_of_h2": 0.21280000000000002
+    },
+    {
+      "trait": "risk_tolerance",
+      "h2_observed": 0.3,
+      "h2_source": "twin",
+      "m": 0.15,
+      "r_delta": 0.045,
+      "v_Ad": 0.2865,
+      "v_ALD": 0.0135,
+      "ALD_share_of_h2": 0.045
+    },
+    {
+      "trait": "smoking_initiation",
+      "h2_observed": 0.5,
+      "h2_source": "twin",
+      "m": 0.38,
+      "r_delta": 0.19,
+      "v_Ad": 0.405,
+      "v_ALD": 0.095,
+      "ALD_share_of_h2": 0.19
+    },
+    {
+      "trait": "drinking_quantity",
+      "h2_observed": 0.5,
+      "h2_source": "twin",
+      "m": 0.42,
+      "r_delta": 0.21,
+      "v_Ad": 0.395,
+      "v_ALD": 0.105,
+      "ALD_share_of_h2": 0.21
+    }
+  ],
+  "wilson_logistic": {
+    "h_inf": 0.8056966312798416,
+    "t_50": 9.021571768202916,
+    "k": 0.2698758881828189,
+    "rmse": 0.009157510260570188,
+    "max_abs_residual": 0.01812315886384963,
+    "anchors": [
+      {
+        "age": 5,
+        "h2_observed": 0.2,
+        "h2_predicted": 0.20343806540879128
+      },
+      {
+        "age": 7,
+        "h2_observed": 0.3,
+        "h2_predicted": 0.2956036522648083
+      },
+      {
+        "age": 10,
+        "h2_observed": 0.46,
+        "h2_predicted": 0.45572831144362647
+      },
+      {
+        "age": 12,
+        "h2_observed": 0.55,
+        "h2_predicted": 0.556565584367724
+      },
+      {
+        "age": 15,
+        "h2_observed": 0.66,
+        "h2_predicted": 0.6718603939765956
+      },
+      {
+        "age": 17,
+        "h2_observed": 0.74,
+        "h2_predicted": 0.7218768411361504
+      },
+      {
+        "age": 25,
+        "h2_observed": 0.79,
+        "h2_predicted": 0.7950398153087724
+      },
+      {
+        "age": 50,
+        "h2_observed": 0.78,
+        "h2_predicted": 0.8056839470801013
+      },
+      {
+        "age": 70,
+        "h2_observed": 0.65,
+        "h2_predicted": 0.8056965738473447
+      }
+    ],
+    "curve": [
+      {
+        "age": 1,
+        "h2": 0.08294939711088968
+      },
+      {
+        "age": 2,
+        "h2": 0.10528905751054214
+      },
+      {
+        "age": 3,
+        "h2": 0.1325418296719717
+      },
+      {
+        "age": 4,
+        "h2": 0.165185010756165
+      },
+      {
+        "age": 5,
+        "h2": 0.20343806540879128
+      },
+      {
+        "age": 6,
+        "h2": 0.24713171958562122
+      },
+      {
+        "age": 7,
+        "h2": 0.2956036522648083
+      },
+      {
+        "age": 8,
+        "h2": 0.3476652539566169
+      },
+      {
+        "age": 9,
+        "h2": 0.40167568791141434
+      },
+      {
+        "age": 10,
+        "h2": 0.45572831144362647
+      },
+      {
+        "age": 11,
+        "h2": 0.5079105701878812
+      },
+      {
+        "age": 12,
+        "h2": 0.556565584367724
+      },
+      {
+        "age": 13,
+        "h2": 0.6004828564732436
+      },
+      {
+        "age": 14,
+        "h2": 0.638977373890312
+      },
+      {
+        "age": 15,
+        "h2": 0.6718603939765956
+      },
+      {
+        "age": 16,
+        "h2": 0.6993372652754419
+      },
+      {
+        "age": 17,
+        "h2": 0.7218768411361504
+      },
+      {
+        "age": 18,
+        "h2": 0.7400879672862388
+      },
+      {
+        "age": 19,
+        "h2": 0.7546223894670424
+      },
+      {
+        "age": 20,
+        "h2": 0.7661092010366148
+      },
+      {
+        "age": 21,
+        "h2": 0.7751172681606979
+      },
+      {
+        "age": 22,
+        "h2": 0.7821385926108824
+      },
+      {
+        "age": 23,
+        "h2": 0.7875854209567547
+      },
+      {
+        "age": 24,
+        "h2": 0.791795277252325
+      },
+      {
+        "age": 25,
+        "h2": 0.7950398153087724
+      },
+      {
+        "age": 26,
+        "h2": 0.7975348928635
+      },
+      {
+        "age": 27,
+        "h2": 0.7994503881142081
+      },
+      {
+        "age": 28,
+        "h2": 0.800919024850838
+      },
+      {
+        "age": 29,
+        "h2": 0.80204392873523
+      },
+      {
+        "age": 30,
+        "h2": 0.8029048933494263
+      },
+      {
+        "age": 31,
+        "h2": 0.8035634630096625
+      },
+      {
+        "age": 32,
+        "h2": 0.8040669917212903
+      },
+      {
+        "age": 33,
+        "h2": 0.8044518479345213
+      },
+      {
+        "age": 34,
+        "h2": 0.8047459238413531
+      },
+      {
+        "age": 35,
+        "h2": 0.8049705880005205
+      },
+      {
+        "age": 36,
+        "h2": 0.8051421977624235
+      },
+      {
+        "age": 37,
+        "h2": 0.8052732666607282
+      },
+      {
+        "age": 38,
+        "h2": 0.8053733631194233
+      },
+      {
+        "age": 39,
+        "h2": 0.8054498009408586
+      },
+      {
+        "age": 40,
+        "h2": 0.8055081690170351
+      },
+      {
+        "age": 41,
+        "h2": 0.8055527372349849
+      },
+      {
+        "age": 42,
+        "h2": 0.8055867672417047
+      },
+      {
+        "age": 43,
+        "h2": 0.8056127502109444
+      },
+      {
+        "age": 44,
+        "h2": 0.8056325886670965
+      },
+      {
+        "age": 45,
+        "h2": 0.8056477354751723
+      },
+      {
+        "age": 46,
+        "h2": 0.8056593000564468
+      },
+      {
+        "age": 47,
+        "h2": 0.8056681295399026
+      },
+      {
+        "age": 48,
+        "h2": 0.805674870753397
+      },
+      {
+        "age": 49,
+        "h2": 0.8056800175722204
+      },
+      {
+        "age": 50,
+        "h2": 0.8056839470801013
+      },
+      {
+        "age": 51,
+        "h2": 0.8056869471839657
+      },
+      {
+        "age": 52,
+        "h2": 0.8056892377010385
+      },
+      {
+        "age": 53,
+        "h2": 0.8056909864605977
+      },
+      {
+        "age": 54,
+        "h2": 0.8056923215985915
+      },
+      {
+        "age": 55,
+        "h2": 0.8056933409450416
+      },
+      {
+        "age": 56,
+        "h2": 0.8056941191915391
+      },
+      {
+        "age": 57,
+        "h2": 0.805694713363708
+      },
+      {
+        "age": 58,
+        "h2": 0.8056951669994458
+      },
+      {
+        "age": 59,
+        "h2": 0.8056955133389919
+      },
+      {
+        "age": 60,
+        "h2": 0.8056957777605158
+      },
+      {
+        "age": 61,
+        "h2": 0.8056959796396558
+      },
+      {
+        "age": 62,
+        "h2": 0.8056961337692476
+      },
+      {
+        "age": 63,
+        "h2": 0.8056962514432612
+      },
+      {
+        "age": 64,
+        "h2": 0.805696341284363
+      },
+      {
+        "age": 65,
+        "h2": 0.8056964098757439
+      },
+      {
+        "age": 66,
+        "h2": 0.8056964622435042
+      },
+      {
+        "age": 67,
+        "h2": 0.8056965022249453
+      },
+      {
+        "age": 68,
+        "h2": 0.8056965327497484
+      },
+      {
+        "age": 69,
+        "h2": 0.805696556054651
+      },
+      {
+        "age": 70,
+        "h2": 0.8056965738473447
+      },
+      {
+        "age": 71,
+        "h2": 0.8056965874316087
+      },
+      {
+        "age": 72,
+        "h2": 0.8056965978028446
+      },
+      {
+        "age": 73,
+        "h2": 0.8056966057210164
+      },
+      {
+        "age": 74,
+        "h2": 0.8056966117663368
+      },
+      {
+        "age": 75,
+        "h2": 0.805696616381783
+      },
+      {
+        "age": 76,
+        "h2": 0.8056966199055576
+      },
+      {
+        "age": 77,
+        "h2": 0.8056966225958687
+      },
+      {
+        "age": 78,
+        "h2": 0.8056966246498519
+      },
+      {
+        "age": 79,
+        "h2": 0.8056966262180153
+      },
+      {
+        "age": 80,
+        "h2": 0.8056966274152676
+      }
+    ]
+  },
+  "sex_differences": [
+    {
+      "trait_panel": "single_math_performance",
+      "n_dimensions": 1,
+      "d_avg_univariate": 0.05,
+      "rho_avg": 0.0,
+      "D_observed": 0.05,
+      "D_disattenuated": 0.05,
+      "n_sample": 1286350.0,
+      "source": "Hyde_2008",
+      "notes": "Hyde 2008 cross-state TIMSS \u2014 small or trivial univariate gap",
+      "D_equicorrelated": 0.05,
+      "overlap_pct_equicorrelated": 98.00549636095239,
+      "overlap_pct_disattenuated": 98.00549636095239
+    },
+    {
+      "trait_panel": "single_verbal_performance",
+      "n_dimensions": 1,
+      "d_avg_univariate": -0.1,
+      "rho_avg": 0.0,
+      "D_observed": 0.1,
+      "D_disattenuated": 0.1,
+      "n_sample": null,
+      "source": "Hyde_2005_meta",
+      "notes": "Females slightly higher",
+      "D_equicorrelated": 0.1,
+      "overlap_pct_equicorrelated": 96.01223883232551,
+      "overlap_pct_disattenuated": 96.01223883232551
+    },
+    {
+      "trait_panel": "people_things_interest",
+      "n_dimensions": 1,
+      "d_avg_univariate": 0.93,
+      "rho_avg": 0.0,
+      "D_observed": 0.93,
+      "D_disattenuated": 0.93,
+      "n_sample": 503127.0,
+      "source": "Su_2009_meta",
+      "notes": "Largest documented univariate sex difference (career interests)",
+      "D_equicorrelated": 0.93,
+      "overlap_pct_equicorrelated": 64.1931456594244,
+      "overlap_pct_disattenuated": 64.1931456594244
+    },
+    {
+      "trait_panel": "big_five_5dim",
+      "n_dimensions": 5,
+      "d_avg_univariate": 0.4,
+      "rho_avg": 0.2,
+      "D_observed": 0.86,
+      "D_disattenuated": 1.1,
+      "n_sample": null,
+      "source": "Schmitt_2008_BSRI",
+      "notes": "Across N/E/A/C/O \u2014 moderate D",
+      "D_equicorrelated": 0.6666666666666667,
+      "overlap_pct_equicorrelated": 73.88826803635273,
+      "overlap_pct_disattenuated": 58.231937357669274
+    },
+    {
+      "trait_panel": "sixteenpf_observed",
+      "n_dimensions": 15,
+      "d_avg_univariate": 0.5,
+      "rho_avg": 0.18,
+      "D_observed": 0.99,
+      "D_disattenuated": 2.71,
+      "n_sample": 10261.0,
+      "source": "Del_Giudice_2012",
+      "notes": "Equicorrelated approx \u2248 1.0; latent-variable + disattenuation = 2.71",
+      "D_equicorrelated": 1.0321535298059632,
+      "overlap_pct_equicorrelated": 60.580079531779475,
+      "overlap_pct_disattenuated": 17.541755702897234
+    },
+    {
+      "trait_panel": "sixteenpf_replication",
+      "n_dimensions": 15,
+      "d_avg_univariate": 0.5,
+      "rho_avg": 0.2,
+      "D_observed": 0.99,
+      "D_disattenuated": 2.1,
+      "n_sample": 31637.0,
+      "source": "Kaiser_2020",
+      "notes": "Replication on open online dataset",
+      "D_equicorrelated": 0.9933992677987828,
+      "overlap_pct_equicorrelated": 61.94008806434697,
+      "overlap_pct_disattenuated": 29.371811275179184
+    },
+    {
+      "trait_panel": "brain_volume_aggregate",
+      "n_dimensions": 7,
+      "d_avg_univariate": 0.5,
+      "rho_avg": 0.3,
+      "D_observed": 0.79,
+      "D_disattenuated": 1.2,
+      "n_sample": 2750.0,
+      "source": "Ritchie_2018",
+      "notes": "Multi-region brain morphology",
+      "D_equicorrelated": 0.7905694150420949,
+      "overlap_pct_equicorrelated": 69.26327840419602,
+      "overlap_pct_disattenuated": 54.850623550014724
+    }
+  ],
+  "pgs_portability": {
+    "slope": -2.453011317704124,
+    "intercept": 0.9795624494745352,
+    "r2": 0.9530037301243145,
+    "pearson_r": -0.9762190994465916,
+    "n_points": 13,
+    "ding_2023_reference_pearson": -0.95
+  },
+  "border_xam": {
+    "border_2022_R2": 0.7432,
+    "border_2022_R2_ci_low": 0.6702,
+    "border_2022_R2_ci_high": 0.8162,
+    "n_trait_pairs_significant": 132,
+    "uk_biobank_spousal_pairs": 40697,
+    "psychiatric_avg_xam_share_after_5_generations": 0.29,
+    "examples": [
+      {
+        "pair": "anxiety \u00d7 MDD",
+        "xam_share_of_rg": 0.21,
+        "ci": [
+          0.17,
+          0.25
+        ]
+      },
+      {
+        "pair": "AUD \u00d7 schizophrenia",
+        "xam_share_of_rg": 0.83,
+        "ci": [
+          0.59,
+          1.24
+        ]
+      }
+    ],
+    "interpretation": "On average, ~29% of reported psychiatric cross-disorder genetic correlation is consistent with cross-trait assortative mating alone. For some pairs (AUD \u00d7 SCZ) it accounts for nearly all of the reported rg; for others (anxiety \u00d7 MDD) it accounts for ~20%. The model's V(A_LD) term is the within-trait analogue of this between-trait phenomenon."
+  },
+  "genetic_nurture": [
+    {
+      "trait": "educational_attainment",
+      "beta_ratio": 0.299,
+      "v_Ad": 0.15,
+      "v_Ai": 0.01341015,
+      "cov_term": 0.024667500000000002,
+      "v_Ai_plus_cov": 0.038077650000000005,
+      "v_Ai_share_of_h2": 0.033525374999999996
+    },
+    {
+      "trait": "height",
+      "beta_ratio": 0.05,
+      "v_Ad": 0.78,
+      "v_Ai": 0.0019500000000000003,
+      "cov_term": 0.00936,
+      "v_Ai_plus_cov": 0.01131,
+      "v_Ai_share_of_h2": 0.002294117647058824
+    },
+    {
+      "trait": "bmi",
+      "beta_ratio": 0.07,
+      "v_Ad": 0.5,
+      "v_Ai": 0.0024500000000000004,
+      "cov_term": 0.005600000000000001,
+      "v_Ai_plus_cov": 0.008050000000000002,
+      "v_Ai_share_of_h2": 0.0032666666666666673
+    },
+    {
+      "trait": "iq_g",
+      "beta_ratio": 0.45,
+      "v_Ad": 0.45,
+      "v_Ai": 0.09112500000000001,
+      "cov_term": 0.08910000000000001,
+      "v_Ai_plus_cov": 0.18022500000000002,
+      "v_Ai_share_of_h2": 0.12150000000000001
+    },
+    {
+      "trait": "iq_g_age5",
+      "beta_ratio": 0.4,
+      "v_Ad": 0.184,
+      "v_Ai": 0.029440000000000004,
+      "cov_term": 0.029440000000000004,
+      "v_Ai_plus_cov": 0.05888000000000001,
+      "v_Ai_share_of_h2": 0.14720000000000003
+    },
+    {
+      "trait": "iq_g_age25",
+      "beta_ratio": 0.4,
+      "v_Ad": 0.5,
+      "v_Ai": 0.08000000000000002,
+      "cov_term": 0.08800000000000001,
+      "v_Ai_plus_cov": 0.16800000000000004,
+      "v_Ai_share_of_h2": 0.10126582278481014
+    },
+    {
+      "trait": "big_five_avg",
+      "beta_ratio": 0.1,
+      "v_Ad": 0.423675,
+      "v_Ai": 0.004236750000000001,
+      "cov_term": 0.005507775000000001,
+      "v_Ai_plus_cov": 0.009744525000000002,
+      "v_Ai_share_of_h2": 0.009415000000000001
+    },
+    {
+      "trait": "neuroticism",
+      "beta_ratio": 0.1,
+      "v_Ad": 0.427725,
+      "v_Ai": 0.004277250000000001,
+      "cov_term": 0.004704975000000001,
+      "v_Ai_plus_cov": 0.008982225000000002,
+      "v_Ai_share_of_h2": 0.009505000000000001
+    },
+    {
+      "trait": "schizophrenia",
+      "beta_ratio": 0.15,
+      "v_Ad": 0.60277,
+      "v_Ai": 0.013562325,
+      "cov_term": 0.02712465,
+      "v_Ai_plus_cov": 0.040686975,
+      "v_Ai_share_of_h2": 0.0171675
+    },
+    {
+      "trait": "bipolar",
+      "beta_ratio": 0.15,
+      "v_Ad": 0.65832,
+      "v_Ai": 0.0148122,
+      "cov_term": 0.0197496,
+      "v_Ai_plus_cov": 0.0345618,
+      "v_Ai_share_of_h2": 0.01899
+    },
+    {
+      "trait": "mdd",
+      "beta_ratio": 0.2,
+      "v_Ad": 0.349465,
+      "v_Ai": 0.013978600000000004,
+      "cov_term": 0.01048395,
+      "v_Ai_plus_cov": 0.024462550000000007,
+      "v_Ai_share_of_h2": 0.037780000000000015
+    },
+    {
+      "trait": "adhd",
+      "beta_ratio": 0.2,
+      "v_Ad": 0.57572,
+      "v_Ai": 0.023028800000000006,
+      "cov_term": 0.034543199999999996,
+      "v_Ai_plus_cov": 0.057572,
+      "v_Ai_share_of_h2": 0.03112000000000001
+    },
+    {
+      "trait": "autism",
+      "beta_ratio": 0.1,
+      "v_Ad": 0.6080000000000001,
+      "v_Ai": 0.006080000000000002,
+      "cov_term": 0.018240000000000003,
+      "v_Ai_plus_cov": 0.024320000000000005,
+      "v_Ai_share_of_h2": 0.007600000000000003
+    },
+    {
+      "trait": "smoking_initiation",
+      "beta_ratio": 0.2,
+      "v_Ad": 0.3,
+      "v_Ai": 0.012000000000000002,
+      "cov_term": 0.022800000000000004,
+      "v_Ai_plus_cov": 0.034800000000000005,
+      "v_Ai_share_of_h2": 0.024000000000000004
+    }
+  ],
+  "environmental_effects": {
+    "n_exposures": 10,
+    "rows": [
+      {
+        "exposure": "lead_blood_1_to_10_ugdl",
+        "outcome": "iq",
+        "effect_size": -6.2,
+        "unit": "IQ_pts",
+        "ci_low": -8.6,
+        "ci_high": -3.8,
+        "design": "pooled_longitudinal",
+        "causal_evidence": "strong",
+        "source": "Lanphear_2005",
+        "n": "1333",
+        "notes": "International pooled analysis 7 cohorts; steeper slope at low concentrations"
+      },
+      {
+        "exposure": "schooling_per_year",
+        "outcome": "iq",
+        "effect_size": 3.4,
+        "unit": "IQ_pts",
+        "ci_low": 1.0,
+        "ci_high": 5.0,
+        "design": "quasi_experimental_meta",
+        "causal_evidence": "strong",
+        "source": "Ritchie_Tucker_Drob_2018",
+        "n": "600000",
+        "notes": "Meta-analysis 142 effect sizes / 42 datasets; persists into old age; instrumental-variable + regression-discontinuity + control-prior-IQ designs all converge"
+      },
+      {
+        "exposure": "iodine_severe_deficiency",
+        "outcome": "iq",
+        "effect_size": -10.0,
+        "unit": "IQ_pts",
+        "ci_low": -12.0,
+        "ci_high": -8.0,
+        "design": "observational_RCT",
+        "causal_evidence": "strong",
+        "source": "Bougma_2013",
+        "n": "N_A",
+        "notes": "Severe deficiency = ~10 pt cost; supplementation recovers ~8.7 pts"
+      },
+      {
+        "exposure": "prenatal_alcohol_FAS",
+        "outcome": "iq",
+        "effect_size": -30.0,
+        "unit": "IQ_pts",
+        "ci_low": -40.0,
+        "ci_high": -20.0,
+        "design": "observational",
+        "causal_evidence": "strong",
+        "source": "Streissguth_2004",
+        "n": "N_A",
+        "notes": "Mean IQ ~70 in full FAS; Mendelian-randomization confirms causation; threshold effect"
+      },
+      {
+        "exposure": "PM25_per_ugm3",
+        "outcome": "iq",
+        "effect_size": -0.27,
+        "unit": "IQ_pts",
+        "ci_low": -0.5,
+        "ci_high": -0.05,
+        "design": "observational_meta",
+        "causal_evidence": "moderate",
+        "source": "Aghaei_2024",
+        "n": "N_A",
+        "notes": "~25 papers; smaller per-unit than lead but exposure widespread"
+      },
+      {
+        "exposure": "severe_psychosocial_deprivation",
+        "outcome": "iq",
+        "effect_size": -15.0,
+        "unit": "IQ_pts",
+        "ci_low": -20.0,
+        "ci_high": -10.0,
+        "design": "natural_experiment",
+        "causal_evidence": "strong",
+        "source": "Nelson_BEIP_2007",
+        "n": "136",
+        "notes": "Bucharest Early Intervention Project; institutional vs foster vs control; recovery if intervention before ~24mo"
+      },
+      {
+        "exposure": "breastfeeding_vs_formula",
+        "outcome": "iq",
+        "effect_size": 3.2,
+        "unit": "IQ_pts",
+        "ci_low": 1.5,
+        "ci_high": 5.0,
+        "design": "RCT_PROBIT",
+        "causal_evidence": "strong",
+        "source": "Kramer_PROBIT_2008",
+        "n": "17046",
+        "notes": "PROBIT cluster-RCT in Belarus; effect persists to age 6.5; smaller effect in MR-confirmed studies"
+      },
+      {
+        "exposure": "adoption_high_to_low_SES",
+        "outcome": "iq",
+        "effect_size": -12.0,
+        "unit": "IQ_pts",
+        "ci_low": -15.0,
+        "ci_high": -8.0,
+        "design": "natural_experiment",
+        "causal_evidence": "strong",
+        "source": "Capron_Duyme_1996",
+        "n": "38",
+        "notes": "Cross-fostered French adoptees; SES gap 12 pts in adopted children"
+      },
+      {
+        "exposure": "malnutrition_severe_chronic",
+        "outcome": "iq",
+        "effect_size": -15.0,
+        "unit": "IQ_pts",
+        "ci_low": -20.0,
+        "ci_high": -10.0,
+        "design": "observational",
+        "causal_evidence": "strong",
+        "source": "Grantham_McGregor_2007",
+        "n": "N_A",
+        "notes": "Stunting + chronic protein-energy deficiency; reversible if intervention <2yr"
+      },
+      {
+        "exposure": "parenting_quality_within_normal",
+        "outcome": "iq",
+        "effect_size": 1.0,
+        "unit": "IQ_pts",
+        "ci_low": -1.0,
+        "ci_high": 3.0,
+        "design": "within_family_twin",
+        "causal_evidence": "weak",
+        "source": "Plomin_Daniels_1987_meta",
+        "n": "N_A",
+        "notes": "Within Western normal range; small or zero adult effect after C controlled; this is the famous null"
+      }
+    ],
+    "schooling": 3.4,
+    "lead": -6.2,
+    "largest_negative": -30.0
+  },
+  "headlines": {
+    "H1_method_gradient": {
+      "claim": "twin h\u00b2 \u2265 SNP h\u00b2 \u2265 within-family h\u00b2 holds per-trait",
+      "traits_with_observed_data": 15,
+      "traits_where_holds": 9,
+      "verdict": "mixed"
+    },
+    "H2_AM_partition": {
+      "claim": "V(A_LD) = m\u00b7h\u00b2 accounts for 10-25% of observed h\u00b2 in AM-strong traits",
+      "EA_ALD_estimate": 0.08800000000000002,
+      "height_ALD_estimate": 0.17339999999999997,
+      "verdict": "supported"
+    },
+    "H3_wilson_logistic": {
+      "claim": "Logistic h\u00b2(t) fits Bouchard 2013 anchors within ~3pp",
+      "max_residual_pp": 1.812315886384963,
+      "fitted_h_inf": 0.8056966312798416,
+      "fitted_t_50": 9.021571768202916,
+      "fitted_k": 0.2698758881828189,
+      "verdict": "supported"
+    },
+    "H4_multivariate_D_gap": {
+      "claim": "Equicorrelated D undershoots disattenuated D by ~2x for 16PF panel",
+      "D_equicorrelated_observed": 1.0321535298059632,
+      "D_disattenuated_latent": 2.71,
+      "ratio_disattenuated_over_observed": 2.6255783870733445,
+      "verdict": "supported_with_caveat"
+    },
+    "H5_PGS_portability": {
+      "claim": "Pearson r between genetic distance and PGS R\u00b2 is strongly negative",
+      "Ding_2023_reported_r": -0.95,
+      "replicated_pearson_on_curated_panel": -0.9762190994465916,
+      "verdict": "supported"
+    },
+    "H6_xAM_inflation": {
+      "claim": "Phenotypic cross-mate correlations explain ~74% of variance in reported psychiatric cross-disorder genetic correlation; the xAM-alone projection \u03b3\u0302 averages 0.29 across 6 disorders \u00d7 5 generations (range 0.21 anxiety\u00d7MDD to 0.83 AUD\u00d7SCZ). \u03b3\u0302 is the ratio of xAM-alone-implied rg to empirical rg \u2014 values near 1 are consistent with xAM accounting for the entire correlation; values near 0 require additional shared biology.",
+      "border_2022_R2": 0.7432,
+      "psychiatric_avg_share": 0.29,
+      "verdict": "supported"
+    },
+    "H7_environmental_effects": {
+      "claim": "The model's V(E_m) bucket is non-empty: published causal effect sizes for measured environments",
+      "n_exposures": 10,
+      "largest_negative_effect_iq_pts": -30.0,
+      "schooling_effect_per_year": 3.4,
+      "lead_effect_1_to_10": -6.2,
+      "verdict": "supported"
+    }
+  }
+}

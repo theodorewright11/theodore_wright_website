@@ -1,0 +1,10 @@
+age,h2,c2,e2,source,notes
+5,0.20,0.55,0.25,Bouchard_2013,Early childhood twin studies
+7,0.30,0.45,0.25,Bouchard_2013,
+10,0.46,0.30,0.24,Bouchard_2013,
+12,0.55,0.20,0.25,Bouchard_2013,
+15,0.66,0.10,0.24,Bouchard_2013,
+17,0.74,0.05,0.21,Bouchard_2013,
+25,0.79,0.05,0.16,Bouchard_2013,Adult asymptote
+50,0.78,0.05,0.17,Bouchard_2013,Plateau
+70,0.65,0.05,0.30,Briley_Tucker_Drob_2013,Late-life decline (cognitive aging)

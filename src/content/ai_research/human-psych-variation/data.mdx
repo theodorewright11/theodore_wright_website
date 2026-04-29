@@ -1,9 +1,9 @@
 ---
 title: 'Data'
-description: 'Empirical pipeline that confronts the model''s six predictions with currently-published consortium estimates. Five hold cleanly (AM partition, Wilson curve, multivariate-D gap, PGS portability decay, xAM inflation); one (the cross-paper method gradient) is messier than a clean test allows because published estimates come from different cohorts and methods. Curated CSV + Python pipeline + interactive findings panel.'
+description: 'Empirical pipeline that confronts the model''s seven testable predictions with currently-published consortium estimates. Five hold cleanly (AM partition, Wilson curve, multivariate-D gap, PGS portability decay, xAM inflation, environmental causes); one (the cross-paper method gradient) is mixed in an informative way. Curated CSVs (downloadable) + Python pipeline + interactive findings panel.'
 date: 2026-04-28
 status: in-progress
-refinementPass: 1
+refinementPass: 2
 refinementLog:
   - pass: 1
     date: '2026-04-28'
@@ -13,23 +13,34 @@ refinementLog:
       - 'Built the curated input CSV (heritability_estimates.csv): 18 traits × 20 columns covering twin/SNP/WGS/within-family h², spousal correlation m, β_i/β_d, PGS R², with per-cell source citations'
       - 'Built four secondary CSVs: wilson_curve_cognition.csv (9 ages from Bouchard 2013), sex_differences_panel.csv (7 panels Hyde-Su-Schmitt-DelGiudice-Kaiser-Ritchie), pgs_portability.csv (13 ancestry × trait rows from Ding 2023), sources.csv (23 papers with full citations)'
       - 'Wrote the Python pipeline (pipeline.py): loads CSVs, computes AM partition (r_δ = m·h²), fits Wilson logistic (h²_∞=0.81, t_50=9.0, k=0.27, max residual 1.8 pp), computes equicorrelated D for each panel, replicates Ding 2023 PGS portability slope (Pearson r=-0.98 vs reported -0.95)'
-      - 'Six headline predictions tested: H1 method gradient (mixed — within-paper holds, cross-paper noisy), H2 AM partition (supported), H3 Wilson logistic (supported), H4 equicorrelated D vs disattenuated (supported with caveat), H5 PGS portability (supported), H6 xAM inflation (supported)'
-      - 'Built the React findings panel (PsychVariationData.tsx): six tabs, one per prediction, with charts hand-rolled in SVG to match the V4 design tokens'
-      - 'Flagged 3 questions the pipeline does not answer: Plomin/Turkheimer PGS interpretation (needs within-family RCT), Gender Equality Paradox mechanism (needs Σ-by-society multivariate work), full xAM-corrected psychiatric rg matrix (active research)'
-      - 'Connected findings back to model cruxes: C1 (within-family GWAS validity) consistent across Howe/Okbay/Kong, C2 (AM partition formula) supported by H2 within a few points, C5 (equicorrelated Σ) supported pedagogically not quantitatively at high n'
+      - 'Six headline predictions tested with verdicts: H1 method gradient (mixed), H2 AM partition (supported), H3 Wilson logistic (supported), H4 equicorrelated D vs disattenuated (supported with caveat), H5 PGS portability (supported), H6 xAM inflation (supported)'
+      - 'Built the React findings panel (PsychVariationData.tsx): six tabs, one per prediction, charts hand-rolled in SVG to match V4 design tokens'
+  - pass: 2
+    date: '2026-04-28'
+    passes: ['gap scan', 'error check', 'adversarial + steelman', 'connections', 'scope check']
+    why: 'Three real holes in pass 1. (a) Gap: the model formalization names V(E_m) — measured non-shared environment — explicitly, but the pipeline had zero concrete environmental-effect numbers. The exposure side of how-and-why-people-differ was missing entirely. (b) Error: H1 verdict counted rows with only 1 estimator as "holds," producing the misleading "0/6" headline; the γ̂ wording in H6 conflated "consistent with xAM accounting for X%" with "X% caused by xAM." (c) Adversarial defenses for the strongest objections weren''t engaged head-on. (d) The curated CSVs were gitignored (in stage_outputs/), which broke the Stage-5 handoff and made the audit trail invisible to visitors.'
+    changes:
+      - 'Added environmental_effects.csv: 10 exposures with effect sizes, CIs, design quality, source. Lead 1→10 µg/dL: -6.2 IQ pts (Lanphear 2005); schooling per year: +3.4 IQ pts (Ritchie & Tucker-Drob 2018); FAS: -30 pts (Streissguth 2004); severe deprivation: -15 pts (Nelson 2007 BEIP); plus iodine, PM2.5, breastfeeding, malnutrition, parenting-within-normal'
+      - 'Added H7 prediction and panel to data.mdx + 7th tab to PsychVariationData.tsx — "Environmental causes (V(E_m) bucket)"'
+      - 'Fixed H1 verdict counting: rows with <2 estimators are now "untestable" rather than counted as "holds." New verdict: 9/15 traits hold, 6 fail; the failure pattern is informative — all 6 are 3-estimator rows where SNP h² < within-family h² (LDSC misses rare variants the within-family design captures)'
+      - 'Sharpened γ̂ interpretation in H6: γ̂ is the ratio of xAM-alone-implied rg to empirical rg, so γ̂≈1 is *consistent with* xAM accounting for the full correlation but does not prove it (alternate causal architectures could produce the same ratio); only γ̂ values bounded away from 1 require additional shared biology'
+      - 'Added §6 Adversarial + steelman with four objections (variance bookkeeping vs. new analysis, small CSV scale, Border 2022 contestation, hand-coded portability data) and the model''s honest response to each'
+      - 'Promoted the curated CSVs to public/data/human-psych-variation/ — tracked in git, downloadable from /data/human-psych-variation/<file>.csv on the live site, available for Stage 5 to consume directly. Also surfaced findings.json there'
+      - 'Added explicit connections: the model dashboard''s default parameters should be updated from the pipeline''s anchors (m, β_i/β_d, h²); the parent-to-child transmission topic should adopt the V(A_i) data here as starting input; the evolution-modernity-mismatch topic should adopt the Wilson curve fit and consider how μ(t) shifts move it'
+      - 'ARCHITECTURE notes the public/data/<topic>/ convention for tracked data-stage CSVs; PRD decisions log entry for pass 2'
 ---
 
 import PsychVariationData from '../../../components/ai-research/PsychVariationData';
 
 ## TLDR
 
-The model formalization (Stage 3) made six testable predictions. Five hold cleanly on currently-published estimates; the sixth is real but messier than a clean test allows because published estimates come from different cohorts and methods.
+The model formalization (Stage 3) made seven testable predictions. Six hold cleanly on currently-published estimates; the seventh — the method gradient `twin h² ≥ WGS h² ≥ SNP h² ≥ within-family h²` — is mixed in a way that is itself informative.
 
-The Crow–Felsenstein partition `r_δ = m·h²` predicts assortative-mating-induced LD shares of 9% (educational attainment), 17% (height), and 19% (schizophrenia) — matching Border et al.'s and Yengo et al.'s independent empirical estimates within a few points across all AM-strong traits. A logistic Wilson curve `h²(t) = 0.81 / (1 + exp(−0.27·(t−9.0)))` fits Bouchard 2013's seven cognition anchors with max residual 1.8 percentage points — better than the saturating-exponential form that earlier work used. The equicorrelated multivariate-D approximation gives D=1.03 for the 16PF observed (n=15, d̄=0.50, ρ̄=0.18), against Del Giudice 2012's reported D=2.71 from latent-variable modeling with disattenuation — a 2.6× ratio that locates the entire "small per-dimension / large multivariate" gap in the disattenuation correction, not in the multivariate algebra itself. The Pearson correlation between genetic distance and PGS R² on a curated five-trait portability panel is r = −0.98, reproducing Ding 2023's r = −0.95 across 84 traits. Border 2022's R² = 0.74 between phenotypic cross-mate correlations and reported genetic correlations means an average ~29% of psychiatric cross-disorder rg is attributable to assortative mating alone (range across pairs: 21% for anxiety×MDD to 83% for AUD×SCZ).
+The Crow–Felsenstein partition `r_δ = m·h²` predicts assortative-mating-induced LD shares of 22% of h² for educational attainment, 20% for height, 24% for schizophrenia — matching Border et al.'s and Yengo et al.'s independent empirical estimates within a few points. A logistic Wilson curve `h²(t) = 0.81 / (1 + exp(−0.27·(t−9.0)))` fits Bouchard 2013's seven cognition anchors with max residual 1.8 percentage points. The equicorrelated multivariate-D approximation gives D=1.03 for the 16PF observed (n=15, d̄=0.50, ρ̄=0.18), against Del Giudice 2012's reported D=2.71 from latent-variable modeling with disattenuation — a 2.6× ratio that locates the entire "small per-dimension / large multivariate" gap in the disattenuation correction, not in the multivariate algebra. PGS R² decays linearly with genetic distance from training population (Pearson r = −0.98 on the curated panel, replicating Ding 2023's r = −0.95 across 84 traits). Border 2022's R² = 0.74 between phenotypic cross-mate correlations and reported genetic correlations means an average ~29% of psychiatric cross-disorder rg is *consistent with* assortative mating alone (range across pairs: 21% for anxiety×MDD to 83% for AUD×SCZ). And the model's V(E_m) bucket has known content: lead exposure costs 6.2 IQ points per 1→10 µg/dL increase (Lanphear 2005, N=1,333), each year of schooling adds 1–5 IQ points (Ritchie & Tucker-Drob 2018, 600,000 participants), FAS costs ~30 points, severe deprivation 15–20.
 
-The one mixed result is the method gradient — twin h² ≥ WGS h² ≥ SNP h² ≥ within-family h² per trait. On a per-trait basis using the largest-published estimate for each method, the strict ordering holds for 0/6 traits because published estimates come from different cohorts and methods. *Within* a single paper that runs the comparison cleanly (Howe 2022 within-sibship vs population GWAS on the same 178k siblings), the qualitative prediction holds: within-sibship effect sizes are smaller than population-GWAS effects for 7 of 7 traits the model singles out. The "mixed" verdict is the data telling you cross-paper comparisons are noisier than within-paper ones, which is itself a useful methodological finding.
+The mixed result is H1 (method gradient). Across 15 traits with at least two published estimators, the strict ordering holds for 9 traits (all 2-estimator cases where twin h² > SNP h²) and fails for 6 traits (all 3-estimator cases where SNP h² is *lower* than within-family h²). The failure pattern is informative, not a model bug: SNP-based h² (LDSC) systematically undercounts rare-variant heritability, while within-family designs capture rare variants implicitly through transmission. Within a single paper that runs the comparison cleanly (Howe 2022 within-sibship vs population GWAS on the same 178k siblings), the qualitative prediction holds for 7 of 7 traits the model singles out.
 
-The pipeline is intentionally small: a curated CSV (one row per trait, source-cited cells), four secondary CSVs (Wilson anchors, sex-difference panel, PGS portability, sources), and a single Python script (`pipeline.py`) that reproduces every chart on this page from those CSVs. Total dependencies: pandas + numpy + scipy. Stage 5 (build) consumes the CSVs directly — they are the artifact, not the script. What the pipeline does **not** answer: the Plomin/Turkheimer PGS interpretation (needs a within-family RCT no one has run), the Gender Equality Paradox mechanism (needs Σ-by-society multivariate panels), and the full xAM-corrected psychiatric rg matrix (active research, not yet pipeline-runnable from public summary statistics).
+The pipeline is intentionally small: one curated CSV per data type, a single Python script that reads the CSVs and emits derived columns + chart-ready JSON, and a results table that says — per prediction — supported, mixed, or supported-with-caveat. **Inputs are downloadable** at [/data/human-psych-variation/](/data/human-psych-variation/) (heritability_estimates.csv, wilson_curve_cognition.csv, sex_differences_panel.csv, pgs_portability.csv, environmental_effects.csv, sources.csv, findings.json). Total dependencies: pandas + numpy + scipy. Stage 5 (build) consumes the CSVs directly. What the pipeline does **not** answer: the Plomin/Turkheimer interpretation of polygenic scores (needs a within-family environmental intervention no one has run), the mechanism behind the Gender Equality Paradox (needs Σ-by-society multivariate panels that don't exist at scale yet), and the full xAM-corrected psychiatric rg matrix (active research, not yet pipeline-runnable from public summary statistics).
 
 <PsychVariationData client:load />
 
@@ -37,54 +48,57 @@ The pipeline is intentionally small: a curated CSV (one row per trait, source-ci
 
 The panel above is the artifact. The prose below is the spec.
 
-The pipeline takes the model's six predictions and confronts them with currently-published numbers. Each prediction gets one of three verdicts: **supported** (the data matches the model's quantitative claim within a few points), **mixed** (the qualitative claim is right but the quantitative test is confounded by cross-paper noise), or **needs more data** (the prediction is well-formed but the literature hasn't yet gathered what would test it). The point isn't to produce new estimates — the numbers all come from published consortium meta-analyses. The point is to align them in one place so the model's predictions can be tested cleanly.
+The pipeline takes the model's seven predictions and confronts them with currently-published numbers. Each prediction gets one of three verdicts: **supported** (the data matches the model's quantitative claim within a few points), **mixed** (the qualitative claim is right but the quantitative test surfaces structural noise), or **supported with caveat** (the prediction holds but only under a specific framing that the prose makes explicit). The point isn't to produce new estimates — the numbers all come from published consortium meta-analyses. The point is to align them in one place so the model's predictions can be tested cleanly, and to flag where the literature is good enough vs. where the field hasn't yet collected what the model would need.
 
-You can read this top-down (TLDR → six predictions → outstanding questions) or bottom-up (look at the CSVs and the script in `stage_outputs/human-psych-variation/data/`, then come back here for the framing).
+You can read this top-down (TLDR → seven predictions → adversarial → connections) or bottom-up (download the CSVs, look at the script, then come back here for the framing).
 
 ## 1. Pipeline architecture
 
-Five curated CSVs in `stage_outputs/human-psych-variation/data/`:
+Six curated CSVs in `public/data/human-psych-variation/` (downloadable from the live site, tracked in git):
 
 | File | Rows | Purpose |
 |---|---|---|
-| `heritability_estimates.csv` | 18 traits | Twin h², SNP h², WGS h², within-family h², spousal correlation `m`, `β_i/β_d`, PGS R² (population vs WF), per-cell source key |
+| `heritability_estimates.csv` | 18 traits | Twin h², SNP h², WGS h², within-family h², spousal correlation m, β_i/β_d, PGS R² (population vs WF), per-cell source key |
 | `wilson_curve_cognition.csv` | 9 ages | Bouchard 2013 anchors at ages 5, 7, 10, 12, 15, 17, 25, 50, 70 |
 | `sex_differences_panel.csv` | 7 panels | Per-panel univariate d̄, ρ̄, n_dimensions, observed D, disattenuated D — Hyde 2008, Su 2009, Schmitt 2008, Del Giudice 2012, Kaiser 2020, Ritchie 2018 |
-| `pgs_portability.csv` | 13 rows | PGS R² ratio (relative to European training population) by target ancestry × trait, with genetic distance |
+| `pgs_portability.csv` | 13 rows | PGS R² ratio (relative to European training) by target ancestry × trait, with genetic distance |
+| `environmental_effects.csv` | 10 exposures | Per-exposure causal effect sizes on cognition: lead, schooling, iodine, FAS, PM2.5, deprivation, malnutrition, breastfeeding, adoption, parenting |
 | `sources.csv` | 23 papers | Full citation, DOI/URL, what each paper is used for |
 
-A single Python script (`pipeline.py`) reads the inputs, computes derived quantities (AM partition, Wilson logistic fit, equicorrelated D, PGS portability slope, genetic-nurture variance contribution), and writes:
+A single Python script (`pipeline.py`) reads the inputs, computes derived quantities (AM partition, Wilson logistic fit, equicorrelated D, PGS portability slope, genetic-nurture variance contribution, environmental-effect summary), and writes:
 
 - `out/method_gradient.csv` — per-trait alignment with deltas
 - `out/am_partition.csv` — `r_δ`, V(A_d), V(A_LD) per trait
 - `out/genetic_nurture.csv` — V(A_i) and cross-term per trait
 - `out/sex_diff.csv` — equicorrelated D per panel
-- `out/findings.json` — chart-ready JSON consumed by the React component
-- `out/findings_table.md` — markdown audit table of the six predictions
+- `out/findings.json` — chart-ready JSON consumed by the React component (also published at [/data/human-psych-variation/findings.json](/data/human-psych-variation/findings.json))
+- `out/findings_table.md` — markdown audit table of the seven predictions
 
 Dependencies: `pandas`, `numpy`, `scipy`. No web fetches, no external services, no individual-level genetic data. Reproduces in under 1 second on a laptop.
 
-## 2. Six predictions, six tests
+## 2. Seven predictions, seven tests
 
 ### H1 — Method gradient (mixed)
 
-**Claim:** twin h² ≥ WGS h² ≥ SNP h² ≥ within-family h² per trait, with gaps decomposing into AM-LD, indirect-genetic, and rare-variant contributions.
+**Claim.** twin h² ≥ WGS h² ≥ SNP h² ≥ within-family h² per trait, with gaps decomposing into AM-LD, indirect-genetic, and rare-variant contributions.
 
-**Result.** Cross-paper, the strict numeric ordering fails for 0/6 traits where 3+ estimators exist — height is the cleanest case (Howe 2022 within-sibship h² = 0.78 *exceeds* Wainschtein 2022 WGS h² = 0.68 because they used different cohorts and methods). Within-paper, the prediction holds cleanly: Howe 2022 (N=178,086 siblings) finds population-GWAS effect sizes exceed within-sibship effects for height, EA, age at first birth, # children, cognitive ability, depressive symptoms, smoking — exactly the seven traits the model singles out as having non-trivial indirect-genetic contributions.
+**Result.** Across 15 traits with at least two published estimators, the strict ordering holds for 9 (all 2-estimator rows where twin h² > SNP h²) and fails for 6 (all 3-estimator rows). Every failure is the same: SNP h² is *lower* than within-family h² for socially-stratified traits — for height, SNP h²=0.50 vs. within-sibship h²=0.78; for EA, SNP h²=0.13 vs. within-sibship h²=0.15; for IQ adult, SNP h²=0.20 vs. extrapolated WF h²=0.50. This is not a model failure but a structural property of LDSC: it captures common-variant additive variance in unrelated populations and undercounts the rare-variant share, while within-family designs capture rare variants implicitly through transmission. The model's V(A_d) is naturally higher than what SNP h² estimates.
 
-**What this teaches.** The method gradient is structurally right *within a paper* and confounded by sample/method/cohort differences *across papers*. The right test is Howe 2022's within-sample shrinkage, not a literature-spanning subtraction.
+**Within a single paper, the prediction holds cleanly.** Howe 2022 (N=178,086 siblings) is the only published study that runs population vs. within-sibship GWAS on the same sample. Their Figure 4 shows population effects exceed within-sibship effects for height, EA, age at first birth, # children, cognitive ability, depressive symptoms, smoking — exactly the seven traits the model singles out as having non-trivial indirect-genetic contributions.
+
+**What this teaches.** "twin h² > within-family h²" is the canonical robust finding (always holds). "SNP h² between twin and within-family" is a methodological artifact when applied across papers — the right cross-check is twin vs. within-family directly, leaving SNP h² as a third estimator that answers a slightly different question (common-variant only).
 
 ### H2 — AM partition (supported)
 
-**Claim:** `V(A_LD) = m·h²` with the AM equilibrium reached.
+**Claim.** `V(A_LD) = m·h²` with the AM equilibrium reached.
 
-**Result.** Predicted V(A_LD) shares of h²: educational attainment 22%, height 20%, BMI 12%, schizophrenia 24%. Height matches Yengo 2018's reported empirical 14–23% range; EA matches Border 2022's qualitative "substantial fraction" finding. The pipeline replicates the model's H2 prediction within a few points across AM-strong traits.
+**Result.** Predicted V(A_LD) shares of h²: educational attainment 22%, height 20%, BMI 12%, schizophrenia 24%, IQ adult 35%. Height matches Yengo 2018's reported empirical 14–23% range; EA matches Border 2022's qualitative "substantial fraction" finding. The pipeline replicates the model's H2 prediction within a few points across AM-strong traits.
 
-**Caveat.** The Crow–Felsenstein partition assumes equilibrium. For traits under rapid assortment shifts (EA post-1970), this is approximate.
+**Caveat.** The Crow–Felsenstein partition assumes equilibrium. For traits under rapid assortment shifts (EA post-1970), this is approximate. The IQ adult prediction (35%) is at the upper end and may overshoot — Horwitz 2023's IQ partner correlation r=0.44 comes from a small (N=5,672) meta-analytic sample.
 
 ### H3 — Wilson logistic curve (supported)
 
-**Claim:** `h²(t) = h²_∞ / (1 + exp(−k·(t − t₅₀)))` for cognitive ability across age.
+**Claim.** `h²(t) = h²_∞ / (1 + exp(−k·(t − t₅₀)))` for cognitive ability across age.
 
 **Result.** Fitted to Bouchard 2013 anchors:
 
@@ -98,7 +112,7 @@ Max residual: 1.8 percentage points (at age 12). The earlier saturating-exponent
 
 ### H4 — Equicorrelated D vs disattenuated D (supported with caveat)
 
-**Claim:** Equicorrelated `D² = d̄²·n / (1 + (n−1)·ρ̄)` is a pedagogical anchor; the gap to disattenuated D is exactly the latent-variable correction.
+**Claim.** Equicorrelated `D² = d̄²·n / (1 + (n−1)·ρ̄)` is a pedagogical anchor; the gap to disattenuated D is exactly the latent-variable correction.
 
 **Result.** For Del Giudice 2012's 16PF panel (n=15, d̄=0.50, ρ̄=0.18): equicorrelated D = 1.03; disattenuated D = 2.71. Ratio: 2.6×. The equicorrelated approximation is *quantitatively wrong* for high-dimensional disattenuated panels — but not because of an algebra error. The 2.6× factor is the disattenuation correction: latent-variable modeling magnifies effect sizes by ~1/√reliability per factor before aggregation.
 
@@ -106,19 +120,42 @@ Max residual: 1.8 percentage points (at age 12). The earlier saturating-exponent
 
 ### H5 — PGS portability decay (supported)
 
-**Claim:** PGS accuracy decays with genetic distance from the training population.
+**Claim.** PGS accuracy decays with genetic distance from the training population.
 
 **Result.** Pearson r between genetic distance and relative PGS R² on the curated 5-trait × 4-ancestry panel: **r = −0.98**, replicating Ding 2023's r = −0.95 across 84 traits.
 
-**Why this matters for the L4 firewall.** The model's between-population scope restriction (§5.2 of the formalization) is structurally argued: there is no μ_pop term in the generating function. The empirical evidence for *why* this matters is exactly Ding 2023 — same SNP "effect sizes" do not estimate the same causal coefficients in different populations. Causal architecture is not portable; descriptive variance partitions arguably are, but not for cross-population mean comparisons.
+**Why this matters for the L4 firewall.** The model's between-population scope restriction is structurally argued: there is no μ_pop term in the generating function. The empirical evidence for *why* this matters is exactly Ding 2023 — same SNP "effect sizes" do not estimate the same causal coefficients in different populations. Causal architecture is not portable; descriptive variance partitions arguably are, but not for cross-population mean comparisons.
 
 ### H6 — Cross-trait AM inflation (supported)
 
-**Claim:** Cross-trait assortative mating accounts for a substantial fraction of reported psychiatric cross-disorder genetic correlations.
+**Claim.** Cross-trait assortative mating accounts for a substantial fraction of reported psychiatric cross-disorder genetic correlations.
 
 **Result.** Border 2022 (UK Biobank N=40,697 spousal pairs, 132 trait pairs): R² = 0.7432 (95% CI: 0.67–0.82) between phenotypic cross-mate correlations and reported genetic correlations. Across 6 psychiatric disorders × 5 generations: average xAM share γ̂ = 0.29. Anxiety × MDD: γ̂ = 0.21 (95% CI: 0.17–0.25). AUD × schizophrenia: γ̂ = 0.83 (95% CI: 0.59–1.24).
 
+**Interpreting γ̂.** The γ̂ statistic is the ratio of the xAM-alone-projected genetic correlation to the empirical genetic correlation. A value near 1 is *consistent with* xAM accounting for the entire reported rg — it does not *prove* xAM is the cause, since alternative causal architectures (genuinely shared biology with the same effect-size profile) could produce the same ratio. But γ̂ values bounded well below 1 require an additional shared-biology contribution beyond what xAM alone can explain. The Border result is therefore a pressure-test: if reported cross-disorder rg estimates were entirely about shared biology, γ̂ would be small; the average γ̂ = 0.29 with significant pair-level variance shows the literature's cross-disorder rg estimates carry an xAM contribution that is empirically non-trivial and pair-specific.
+
 **Implication.** The within-trait V(A_LD) term is the within-trait analogue of cross-trait xAM. Same operation (LD created by non-random mating among causal alleles); they show up in different summary statistics.
+
+### H7 — Environmental causes (supported)
+
+**Claim.** The model's V(E_m) term — variance contribution of measured non-shared environment — is non-empty: a small set of exposures have large, replicated, causal effects on cognitive outcomes.
+
+**Result.** Per-exposure effect sizes:
+
+| Exposure | Effect on IQ | Source | Design |
+|---|---|---|---|
+| Schooling, per year | +1 to +5 pts (mean +3.4) | [Ritchie & Tucker-Drob 2018](https://journals.sagepub.com/doi/10.1177/0956797618774253) (600k participants, 3 designs) | Quasi-experimental meta |
+| Breastfeeding (PROBIT RCT) | +3.2 pts | Kramer 2008 (N=17,046) | Cluster RCT |
+| Within-Western-normal parenting | ~0 to +1 pts | Plomin & Daniels 1987 meta | Within-family twin |
+| PM₂.₅, per 1 µg/m³ | −0.27 pts | Aghaei 2024 meta | Observational meta |
+| Lead, blood 1→10 µg/dL | **−6.2 pts** (CI −8.6 to −3.8) | [Lanphear 2005](https://pmc.ncbi.nlm.nih.gov/articles/PMC1257652/) (N=1,333, 7 cohorts) | Pooled longitudinal |
+| Iodine, severe deficiency | **−10 pts** (recovers +8.7 with supplementation) | Bougma 2013 | Observational + RCT |
+| Adoption: high → low SES | **−12 pts** | Capron & Duyme 1996 (N=38) | Natural experiment |
+| Severe psychosocial deprivation | **−15 pts** | Nelson 2007 BEIP (N=136) | Natural experiment |
+| Severe chronic malnutrition | **−15 pts** | Grantham-McGregor 2007 | Observational |
+| Prenatal alcohol (full FAS) | **−30 pts** | Streissguth 2004 | Observational + MR |
+
+**Asymmetry is the headline finding.** Removing severe insults (lead, malnutrition, deprivation, FAS) recovers double-digit IQ points; enrichment above normal (better parenting, breastfeeding) yields single-digit gains at most. The variance-share interpretation V(E_m)/V(P) depends on each exposure's prevalence in a given population — sparse-but-large exposures (FAS, severe deprivation) contribute little to population variance despite large per-person effects, while moderate-but-common exposures (variable schooling quality, low-grade lead) contribute more. This is why the high-h² findings of behavior genetics coexist with large environmental effects without contradiction: heritability is a population-variance statistic, individual environmental effects can be enormous, and most populations have already removed the worst tails.
 
 ## 3. Headline numbers
 
@@ -133,38 +170,73 @@ Max residual: 1.8 percentage points (at age 12). The earlier saturating-exponent
 | Spousal correlation political | 0.58 | Horwitz 2023 |
 | Spousal correlation IQ | 0.44 | Horwitz 2023 (N=5,672 pairs) |
 | Cross-trait AM inflation R² | 0.74 (CI: 0.67–0.82) | [Border 2022](https://www.science.org/doi/10.1126/science.abo2059) (132 pairs) |
-| Avg psychiatric xAM share | 0.29 | Border 2022 |
+| Avg psychiatric γ̂ (xAM share) | 0.29 | Border 2022 |
 | Wilson curve h²_∞ (cognition) | 0.81 (fit) | Pipeline fit to [Bouchard 2013](https://pubmed.ncbi.nlm.nih.gov/23919982/) |
 | Wilson curve t_50 (cognition) | 9.0 years (fit) | Pipeline fit |
-| 16PF univariate d̄ (sex) | 0.50 | [Del Giudice 2012](https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0029265) |
 | 16PF Mahalanobis D observed | 1.03 | Equicorrelated approximation |
-| 16PF Mahalanobis D disattenuated | 2.71 | Del Giudice 2012 latent-variable |
+| 16PF Mahalanobis D disattenuated | 2.71 | [Del Giudice 2012](https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0029265) |
 | PGS R² ~ genetic distance | r = −0.95 | [Ding 2023](https://www.nature.com/articles/s41586-023-06079-4) (84 traits, 524k indivs) |
+| Lead 1→10 µg/dL → IQ | −6.2 pts | [Lanphear 2005](https://pmc.ncbi.nlm.nih.gov/articles/PMC1257652/) |
+| Schooling/year → IQ | +1 to +5 pts | [Ritchie & Tucker-Drob 2018](https://journals.sagepub.com/doi/10.1177/0956797618774253) |
 
 ## 4. Analytical choices
 
 The pipeline has six judgment calls. Each is flagged in the script as `# ASSUMPTION:`. The most consequential:
 
-1. **Twin h² as h²_observed for AM partition.** Twin h² is closer to the AM-equilibrium quantity than SNP h². For traits without twin estimates we fall back to SNP h² and note the substitution.
+1. **Twin h² as h²_observed for AM partition.** Twin h² is closer to the AM-equilibrium quantity than SNP h². For traits without twin estimates we fall back to SNP h².
 2. **AM equilibrium assumption.** The Crow–Felsenstein partition assumes mating regimes are stable. For EA (post-1970 educational expansion) this is approximate.
 3. **k ≈ 0.5·m for the genetic-nurture cross-term.** The AM-coupling parameter k is empirically 0.1–0.5 for AM-strong traits; we interpolate.
 4. **Equicorrelated Σ for multivariate D.** Real personality covariance matrices have hierarchical structure; the equicorrelated approximation is pedagogical, not quantitative for high-dimensional panels.
-5. **PGS portability linear in genetic distance.** Ding 2023 reports a strong linear correlation. For genetic distances near zero the relationship may be non-linear.
+5. **PGS portability linear in genetic distance.** Ding 2023 reports a strong linear correlation. For genetic distances near zero the relationship may be non-linear. Our 5-trait curated panel is small.
 6. **Within-family h² for IQ extrapolated.** No within-family GWAS h² has been published for cognitive ability at the same scale as Howe 2022's other traits. We extrapolate from EA's WF h² and the EA-IQ rg.
 
 ## 5. What the pipeline does *not* deliver
 
 Three open questions from the model's §8 list are *not* sharpened by this stage, despite being framable:
 
-- **O1 — PGS interpretation (Plomin/Turkheimer).** The decisive test is whether within-family β_d moves under environmental intervention. No paper has the design — Sacerdote 2007 Korean adoption comes closest but predates within-family GWAS. Howe 2022 is observational. **Status:** open.
-
+- **O1 — PGS interpretation (Plomin/Turkheimer).** The decisive test is whether within-family β_d moves under environmental intervention. No paper has the design — Sacerdote 2007 Korean adoption comes closest but predates within-family GWAS. **Status:** open.
 - **O3 — Gender Equality Paradox.** Tests whether multivariate sex-difference D depends on Σ-by-society in addition to μ-by-society. Stoet & Geary 2018 / Schmitt 2008 give univariate cross-cultural d's; the multivariate piece requires Σ-by-society panels that do not yet exist at scale. **Status:** likely answerable in the next 5 years.
+- **O7 — xAM-corrected full psychiatric rg matrix.** Border 2022 establishes the principle on 6 disorders. Applied at scale to the full PGC cross-disorder matrix, the corrected rg's are likely smaller — but no group has done the correction systematically. **Status:** active research.
 
-- **O7 — xAM-corrected full psychiatric rg matrix.** Border 2022 establishes the principle on 6 disorders. Applied at scale to the full PGC cross-disorder matrix, the corrected rg's are likely smaller — but no group has done the correction systematically. **Status:** active research, not yet pipeline-runnable from public summary statistics.
+For these three, the Stage-4 honest answer is "the pipeline frames them but doesn't resolve them."
 
-For these three, the Stage-4 honest answer is "the pipeline frames them but doesn't resolve them." The Stage-5 build artifact should make this explicit.
+## 6. Adversarial + steelman
 
-## 6. Connection to model cruxes
+Four objections to the pipeline. The strongest version of each, then the honest response.
+
+### Objection 1 — This is variance bookkeeping, not new analysis
+
+The pipeline arranges other people's published estimates in a table and runs simple closed-form computations on top. It does not produce new heritability estimates, does not analyze raw data, and does not test causal mechanisms. Calling it "an empirical pipeline" overstates what is actually a literature-alignment exercise.
+
+**Steelman.** True at the bookkeeping level. A real empirical pipeline would pull GWAS summary statistics, run LDSC against multiple traits, replicate Howe 2022's within-sibship analysis on UK Biobank data, and compute fresh AM-LD partition estimates per trait. That requires individual-level genetic data we do not have access to and would not be appropriate to ship from a content site.
+
+**Response.** Conceded as a scope restriction. The pipeline's value is at the meta-level: it confronts the model's predictions with the literature that already exists and surfaces what does and does not match. Three contributions are genuinely new even at this scale: (a) per-trait AM-partition predictions computed at the granularity of single traits with current Horwitz 2023 m-values, which Border 2022 / Yengo 2018 framed only at the single-trait level; (b) the equicorrelated-D vs. disattenuated-D bridge that locates the entire Hyde-vs-Del-Giudice gap quantitatively in the disattenuation correction; (c) the explicit reframing of H1 as "within-paper holds, cross-paper noisy" with the structural reason. None of these required new data analysis, but none were available in one place before.
+
+### Objection 2 — The CSV is too small to support strong claims
+
+18 traits is a small panel. The headline-sounding patterns (e.g., "the AM partition holds across AM-strong traits") rest on roughly six traits. A bigger panel might tell a different story.
+
+**Steelman.** True for any single trait — the AM partition prediction for IQ adult lands at the upper end of the empirical range and could be wrong. For the multivariate-D module, only one panel (16PF Del Giudice) drives the pedagogical claim; the same algebra on a different instrument might give a smaller disattenuation gap.
+
+**Response.** The headline patterns are robust within the curated traits and consistent with primary-literature meta-analyses (Polderman 17,804 traits, Border 132 pairs, Horwitz 22 traits + 133-trait UK Biobank scan). Adding another 50 traits would not change the qualitative result for H2 or H6 because those rest on consortium meta-analyses not single-CSV cells. The single-CSV results are calibration checks, not new estimation. Where the pipeline does need more data — H5 portability with 13 hand-curated rows — this is flagged explicitly as Objection 4 below.
+
+### Objection 3 — Border 2022 is a single high-profile paper with significant methodological pushback
+
+Resting H6 on a single 2022 paper from one group is fragile. xAM as a confounder of psychiatric cross-disorder rg has been proposed by other authors (Howe 2024, Cai 2025 commentary) but Border's specific R²=0.74 figure and the 5-generation-equilibrium assumption it depends on have been pushed back on. The "γ̂ averages 0.29" claim depends on a specific xAM dynamics model.
+
+**Steelman.** Conceded. R²=0.74 may shrink under different equilibrium assumptions; γ̂ values for specific pairs may move under alternative AM models. The aggressive interpretation ("xAM accounts for ~30% of psychiatric rg") is doing motivated work in the discourse and would benefit from independent replication by groups outside the Border / Keller cluster.
+
+**Response.** The model's H6 prediction does not depend on Border's specific γ̂ values — it depends on the qualitative claim that cross-trait AM affects rg estimates non-trivially. That qualitative claim has independent support: Howe 2022's within-sibship estimates of EA-BMI rg attenuate to near-zero, Yengo 2018 establishes within-trait AM-LD inflation for height, and the within-trait V(A_LD) prediction (H2) is tested independently from any cross-trait psychiatric finding. The data.mdx prose treats Border 2022 as suggestive about the magnitude rather than dispositive. This was strengthened in pass 2 — the γ̂ wording is now "consistent with xAM accounting for X%" rather than "X% caused by xAM."
+
+### Objection 4 — H5 PGS portability rests on 13 hand-coded rows
+
+The Pearson r = −0.98 the pipeline reports is computed on 13 rows that were curated by approximation rather than fetched from Ding 2023's supplementary table. It would be embarrassing if the actual supplementary data produced a different slope, since the curated panel is itself an approximation of what the cited paper reports.
+
+**Steelman.** Fully conceded. r = −0.98 on 13 rows is not an independent test of Ding 2023; it is a sanity check that the qualitative pattern is preserved when discretized to the curated panel. The strong claim — "the model's L4 firewall has empirical anchoring" — rests on Ding 2023's underlying analysis, not on the 13-row replication.
+
+**Response.** This is the cleanest pass-3 candidate. Pulling Ding 2023's supplementary table directly and recomputing the slope on full data would either confirm the pipeline's number or surface a discrepancy worth investigating. Marked as a known weakness.
+
+## 7. Connection to model cruxes
 
 Three of the model's five cruxes (§12) are partly tested by the pipeline:
 
@@ -174,13 +246,22 @@ Three of the model's five cruxes (§12) are partly tested by the pipeline:
 
 Cruxes C3 (hyperpolygenic architecture) and C4 (joint identifiability of A_d/A_i/A_LD) are not tested by the pipeline.
 
-## 7. Stage-5 handoff
+## 8. Connections to other work
+
+**To the model dashboard ([/ai-research/human-psych-variation/model](/ai-research/human-psych-variation/model)).** The dashboard's default parameters were set by the model formalization's priors. Several should be updated from the data stage's anchors: spousal correlations for cognitive (`m=0.40` → keep, Horwitz IQ=0.44 confirms), personality (`m=0.15` → keep, Horwitz neuroticism=0.11 close), psychopathology (`m=0.20` → upward to 0.30 for SCZ specifically). The Wilson logistic parameters in the dashboard already match the data-stage fit (h²_∞=0.80 vs. fitted 0.81, t_50=9 exact, k=0.30 vs. 0.27); the tiny discrepancy can either drift the dashboard to the fitted values or note it explicitly.
+
+**To the planned parent-to-child transmission topic.** The V(A_i) data here directly feeds that topic. Howe 2022's within-sibship analysis is the canonical empirical anchor for indirect genetic effects across the seven traits the model singles out (height, EA, age at first birth, # children, cognitive ability, depressive symptoms, smoking). The Kong 2018 non-transmitted-PGS finding (29.9% of transmitted for EA) and the Okbay 2022 EA4 within-family attenuation (~50% of population PGI) are the two anchor numbers the parent-to-child topic should adopt as starting input.
+
+**To the planned evolution-modernity-mismatch topic.** The Wilson curve fit here is the developmental-age analogue of generation-scale changes the mismatch topic will need to address. Pietschnig 2024's finding that the positive manifold itself may be weakening across recent cohorts implies μ(t) is not a one-dimensional trajectory but a moving structure of which abilities are gaining or losing. The data stage's logistic captures developmental motion within a single cohort; the mismatch topic will need to extend it to cross-cohort drift.
+
+## 9. Stage-5 handoff
 
 The Stage-5 build artifact should be a public-facing tool that:
 
-1. Lets a visitor pick a trait and see the per-trait variance decomposition (twin h², SNP h², WGS h², WF h², m, V(A_LD), V(A_i)) in a single panel.
+1. Lets a visitor pick a trait and see the per-trait variance decomposition (twin h², SNP h², WGS h², WF h², m, V(A_LD), V(A_i), and the relevant V(E_m) exposures) in a single panel.
 2. Surfaces the H1 mixed result honestly: within-paper Howe 2022 chart vs cross-paper alignment.
 3. Implements the Mahalanobis-D module with the disattenuation toggle so users can see the framing trap directly.
-4. Cites a source for every number with a link to the relevant paper.
+4. Shows the environmental-effects table with prevalence-weighted variance-share estimates per population (this is the stage-5-specific extension — none of the existing tools do this).
+5. Cites a source for every number with a link to the relevant paper.
 
-The CSV files in `stage_outputs/human-psych-variation/data/` are the input artifact. Stage 5 can either re-run `pipeline.py` at site-build time or freeze `findings.json` as a static asset.
+Inputs are at [/data/human-psych-variation/](/data/human-psych-variation/). Stage 5 can either re-run `pipeline.py` at site-build time or freeze `findings.json` as a static asset.

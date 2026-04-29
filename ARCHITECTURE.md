@@ -119,6 +119,8 @@ Each topic is a folder under `src/content/ai_research/<topic>/`. Inside:
 
 For the data stage specifically, raw working drafts can be accompanied by a sibling `stage_outputs/<topic>/data/` folder containing the curated input CSVs, the runnable Python pipeline, and a `data/out/` folder with derived outputs. The CSVs are the canonical artifact (one source-cited row per estimate); the Python script is reference code that reproduces every chart on the published `data.mdx`. Stage-5 build artifacts consume the CSVs directly.
 
+**Public data convention.** Once a data-stage CSV is finalized for publication it is copied to `public/data/<topic>/<file>.csv`. Astro serves `public/` as-is, so the file is downloadable at `/data/<topic>/<file>.csv` on the live site. This (a) makes the audit trail visible to visitors, (b) provides a stable URL Stage 5 build artifacts can fetch, and (c) keeps the file tracked in git (the `stage_outputs/` folder is gitignored as raw working state). The pipeline source (`pipeline.py`) and intermediate `out/` files stay in `stage_outputs/` as they are working artifacts, not publication artifacts.
+
 Stage-specific interactive components (D3 graphs for topology, dashboards for model/data) live at `src/components/ai-research/<ComponentName>.tsx` and are mounted in the stage's MDX with `client:load` (wrap in `not-prose` so Tailwind Typography doesn't override styles).
 
 Refinement history is stored as an array in frontmatter:

@@ -1,0 +1,11 @@
+exposure,outcome,effect_size,unit,ci_low,ci_high,design,causal_evidence,source,n,notes
+lead_blood_1_to_10_ugdl,iq,-6.2,IQ_pts,-8.6,-3.8,pooled_longitudinal,strong,Lanphear_2005,1333,"International pooled analysis 7 cohorts; steeper slope at low concentrations"
+schooling_per_year,iq,3.4,IQ_pts,1.0,5.0,quasi_experimental_meta,strong,Ritchie_Tucker_Drob_2018,600000,"Meta-analysis 142 effect sizes / 42 datasets; persists into old age; instrumental-variable + regression-discontinuity + control-prior-IQ designs all converge"
+iodine_severe_deficiency,iq,-10.0,IQ_pts,-12.0,-8.0,observational_RCT,strong,Bougma_2013,N_A,"Severe deficiency = ~10 pt cost; supplementation recovers ~8.7 pts"
+prenatal_alcohol_FAS,iq,-30.0,IQ_pts,-40.0,-20.0,observational,strong,Streissguth_2004,N_A,"Mean IQ ~70 in full FAS; Mendelian-randomization confirms causation; threshold effect"
+PM25_per_ugm3,iq,-0.27,IQ_pts,-0.5,-0.05,observational_meta,moderate,Aghaei_2024,N_A,"~25 papers; smaller per-unit than lead but exposure widespread"
+severe_psychosocial_deprivation,iq,-15.0,IQ_pts,-20.0,-10.0,natural_experiment,strong,Nelson_BEIP_2007,136,"Bucharest Early Intervention Project; institutional vs foster vs control; recovery if intervention before ~24mo"
+breastfeeding_vs_formula,iq,3.2,IQ_pts,1.5,5.0,RCT_PROBIT,strong,Kramer_PROBIT_2008,17046,"PROBIT cluster-RCT in Belarus; effect persists to age 6.5; smaller effect in MR-confirmed studies"
+adoption_high_to_low_SES,iq,-12.0,IQ_pts,-15.0,-8.0,natural_experiment,strong,Capron_Duyme_1996,38,"Cross-fostered French adoptees; SES gap 12 pts in adopted children"
+malnutrition_severe_chronic,iq,-15.0,IQ_pts,-20.0,-10.0,observational,strong,Grantham_McGregor_2007,N_A,"Stunting + chronic protein-energy deficiency; reversible if intervention <2yr"
+parenting_quality_within_normal,iq,1.0,IQ_pts,-1.0,3.0,within_family_twin,weak,Plomin_Daniels_1987_meta,N_A,"Within Western normal range; small or zero adult effect after C controlled; this is the famous null"

@@ -1,0 +1,14 @@
+target_population,training_population,trait,relative_pgs_r2,genetic_distance,source,notes
+european,european,height,1.00,0.00,Ding_2023,Reference baseline
+south_asian,european,height,0.65,0.10,Ding_2023,Approximate from Pearson r=-0.95 trend
+east_asian,european,height,0.55,0.15,Ding_2023,
+admixed_american,european,height,0.50,0.18,Ding_2023,
+african,european,height,0.20,0.30,Ding_2023,Largest decay
+european,european,educational_attainment,1.00,0.00,Okbay_2022_EA4,
+african,european,educational_attainment,0.10,0.30,Okbay_2022_EA4,EA4 reports near-zero predictive accuracy in African ancestries
+european,european,bmi,1.00,0.00,Ding_2023,
+african,european,bmi,0.30,0.30,Ding_2023,
+european,european,blood_pressure,1.00,0.00,Ding_2023,
+african,european,blood_pressure,0.40,0.30,Ding_2023,
+european,european,schizophrenia,1.00,0.00,Trubetskoy_2022,
+african,european,schizophrenia,0.30,0.30,Trubetskoy_2022,Less decay than EA — closer-to-biological mechanism

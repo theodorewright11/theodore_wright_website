@@ -1,0 +1,19 @@
+trait,trait_class,twin_h2,twin_h2_source,snp_h2,snp_h2_source,wgs_h2,wgs_h2_source,wf_h2,wf_h2_source,m,m_n_pairs,m_source,beta_i_over_d,beta_i_source,n_largest_gwas,pgs_r2_pop,pgs_r2_wf,c2_adult,notes
+educational_attainment,achievement,0.40,Branigan_2013_Polderman_2015,0.13,Okbay_2022_EA4,,,0.15,Howe_2022_within_sibship,0.55,1911720,Horwitz_2023,0.299,Kong_2018,3037499,0.13,0.06,0.20,"Kong 2018: NT-PGS = 29.9% of T-PGS (P=1.6e-14, N=21637); Okbay 2022 EA4: WF direct ~50% of population PGI"
+height,physical,0.85,Silventoinen_2003_meta,0.50,Yengo_2022,0.68,Wainschtein_2022,0.78,Howe_2022_within_sibship,0.24,293461,Horwitz_2023,0.05,Howe_2022,5400000,0.40,0.40,0.00,"Yengo 2022 N=5.4M (12111 SNPs explain 40% var EUR, 10-20% non-EUR); Wainschtein 2022 WGS h2=0.68 SE 0.10 N=25465"
+bmi,physical,0.75,Elks_2012_meta,0.27,Yengo_2018,,,0.50,Howe_2022_within_sibship,0.16,123881,Horwitz_2023,0.07,Howe_2022,700000,0.10,0.06,0.05,
+iq_g,cognitive,0.75,Bouchard_2013_McGue_1993,0.20,Savage_2018,,,0.45,extrapolated,0.44,5672,Horwitz_2023,0.45,Cognitive_PGS_Howe,269867,0.05,0.025,0.05,"IQ partner r=0.44 Horwitz 2023; WF h2 extrapolated from EA WF and EA-IQ rg"
+iq_g_age5,cognitive,0.20,Bouchard_2013,,,,,,,0.40,,assumed_parental,0.40,assumed,,,,0.50,Bouchard 2013 Wilson Effect early childhood anchor
+iq_g_age25,cognitive,0.79,Bouchard_2013,0.20,Savage_2018,,,0.50,extrapolated,0.44,5672,Horwitz_2023,0.40,Cognitive,269867,0.05,0.025,0.05,Wilson asymptote
+big_five_avg,personality,0.45,Vukasovic_2015_meta,0.10,Lo_2017,,,,,0.13,,Horwitz_2023_avg,0.10,personality_modest_IGE,449129,0.04,,0.00,"Avg of N/E/O/A/C from Horwitz 2023 (E=0.08 N=0.11 A=0.11 C=0.16 O=0.21)"
+neuroticism,personality,0.45,Vukasovic_2015,0.10,Nagel_2018,,,,,0.11,35706,Horwitz_2023,0.10,Howe_2022,449129,0.04,,0.00,
+schizophrenia,psychiatric,0.79,Sullivan_2003_meta,0.24,Trubetskoy_2022,,,,,0.30,,Nordsletten_2016_imputed,0.15,assumed,320404,0.08,,0.05,"Border 2022: AUD-SCZ gamma_hat=0.83 — most psychiatric pairs partly attributable to xAM"
+bipolar,psychiatric,0.78,Smoller_Finn_2003,0.19,Mullins_2021,,,,,0.20,,Nordsletten_2016,0.15,assumed,413466,0.04,,0.05,
+mdd,psychiatric,0.37,Sullivan_2000_meta,0.09,Howard_2019,,,,,0.15,1483486,Horwitz_2023,0.20,Howe_2022_depressive,807553,0.03,,0.05,"Border 2022: anxiety-MDD gamma_hat=0.21"
+adhd,psychiatric,0.74,Faraone_2019,0.14,Demontis_2023,,,,,0.30,,Nordsletten_2016,0.20,assumed,225534,0.05,,0.10,
+autism,psychiatric,0.80,Tick_2016_meta,0.12,Grove_2019,,,,,0.30,,Nordsletten_2016,0.10,assumed,46350,0.025,,0.10,Strong rare-variant tail outside polygenic frame
+political_orientation,attitudes,0.40,Hatemi_2014,,,,,,,0.58,11658,Horwitz_2023,,,,,,0.25,Highest m of all measured traits with religion
+religiosity,attitudes,0.38,Bouchard_2004,,,,,,,0.56,6269,Horwitz_2023,,,,,,0.25,
+risk_tolerance,behavioral,0.30,Karlsson_Linner_2019,0.05,Karlsson_Linner_2019,,,,,0.15,,Horwitz_2023_imputed,,,,,,0.05,
+smoking_initiation,behavioral,0.50,Vink_2005,0.08,Liu_2019_GSCAN,,,0.30,Howe_2022,0.38,118856,Horwitz_2023,0.20,Howe_2022,1232091,0.04,,0.05,
+drinking_quantity,behavioral,0.50,Verhulst_2014,0.08,Liu_2019_GSCAN,,,,,0.42,7055,Horwitz_2023,,,,,,0.05,

@@ -1,0 +1,8 @@
+trait_panel,n_dimensions,d_avg_univariate,rho_avg,D_observed,D_disattenuated,n_sample,source,notes
+single_math_performance,1,0.05,0.0,0.05,0.05,1286350,Hyde_2008,Hyde 2008 cross-state TIMSS — small or trivial univariate gap
+single_verbal_performance,1,-0.10,0.0,0.10,0.10,,Hyde_2005_meta,Females slightly higher
+people_things_interest,1,0.93,0.0,0.93,0.93,503127,Su_2009_meta,Largest documented univariate sex difference (career interests)
+big_five_5dim,5,0.40,0.20,0.86,1.10,,Schmitt_2008_BSRI,Across N/E/A/C/O — moderate D
+sixteenpf_observed,15,0.50,0.18,0.99,2.71,10261,Del_Giudice_2012,Equicorrelated approx ≈ 1.0; latent-variable + disattenuation = 2.71
+sixteenpf_replication,15,0.50,0.20,0.99,2.10,31637,Kaiser_2020,Replication on open online dataset
+brain_volume_aggregate,7,0.50,0.30,0.79,1.20,2750,Ritchie_2018,Multi-region brain morphology

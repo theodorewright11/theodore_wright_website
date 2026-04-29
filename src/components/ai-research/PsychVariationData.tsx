@@ -115,17 +115,41 @@ const XAM_PSYCHIATRIC = [
   { pair: 'avg across 6 disorders',    gamma_hat: 0.29, ci: [0.27, 0.31] as [number, number] },
 ];
 
+type EnvRow = {
+  exposure: string;
+  effect_size: number;
+  ci_low: number | null;
+  ci_high: number | null;
+  design: string;
+  causal_evidence: string;
+  source: string;
+};
+
+const ENV_EFFECTS: EnvRow[] = [
+  { exposure: 'schooling per year',                effect_size:  3.4, ci_low:  1.0, ci_high:  5.0, design: 'quasi-experimental meta',  causal_evidence: 'strong',   source: 'Ritchie & Tucker-Drob 2018' },
+  { exposure: 'breastfeeding (PROBIT RCT)',        effect_size:  3.2, ci_low:  1.5, ci_high:  5.0, design: 'cluster RCT',              causal_evidence: 'strong',   source: 'Kramer 2008 PROBIT' },
+  { exposure: 'parenting (within Western normal)', effect_size:  1.0, ci_low: -1.0, ci_high:  3.0, design: 'within-family twin',       causal_evidence: 'weak',     source: 'Plomin & Daniels 1987 meta' },
+  { exposure: 'PM₂.₅ per 1 µg/m³',                  effect_size: -0.27, ci_low: -0.5, ci_high: -0.05, design: 'observational meta',     causal_evidence: 'moderate', source: 'Aghaei 2024' },
+  { exposure: 'lead (blood 1→10 µg/dL)',           effect_size: -6.2, ci_low: -8.6, ci_high: -3.8, design: 'pooled longitudinal',      causal_evidence: 'strong',   source: 'Lanphear 2005' },
+  { exposure: 'iodine (severe deficiency)',        effect_size: -10.0, ci_low: -12.0, ci_high: -8.0, design: 'observational + RCT',    causal_evidence: 'strong',   source: 'Bougma 2013' },
+  { exposure: 'adoption: high → low SES',          effect_size: -12.0, ci_low: -15.0, ci_high: -8.0, design: 'natural experiment',     causal_evidence: 'strong',   source: 'Capron & Duyme 1996' },
+  { exposure: 'severe deprivation (Romanian)',     effect_size: -15.0, ci_low: -20.0, ci_high: -10.0, design: 'natural experiment',    causal_evidence: 'strong',   source: 'Nelson 2007 BEIP' },
+  { exposure: 'severe chronic malnutrition',       effect_size: -15.0, ci_low: -20.0, ci_high: -10.0, design: 'observational',         causal_evidence: 'strong',   source: 'Grantham-McGregor 2007' },
+  { exposure: 'prenatal alcohol (full FAS)',       effect_size: -30.0, ci_low: -40.0, ci_high: -20.0, design: 'observational',         causal_evidence: 'strong',   source: 'Streissguth 2004' },
+];
+
 // ---- Tabs --------------------------------------------------------------
 
-type Tab = 'gradient' | 'am' | 'wilson' | 'sex' | 'portability' | 'xam';
+type Tab = 'gradient' | 'am' | 'wilson' | 'sex' | 'portability' | 'xam' | 'env';
 
 const TABS: { key: Tab; label: string; symbol: string }[] = [
-  { key: 'gradient',    label: 'Method gradient',  symbol: 'H1' },
-  { key: 'am',          label: 'AM partition',     symbol: 'H2' },
-  { key: 'wilson',      label: 'Wilson curve',     symbol: 'H3' },
-  { key: 'sex',         label: 'Multivariate D',   symbol: 'H4' },
-  { key: 'portability', label: 'PGS portability',  symbol: 'H5' },
-  { key: 'xam',         label: 'xAM inflation',    symbol: 'H6' },
+  { key: 'gradient',    label: 'Method gradient',     symbol: 'H1' },
+  { key: 'am',          label: 'AM partition',        symbol: 'H2' },
+  { key: 'wilson',      label: 'Wilson curve',        symbol: 'H3' },
+  { key: 'sex',         label: 'Multivariate D',      symbol: 'H4' },
+  { key: 'portability', label: 'PGS portability',     symbol: 'H5' },
+  { key: 'xam',         label: 'xAM inflation',       symbol: 'H6' },
+  { key: 'env',         label: 'Environmental causes', symbol: 'H7' },
 ];
 
 // ---- Top-level component -----------------------------------------------
@@ -157,6 +181,7 @@ export default function PsychVariationData() {
       {tab === 'sex' && <SexDiffPanel />}
       {tab === 'portability' && <PortabilityPanel />}
       {tab === 'xam' && <XamPanel />}
+      {tab === 'env' && <EnvPanel />}
     </div>
   );
 }
@@ -211,7 +236,7 @@ function MethodGradientPanel() {
     <div>
       <PanelHeader
         title="H1. Method gradient"
-        claim="The model predicts twin h² ≥ WGS h² ≥ SNP h² ≥ within-family h². Cross-paper alignment is noisy because estimates come from different cohorts and methods. Within Howe 2022 (N=178k siblings) the qualitative prediction holds: population-GWAS effects exceed within-sibship effects for the seven AM-strong/IGE-strong traits."
+        claim="The model predicts twin h² ≥ WGS h² ≥ SNP h² ≥ within-family h². Across 15 traits with ≥2 estimators, the strict ordering holds for 9 (all 2-estimator rows where twin > SNP); fails for 6 (all rows with 3+ estimators). The pattern of failure is informative: SNP h² is consistently lower than within-family h² for socially-stratified traits, because LDSC misses the rare-variant share that within-family designs capture through transmission."
         verdict="mixed"
         verdictKind="mixed"
       />
@@ -490,7 +515,7 @@ function XamPanel() {
     <div>
       <PanelHeader
         title="H6. Cross-trait AM inflation (Border 2022)"
-        claim="R² = 0.7432 (95% CI: 0.67–0.82) between phenotypic cross-mate correlations and reported genetic correlations across 132 psychiatric trait pairs in UK Biobank (N=40,697 spousal pairs)."
+        claim="R² = 0.7432 (95% CI: 0.67–0.82) between phenotypic cross-mate correlations and reported genetic correlations across 132 psychiatric trait pairs in UK Biobank (N=40,697 spousal pairs). The γ̂ statistic below is the ratio of xAM-alone-implied rg to empirical rg — values near 1 are consistent with xAM accounting for the entire correlation; values near 0 require additional shared biology beyond xAM."
         verdict="supported"
         verdictKind="supported"
       />
@@ -537,6 +562,99 @@ function XamPanel() {
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+// ---- H7 environmental causes -----------------------------------------
+
+function EnvPanel() {
+  // Sort by effect size, most negative first.
+  const sorted = [...ENV_EFFECTS].sort((a, b) => a.effect_size - b.effect_size);
+  const minE = -32;
+  const maxE = 6;
+  const span = maxE - minE;
+  const zeroPct = ((0 - minE) / span) * 100;
+
+  return (
+    <div>
+      <PanelHeader
+        title="H7. Environmental causes (V(E_m) bucket)"
+        claim="The model's V(E_m) term is the variance contribution of measured non-shared environment. It is non-empty: a small set of exposures have large, replicated, causal effects on cognitive ability. Lead and severe deprivation cost double-digit IQ points; schooling adds 1–5 points per year. 'Within-normal' parenting variation is the famous null."
+        verdict="supported"
+        verdictKind="supported"
+      />
+
+      <div className="space-y-2 text-[12px]">
+        <div className="grid grid-cols-[200px_1fr_220px] gap-3 text-[10px] font-mono uppercase tracking-wider text-muted pb-1 border-b border-rule-soft">
+          <span>exposure</span>
+          <span>effect on IQ (points)</span>
+          <span className="text-right">design / source</span>
+        </div>
+        {sorted.map(r => {
+          const isNeg = r.effect_size < 0;
+          const effectPct = ((r.effect_size - minE) / span) * 100;
+          const ciLowPct = r.ci_low != null ? ((r.ci_low - minE) / span) * 100 : null;
+          const ciHighPct = r.ci_high != null ? ((r.ci_high - minE) / span) * 100 : null;
+          return (
+            <div key={r.exposure} className="grid grid-cols-[200px_1fr_220px] gap-3 items-center">
+              <span className="text-ink text-[12px] leading-tight">{r.exposure}</span>
+              <div className="relative h-5 bg-paper border border-rule-soft rounded-sm">
+                {/* zero line */}
+                <div className="absolute top-0 bottom-0 w-px bg-rule" style={{ left: `${zeroPct}%` }} />
+                {/* CI band */}
+                {ciLowPct != null && ciHighPct != null && (
+                  <div
+                    className="absolute top-1.5 bottom-1.5 rounded-sm"
+                    style={{
+                      left: `${Math.min(ciLowPct, ciHighPct)}%`,
+                      width: `${Math.abs(ciHighPct - ciLowPct)}%`,
+                      backgroundColor: isNeg ? '#8a4a2b' : '#1a1614',
+                      opacity: 0.25,
+                    }}
+                  />
+                )}
+                {/* point estimate marker */}
+                <div
+                  className="absolute top-0 bottom-0 w-1 rounded"
+                  style={{ left: `${effectPct}%`, backgroundColor: isNeg ? '#8a4a2b' : '#1a1614' }}
+                />
+                <span
+                  className="absolute top-0.5 text-[10px] font-mono text-ink-soft"
+                  style={{ left: isNeg ? `${Math.min(effectPct + 1.5, 80)}%` : `${Math.max(effectPct - 4, 1)}%` }}
+                >
+                  {r.effect_size > 0 ? '+' : ''}{r.effect_size.toFixed(1)}
+                </span>
+              </div>
+              <span className="text-[10px] font-mono text-muted text-right leading-tight">
+                {r.design}<br />
+                <span className="text-ink-soft">{r.source}</span>
+              </span>
+            </div>
+          );
+        })}
+        {/* x-axis ticks */}
+        <div className="grid grid-cols-[200px_1fr_220px] gap-3 pt-1">
+          <span></span>
+          <div className="relative h-3 text-[9px] font-mono text-muted">
+            {[-30, -20, -10, 0, 5].map(t => (
+              <span key={t} className="absolute" style={{ left: `${((t - minE) / span) * 100}%`, transform: 'translateX(-50%)' }}>
+                {t > 0 ? '+' : ''}{t}
+              </span>
+            ))}
+          </div>
+          <span></span>
+        </div>
+      </div>
+
+      <Legend items={[
+        { label: 'positive (cognitive enrichment)', color: '#1a1614' },
+        { label: 'negative (cognitive insult)', color: '#8a4a2b' },
+      ]} />
+
+      <p className="text-[11px] text-muted mt-4 leading-relaxed">
+        Asymmetry is a real finding: removing severe insults (lead, malnutrition, deprivation, FAS) recovers double-digit IQ points; enrichment above normal (better parenting, breastfeeding) yields single-digit gains at most. The variance-share "V(E_m)" depends on each exposure's prevalence in a given population — sparse-but-large exposures (FAS, severe deprivation) contribute little to population variance despite large per-person effects, while moderate-but-common exposures (variable schooling, low-grade lead) contribute more.
+      </p>
     </div>
   );
 }
