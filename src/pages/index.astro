@@ -2,9 +2,11 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 import SectionLabel from '../components/SectionLabel.astro';
 import TierChip from '../components/TierChip.astro';
+import { Image } from 'astro:assets';
 import { getCollection } from 'astro:content';
 import bio from '../data/bio.json';
 import dashboards from '../data/dashboards.json';
+import meImg from '../assets/pic_of_me.png';
 
 const fmt = (date: Date) =>
   date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
@@ -62,15 +64,16 @@ const statusToLabel = (status: string) =>
     {/* Masthead */}
     <div class="border-b-4 border-double border-ink pb-8 mb-9">
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-end">
-        <div class="flex items-end gap-5">
-          <img src="/pic_of_me.png" alt="Teddy Wright"
-               class="w-24 h-24 sm:w-28 sm:h-28 object-cover border border-rule rounded-sm flex-shrink-0" />
-          <div>
-            <h1 class="font-display font-semibold text-[56px] sm:text-[68px] text-ink leading-[0.92] m-0"
-                style="letter-spacing: -0.035em">
+        <div class="flex items-start gap-5">
+          <Image src={meImg} alt="Teddy Wright"
+                 width={224} height={224} densities={[1, 2]} format="webp" quality={82}
+                 class="w-24 h-24 sm:w-28 sm:h-28 object-cover border border-rule rounded-sm flex-shrink-0" />
+          <div class="min-w-0">
+            <h1 class="font-display font-semibold text-[44px] sm:text-[52px] text-ink leading-[1] m-0 whitespace-nowrap"
+                style="letter-spacing: -0.03em">
               Teddy Wright
             </h1>
-            <p class="font-serif italic text-[14px] text-muted leading-[1.5] m-0 mt-3 max-w-[480px]"
+            <p class="font-serif italic text-[13px] text-muted leading-[1.5] m-0 mt-3"
                style="text-wrap: pretty">{bio.credentials}</p>
           </div>
         </div>
@@ -201,25 +204,25 @@ const statusToLabel = (status: string) =>
         </div>
       </div>
 
-      {/* Column 3 — Updates + Dashboards */}
+      {/* Column 3 — Dashboards + Updates (matches nav order) */}
       <div>
-        <SectionLabel label="Updates" href="/updates" />
-        <div class="font-serif italic text-[13px] text-muted leading-[1.5]"
-             style="text-wrap: pretty">
-          Coming soon. Weekly updates — partly for me, to track my research and what I'm working on, partly for anyone in my life or just curious folks who might want to see what's moving.
+        <SectionLabel label="Dashboards" href="/dashboards" />
+        <div class="font-serif italic text-[13px] text-muted mb-2">
+          planned, not live
         </div>
+        {dashboards.map(d => (
+          <div class="py-1.5 font-serif text-[13px] text-ink-soft leading-[1.45]">
+            <strong class="text-ink font-semibold">{d.title}</strong>
+            <span class="text-muted"> — {d.desc.split('.')[0]}.</span>
+          </div>
+        ))}
 
         <div class="mt-8">
-          <SectionLabel label="Dashboards" href="/dashboards" />
-          <div class="font-serif italic text-[13px] text-muted mb-2">
-            planned, not live
+          <SectionLabel label="Updates" href="/updates" />
+          <div class="font-serif italic text-[13px] text-muted leading-[1.5]"
+               style="text-wrap: pretty">
+            Coming soon. Weekly updates — partly for me, to track my research and what I'm working on, partly for anyone in my life or just curious folks who might want to see what's moving.
           </div>
-          {dashboards.map(d => (
-            <div class="py-1.5 font-serif text-[13px] text-ink-soft leading-[1.45]">
-              <strong class="text-ink font-semibold">{d.title}</strong>
-              <span class="text-muted"> — {d.desc.split('.')[0]}.</span>
-            </div>
-          ))}
         </div>
       </div>
     </div>

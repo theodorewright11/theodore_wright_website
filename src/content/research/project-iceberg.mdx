@@ -1,10 +1,51 @@
 ---
 title: 'Project Iceberg'
-description: 'Nationally recognized AI labor market simulation study, led out of MIT.'
+description: 'Nationally recognized AI labor market simulation study, led out of MIT. Skills-centered exposure index built on a 151M-worker agent simulation.'
 date: 2025-09-01
 status: contribution
+paperStatus: 'working paper · Sep 2025'
 venue: 'MIT'
 externalUrl: 'https://iceberg.mit.edu/report.pdf'
+authors:
+  - name: 'Ayush Chopra'
+    affiliation: 'MIT · Project Iceberg'
+  - name: 'Santanu Bhattacharya'
+    affiliation: 'MIT · Project Iceberg'
+  - name: 'DeAndrea Salvador'
+    affiliation: 'NC General Assembly · Future Caucus'
+  - name: 'Ayan Paul'
+    affiliation: 'Project Iceberg'
+  - name: 'Teddy Wright'
+    affiliation: 'Utah Office of AI Policy'
+    mine: true
+  - name: 'Aditi Garg'
+    affiliation: 'Project Iceberg'
+  - name: 'Feroz Ahmad'
+    affiliation: 'Project Iceberg'
+  - name: 'Alice C. Schwarze'
+    affiliation: 'Utah Office of AI Policy'
+  - name: 'Ramesh Raskar'
+    affiliation: 'MIT · Project Iceberg'
+  - name: 'Prasanna Balaprakash'
+    affiliation: 'Oak Ridge National Laboratory'
+abstract: |
+  Artificial Intelligence is reshaping America's over $9.4 trillion labor market, with cascading effects that extend far beyond visible technology sectors. When AI automates quality control in automotive plants, consequences spread through logistics networks, supply chains, and local service economies. Yet traditional workforce metrics cannot capture these ripple effects: they measure employment outcomes after disruption occurs, not where AI capabilities overlap with human skills before adoption crystallizes.
+
+  Project Iceberg addresses this gap using Large Population Models to simulate the human–AI labor market, representing 151 million workers as autonomous agents executing over 32,000 skills across 3,000 counties and interacting with thousands of AI tools. It introduces the Iceberg Index, a skills-centered metric that measures the wage value of skills AI systems can perform within each occupation. The Index captures technical exposure — where AI can perform occupational tasks — not displacement outcomes or adoption timelines.
+
+  Analysis shows that visible AI adoption concentrated in computing and technology (2.2% of wage value, approximately $211 billion) represents only the tip of the iceberg. Technical capability extends far below the surface through cognitive automation spanning administrative, financial, and professional services (11.7%, approximately $1.2 trillion). This exposure is fivefold larger and geographically distributed across all states rather than confined to coastal hubs. Traditional indicators such as GDP, income, and unemployment explain less than 5% of this skills-based variation, underscoring why new indices are needed to capture exposure in the AI economy.
+
+  By simulating how capabilities may spread under alternative scenarios, Project Iceberg enables policymakers and business leaders to identify exposure hotspots, prioritize training and infrastructure investments, and test interventions before committing billions to implementation. Iceberg is built with the AgentTorch framework.
 ---
 
-Contributed to the published report. Read the full PDF via the external link.
+## What the Iceberg Index measures
+
+Two numbers most people have never had separated:
+
+| | Visible adoption | Technical capability |
+|---|---|---|
+| **What it tracks** | Where AI is being used today | Where AI *can* perform occupational tasks |
+| **Wage-value share** | 2.2% (~$211B) | 11.7% (~$1.2T) |
+| **Geography** | Coastal computing hubs | All 50 states |
+
+The gap between those two columns is the iceberg. The model's job is to surface it.

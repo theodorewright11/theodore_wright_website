@@ -34,18 +34,28 @@ export const blogToMd = (p: CollectionEntry<'blog'>) => [
   stripImports(p.body),
 ].join('\n');
 
-export const researchToMd = (r: CollectionEntry<'research'>) => [
-  `## ${r.data.title}`,
-  `*${fmt(r.data.date)} · ${r.data.status}` +
-    (r.data.collaborators?.length ? ` · with ${r.data.collaborators.join(', ')}` : '') +
-    (r.data.venue ? ` · ${r.data.venue}` : '') + '*',
-  r.data.paperUrl ? `Paper: https://theodorewright.dev${r.data.paperUrl}` : '',
-  r.data.externalUrl ? `External: ${r.data.externalUrl}` : '',
-  '',
-  r.data.description,
-  '',
-  stripImports(r.body),
-].filter(Boolean).join('\n');
+export const researchToMd = (r: CollectionEntry<'research'>) => {
+  const authorsLine = r.data.authors?.length
+    ? r.data.authors.map(a => a.affiliation ? `${a.name} (${a.affiliation})` : a.name).join(', ')
+    : r.data.collaborators?.length
+      ? r.data.collaborators.join(', ')
+      : null;
+
+  return [
+    `## ${r.data.title}`,
+    `*${fmt(r.data.date)} · ${r.data.status}` +
+      (r.data.paperStatus ? ` · ${r.data.paperStatus}` : '') +
+      (r.data.venue ? ` · ${r.data.venue}` : '') + '*',
+    authorsLine ? `Authors: ${authorsLine}` : '',
+    r.data.paperUrl ? `Paper: https://theodorewright.dev${r.data.paperUrl}` : '',
+    r.data.externalUrl ? `External: ${r.data.externalUrl}` : '',
+    '',
+    r.data.description,
+    r.data.abstract ? `\n### Abstract\n\n${r.data.abstract.trim()}` : '',
+    '',
+    stripImports(r.body),
+  ].filter(Boolean).join('\n');
+};
 
 export const modelToMd = (m: CollectionEntry<'models'>) => [
   `## ${m.data.title}`,

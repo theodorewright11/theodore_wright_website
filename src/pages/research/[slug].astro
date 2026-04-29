@@ -40,18 +40,21 @@ const fmtYear = (date: Date) => String(date.getFullYear());
           {statusLabel[entry.data.status] ?? entry.data.status}
         </span>
         <span class="font-mono text-[11px] text-muted">{fmtYear(entry.data.date)}</span>
+        {entry.data.paperStatus && (
+          <span class="font-mono text-[10px] uppercase text-muted border border-rule rounded-sm px-1.5 py-px"
+                style="letter-spacing: 0.1em">{entry.data.paperStatus}</span>
+        )}
       </div>
       <h1 class="font-display font-semibold text-[42px] leading-[1.08] m-0 mb-3 text-ink"
           style="letter-spacing: -0.025em; text-wrap: balance">{entry.data.title}</h1>
       <p class="font-serif text-[17px] text-ink-soft leading-[1.55] m-0"
          style="text-wrap: pretty">{entry.data.description}</p>
 
-      <div class="font-mono text-[11px] text-muted mt-4" style="letter-spacing: 0.04em">
-        {[
-          entry.data.collaborators?.length ? `with ${entry.data.collaborators.join(' & ')}` : null,
-          entry.data.venue ?? null,
-        ].filter(Boolean).join(' · ')}
-      </div>
+      {entry.data.venue && (
+        <div class="font-mono text-[11px] text-muted mt-4" style="letter-spacing: 0.04em">
+          {entry.data.venue}
+        </div>
+      )}
 
       {(entry.data.paperUrl || entry.data.externalUrl) && (
         <div class="flex gap-3 mt-6 flex-wrap font-mono text-[13px] font-semibold uppercase"
@@ -71,6 +74,42 @@ const fmtYear = (date: Date) => String(date.getFullYear());
         </div>
       )}
     </header>
+
+    {entry.data.abstract && (
+      <section class="mb-10">
+        <h2 class="font-display font-semibold text-[14px] uppercase text-muted m-0 mb-3"
+            style="letter-spacing: 0.12em">Abstract</h2>
+        <div class="font-serif text-[16px] text-ink-soft leading-[1.7] space-y-4"
+             style="text-wrap: pretty">
+          {entry.data.abstract.split(/\n\s*\n/).map((para: string) => (
+            <p class="m-0">{para.trim()}</p>
+          ))}
+        </div>
+      </section>
+    )}
+
+    {(entry.data.authors?.length || entry.data.collaborators?.length) && (
+      <section class="mb-10 pb-8 border-b border-rule-soft">
+        <h2 class="font-display font-semibold text-[14px] uppercase text-muted m-0 mb-3"
+            style="letter-spacing: 0.12em">Authors</h2>
+        {entry.data.authors?.length ? (
+          <ul class="m-0 p-0 list-none grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1.5">
+            {entry.data.authors.map((a: { name: string; affiliation?: string; mine?: boolean }) => (
+              <li class="font-serif text-[15px] leading-[1.4]">
+                <span class:list={['text-ink', a.mine ? 'font-semibold' : 'font-normal']}>{a.name}</span>
+                {a.affiliation && (
+                  <span class="font-serif italic text-[13px] text-muted"> — {a.affiliation}</span>
+                )}
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p class="font-serif text-[15px] text-ink-soft m-0">
+            with {entry.data.collaborators.join(' & ')}
+          </p>
+        )}
+      </section>
+    )}
 
     <div class="paper-prose">
       <Content />

@@ -19,6 +19,16 @@ const research = defineCollection({
     description: z.string(),
     date: z.coerce.date(),
     status: z.enum(['in-progress', 'published', 'upcoming', 'contribution']).default('in-progress'),
+    // Free-form publication state ("working paper, Apr 2026", "preprint", "v0.3"). Surfaces as a small badge.
+    paperStatus: z.string().optional(),
+    abstract: z.string().optional(),
+    // Richer author list with affiliations. `mine: true` flags Teddy's own entry so it can be styled differently.
+    // The legacy `collaborators` string array still works for entries that haven't been migrated.
+    authors: z.array(z.object({
+      name: z.string(),
+      affiliation: z.string().optional(),
+      mine: z.boolean().default(false),
+    })).default([]),
     collaborators: z.array(z.string()).default([]),
     venue: z.string().optional(),
     paperUrl: z.string().optional(),       // local PDF in /public/papers/
