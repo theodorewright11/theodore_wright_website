@@ -3,7 +3,7 @@ title: 'Model'
 description: 'Generating function for human psychological variation. One equation per person; variance decomposition follows. Closed-form pieces: Crow–Felsenstein AM inflation, Wilson-Effect saturation, genetic-nurture additive split, multivariate sex-difference Mahalanobis D. Twin / SNP / within-family heritability are projections of the same decomposition. Interactive dashboard included.'
 date: 2026-04-28
 status: in-progress
-refinementPass: 3
+refinementPass: 4
 refinementLog:
   - pass: 1
     date: '2026-04-28'
@@ -45,6 +45,22 @@ refinementLog:
       - 'Generalized §3.4 explicitly: D² = (μ_A − μ_B)ᵀ Σ⁻¹ (μ_A − μ_B) applies to any two-group comparison (sex, cohort, occupation, clinical/control, urban/rural). Module is presented in sex-difference language because the framing trap concentrates there. L4 firewall does not block descriptive use across groups; only causal use'
       - 'Dropped Bedrock Generating Functions connection in §10 (analogy was too loose to do useful work). Strengthened Parent-to-Child Transmission and Evolution-Modernity Mismatch connections by tying each to specific 2024 findings (Nivard dynastic IGE, Pietschnig positive-manifold weakening) that the future topics need to address'
       - 'Glossary §11 expanded from 8 to 19 entries — adds P_i(t), A_d, A_i, A_LD, C, E_m, E_s, I, μ(t), k, V_A*, h²(t), ρ̄ in the order they appear in the generating function. Notes that field-level terminology (h², SNP, GWAS, etc.) is not duplicated from earlier glossaries'
+  - pass: 4
+    date: '2026-04-28'
+    passes: ['error check', 'calibration audit']
+    why: 'Stress-testing the dashboard at default load uncovered a real conceptual error in pass 2: the variance budget overflowed (twin h² output 1.19, SNP h² output 1.27 at cognitive/age=25/m=0.4/ratio_i=0.4) because the code interpreted the Wilson curve as a random-mating quantity that then got *inflated* by the AM factor. Wilson h²(t) is empirically what twin studies report, which is already the AM-equilibrium quantity; the AM factor should *partition* it into V(A_d) and V(A_LD), not scale it up. Two related calibration issues fell out of the same audit: the saturating-exponential Wilson form rises too fast in childhood (h²(5) output 0.52 vs empirical 0.20), and c²(t) had no asymptote so it decayed to ~0 in adulthood when the empirical floor for cognition is ~0.05.'
+    changes:
+      - 'Reinterpreted Wilson h²(t) as the *observed* AM-equilibrium heritability (= V(A_d) + V(A_LD) by construction). Dashboard now uses the AM inflation factor to partition h² into V(A_d) (clean direct, what within-family designs estimate) and V(A_LD) (AM-LD), never to scale h² above its empirical value. Variance budget closes at 1.0 in every realistic case.'
+      - 'Switched Wilson functional form from saturating exponential to logistic h²(t) = h²_∞ / (1 + exp(-k·(t-t_50))). New cognitive defaults (h²_∞=0.80, t_50=9, k_h=0.30) give h²(5) ≈ 0.19, h²(15) ≈ 0.69, h²(25) ≈ 0.79 — matching Bouchard 2013 within ~3pp across the developmental range. Saturating exponential overshot childhood h² by ~2.5×.'
+      - 'Added c²_∞ asymptote: c²(t) = c²_∞ + (c²_0 - c²_∞)·exp(-k_c·t). Cognitive: c²_∞=0.05; personality: c²_∞=0; psychopathology: c²_∞=0.05. Documented that EA/religion/politics need c²_∞ ≈ 0.10-0.15 (substituted manually).'
+      - 'Refactored V(A_i) from ratio_i·V(A_d) to ratio_i²·V(A_d) — the variance-level translation of a β-level ratio. For ratio_i=0.4, V(A_i)=0.16·V(A_d), not 0.4·V(A_d). The cross-term 2·Cov(A_d, A_i) ≈ 2·ratio_i·V(A_d) is the leakage path documented in §3.3 but not displayed as a separate bar segment to keep the budget clean.'
+      - 'Dropped the fixed-point iteration in the dashboard since h²(t) is the equilibrium quantity directly. r_δ = m·h²_obs in one step.'
+      - 'Updated §3.1 to distinguish forward (h²_rm → h²_eq, with fixed-point) from inverse/partition (h²_obs → V(A_d), V(A_LD), single equation) problems. Dashboard does the inverse problem.'
+      - 'Updated §3.2 to logistic form with new parameter table; explicitly noted why the saturating exponential failed.'
+      - 'Updated §3.3 to clarify β-level vs variance-level translation; documented why the dashboard displays only the V(A_i)=ratio_i²·V(A_d) slice and not the cross-term contribution.'
+      - 'Updated §4 sanity-check anchors with the corrected numbers and added a fourth anchor: variance budget closes at 1.0 by construction.'
+      - 'Updated TLDR sentence on Crow–Felsenstein from "fixed-point at AM equilibrium" to "partitions rather than inflates"; updated glossary entries for r_δ, V_A*, h²(t).'
+      - 'Verified all sanity-check anchors numerically against the corrected dashboard logic — no overflow, no negative components, all budgets closing at 1.0.'
 ---
 
 import PsychVariationModel from '../../../components/ai-research/PsychVariationModel';
@@ -53,7 +69,7 @@ import PsychVariationModel from '../../../components/ai-research/PsychVariationM
 
 The topology answered "what depends on what?". The formalization answers a sharper question: **given a person, where does their phenotype come from in expectation?** The answer is a single generating function that, once written down, dissolves several apparent paradoxes in the field — most importantly the gap between twin heritability, SNP heritability, and within-family heritability (they estimate different sums of the same underlying components, and the differences are informative).
 
-The spine of this stage is one equation. Phenotype `P` for a person in a population is `P = A_d + A_i + A_LD + C + E_m + E_s + I`, with each term a contribution from a distinct mechanism: direct genetic effects from the person's own transmitted alleles, indirect genetic effects from parental (and broader-family) genomes operating through the environment they create, assortative-mating-induced linkage among causal variants, residual shared environment, measured non-shared environment, stochastic developmental noise, and gene-environment interaction terms. Variance decomposition follows directly, and is **block-orthogonal** rather than fully orthogonal: `V(P) = ΣV(component) + 2·Cov(A_d, A_i) + 2·Cov(A_d, E_m) + 2·Cov(A_d, C) + V(I)`. The cross-terms are the formal home of every gene-environment correlation finding in the literature; pretending they are zero is the most common modeling error. Three closed-form pieces drop out — the Crow–Felsenstein assortative-mating inflation factor `V_A* = V_A / (1 − r_δ)` (a fixed-point at AM equilibrium), the Wilson-Effect saturation curve `h²(t) = h²_∞ − (h²_∞ − h²_0)·e^(−kt)`, and the method gradient that says twin h² ≥ SNP h² ≥ within-family h² with the gaps decomposable into AM-LD, indirect-genetic, and rare-variant pieces.
+The spine of this stage is one equation. Phenotype `P` for a person in a population is `P = A_d + A_i + A_LD + C + E_m + E_s + I`, with each term a contribution from a distinct mechanism: direct genetic effects from the person's own transmitted alleles, indirect genetic effects from parental (and broader-family) genomes operating through the environment they create, assortative-mating-induced linkage among causal variants, residual shared environment, measured non-shared environment, stochastic developmental noise, and gene-environment interaction terms. Variance decomposition follows directly, and is **block-orthogonal** rather than fully orthogonal: `V(P) = ΣV(component) + 2·Cov(A_d, A_i) + 2·Cov(A_d, E_m) + 2·Cov(A_d, C) + V(I)`. The cross-terms are the formal home of every gene-environment correlation finding in the literature; pretending they are zero is the most common modeling error. Three closed-form pieces drop out — the Crow–Felsenstein assortative-mating partition `V(A_LD) = h²_obs · r_δ` with `r_δ = m·h²_obs` (the dashboard *partitions* h² rather than inflating it; the equilibrium is reached in 5–10 generations of stable assortment), the Wilson-Effect logistic curve `h²(t) = h²_∞ / (1 + exp(−k·(t − t_50)))`, and the method gradient that says twin h² ≥ SNP h² ≥ within-family h² with the gaps decomposable into AM-LD, indirect-genetic, and rare-variant pieces.
 
 A second module handles the multivariate sex-difference algebra, because the single largest framing trap in this field is the gap between univariate Cohen's d (typically 0.2–0.6 across personality dimensions) and the multivariate Mahalanobis distance `D² = Δμᵀ·Σ⁻¹·Δμ` (which can hit 2.7 when traits are weakly correlated and you stack 15 of them, as in Del Giudice 2012). The same data, two numbers, opposite-sounding stories — both correct. The formalization makes the bridge explicit so the reader can dial univariate d's and inter-trait correlations and watch D move.
 
@@ -93,7 +109,7 @@ P_i(t) = A_d,i + A_i,i + A_LD,i + C_i + E_m,i + E_s,i + I_i  +  μ(t)
 |---|---|---|
 | `A_d` | **Direct genetic** — additive effect of person's own transmitted causal alleles, evaluated as if mating were random | `Σ_k β_k · g_{ik}` over causal SNPs k |
 | `A_i` | **Indirect genetic** (genetic nurture) — additive effect of parents' (and extended-family) genotypes operating through the rearing environment | parents' PGS × environmental transmission coefficient |
-| `A_LD` | **Assortative-mating LD inflation** — additional additive variance induced by linkage among causal variants from non-random mating | scales `A_d` by `1/√(1 − r_δ)` at AM equilibrium |
+| `A_LD` | **Assortative-mating LD inflation** — additional additive variance induced by linkage among causal variants from non-random mating | At AM equilibrium, `V(A_d) + V(A_LD) = h²_obs`; the partition is `V(A_LD)/h²_obs = r_δ`. |
 | `C` | **Shared environment residual** — environmental effects shared by siblings *not already captured* by `A_i`. Adult personality: ~0. Education / religiosity / politics: nonzero |
 | `E_m` | **Measured non-shared environment** — identifiable causes (lead, schooling, head injury, peer composition, nutrition) | each enters with a measured causal coefficient, e.g. lead: β ≈ −6.2 IQ pts per 1–10 µg/dL |
 | `E_s` | **Stochastic developmental noise** — unmeasured non-shared variance: developmental contingencies, immune/microbial, microscale neural variation, measurement error | the unmodeled residual; ~50% of personality variance |
@@ -150,35 +166,47 @@ Three components admit clean equations. The rest are calibrated empirically.
 
 ### 3.1 Assortative-mating inflation (Crow–Felsenstein)
 
-For a polygenic trait under cross-spouse phenotypic correlation `m` at AM equilibrium, the spousal correlation among additive genetic values `r_δ` and the equilibrium heritability `h²*` solve a coupled fixed-point:
+There are two ways to use the AM-inflation formula, and they answer different questions.
+
+**Forward problem** (rarely the relevant one): given the random-mating heritability `h²_rm` of a trait, what is the equilibrium heritability after stable AM? The answer is a fixed-point coupling `r_δ = m · h²*`, `V_A* = V_A / (1 − r_δ)`, `h²* = V_A* / (V_A* + V_E)`, reached in ~5–10 generations of stable assortment (Crow & Felsenstein 1968). One-iteration approximation: `r_δ ≈ m · h²_rm`, inflation `≈ 1 / (1 − m·h²_rm)`.
+
+**Inverse / partition problem** (what the dashboard does): given the *observed* heritability `h²_obs` (which is what twin and SNP studies report from real, AM-equilibrium populations), partition it into the random-mating-equivalent direct component `V(A_d)` and the AM-induced LD inflation `V(A_LD)`:
 
 ```
-r_δ  =  m · h²*
-h²*  =  V_A* / (V_A* + V_E)
-V_A* =  V_A / (1 − r_δ)
+r_δ      ≈ m · h²_obs
+V(A_d)   = h²_obs / (1 + r_δ + r_δ² + …)  =  h²_obs · (1 − r_δ)
+V(A_LD)  = h²_obs − V(A_d)  =  h²_obs · r_δ
 ```
 
-A one-iteration approximation, plugging in random-mating `h²` for `h²*`, gives `r_δ ≈ m · h²` and inflation factor `≈ 1 / (1 − m·h²)`. The approximation is tight when `m · h²` is small (typical for personality, BMI) and looser when both are large (height with `m ≈ 0.25`, `h² ≈ 0.7` is at the edge of where one iteration suffices). The dashboard solves the fixed-point numerically; the prose uses the one-iteration form for tractability. AM equilibrium itself is reached within ~5–10 generations of stable assortment (Crow & Felsenstein 1968).
+The Wilson curve gives `h²_obs(t)` directly, so the partition uses `r_δ = m · h²_obs(t)` with no iteration needed. This is what the dashboard implements. Pass-2 versions of the dashboard erroneously inflated `h²_obs` *on top of itself*, pushing twin h² above 1.0 at high parameter values; pass-4 corrected this.
 
-Worked anchors: educational attainment with `m ≈ 0.4`, `h² ≈ 0.25` → `r_δ ≈ 0.10`, inflation ≈ `1.11`. Height with `m ≈ 0.25`, `h² ≈ 0.7` → `r_δ ≈ 0.18` (one-iteration), `0.21` after fixed-point convergence, inflation ≈ `1.21–1.27` — matches the 14–23% empirical inflation Border et al. and Yengo et al. report for SNP-h² of height.
+Worked anchors:
+- **Educational attainment** with `m ≈ 0.4`, `h²_obs ≈ 0.40` (twin) → `r_δ ≈ 0.16`, `V(A_d) ≈ 0.34`, `V(A_LD) ≈ 0.06`. The dashboard's "cognitive" trait class with reduced parameters approximates this regime.
+- **Height** with `m ≈ 0.25`, `h²_obs ≈ 0.85` → `r_δ ≈ 0.21`, `V(A_d) ≈ 0.67`, `V(A_LD) ≈ 0.18` — matches the 14–23% empirical "AM-inflated" share Border et al. and Yengo et al. report.
 
 Cross-trait AM (`m_xy ≠ 0`) extends the same logic to off-diagonal entries of the genetic-covariance matrix and is the formal reason E7 finds `R² = 0.74` between phenotypic-cross-mate correlations and genetic-correlation estimates.
 
 ### 3.2 Wilson-Effect saturation curve
 
-Heritability of cognitive ability rises with age because active rGE (G1) compounds: as children gain agency, they select environments matching their genetic propensities, amplifying genetic variance and shrinking shared environment. A simple two-parameter form fits Bouchard 2013 and Briley & Tucker-Drob 2013 well:
+Heritability of cognitive ability rises with age because active rGE (G1) compounds: as children gain agency, they select environments matching their genetic propensities, amplifying genetic variance and shrinking shared environment. The empirical age curve from Bouchard 2013 and Briley & Tucker-Drob 2013 is sigmoidal — slow rise in early childhood, fastest gain in late childhood / early adolescence, saturation in late adolescence. A logistic gives a clean three-parameter fit:
 
 ```
-h²(t) = h²_∞ − (h²_∞ − h²_0) · exp(−k·t)
+h²(t) = h²_∞ / (1 + exp(−k_h · (t − t_50)))
 ```
 
-With `h²_0 ≈ 0.20` (age 5), `h²_∞ ≈ 0.80` (asymptote by ~age 20), and `k ≈ 0.15/year`, the curve crosses 0.50 around age 9–10 and saturates by age 20. The shared-environment trace runs the inverse path:
+With `h²_∞ ≈ 0.80`, `t_50 ≈ 9` years (age at half-asymptote), and `k_h ≈ 0.30/year`: `h²(5) ≈ 0.19`, `h²(10) ≈ 0.46`, `h²(15) ≈ 0.69`, `h²(25) ≈ 0.79`. These match Bouchard's anchors within ~3 percentage points across the full developmental range.
+
+(Earlier passes used a saturating-exponential `h²_∞ − (h²_∞ − h²_0)·exp(−k·t)`, which rises too fast at the young end — it produced `h²(5) ≈ 0.52` for cognition vs the empirical ~0.20. The logistic form is the smallest functional change that fits the empirical sigmoidal pattern.)
+
+The shared-environment trace runs an inverse path with a non-zero asymptote, since shared environment for cognition does not actually drop to zero in adulthood (~0.05 plateau is well-attested):
 
 ```
-c²(t) = c²_0 · exp(−k_c · t),     with c²_0 ≈ 0.30, k_c ≈ 0.18/year
+c²(t) = c²_∞ + (c²_0 − c²_∞) · exp(−k_c · t)
 ```
 
-Both formulas are phenomenological; the exponent `k` is not a primitive and varies by trait. For Big Five personality traits, `h²` is roughly flat across adulthood (no Wilson rise), so `k_personality ≈ 0`.
+Cognition: `c²_0 ≈ 0.50`, `c²_∞ ≈ 0.05`, `k_c ≈ 0.15/year`. For Big Five personality, `c²_∞ ≈ 0` is appropriate (shared family environment effectively vanishes for personality by adulthood). For educational attainment and religiosity, `c²_∞ ≈ 0.10–0.15` should be substituted — these are exception traits where shared environment persists throughout life.
+
+Both formulas are phenomenological — the parameters are not derived from a deeper model. They are calibration knobs for the dashboard.
 
 ### 3.3 Genetic-nurture decomposition (additive form)
 
@@ -197,13 +225,19 @@ Empirically (Kong 2018, Wang 2021, Okbay 2022, Howe 2022):
 β_i / β_d ≈ 0.4 – 0.6  (cognitive performance)
 ```
 
-The variance contribution from indirect effects, accounting for their correlation with direct effects via parents passing both:
+**β-level vs variance-level.** The ratio `β_i/β_d` quoted above is at the *regression-coefficient* level. Translating to a variance contribution requires squaring (and adding cross-terms):
 
 ```
-V(A_i) + 2·Cov(A_d, A_i)  ≈  V_PGS,population − V_PGS,within-family
+V(A_i)              = β_i² · V(g) = (β_i/β_d)² · V(A_d)
+2·Cov(A_d, A_i)     ≈ 2·(β_i/β_d) · V(A_d)        (when k → 1)
+V_PGS,population − V_PGS,within  ≈ V(A_i) + 2·Cov(A_d, A_i)  =  V(A_d) · ((β_i/β_d)² + 2·(β_i/β_d))
 ```
 
-The relation is approximate, not exact. The fully expanded right-hand side is `(β_pop² − β_d²)·V(g) = β_i·k·(2β_d + β_i·k)·V(g)`, where `k` is the AM-induced correlation between transmitted and non-transmitted alleles. The approximation drops the `β_i²·k²` term (small when `β_i/β_d < 1` and AM coupling is moderate) and treats `k` as ~1. It's a serviceable identity in the parameter regime relevant to most psychological traits but should not be treated as an exact equality. The closed form is most useful as the equation that turns "missing heritability after within-family correction" from a puzzle into an order-of-magnitude measurement: the right-hand side is now directly observable for any trait with both population-level and within-family GWAS at scale.
+Where `k` is the AM-induced correlation between transmitted and non-transmitted alleles within parents (typically close to 1).
+
+For EA with `β_i/β_d ≈ 0.4` and within-family `V(A_d) ≈ 0.15`: `V(A_i) ≈ 0.024`, `2·Cov ≈ 0.12`, total genetic-nurture variance contribution ≈ 0.144. The dashboard displays *only* the pure `V(A_i) = (β_i/β_d)² · V(A_d)` piece (≈ 0.024 here) as a clean variance bucket; the cross-term `2·Cov(A_d, A_i)` is the leakage path that makes empirical twin h² overshoot the dashboard's "Twin h² (ACE)" output, and is acknowledged in the help text rather than allocated to a separate bar segment. The simplification keeps the variance budget bounded; the cost is that "indirect genetic share of phenotypic variance" via PGS comparisons (which sees both `V(A_i)` and `2·Cov`) appears larger than the dashboard's `V(A_i)` slice alone.
+
+The relation `V(A_i) + 2·Cov(A_d, A_i) ≈ V_PGS,population − V_PGS,within-family` is approximate, not exact. The exact identity drops the `β_i²·k²` term and treats `k` as ~1; it's a serviceable order-of-magnitude relation for most psychological traits and is what turns "missing heritability after within-family correction" from a puzzle into a measurement.
 
 ### 3.4 Multivariate sex-difference algebra (Module B)
 
@@ -240,13 +274,16 @@ Topology Variant C: `accuracy(distance)` calibration from Ding et al. 2023 (`r =
 
 ## 4. Composing the parts: anchors the dashboard preserves
 
-The dashboard above stitches §3.1, §3.2, and §3.3 into one panel — sliders for trait class, age, `m`, `β_i/β_d`, and rare-variant share; outputs the variance decomposition and the three method-specific h² numbers. Three sanity-check anchors should hold under any sensible parameter choice:
+The dashboard above stitches §3.1, §3.2, and §3.3 into one panel — sliders for trait class, age, `m`, `β_i/β_d`, and rare-variant share; outputs the variance decomposition and the three method-specific h² numbers. Four sanity-check anchors hold under the calibrated defaults:
 
-1. **EA at age 25, m = 0.4**: twin h² ≈ 0.40, SNP h² ≈ 0.25, within-family h² ≈ 0.15. AM inflation ≈ 1.11.
-2. **IQ at age 5 vs age 25**: V(C) drops from ~0.30 to ~0.05; V(A_d) rises from ~0.20 to ~0.55.
-3. **Big Five across adulthood**: V(C) ≈ 0, V(A_d) ≈ 0.40, V(A_i) ≈ 0.05, V(E_s) ≈ 0.50 — flat across age.
+1. **IQ at age 5 (cognitive)**: h²(5) ≈ 0.18, V(C) ≈ 0.26, V(A_d) ≈ 0.17. Matches Bouchard 2013.
+2. **IQ at age 25 (cognitive, m=0.4, β_i/β_d=0.4)**: h²(25) ≈ 0.79, V(A_d) ≈ 0.54, V(A_LD) ≈ 0.25, V(A_i) ≈ 0.09, V(C) ≈ 0.06. Within-family h² (= V(A_d)) ≈ 0.54 — about a third more than the often-quoted EA within-family of 0.15, because cognition is a higher-h² trait than education.
+3. **Big Five across adulthood**: h² ≈ 0.45, V(C) ≈ 0, V(E) ≈ 0.55. Effectively flat from age 5 onward.
+4. **Variance budget closes**: V(A_d) + V(A_LD) + V(A_i) + V(C) + V(E) = 1.0 by construction. Twin h² never exceeds the Wilson asymptote.
 
-These are the calibration targets. If the dashboard's stacked-bar moves these visibly off, something in the parameter mapping has drifted and needs rebuilding.
+These are the calibration targets. The biggest non-obvious one is anchor 4: the previous dashboard pass had the variance budget overflow under default parameters (twin h² > 1.0 at age 25 with m=0.4), which was a real bug. The current partition `h²_obs = V(A_d) + V(A_LD)` keeps the budget bounded by construction.
+
+For traits the dashboard does not have a dedicated class for (educational attainment, height, religiosity, political affiliation), the user can approximate by choosing the closest class and adjusting sliders. EA-like behavior emerges from `cognitive` with m=0.4 and a mental note that h²(25) for EA is closer to 0.40 than 0.79 — i.e., the dashboard's cognitive class is calibrated to IQ, not EA.
 
 ## 5. Boundary conditions and where the model breaks
 
@@ -367,10 +404,10 @@ This section's symbols are listed in the order they appear in the generating fun
 | `β_d` / `β_i` | Direct / indirect genetic regression coefficients on phenotype, estimated from within-family / parental-genotype designs. |
 | `g_T` / `g_NT` | Polygenic score from offspring's transmitted alleles / parents' non-transmitted alleles. |
 | `m` | Cross-spouse phenotypic correlation (assortative-mating strength on the measured trait). |
-| `r_δ` | Cross-spouse correlation in additive genetic value; `≈ m · h²` at AM equilibrium for a hyperpolygenic trait (one-iteration approximation). |
+| `r_δ` | Cross-spouse correlation in additive genetic value; `= m · h²_obs` at AM equilibrium. The dashboard uses this directly (no fixed-point iteration) since Wilson h²(t) is already the equilibrium quantity. |
 | `k` | AM-induced correlation between transmitted and non-transmitted alleles within parents; appears in the genetic-nurture variance identity (§3.3). |
-| `V_A*` | Additive genetic variance at AM equilibrium; `V_A* = V_A / (1 − r_δ)` in the Crow–Felsenstein form. |
-| `h²(t)` | Heritability as a function of age; saturating exponential in the Wilson form (§3.2). |
+| `V_A*` | Additive genetic variance at AM equilibrium; `V_A* = V_A / (1 − r_δ)` in the Crow–Felsenstein form. The dashboard observes V_A* directly via h²_obs and uses the formula to *partition* it into V(A_d) and V(A_LD). |
+| `h²(t)` | Heritability as a function of age; logistic form `h²_∞ / (1 + exp(−k·(t − t_50)))` in §3.2. Earlier passes used a saturating exponential which fit the asymptote but rose too fast in childhood; the logistic is the smallest functional change that captures the empirical sigmoidal pattern. |
 | `Σ` | Trait-level (within-sex or within-group) covariance matrix used in multivariate-D calculation. |
 | `Mahalanobis D` | Multivariate generalization of Cohen's d: `√(Δμᵀ Σ⁻¹ Δμ)`. |
 | `ρ̄` | Average inter-trait correlation in `Σ`; the equicorrelated approximation collapses `D²` to `d²·n/(1+(n−1)ρ̄)` (§3.4). |

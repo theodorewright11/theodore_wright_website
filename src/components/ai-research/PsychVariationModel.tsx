@@ -5,35 +5,43 @@ type Tab = 'variance' | 'sexdiff';
 
 // ---- Variance decomposition logic ---------------------------------------
 
-// Per-trait-class defaults at the parameter floor (age 5 / m=0 / etc).
-// Numbers are illustrative-but-anchored to the literature (Bouchard 2013,
-// Briley & Tucker-Drob 2013, Polderman 2015, Howe 2022, Wainschtein 2025).
+// Per-trait-class defaults. Wilson curve uses logistic form
+//   h²(t) = h²_∞ / (1 + exp(-k_h · (t - t_50)))
+// because the empirical age-of-rise is sigmoidal (slow at infancy, fastest in
+// late childhood, saturating in late adolescence) — saturating exponentials
+// rise too fast at the young end (Briley & Tucker-Drob 2013, Bouchard 2013).
+// c²(t) gets an explicit non-zero asymptote c²_∞ since shared environment
+// for cognition / EA / psychopathology does not actually go to zero in adulthood.
 const TRAIT_DEFAULTS: Record<TraitClass, {
-  h2_inf: number;     // Wilson asymptote
-  h2_0: number;       // Wilson floor (age 0)
-  k_h: number;        // Wilson rate (per year)
+  h2_inf: number;     // Wilson asymptote (V(A_d) + V(A_LD))
+  t_50: number;       // age at which h² = h²_∞ / 2
+  k_h: number;        // logistic slope per year
   c2_0: number;       // shared-env at age 0
+  c2_inf: number;     // shared-env asymptote at adulthood
   k_c: number;        // shared-env decay rate
-  ratio_i_default: number; // β_i / β_d
+  ratio_i_default: number; // β_i / β_d (regression-coefficient level)
   m_default: number;       // cross-spouse phenotypic correlation
   age_default: number;
   age_label: string;
 }> = {
   cognitive: {
-    h2_inf: 0.80, h2_0: 0.20, k_h: 0.15,
-    c2_0: 0.30, k_c: 0.18,
+    // IQ-like composite. Empirical anchors: h²(5) ≈ 0.20, h²(20+) ≈ 0.75-0.80.
+    h2_inf: 0.80, t_50: 9, k_h: 0.30,
+    c2_0: 0.50, c2_inf: 0.05, k_c: 0.15,
     ratio_i_default: 0.40, m_default: 0.40,
     age_default: 25, age_label: 'adulthood',
   },
   personality: {
-    h2_inf: 0.45, h2_0: 0.40, k_h: 0.05, // nearly flat
-    c2_0: 0.10, k_c: 0.20,
+    // Big-Five-like. h² roughly flat across ages, ~0.40-0.45.
+    h2_inf: 0.45, t_50: 2, k_h: 1.0,
+    c2_0: 0.10, c2_inf: 0.0, k_c: 0.20,
     ratio_i_default: 0.10, m_default: 0.15,
     age_default: 30, age_label: 'adulthood',
   },
   psychopathology: {
-    h2_inf: 0.50, h2_0: 0.30, k_h: 0.10,
-    c2_0: 0.15, k_c: 0.15,
+    // Mood/anxiety/SCZ aggregate. Moderate h², C tail persists.
+    h2_inf: 0.50, t_50: 8, k_h: 0.30,
+    c2_0: 0.20, c2_inf: 0.05, k_c: 0.15,
     ratio_i_default: 0.20, m_default: 0.20,
     age_default: 30, age_label: 'adulthood',
   },
@@ -48,55 +56,52 @@ function computeDecomposition(
 ) {
   const T = TRAIT_DEFAULTS[trait];
 
-  // Wilson curve: h²(t). Treat this as the upper-bound additive
-  // (V(A_d) + V(A_LD)) under random-mating assumption; we then add
-  // V(A_i) on top via genetic-nurture coupling, as a separate component.
-  const h2_random_mating = T.h2_inf - (T.h2_inf - T.h2_0) * Math.exp(-T.k_h * age);
-  const c2 = T.c2_0 * Math.exp(-T.k_c * age);
+  // Wilson logistic: h²(t) is the *observed* (AM-equilibrium) additive heritability —
+  // the thing twin studies report. By construction h²(t) = V(A_d) + V(A_LD).
+  // We do NOT multiply by an inflation factor on top of this — that was the pass-2
+  // bug. Instead AM inflation is used to *partition* h² into V(A_d) and V(A_LD).
+  const h2_observed = T.h2_inf / (1 + Math.exp(-T.k_h * (age - T.t_50)));
 
-  // Crow–Felsenstein AM equilibrium: solve r_δ = m · h²*(r_δ) as a fixed point.
-  // h²*(r_δ) = h²_rm / (1 − r_δ + r_δ · h²_rm)  (after one substitution).
-  // We use ~6 fixed-point iterations; converges fast for m·h² < 0.5.
-  let r_delta = m * h2_random_mating;
-  for (let i = 0; i < 6; i++) {
-    const inflation_iter = 1 / Math.max(1 - r_delta, 0.05);
-    const v_a_eq = h2_random_mating * inflation_iter;
-    const h2_eq = v_a_eq / (v_a_eq + (1 - h2_random_mating)); // fix V_E at random-mating level
-    r_delta = Math.min(m * h2_eq, 0.6);
-  }
+  // Shared environment with non-zero asymptote.
+  const c2 = T.c2_inf + (T.c2_0 - T.c2_inf) * Math.exp(-T.k_c * age);
+
+  // AM partition. r_δ = m · h²_observed at AM equilibrium (Wilson is already at
+  // equilibrium, so no fixed-point iteration needed). Inflation factor relates
+  // V(A_d) (clean, within-family) to V(A_d) + V(A_LD) (the observed total).
+  const r_delta = Math.min(m * h2_observed, 0.6);
   const am_inflation = 1 / Math.max(1 - r_delta, 0.05);
+  const v_Ad = h2_observed / am_inflation;
+  const v_ALD = h2_observed - v_Ad;
 
-  // Build the variance components.
-  // V(A_d) is the direct genetic; under AM equilibrium V(A_d) inflates to V(A_d)·inflation.
-  // We treat the inflation as the V(A_LD) component (so V(A_d) is the random-mating direct).
-  const v_Ad_total_with_LD = h2_random_mating * am_inflation;
-  const v_ALD = v_Ad_total_with_LD - h2_random_mating;
-  const v_Ad = h2_random_mating;
-  // V(A_i) sits on top and adds to total variance (this is the genetic-nurture environmental contribution).
-  const v_Ai = ratio_i * v_Ad;
+  // Genetic-nurture variance contribution. ratio_i is at the β level (β_i/β_d).
+  // At the variance level, V(A_i) ≈ ratio_i² · V(A_d). The cross-term
+  // 2·Cov(A_d, A_i) ≈ 2·ratio_i·V(A_d) is held in the V(C) bucket conceptually
+  // (it's the "leakage" path) but not displayed separately to keep the budget clean.
+  const v_Ai = ratio_i * ratio_i * v_Ad;
 
   // Rare-variant slice peels off V(A_d).
   const v_Ad_rare = v_Ad * shareRare;
   const v_Ad_common = v_Ad - v_Ad_rare;
 
-  // Residual environment (V(C) + V(E)) fills to 1 once we've accounted for additive + indirect.
-  const total_genetic_plus_LD = v_Ad + v_ALD;
-  const v_C_with_nurture = c2 + v_Ai;            // V(A_i) lands in C under correctly specified ACE
-  const v_E = Math.max(0, 1 - total_genetic_plus_LD - v_C_with_nurture);
+  const v_C = c2;
+  const v_E = Math.max(0, 1 - v_Ad - v_ALD - v_Ai - v_C);
 
-  // Estimator views (corrected per pass-2 method-gradient discussion):
-  //   Twin h² (classical ACE) = V(A_d) + V(A_LD); V(A_i) lands in C.
-  //   SNP h² (LDSC on population GWAS) = V(A_d, common) + V(A_LD) + a fraction of V(A_i)·k.
-  //     We approximate the V(A_i) leakage at 0.5 (mid-range AM coupling).
-  //   Within-family h² = V(A_d) only.
+  // Estimator views.
+  // Twin h² (correctly specified ACE) = V(A_d) + V(A_LD) = h²_observed by construction.
+  //   Real-world classical ACE without AM correction will exceed this by absorbing
+  //   some V(A_i) leakage; we display the clean number with a note.
+  // SNP h² (LDSC on population GWAS) ≈ V(A_d, common) + V(A_LD) + ~30% of V(A_i)
+  //   (population effect sizes carry partial indirect contamination; LDSC partly
+  //   adjusts for LD but not fully for AM-induced LD).
+  // Within-family h² = V(A_d) only.
   const twin_h2 = v_Ad + v_ALD;
-  const snp_h2 = v_Ad_common + v_ALD + 0.5 * v_Ai;
+  const snp_h2 = v_Ad_common + v_ALD + 0.3 * v_Ai;
   const wf_h2 = v_Ad;
 
   return {
-    h2_random_mating, c2, r_delta, am_inflation,
+    h2_observed, c2, r_delta, am_inflation,
     v_Ad, v_Ai, v_ALD, v_Ad_rare, v_Ad_common,
-    v_C_baseline: c2, v_C_with_nurture, v_E,
+    v_C, v_E,
     twin_h2, snp_h2, wf_h2,
   };
 }
@@ -235,8 +240,8 @@ function VariancePanel() {
     { label: 'V(A_d) common', value: d.v_Ad_common, color: '#1a1614' },
     { label: 'V(A_d) rare',   value: d.v_Ad_rare,   color: '#3a342c' },
     { label: 'V(A_LD) AM-induced', value: d.v_ALD, color: '#c98a6e' },
-    { label: 'V(A_i) → lands in C', value: d.v_Ai, color: '#8a4a2b' },
-    { label: 'V(C) shared env',  value: d.v_C_baseline, color: '#a89677' },
+    { label: 'V(A_i) genetic nurture', value: d.v_Ai, color: '#8a4a2b' },
+    { label: 'V(C) shared env',  value: d.v_C, color: '#a89677' },
     { label: 'V(E) non-shared',  value: d.v_E, color: '#d9d0bf' },
   ];
 
@@ -306,14 +311,14 @@ function VariancePanel() {
           <NumberCard label="Within-family" value={d.wf_h2.toFixed(2)} formula="A_d only" />
         </div>
 
-        <h4 className="text-[11px] font-mono uppercase tracking-wider text-muted mt-6 mb-3">Assortative mating (fixed point)</h4>
+        <h4 className="text-[11px] font-mono uppercase tracking-wider text-muted mt-6 mb-3">Assortative-mating partition</h4>
         <div className="grid grid-cols-2 gap-2">
-          <NumberCard label="r_δ equilibrium" value={d.r_delta.toFixed(3)} formula="r_δ = m · h²(r_δ)" />
-          <NumberCard label="V_A inflation" value={d.am_inflation.toFixed(2) + '×'} formula="1 / (1 − r_δ)" />
+          <NumberCard label="r_δ" value={d.r_delta.toFixed(3)} formula="m · h²" />
+          <NumberCard label="V(A_d) / h²" value={(1 / d.am_inflation).toFixed(2)} formula="direct share of additive" />
         </div>
 
         <p className="text-[11px] text-muted mt-5 leading-relaxed">
-          Under correctly specified ACE, V(A_i) is shared identically by MZ and DZ co-twins (same parents) and lands in C, not in twin h². Empirical twin h² for EA exceeds within-family by ~0.20–0.25 mostly because AM and unmodeled genetic nurture leak into A. The honest method gradient: twin h² ≥ SNP h² ≥ within-family h², with each estimator answering a slightly different question.
+          Wilson h²(t) is the *observed* (AM-equilibrium) heritability twin studies estimate. AM-LD partitions it into V(A_d) (clean direct, what within-family designs estimate) and V(A_LD) (structural inflation from non-random mating). V(A_i) is added on top as the variance contribution of genetic nurture; classical ACE without AM correction tends to leak some of V(A_i) into A, which is why empirical twin h² often exceeds the dashboard's "Twin h² (ACE)" output.
         </p>
       </div>
     </div>
