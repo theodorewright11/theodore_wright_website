@@ -62,8 +62,11 @@ const AM_PARTITION: AmPartitionRow[] = [
   { trait: 'iq_g (adult)', m: 0.44, h2_observed: 0.79, v_Ad: 0.52, v_ALD: 0.27, ALD_share_of_h2: 0.35 },
   { trait: 'big_five_avg', m: 0.13, h2_observed: 0.45, v_Ad: 0.42, v_ALD: 0.03, ALD_share_of_h2: 0.06 },
   { trait: 'neuroticism', m: 0.11, h2_observed: 0.45, v_Ad: 0.43, v_ALD: 0.02, ALD_share_of_h2: 0.05 },
-  { trait: 'schizophrenia', m: 0.30, h2_observed: 0.79, v_Ad: 0.60, v_ALD: 0.19, ALD_share_of_h2: 0.24 },
+  { trait: 'schizophrenia', m: 0.45, h2_observed: 0.79, v_Ad: 0.51, v_ALD: 0.28, ALD_share_of_h2: 0.36 },
+  { trait: 'bipolar', m: 0.18, h2_observed: 0.78, v_Ad: 0.67, v_ALD: 0.11, ALD_share_of_h2: 0.14 },
   { trait: 'mdd', m: 0.15, h2_observed: 0.37, v_Ad: 0.35, v_ALD: 0.02, ALD_share_of_h2: 0.06 },
+  { trait: 'adhd', m: 0.45, h2_observed: 0.74, v_Ad: 0.49, v_ALD: 0.25, ALD_share_of_h2: 0.33 },
+  { trait: 'autism', m: 0.45, h2_observed: 0.80, v_Ad: 0.51, v_ALD: 0.29, ALD_share_of_h2: 0.36 },
   { trait: 'political_orientation', m: 0.58, h2_observed: 0.40, v_Ad: 0.31, v_ALD: 0.09, ALD_share_of_h2: 0.23 },
   { trait: 'religiosity', m: 0.56, h2_observed: 0.38, v_Ad: 0.30, v_ALD: 0.08, ALD_share_of_h2: 0.21 },
   { trait: 'smoking_initiation', m: 0.38, h2_observed: 0.50, v_Ad: 0.41, v_ALD: 0.10, ALD_share_of_h2: 0.19 },
@@ -232,8 +235,25 @@ function PanelHeader({ title, claim, verdict, verdictKind }: {
 
 function MethodGradientPanel() {
   const traits = METHOD_GRADIENT;
-  const W = 100;
   const max = 1.0;
+
+  // Per-row chart geometry. SVG drawn at fixed width 360 then scaled responsively.
+  const W = 360;
+  const H = 24;
+  const padX = 6;
+  const innerW = W - 2 * padX;
+
+  const sx = (v: number) => padX + (v / max) * innerW;
+
+  // Estimator order matters for the connecting line — model predicts
+  // twin (left/highest) → wgs → snp → wf (right/lowest).
+  type EstKey = 'twin_h2' | 'wgs_h2' | 'snp_h2' | 'wf_h2';
+  const ESTIMATORS: { key: EstKey; label: string; color: string; r: number }[] = [
+    { key: 'twin_h2', label: 'twin', color: '#1a1614', r: 4.5 },
+    { key: 'wgs_h2',  label: 'WGS',  color: '#8a4a2b', r: 4 },
+    { key: 'snp_h2',  label: 'SNP',  color: '#c98a6e', r: 3.5 },
+    { key: 'wf_h2',   label: 'WF',   color: '#a89677', r: 3.5 },
+  ];
 
   return (
     <div>
@@ -244,63 +264,104 @@ function MethodGradientPanel() {
         verdictKind="mixed"
       />
 
-      <div className="space-y-2 text-[12px]">
-        <div className="grid grid-cols-[140px_1fr_220px] gap-3 text-[10px] font-mono uppercase tracking-wider text-muted pb-1 border-b border-rule-soft">
+      <div className="space-y-1 text-[12px]">
+        {/* x-axis header */}
+        <div className="grid grid-cols-[150px_1fr] gap-3 text-[10px] font-mono uppercase tracking-wider text-muted pb-1 border-b border-rule-soft">
           <span>trait</span>
-          <span>h² 0 → 1</span>
-          <span className="text-right">twin / wgs / snp / wf</span>
-        </div>
-        {traits.map(t => (
-          <div key={t.trait} className="grid grid-cols-[140px_1fr_220px] gap-3 items-center">
-            <span className="text-ink text-[12px]">{t.trait}</span>
-            <div className="relative h-5 bg-paper border border-rule-soft rounded-sm">
-              {/* shaded h² bands */}
-              {t.twin_h2 != null && <Bar value={t.twin_h2} max={max} color="#1a1614" label="twin" yPct={0} />}
-              {t.wgs_h2 != null  && <Bar value={t.wgs_h2}  max={max} color="#8a4a2b" label="wgs"  yPct={0} />}
-              {t.snp_h2 != null  && <Bar value={t.snp_h2}  max={max} color="#c98a6e" label="snp"  yPct={0} />}
-              {t.wf_h2 != null   && <Bar value={t.wf_h2}   max={max} color="#a89677" label="wf"   yPct={0} />}
-              {/* tick markers as vertical lines */}
-              {t.twin_h2 != null && <Tick value={t.twin_h2} max={max} color="#1a1614" />}
-              {t.wgs_h2 != null  && <Tick value={t.wgs_h2}  max={max} color="#8a4a2b" />}
-              {t.snp_h2 != null  && <Tick value={t.snp_h2}  max={max} color="#c98a6e" />}
-              {t.wf_h2 != null   && <Tick value={t.wf_h2}   max={max} color="#a89677" />}
-            </div>
-            <div className="flex justify-end gap-2 text-[10px] font-mono text-muted">
-              <span style={{ color: '#1a1614' }}>{fmt(t.twin_h2)}</span>
-              <span style={{ color: '#8a4a2b' }}>{fmt(t.wgs_h2)}</span>
-              <span style={{ color: '#c98a6e' }}>{fmt(t.snp_h2)}</span>
-              <span style={{ color: '#a89677' }}>{fmt(t.wf_h2)}</span>
-            </div>
+          <div className="relative h-3">
+            {[0, 0.25, 0.5, 0.75, 1.0].map(v => (
+              <span key={v} className="absolute" style={{ left: `${(v / max) * 100}%`, transform: 'translateX(-50%)' }}>
+                {v.toFixed(2)}
+              </span>
+            ))}
           </div>
-        ))}
+        </div>
+
+        {traits.map(t => {
+          const points = ESTIMATORS
+            .map(e => ({ ...e, value: t[e.key] }))
+            .filter(p => p.value != null) as { key: EstKey; label: string; color: string; r: number; value: number }[];
+          // Sort by value ascending for the gridline span
+          const sortedVals = [...points].map(p => p.value).sort((a, b) => a - b);
+          const minV = sortedVals[0];
+          const maxV = sortedVals[sortedVals.length - 1];
+          // Predicted ordering check: twin >= wgs >= snp >= wf when present.
+          const presentKeys = points.map(p => p.key);
+          const predictedOrderHolds = presentKeys.every((_, i, arr) => {
+            if (i === 0) return true;
+            const prev = points[i - 1].value;
+            const curr = points[i].value;
+            return prev >= curr - 1e-9;
+          });
+          return (
+            <div key={t.trait} className="grid grid-cols-[150px_1fr] gap-3 items-center py-0.5">
+              <span className="text-ink text-[12px] flex items-center gap-2">
+                <span
+                  className="inline-block w-1.5 h-1.5 rounded-full"
+                  style={{ backgroundColor: predictedOrderHolds ? '#8a4a2b' : '#a89677' }}
+                  title={predictedOrderHolds ? 'predicted ordering holds' : 'ordering fails (informative)'}
+                />
+                {t.trait}
+              </span>
+              <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" width="100%" height={H}>
+                {/* faint grid */}
+                {[0.25, 0.5, 0.75, 1.0].map(v => (
+                  <line key={v} x1={sx(v)} y1={0} x2={sx(v)} y2={H} stroke="#e6dfcf" strokeWidth={0.5} />
+                ))}
+                {/* range bar (min to max of observed) */}
+                {points.length >= 2 && (
+                  <line
+                    x1={sx(minV)}
+                    y1={H / 2}
+                    x2={sx(maxV)}
+                    y2={H / 2}
+                    stroke="#d9d0bf"
+                    strokeWidth={1.5}
+                  />
+                )}
+                {/* estimator markers */}
+                {points.map(p => (
+                  <g key={p.key}>
+                    <circle
+                      cx={sx(p.value)}
+                      cy={H / 2}
+                      r={p.r}
+                      fill={p.color}
+                      fillOpacity={0.95}
+                      stroke="#f7f3ec"
+                      strokeWidth={1}
+                    >
+                      <title>{p.label} h² = {p.value.toFixed(2)}</title>
+                    </circle>
+                  </g>
+                ))}
+                {/* twin annotation if value > 0 */}
+                {points.length > 0 && (
+                  <text
+                    x={sx(points[0].value) + 7}
+                    y={H / 2 + 3.5}
+                    fontSize="9"
+                    fill="#3a342c"
+                    fontFamily="JetBrains Mono, monospace"
+                  >
+                    {points[0].value.toFixed(2)}
+                  </text>
+                )}
+              </svg>
+            </div>
+          );
+        })}
       </div>
 
-      <Legend items={[
-        { label: 'twin h²', color: '#1a1614' },
-        { label: 'WGS h²', color: '#8a4a2b' },
-        { label: 'SNP h²', color: '#c98a6e' },
-        { label: 'within-family h²', color: '#a89677' },
-      ]} />
+      <Legend items={ESTIMATORS.map(e => ({ label: `${e.label} h²`, color: e.color }))} />
 
       <p className="text-[11px] text-muted mt-4 leading-relaxed">
-        Each tick is one published estimate from a different paper / cohort. The "violations" you see (e.g., height WGS=0.68 lower than within-sibship=0.78) are cross-paper noise, not model failures: Wainschtein 2022 used N=25k unrelated EUR with WGS-GREML; Howe 2022 used N=178k siblings with sib-regression. They estimate slightly different things. The clean within-paper test is Howe 2022's population-vs-within-sibship comparison on the same sample, which holds in the predicted direction.
+        Each row plots the published estimates for one trait on the 0–1 h² scale. Larger dot = larger-N or older estimator (twin); smaller dots = newer methods. The grey bar spans min(observed) to max(observed) — its length is the cross-paper noise. Sienna dot at the trait label = predicted ordering holds; muted dot = ordering fails (informative pattern, not model failure). The "violations" you see (e.g., height WGS=0.68 below within-sibship=0.78) are cross-paper / cross-method differences, not bugs in the model: Wainschtein 2022 used N=25k unrelated EUR with WGS-GREML; Howe 2022 used N=178k siblings with sib-regression. The clean within-paper test (Howe 2022 alone, population vs. within-sibship on the same sample) holds in the predicted direction across all seven AM/IGE-strong traits the model singles out.
       </p>
     </div>
   );
 }
 
-function Tick({ value, max, color }: { value: number; max: number; color: string }) {
-  const pct = (value / max) * 100;
-  return (
-    <div className="absolute top-0 bottom-0 w-px" style={{ left: `${pct}%`, backgroundColor: color, opacity: 0.85 }} />
-  );
-}
-function Bar({ value, max, color }: { value: number; max: number; color: string; label: string; yPct?: number }) {
-  const pct = (value / max) * 100;
-  return (
-    <div className="absolute top-0 bottom-0" style={{ left: 0, width: `${pct}%`, backgroundColor: color, opacity: 0.06 }} />
-  );
-}
 function Legend({ items }: { items: { label: string; color: string }[] }) {
   return (
     <div className="flex flex-wrap gap-3 mt-3 text-[10px] font-mono text-muted">

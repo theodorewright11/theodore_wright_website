@@ -3,7 +3,7 @@ title: 'Data'
 description: 'Empirical pipeline that confronts the model''s seven testable predictions with currently-published consortium estimates. Six hold cleanly (AM partition, Wilson curve, multivariate-D gap, PGS portability decay, xAM inflation, environmental causes); one (the cross-paper method gradient) is mixed in an informative way. Curated CSVs (downloadable) + Python pipeline + interactive findings panel.'
 date: 2026-04-28
 status: in-progress
-refinementPass: 3
+refinementPass: 4
 refinementLog:
   - pass: 1
     date: '2026-04-28'
@@ -39,6 +39,18 @@ refinementLog:
       - 'Compressed §3 headline numbers (kept as one-stop reference table but trimmed duplicates with §2 result subsections)'
       - 'Added a brief glossary subsection right after TLDR ("A few terms") that defines the model-imported jargon in plain language for readers entering at the data page'
       - 'Pruned §4 vs §6 overlap: AM-equilibrium caveat now lives only in §4; the "small CSV scale" objection in §6 references §4 rather than restating it'
+  - pass: 4
+    date: '2026-04-28'
+    passes: ['error check', 'crux follow-through', 'readability']
+    why: 'Pass 3 named D1 (cell-level extraction correctness) as the most consequential pipeline crux but never actually audited the suspicious cells. Spot-checking the four psychiatric m values cited as "Nordsletten_2016_imputed" surfaced a real correction: Nordsletten 2016 reports tetrachoric spousal correlations greater than 0.40 for schizophrenia, ADHD, and autism, but my CSV had m=0.30 for all three. Also: the H1 panel''s visualization was visually weak (4 stacked 6%-opacity bars + 1px ticks; readers couldn''t see the bars and ended up reading only the numbers).'
+    changes:
+      - 'Web-verified Nordsletten 2016 (JAMA Psychiatry, N≈707k Swedish population register) per disorder: SCZ tetrachoric >0.40, ADHD >0.40, autism >0.40, affective disorders 0.14–0.19, substance abuse 0.36–0.39'
+      - 'Corrected heritability_estimates.csv: schizophrenia m 0.30→0.45, ADHD m 0.30→0.45, autism m 0.30→0.45, bipolar m 0.20→0.18 (within Nordsletten range), MDD unchanged at 0.15 (Horwitz 2023 verified). Source labels updated from "Nordsletten_2016_imputed" to "Nordsletten_2016" with the per-disorder note in the cell'
+      - 'Knock-on H2 numbers: SCZ V(A_LD) share rises from 24% to 36% of h²; ADHD from 22% to 33%; autism from 24% to 36%. The substantively new reading: ~one-third of the additive genetic variance for severe psychiatric conditions is structural AM-induced LD rather than independent direct biological signal'
+      - 'Added pass-4 caveat block to §2 H2 explaining the correction and noting that for binary-diagnosis traits, "spousal correlation" is a tetrachoric across diagnosis status — same equilibrium logic, lower quantitative precision'
+      - 'Rewrote the H1 panel visualization as SVG-per-row: 4 colored circles (different sizes per estimator: twin = largest, WF = smallest) at the actual h² values along a 0–1 axis, with a faint grey bar spanning min(observed) to max(observed) showing cross-paper noise width. Sienna marker at trait label = predicted ordering holds for that trait, muted marker = fails (informative pattern). Drops the unreadable 6%-opacity bars and 1px ticks of pass 1–3'
+      - 'Updated React component AM_PARTITION constants for SCZ/BIP/ADHD/autism to match the corrected CSV'
+      - 'PRD topic registry advanced from "data (pass 1)" — actually advanced through the intervening passes too; corrected to "data (pass 4)" along with a decisions-log entry'
 ---
 
 import PsychVariationData from '../../../components/ai-research/PsychVariationData';
@@ -112,9 +124,11 @@ Dependencies: `pandas`, `numpy`, `scipy`. No web fetches, no external services, 
 
 **Claim.** `V(A_LD) = m·h²` with the AM equilibrium reached.
 
-**Result.** Predicted V(A_LD) shares of h²: educational attainment 22%, height 20%, BMI 12%, schizophrenia 24%, IQ adult 35%. Height matches Yengo 2018's reported empirical 14–23% range; EA matches Border 2022's qualitative "substantial fraction" finding. The pipeline replicates the model's H2 prediction within a few points across AM-strong traits.
+**Result.** Predicted V(A_LD) shares of observed h²: educational attainment **22%**, height **20%**, BMI **12%**, schizophrenia **36%**, ADHD **33%**, autism **36%**, bipolar **14%**, MDD **6%**, IQ adult **35%**. Height matches Yengo 2018's reported empirical 14–23% range; EA matches Border 2022's qualitative "substantial fraction" finding.
 
-**Caveat.** The Crow–Felsenstein partition assumes equilibrium. For traits under rapid assortment shifts (EA post-1970), this is approximate. The IQ adult prediction (35%) is at the upper end and may overshoot — Horwitz 2023's IQ partner correlation r=0.44 comes from a small (N=5,672) meta-analytic sample.
+**The psychiatric numbers were corrected in pass 4.** Pass-1/2/3 used m=0.30 for schizophrenia, ADHD, and autism (cited as "Nordsletten 2016 imputed" without verified value). [Nordsletten 2016](https://pubmed.ncbi.nlm.nih.gov/26913486/) actually reports tetrachoric spousal correlations *greater than 0.40* for all three disorders — moving these from m=0.30 to m=0.45 lifts their predicted V(A_LD) share from ~24% to ~36% of h². This is a real and substantively different reading: about one third of the additive genetic variance for severe psychiatric conditions is *structural assortative-mating-induced LD* rather than independent direct biological signal. The model's prediction stands; the data is more dramatic than pass-1 numbers showed.
+
+**Caveats.** The Crow–Felsenstein partition assumes AM equilibrium. For traits under rapid assortment shifts (EA post-1970), this is approximate. The IQ adult prediction (35%) sits at the upper end and may overshoot — Horwitz 2023's IQ partner correlation r=0.44 comes from a small (N=5,672) meta-analytic sample. For psychiatric disorders, "spousal correlation" is a tetrachoric across a binary diagnosis, which behaves differently than a continuous-trait partner correlation under the same equilibrium assumption — the prediction is qualitatively right but quantitative precision is lower.
 
 ### H3 — Wilson logistic curve (supported)
 

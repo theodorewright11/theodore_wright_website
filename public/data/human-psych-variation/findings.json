@@ -302,21 +302,21 @@
       "trait": "schizophrenia",
       "h2_observed": 0.79,
       "h2_source": "twin",
-      "m": 0.3,
-      "r_delta": 0.237,
-      "v_Ad": 0.60277,
-      "v_ALD": 0.18723,
-      "ALD_share_of_h2": 0.237
+      "m": 0.45,
+      "r_delta": 0.35550000000000004,
+      "v_Ad": 0.509155,
+      "v_ALD": 0.28084500000000007,
+      "ALD_share_of_h2": 0.35550000000000004
     },
     {
       "trait": "bipolar",
       "h2_observed": 0.78,
       "h2_source": "twin",
-      "m": 0.2,
-      "r_delta": 0.15600000000000003,
-      "v_Ad": 0.65832,
-      "v_ALD": 0.12168000000000002,
-      "ALD_share_of_h2": 0.15600000000000003
+      "m": 0.18,
+      "r_delta": 0.1404,
+      "v_Ad": 0.6704880000000001,
+      "v_ALD": 0.109512,
+      "ALD_share_of_h2": 0.1404
     },
     {
       "trait": "mdd",
@@ -332,21 +332,21 @@
       "trait": "adhd",
       "h2_observed": 0.74,
       "h2_source": "twin",
-      "m": 0.3,
-      "r_delta": 0.222,
-      "v_Ad": 0.57572,
-      "v_ALD": 0.16428,
-      "ALD_share_of_h2": 0.222
+      "m": 0.45,
+      "r_delta": 0.333,
+      "v_Ad": 0.49358,
+      "v_ALD": 0.24642,
+      "ALD_share_of_h2": 0.333
     },
     {
       "trait": "autism",
       "h2_observed": 0.8,
       "h2_source": "twin",
-      "m": 0.3,
-      "r_delta": 0.24,
-      "v_Ad": 0.6080000000000001,
-      "v_ALD": 0.192,
-      "ALD_share_of_h2": 0.24
+      "m": 0.45,
+      "r_delta": 0.36000000000000004,
+      "v_Ad": 0.5119999999999999,
+      "v_ALD": 0.28800000000000003,
+      "ALD_share_of_h2": 0.36000000000000004
     },
     {
       "trait": "political_orientation",
@@ -986,20 +986,20 @@
     {
       "trait": "schizophrenia",
       "beta_ratio": 0.15,
-      "v_Ad": 0.60277,
-      "v_Ai": 0.013562325,
-      "cov_term": 0.02712465,
-      "v_Ai_plus_cov": 0.040686975,
-      "v_Ai_share_of_h2": 0.0171675
+      "v_Ad": 0.509155,
+      "v_Ai": 0.0114559875,
+      "cov_term": 0.0343679625,
+      "v_Ai_plus_cov": 0.04582395,
+      "v_Ai_share_of_h2": 0.01450125
     },
     {
       "trait": "bipolar",
       "beta_ratio": 0.15,
-      "v_Ad": 0.65832,
-      "v_Ai": 0.0148122,
-      "cov_term": 0.0197496,
-      "v_Ai_plus_cov": 0.0345618,
-      "v_Ai_share_of_h2": 0.01899
+      "v_Ad": 0.6704880000000001,
+      "v_Ai": 0.01508598,
+      "cov_term": 0.018103176000000002,
+      "v_Ai_plus_cov": 0.033189156000000004,
+      "v_Ai_share_of_h2": 0.019341
     },
     {
       "trait": "mdd",
@@ -1013,20 +1013,20 @@
     {
       "trait": "adhd",
       "beta_ratio": 0.2,
-      "v_Ad": 0.57572,
-      "v_Ai": 0.023028800000000006,
-      "cov_term": 0.034543199999999996,
-      "v_Ai_plus_cov": 0.057572,
-      "v_Ai_share_of_h2": 0.03112000000000001
+      "v_Ad": 0.49358,
+      "v_Ai": 0.019743200000000006,
+      "cov_term": 0.04442220000000001,
+      "v_Ai_plus_cov": 0.06416540000000001,
+      "v_Ai_share_of_h2": 0.02668000000000001
     },
     {
       "trait": "autism",
       "beta_ratio": 0.1,
-      "v_Ad": 0.6080000000000001,
-      "v_Ai": 0.006080000000000002,
-      "cov_term": 0.018240000000000003,
-      "v_Ai_plus_cov": 0.024320000000000005,
-      "v_Ai_share_of_h2": 0.007600000000000003
+      "v_Ad": 0.5119999999999999,
+      "v_Ai": 0.00512,
+      "cov_term": 0.023039999999999998,
+      "v_Ai_plus_cov": 0.028159999999999998,
+      "v_Ai_share_of_h2": 0.0064
     },
     {
       "trait": "smoking_initiation",
