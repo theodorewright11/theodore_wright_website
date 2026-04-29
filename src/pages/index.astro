@@ -62,26 +62,30 @@ const statusToLabel = (status: string) =>
     {/* Masthead */}
     <div class="border-b-4 border-double border-ink pb-8 mb-9">
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-end">
-        <div>
-          <h1 class="font-display font-semibold text-[64px] sm:text-[76px] text-ink leading-[0.92] m-0"
-              style="letter-spacing: -0.035em">
-            Teddy Wright
-          </h1>
-          <p class="font-serif italic text-[14px] text-muted leading-[1.5] m-0 mt-4 max-w-[480px]"
-             style="text-wrap: pretty">{bio.credentials}</p>
+        <div class="flex items-end gap-5">
+          <img src="/pic_of_me.png" alt="Teddy Wright"
+               class="w-24 h-24 sm:w-28 sm:h-28 object-cover border border-rule rounded-sm flex-shrink-0" />
+          <div>
+            <h1 class="font-display font-semibold text-[56px] sm:text-[68px] text-ink leading-[0.92] m-0"
+                style="letter-spacing: -0.035em">
+              Teddy Wright
+            </h1>
+            <p class="font-serif italic text-[14px] text-muted leading-[1.5] m-0 mt-3 max-w-[480px]"
+               style="text-wrap: pretty">{bio.credentials}</p>
+          </div>
         </div>
         <div>
           <p class="font-serif text-base leading-[1.6] text-ink-soft m-0 mb-3"
              style="text-wrap: pretty">{bio.blurb}</p>
           <div class="font-mono text-[11px] uppercase text-muted"
                style="letter-spacing: 0.08em">
-            <a href={`mailto:${bio.email}`} class="text-ink no-underline hover:text-accent transition-colors">email</a>
-            <span class="text-muted"> / </span>
-            <a href={bio.substack} target="_blank" rel="noopener" class="text-ink no-underline hover:text-accent transition-colors">substack</a>
+            <a href={bio.linkedin} target="_blank" rel="noopener" class="text-ink no-underline hover:text-accent transition-colors">linkedin</a>
             <span class="text-muted"> / </span>
             <a href={bio.github} target="_blank" rel="noopener" class="text-ink no-underline hover:text-accent transition-colors">github</a>
             <span class="text-muted"> / </span>
-            <a href={bio.linkedin} target="_blank" rel="noopener" class="text-ink no-underline hover:text-accent transition-colors">linkedin</a>
+            <a href={bio.substack} target="_blank" rel="noopener" class="text-ink no-underline hover:text-accent transition-colors">substack</a>
+            <span class="text-muted"> / </span>
+            <a href={`mailto:${bio.email}`} class="text-ink no-underline hover:text-accent transition-colors">email</a>
           </div>
         </div>
       </div>
@@ -200,8 +204,9 @@ const statusToLabel = (status: string) =>
       {/* Column 3 — Updates + Dashboards */}
       <div>
         <SectionLabel label="Updates" href="/updates" />
-        <div class="font-serif italic text-[13px] text-muted">
-          coming soon — short notes on what I'm reading, working on, and thinking about.
+        <div class="font-serif italic text-[13px] text-muted leading-[1.5]"
+             style="text-wrap: pretty">
+          Coming soon. Weekly updates — partly for me, to track my research and what I'm working on, partly for anyone in my life or just curious folks who might want to see what's moving.
         </div>
 
         <div class="mt-8">

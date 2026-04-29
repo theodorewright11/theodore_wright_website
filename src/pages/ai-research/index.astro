@@ -149,12 +149,12 @@ const groups = [
 ---
 
 <BaseLayout title="AI’s Research — Teddy Wright"
-  description="Outputs of the LLM Iterate pipeline — topics progressively refined across five stages, each ending in a writeup and a usable artifact.">
+  description="Outputs of the LLM Iterate pipeline — topics refined across five stages. Every stage has a writeup plus a possible artifact; every finished topic ends in a final writeup and artifact(s) anyone can use.">
   <section class="max-w-[760px] mx-auto px-8 pt-14 pb-24">
     <h1 class="font-display font-semibold text-[48px] leading-none m-0 mb-3 text-ink"
         style="letter-spacing: -0.03em">AI’s Research</h1>
     <p class="font-serif text-[17px] text-muted leading-[1.55] max-w-[580px] m-0 mb-14">
-      A pipeline where I set AI loose on topics I choose. Five main stages — lit review, topology, model, data, build — and each ends in a writeup plus an artifact (tool, dashboard, explainer) meant to be useful to someone.
+      A pipeline where I set AI loose on topics I choose. Five main stages — lit review, topology, model, data, build. Every stage produces a writeup plus a possible artifact, and every finished topic ends in a final writeup and artifact(s) (tool, dashboard, explainer) that any person can use.
     </p>
 
     <DownloadMd href="/ai-research.md" label="download all AI's research (.md)" />
@@ -177,47 +177,71 @@ const groups = [
                     style="letter-spacing: -0.015em">{t.title}</h3>
                 <p class="font-serif text-[15px] text-ink-soft leading-[1.55] m-0"
                    style="text-wrap: pretty">{t.desc}</p>
+                <div class="mt-2 font-mono text-[11px] text-muted flex gap-3 flex-wrap"
+                     style="letter-spacing: 0.06em">
+                  <span>writeup —</span>
+                  <span>artifact —</span>
+                </div>
               </article>
             ))
           ) : (
-            (g.items as ActiveTopic[]).map((t, i) => (
-              <article class:list={[
-                'py-5',
-                i < g.items.length - 1 ? 'border-b border-rule-soft' : '',
-              ]}>
-                <div class="flex items-baseline gap-3 mb-2">
-                  <h3 class="font-display font-semibold text-[22px] m-0 text-ink flex-1"
-                      style="letter-spacing: -0.015em">
-                    <a href={`/ai-research/${t.slug}`}
-                       class="text-ink no-underline hover:text-accent transition-colors">
-                      {t.title}
-                    </a>
-                  </h3>
-                  <span class="font-mono text-[11px] text-muted">{t.done}/{t.stages.length}</span>
-                </div>
-                {t.desc && (
-                  <p class="font-serif text-[15px] text-ink-soft leading-[1.55] m-0 mb-3"
-                     style="text-wrap: pretty">{t.desc}</p>
-                )}
-                <div class="flex gap-1 h-1.5 rounded-[3px] overflow-hidden mb-2">
-                  {t.stages.map(s => {
-                    const hasDraft = s.status === 'complete' || s.status === 'in-progress';
-                    return (
-                      <div class:list={['flex-1', hasDraft ? 'bg-accent' : 'bg-rule']} />
-                    );
-                  })}
-                </div>
-                <div class="font-mono text-[11px] text-muted flex gap-2.5 flex-wrap"
-                     style="letter-spacing: 0.06em">
-                  {t.stages.map(s => {
-                    const hasDraft = s.status === 'complete' || s.status === 'in-progress';
-                    return (
-                      <span class:list={[hasDraft ? 'text-ink' : 'text-muted']}>{s.label}</span>
-                    );
-                  })}
-                </div>
-              </article>
-            ))
+            (g.items as ActiveTopic[]).map((t, i) => {
+              const hasWriteup = t.stages.find(s => s.id === 'writeup' && (s.status === 'complete' || s.status === 'in-progress'));
+              const hasBuild = t.stages.find(s => s.id === 'build' && (s.status === 'complete' || s.status === 'in-progress'));
+              return (
+                <article class:list={[
+                  'py-5',
+                  i < g.items.length - 1 ? 'border-b border-rule-soft' : '',
+                ]}>
+                  <div class="flex items-baseline gap-3 mb-2">
+                    <h3 class="font-display font-semibold text-[22px] m-0 text-ink flex-1"
+                        style="letter-spacing: -0.015em">
+                      <a href={`/ai-research/${t.slug}`}
+                         class="text-ink no-underline hover:text-accent transition-colors">
+                        {t.title}
+                      </a>
+                    </h3>
+                    <span class="font-mono text-[11px] text-muted">{t.done}/{t.stages.length}</span>
+                  </div>
+                  {t.desc && (
+                    <p class="font-serif text-[15px] text-ink-soft leading-[1.55] m-0 mb-3"
+                       style="text-wrap: pretty">{t.desc}</p>
+                  )}
+                  <div class="flex gap-1 h-1.5 rounded-[3px] overflow-hidden mb-2">
+                    {t.stages.map(s => {
+                      const hasDraft = s.status === 'complete' || s.status === 'in-progress';
+                      return (
+                        <div class:list={['flex-1', hasDraft ? 'bg-accent' : 'bg-rule']} />
+                      );
+                    })}
+                  </div>
+                  <div class="font-mono text-[11px] text-muted flex gap-2.5 flex-wrap mb-3"
+                       style="letter-spacing: 0.06em">
+                    {t.stages.map(s => {
+                      const hasDraft = s.status === 'complete' || s.status === 'in-progress';
+                      return (
+                        <span class:list={[hasDraft ? 'text-ink' : 'text-muted']}>{s.label}</span>
+                      );
+                    })}
+                  </div>
+                  <div class="font-mono text-[11px] flex gap-4 flex-wrap"
+                       style="letter-spacing: 0.06em">
+                    {hasWriteup ? (
+                      <a href={`/ai-research/${t.slug}/writeup`}
+                         class="text-accent no-underline hover:underline">writeup →</a>
+                    ) : (
+                      <span class="text-muted">writeup —</span>
+                    )}
+                    {hasBuild ? (
+                      <a href={`/ai-research/${t.slug}/build`}
+                         class="text-accent no-underline hover:underline">artifact →</a>
+                    ) : (
+                      <span class="text-muted">artifact —</span>
+                    )}
+                  </div>
+                </article>
+              );
+            })
           )}
         </section>
       ))

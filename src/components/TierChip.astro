@@ -5,17 +5,19 @@ interface Props {
 }
 const { tier } = Astro.props;
 
-const labels: Record<Tier, string> = {
-  mine: 'me',
+// 'mine' tier renders no chip — only the explicitly AI-assisted tiers are surfaced.
+const labels: Partial<Record<Tier, string>> = {
   collab: 'me x ai',
   'ai-led': 'ai',
 };
-const label = labels[tier] ?? labels.mine;
+const label = labels[tier];
 ---
 
-<span
-  class="inline-block font-mono text-[10px] uppercase text-muted border border-rule rounded-sm px-1.5 py-px whitespace-nowrap"
-  style="letter-spacing: 0.08em"
->
-  {label}
-</span>
+{label && (
+  <span
+    class="inline-block font-mono text-[10px] uppercase text-muted border border-rule rounded-sm px-1.5 py-px whitespace-nowrap"
+    style="letter-spacing: 0.08em"
+  >
+    {label}
+  </span>
+)}
