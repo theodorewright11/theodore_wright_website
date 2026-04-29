@@ -3,8 +3,27 @@ title: 'Build'
 description: 'A reader''s tool for the psychology of individual differences. Pick a trait, see the three plain-language buckets (direct genes / family setup / environment + chance) instead of the V(A_d)/V(A_LD)/V(A_i) decomposition. Plus the four motivated-reasoning traps the field gets caught in, the asymmetric environmental-effects finding, three "heritability ≠ destiny" misreadings, and a seven-bullet take-away. Translates the formalization and data pipeline into something a non-specialist can actually use.'
 date: 2026-04-28
 status: in-progress
-refinementPass: 3
+refinementPass: 4
 refinementLog:
+  - pass: 4
+    date: '2026-04-29'
+    passes: ['error check', 'truth/accuracy override on bias', 'cross-stage sync']
+    why: 'A reviewer pointed out a real and consequential error that had propagated through the explorer (and the writeup): I attributed the structural inflation of twin-based heritability — the gap between twin h² and within-family h² for socially-structured traits — partly to assortative mating creating linkage between trait-relevant alleles. The reviewer correctly noted that AM biases Falconer''s twin formula 2(rMZ - rDZ) DOWNWARD, not upward: under positive AM, parents are genetically more similar than chance, so DZ twins share more than 50% of trait-relevant alleles, raising rDZ relative to rMZ and shrinking the formula''s output. The dominant source of the twin-vs-within-family gap for socially-structured traits is genetic nurture (parents passing on alleles AND correlated rearing environments), with direct empirical anchors in Kong 2018 (non-transmitted PGS effect = 29.9% of transmitted) and Okbay 2022 (within-family direct ~50% of population PGI). AM is a real population-level phenomenon (Crow-Felsenstein LD inflation; Yengo 2018: 14-23% V(A) inflation for height) but its effect on twin estimates runs OPPOSITE to genetic nurture''s — they partially cancel. The error propagated through take-away 3 and through most trait familyNote entries that mentioned AM as the source of structural inflation.'
+    changes:
+      - 'Take-away 3 body rewritten to lead with genetic nurture as the dominant source of twin-h² inflation for socially-structured traits, with AM clarified as a real population-level phenomenon (V(A) inflation via LD) but with the correct opposite-direction effect on Falconer''s twin formula'
+      - 'Adult IQ familyNote rewritten: removed the wrong-direction "28% structural inflation from assortative mating" framing; now leads with genetic nurture, includes AM with the correct opposite-direction caveat'
+      - 'Educational attainment familyNote rewritten: now leads with Kong 2018 / Okbay 2022 as direct empirical evidence for genetic nurture, AM is mentioned with the correct caveat about Falconer downward bias'
+      - 'Schizophrenia, ADHD, and autism familyNote entries rewritten: previously attributed ~33-36% V(A_LD) share to AM as if it were the source of the twin-vs-direct-biology gap; now correctly framed as Crow-Felsenstein population-level LD prediction (the formula partition is mathematically valid as a V(A) decomposition) with explicit acknowledgment that no within-family GWAS at scale exists for these traits, so the genetic-nurture contribution is unmeasured. The Border 2022 cross-trait AM finding (about between-trait LD inflating cross-disorder rg) is preserved correctly because that is a separate and well-supported phenomenon'
+      - 'Big Five subdimension familyNote entries (openness, conscientiousness, extraversion, agreeableness, neuroticism) rewritten to lead with "genetic nurture for personality is essentially zero" as the reason the family bucket is small, with AM mentioned correctly as not driving the gap'
+      - 'Self-control, empathy, subjective wellbeing familyNote entries rewritten to remove AM-as-source framing'
+      - 'Religiosity, political orientation familyNote entries rewritten to lead with shared family environment / cultural transmission (the actual dominant contributor for high-c²-adult traits) instead of AM'
+      - 'Smoking initiation familyNote rewritten to lead with cultural transmission and the empirical twin-vs-WF gap (Howe 2022) instead of AM-as-driver'
+      - 'EA trapHer entry updated to attribute the inflation to genetic nurture leakage with Kong/Okbay anchors instead of "assortative-mating + genetic-nurture"'
+      - 'Schizophrenia trapHer and takeaway entries updated: the within-trait genetic-nurture share is acknowledged as unmeasured (no WF GWAS at scale); the Border 2022 xAM finding is preserved as it correctly addresses cross-disorder rg, not within-trait inflation'
+      - 'ADHD and autism trapHer/takeaway entries similarly updated'
+      - 'Did NOT change Border 2022 cross-trait AM mentions — those address cross-disorder rg inflation via between-trait LD, which is a real and well-supported finding (separate from the within-trait twin-h² question)'
+      - 'Did NOT change the variance bucket numbers — those were computed via Method C (within-family h² when published, formula fallback otherwise) and are mathematically correct as a partition of V(P). Only the prose attribution of which mechanism drives each bucket needed correction'
+      - 'Flagged for separate refinement: the model formalization §3.1 partition formula V(A_LD) = m·h² is mathematically valid as a Crow-Felsenstein population-level decomposition but its labeling there as "explains the twin-vs-WF gap" needs the same correction; the data stage''s H2 prediction tests the partition formula (which holds) but its interpretation as "structural inflation of twin h²" propagates the same error'
   - pass: 3
     date: '2026-04-29'
     passes: ['internal consistency check', 'cross-stage sync']

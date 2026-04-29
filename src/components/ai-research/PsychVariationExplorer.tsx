@@ -53,7 +53,7 @@ const TRAITS: Trait[] = [
       "Why people differ in cognitive ability as adults is mostly genetic at the population level — but a sizeable chunk of what twin studies count as 'genetic' is actually the family setup parents create, not direct biological causation.",
     variance: { direct: 0.50, family: 0.34, env: 0.16 },
     familyNote:
-      'About 28% structural inflation from assortative mating (people pair with partners of similar cognitive ability, which links the relevant alleles together), ~5% residual shared family environment that persists into adulthood, plus a small classical-twin-design leakage of genetic-nurture effects. Within-family GWAS for cognition recovers ~0.50 — substantially below twin h² of 0.79.',
+      'Most of this bucket is genetic nurture — parents who pass on cognitive-ability variants also create environments correlated with those variants (vocabulary, books, expectations, peer-group selection). Classical twin models cannot easily separate this from direct biological causation. Within-family GWAS for cognition recovers ~0.50, substantially below twin h² of 0.79; the gap is dominated by genetic-nurture leakage. About ~5% is residual shared family environment that persists into adulthood. Assortative mating (m=0.44 for IQ) does inflate population-level V(A) via LD but biases Falconer\'s twin formula downward, partially canceling rather than adding to the gap.',
     envNote:
       "Most of this small bucket is unmeasured developmental noise. Identified large levers (severe deprivation, lead, fetal alcohol syndrome) account for almost no population variance in modern Western samples because their prevalence is now low.",
     insults: [
@@ -116,7 +116,7 @@ const TRAITS: Trait[] = [
       "Years of schooling completed is one of the most heavily 'family setup' traits the field has studied. More than half of what looks genetic in twin studies is actually environmental, transmitted through parents who happen to share genes with their kids.",
     variance: { direct: 0.15, family: 0.45, env: 0.40 },
     familyNote:
-      'Educational attainment has the strongest assortative mating of any non-attitudinal trait (m = 0.55 — partners are quite similar on years of schooling). Twin h² is 0.40; within-sibship h² is 0.15 (Howe 2022). The 0.25 gap is the combined contribution of assortative-mating-induced linkage, parental-environment effects mediated through genes, and residual shared family environment that persists into adulthood (~9%).',
+      'Dominated by genetic nurture: Kong 2018 found parents\' non-transmitted alleles predict offspring outcomes at 29.9% of the transmitted-allele effect — direct evidence that "genetic" transmission for EA is partly the home environment that correlates with parental genes. Twin h² is 0.40; within-sibship h² is 0.15 (Howe 2022). About ~9% is residual shared family environment that persists into adulthood (unusual for behavioral traits). Educational attainment shows the strongest non-attitudinal assortative mating (m=0.55), but AM biases Falconer\'s twin formula downward, partially canceling other inflations rather than driving them.',
     envNote:
       'Larger than for cognitive ability itself because educational attainment is a social outcome, not just a cognitive one — peer effects, school quality, recession-year birth cohorts, and cultural shifts all leave signal here.',
     insults: [],
@@ -126,7 +126,7 @@ const TRAITS: Trait[] = [
     trapEnv:
       "Dismissing the genetic signal entirely ignores that within-family direct effects are non-zero (h² ≈ 0.15 is small but real). Cognitive ability matters for completing school, and cognitive ability is partly heritable.",
     trapHer:
-      "Citing twin h² = 0.40 as 'education is mostly genetic' is the textbook example of getting captured by the assortative-mating + genetic-nurture inflation. Within-family h² is 0.15 — about three-eighths of the twin estimate. Most of what looks genetic in EA is parents creating environments their kids would match anyway.",
+      "Citing twin h² = 0.40 as 'education is mostly genetic' is the textbook example of getting captured by genetic-nurture leakage into twin estimates. Within-family h² is 0.15 — about three-eighths of the twin estimate. Most of what looks genetic in EA is parents creating environments their kids would match anyway (Kong 2018, Okbay 2022).",
     takeaway:
       "Educational attainment is one of the cleanest demonstrations that 'genetic effect' in twin studies routinely contains substantial structural and environmental contamination. The honest reading: small-but-real direct genetic effect on completion, plus a much larger family-setup contribution, plus genuine effects of mandatory schooling and broader social structure.",
     primarySources: [
@@ -169,7 +169,7 @@ const TRAITS: Trait[] = [
       'Openness — curiosity, aesthetic sensitivity, intellectual exploration — has the highest assortative mating of any Big Five dimension (m ≈ 0.21). Curious people pair with curious people, which structurally inflates the genetic-looking signal more than for any other personality trait.',
     variance: { direct: 0.37, family: 0.04, env: 0.59 },
     familyNote:
-      'The small family bucket is mostly assortative-mating-induced linkage. Shared family environment for openness is roughly zero by adulthood, like other personality traits.',
+      'Genetic nurture for personality is essentially zero, so the family bucket is small to begin with. Openness shows the strongest assortative mating among Big Five (curious people pair with curious people), which inflates population-level V(A) via LD — but this does not on net inflate the twin-vs-direct-biology gap (AM biases Falconer\'s formula downward, partially canceling other twin-design biases). Shared family environment for openness is roughly zero by adulthood.',
     envNote:
       'About 60% of why adults differ in openness is non-shared environment + chance. Most is unmeasured developmental history; some signal comes from formal education exposure and urban living, but even those move openness only modestly within adulthood.',
     insults: [],
@@ -193,7 +193,7 @@ const TRAITS: Trait[] = [
       'Conscientiousness — diligence, order, follow-through — predicts more life outcomes (income, longevity, marriage stability) than any other personality trait. About 45% genetic, with modest assortative mating.',
     variance: { direct: 0.42, family: 0.03, env: 0.55 },
     familyNote:
-      'Tiny family bucket. Conscientiousness shows ~0% shared family environment in adulthood; the small assortative mating signal (m ≈ 0.16) is the only structural inflation.',
+      'Tiny family bucket. Conscientiousness shows ~0% shared family environment in adulthood, and genetic nurture for personality is essentially zero. Modest assortative mating (m ≈ 0.16) does inflate population-level V(A) slightly via LD but does not on net add to the twin-vs-direct-biology gap.',
     envNote:
       'Roughly 55% non-shared environment + chance. Conscientiousness is one of the more interventional-responsive personality traits — habit-formation, environmental cues, structured routines all show modest documented effects on diligence-related outcomes (though underlying baseline shifts are smaller).',
     insults: [],
@@ -217,7 +217,7 @@ const TRAITS: Trait[] = [
       'Extraversion has the lowest assortative mating of any Big Five dimension (m ≈ 0.08). Extroverts and introverts pair almost at random — surprising but well-replicated. About 45% genetic, otherwise typical for personality.',
     variance: { direct: 0.43, family: 0.02, env: 0.55 },
     familyNote:
-      'Negligible family bucket. The lack of like-with-like pairing means structural inflation from assortative mating is minimal — extraversion is one of the cleanest direct-biology reads in personality.',
+      'Negligible family bucket. Extraversion has both essentially-zero genetic nurture (typical of personality traits) and the lowest assortative mating among Big Five (m=0.08, near-random pairing) — both push toward the cleanest direct-biology read of any personality trait.',
     envNote:
       'Roughly 55% non-shared environment + chance. Most of this is unmeasured developmental noise; extraversion shows the typical "missing 50%" puzzle of personality genetics.',
     insults: [],
@@ -241,7 +241,7 @@ const TRAITS: Trait[] = [
       'Agreeableness — ease of cooperation, trust, warmth — is moderately heritable like other Big Five traits, with weak assortative mating (m ≈ 0.11). The biggest personality predictor of marital stability.',
     variance: { direct: 0.40, family: 0.02, env: 0.58 },
     familyNote:
-      'Small family bucket from modest assortative mating; shared family environment effectively zero by adulthood.',
+      'Small family bucket. Genetic nurture for personality is essentially zero, and modest assortative mating (m=0.11) contributes only minor population-level LD inflation. Shared family environment is effectively zero by adulthood.',
     envNote:
       'Roughly 58% non-shared environment + chance. Agreeableness shifts modestly with age (rises into midlife as part of the "maturity principle"), but interventional movements within adulthood are modest.',
     insults: [],
@@ -264,7 +264,7 @@ const TRAITS: Trait[] = [
       'Neuroticism — proneness to negative affect — is moderately heritable (h² ≈ 0.45) and shares substantial genetic architecture with depression and anxiety. Weak assortative mating (m ≈ 0.11).',
     variance: { direct: 0.43, family: 0.02, env: 0.55 },
     familyNote:
-      'Small family bucket. Neuroticism shows ~0 shared family environment in adulthood; weak assortative mating means little structural inflation.',
+      'Small family bucket. Genetic nurture for personality is essentially zero, and weak assortative mating (m=0.11) contributes only minor population-level LD. Shared family environment is effectively zero by adulthood.',
     envNote:
       'Most of the 55% non-shared bucket is unmeasured developmental history. Cognitive-behavioral therapy moves neuroticism-related outcomes at clinically meaningful effect sizes; the underlying baseline shifts only modestly.',
     insults: [],
@@ -288,7 +288,7 @@ const TRAITS: Trait[] = [
       'Self-control — the capacity to resist immediate impulses for delayed rewards — is among the most heritable personality-adjacent traits (h² ≈ 0.60), with strong genetic correlations to ADHD, addiction, and antisocial outcomes.',
     variance: { direct: 0.53, family: 0.12, env: 0.35 },
     familyNote:
-      'Modest family bucket from assortative mating plus a small shared-family contribution that persists slightly into adulthood (unusual for personality-adjacent traits).',
+      'Modest family bucket. Self-control shows a small shared-family contribution that persists slightly into adulthood (unusual for personality-adjacent traits) and modest assortative mating (m≈0.20). Genetic nurture has not been quantified at scale for self-control specifically.',
     envNote:
       'About 35% environment + chance. Some of this is recoverable through environmental scaffolding — commitment devices, structured environments, removing temptations from sight. Larger gains require addressing underlying executive function rather than relying on willpower.',
     insults: [],
@@ -311,7 +311,7 @@ const TRAITS: Trait[] = [
       'Empathy — emotional perspective-taking and concern for others — is moderately heritable (~30%) but with much larger environmental + chance share than personality. Cognitive empathy (understanding) and affective empathy (feeling) may have somewhat different etiologies.',
     variance: { direct: 0.29, family: 0.06, env: 0.65 },
     familyNote:
-      'Small family bucket from modest assortative mating plus a small shared-family contribution from socialization patterns and modeling.',
+      'Small family bucket. Modeling and socialization within the family contribute a small shared-environment effect; assortative mating is modest. Genetic nurture for empathy has not been quantified at scale.',
     envNote:
       'About 65% non-shared environment + chance. Empathy is one of the more environmentally-malleable psychological traits, particularly through perspective-taking exercises, exposure to diverse social contexts, and explicit socialization.',
     insults: [],
@@ -337,7 +337,7 @@ const TRAITS: Trait[] = [
       'Subjective wellbeing — what people call "happiness" or life satisfaction — is moderately heritable (h² ≈ 0.40). Acute life events move it temporarily; long-term levels track a partly-genetic baseline ("set point").',
     variance: { direct: 0.37, family: 0.08, env: 0.55 },
     familyNote:
-      'Small family bucket from neuroticism-correlated assortative mating plus shared family-environment patterns of explanatory style and emotional norms.',
+      'Small family bucket. Shared family-environment patterns of explanatory style and emotional norms contribute a residual; neuroticism-correlated assortative mating contributes population-level LD inflation. Genetic nurture for wellbeing has not been quantified at scale.',
     envNote:
       'About 55% non-shared environment + chance. This is where major life events leave durable signal — chronic illness, unemployment, severe relationship loss can persistently lower wellbeing; positive shifts (close relationships, sense of meaning, regular physical activity) can persistently raise it. The "happiness lottery" framing of the early 1990s undersold this layer.',
     insults: [],
@@ -390,7 +390,7 @@ const TRAITS: Trait[] = [
       "Schizophrenia is one of the most heritable psychiatric conditions (h² ≈ 0.79), but 'heritable' here is partly structural: about a third of the additive genetic variance is assortative-mating-induced linkage, not independent direct biological causation.",
     variance: { direct: 0.51, family: 0.33, env: 0.16 },
     familyNote:
-      'The most extreme assortative-mating signal in psychiatry: people with schizophrenia partner with affected spouses at tetrachoric correlations >0.40 (Nordsletten 2016). This drives a structural ~36% V(A_LD) share — about a third of the additive genetic variance is linkage created by like-pair mating, not independent biology. Cross-disorder genetic correlations with other psychiatric conditions are also substantially inflated by cross-trait assortative mating (Border 2022).',
+      'For severe psychiatric conditions there is no published within-family GWAS at scale, so the within-trait twin-vs-direct-biology decomposition is uncertain. The displayed family bucket is the Crow-Felsenstein V(A_LD) prediction (m·h² with m=0.45 from Nordsletten 2016, the most extreme assortative-mating signal in psychiatry — affected partners pair at tetrachoric correlations >0.40) plus residual shared environment. This represents population-level LD inflation of V(A), not the (unmeasured) genetic-nurture component. Cross-disorder genetic correlations with bipolar / MDD / etc. ARE substantially inflated by cross-trait assortative mating (Border 2022) — that finding is about between-trait LD inflating reported rg, which is a separate and well-supported phenomenon.',
     envNote:
       'Identifiable risk factors include obstetric complications, prenatal infection, urban birth, paternal age — each contributing modestly. Cannabis use in adolescence is the most-cited modifiable factor; the population-level variance contribution is moderate.',
     insults: [
@@ -401,9 +401,9 @@ const TRAITS: Trait[] = [
     trapEnv:
       "'Mental illness is environmental / cultural' does not fit the data for schizophrenia. h² ≈ 0.79 across cultures, GWAS hits replicate cross-ancestry, and there is no environmental intervention with effect sizes anywhere near the genetic load. Treating schizophrenia as a social construction underweights what affected families and clinicians know firsthand.",
     trapHer:
-      "Citing h² = 0.79 as 'this is genetic, period' overlooks that ~36% of that genetic variance is structural assortative-mating-induced linkage and that the cross-disorder genetic correlations with bipolar, MDD, etc. are substantially inflated by cross-trait AM. The picture is genuine biology, but the share that is 'shared underlying biological cause across disorders' has shrunk substantially under correction.",
+      "Citing h² = 0.79 as 'this is genetic, period' has two weaknesses: without published within-family GWAS for SCZ at scale, the direct-biology share is not cleanly separable from genetic nurture (the within-trait gap could go either way), and the cross-disorder genetic correlations with bipolar / MDD / etc. that some readings emphasize are substantially inflated by cross-trait assortative mating (Border 2022). The picture is genuine and dominantly biological, but the pleiotropy story across disorders has shrunk substantially under xAM correction.",
     takeaway:
-      'Schizophrenia is one of the strongest heritability findings in psychiatry. But about a third of that heritability is structural AM-induced linkage, and the cross-disorder pleiotropy that some readings emphasize is partly a cross-trait AM artifact. Direct biological causation is real and dominant; the structural inflation is also real and growing in importance as a correction.',
+      'Schizophrenia is one of the strongest heritability findings in psychiatry. The direct-biology share is dominant. The cross-disorder pleiotropy that older readings emphasized is partly a cross-trait assortative-mating artifact (Border 2022) — schizophrenia\'s genetic correlations with other psychiatric conditions are smaller after correction than reported in older literature. Within-trait, the genetic-nurture contribution to twin h² is unmeasured at scale (no published WF GWAS for SCZ).',
     primarySources: [
       { label: 'Sullivan 2003 meta — schizophrenia h²', url: 'https://pubmed.ncbi.nlm.nih.gov/12642233/' },
       { label: 'Nordsletten 2016 — psychiatric assortative mating', url: 'https://pubmed.ncbi.nlm.nih.gov/26913486/' },
@@ -475,7 +475,7 @@ const TRAITS: Trait[] = [
       "ADHD is highly heritable (h² ≈ 0.74) with strong assortative mating. Like schizophrenia, about a third of the genetic variance is structural assortative-mating-induced linkage rather than independent biological signal.",
     variance: { direct: 0.49, family: 0.35, env: 0.16 },
     familyNote:
-      "Strong assortative mating (Nordsletten 2016 reports tetrachoric m > 0.40 for ADHD), driving ~33% V(A_LD) share. Like other 'AM-strong psychiatric' conditions, what looks like one-third of the heritable signal is actually structural like-pair mating, not independent direct biology.",
+      "No published within-family GWAS at scale for ADHD, so the within-trait genetic-nurture vs direct-biology split is uncertain. The displayed family bucket is the Crow-Felsenstein V(A_LD) prediction (m=0.45 from Nordsletten 2016, strong assortative mating typical of AM-strong psychiatric conditions) plus residual shared environment. This represents population-level LD inflation of V(A), not the (unmeasured) genetic-nurture component.",
     envNote:
       'Identifiable contributors include preterm birth, prenatal maternal smoking, lead exposure, severe early deprivation. Each is modest at the population level.',
     insults: [
@@ -486,9 +486,9 @@ const TRAITS: Trait[] = [
     trapEnv:
       "'ADHD is over-diagnosed / a cultural construct' is contradicted by the cross-cultural h² and GWAS replication. The biological signal is real. Diagnostic-rate variation is a different question from etiology.",
     trapHer:
-      "Citing h² = 0.74 as 'ADHD is essentially genetic' overstates the direct-biological share once AM correction is applied. About a third of the heritable signal is structural assortative mating; the underlying direct causal architecture is not as concentrated as the headline number suggests.",
+      "Citing h² = 0.74 as 'ADHD is essentially genetic' has the same caveat as schizophrenia: without within-family GWAS at scale, the genetic-nurture contribution to twin h² is unmeasured. Treatment responsiveness to medication AND to environmental scaffolding is consistent with a mixed picture in which the direct-biology share is dominant but not the whole story.",
     takeaway:
-      'ADHD is genuinely highly heritable, but a substantial fraction of that heritability is structural assortative mating rather than independent biological causation. Treatment responsiveness to both medication and environmental scaffolding is consistent with this mixed picture.',
+      'ADHD is genuinely highly heritable, with a dominant direct-biology share. Within-family GWAS at scale has not been done, so the genetic-nurture contribution to twin h² is unmeasured. Treatment responsiveness to both medication and environmental scaffolding is consistent with this mixed picture.',
     primarySources: [
       { label: 'Faraone 2019 — ADHD heritability', url: 'https://pubmed.ncbi.nlm.nih.gov/30903002/' },
       { label: 'Demontis 2023 — ADHD GWAS', url: 'https://www.nature.com/articles/s41588-022-01285-8' },
@@ -502,7 +502,7 @@ const TRAITS: Trait[] = [
       "Autism is highly heritable (h² ≈ 0.80) with two distinct genetic architectures: a polygenic common-variant tail correlated positively with cognitive ability, and a rare-variant component dominated by de novo mutations in a subset of severe cases.",
     variance: { direct: 0.51, family: 0.39, env: 0.10 },
     familyNote:
-      "Strong assortative mating (m > 0.40, Nordsletten 2016) drives ~36% V(A_LD) share. Autism is also where the polygenic-additive frame breaks at the severe tail: a subset of cases (especially severe early-onset autism with intellectual disability) is driven by single rare variants like CHD8, SCN2A, SYNGAP1 — effectively Mendelian rather than polygenic.",
+      "No published within-family GWAS at scale for autism, so the within-trait genetic-nurture vs direct-biology split is uncertain. The displayed family bucket is the Crow-Felsenstein V(A_LD) prediction (m=0.45 from Nordsletten 2016) plus residual shared environment. Autism is also where the polygenic-additive frame breaks at the severe tail: a subset of cases (especially severe early-onset autism with intellectual disability) is driven by single rare variants like CHD8, SCN2A, SYNGAP1 — effectively Mendelian rather than polygenic.",
     envNote:
       'Identifiable contributors are modest at the population level. Vaccines do not cause autism — this is one of the most thoroughly tested negative findings in epidemiology, replicated across millions of children. Advanced paternal age is a small risk factor through de novo mutation rate.',
     insults: [
@@ -512,9 +512,9 @@ const TRAITS: Trait[] = [
     trapEnv:
       "Treating autism as primarily an environmental injury (vaccines, gut, etc.) contradicts what the genetic data clearly show. h² ≈ 0.80, GWAS hits replicate, twin and family-recurrence patterns fit a strongly genetic model. The vaccine hypothesis specifically has been tested at population scale across millions of children and is settled.",
     trapHer:
-      "Citing h² = 0.80 as 'autism is genetic' obscures two important nuances: (a) ~36% of the heritable signal is structural AM-LD, and (b) the 'genetic' architecture is bimodal — common-variant polygenic for the majority, single-rare-variant Mendelian for a subset. These two architectures imply different things for prediction, prognosis, and intervention.",
+      "Citing h² = 0.80 as 'autism is genetic' obscures the bimodal architecture: common-variant polygenic for the majority, single-rare-variant Mendelian for a subset. These two architectures imply different things for prediction, prognosis, and intervention. Without within-family GWAS at scale, the genetic-nurture contribution to twin h² is also unmeasured.",
     takeaway:
-      "Autism is strongly genetic but not in a simple sense: it has a polygenic common-variant component (correlated positively with cognitive ability) and a rare-variant component (dominated by de novo mutations) that drives much of the severe tail. About a third of the heritable signal is structural assortative mating. Environmental injury hypotheses, especially vaccines, have been thoroughly tested and don't hold up.",
+      "Autism is strongly genetic but not in a simple sense: it has a polygenic common-variant component (correlated positively with cognitive ability) and a rare-variant component (dominated by de novo mutations) that drives much of the severe tail. Environmental injury hypotheses, especially vaccines, have been thoroughly tested and don't hold up. Without within-family GWAS at scale the within-trait genetic-nurture share is unmeasured.",
     primarySources: [
       { label: 'Tick 2016 — twin meta-analysis of autism', url: 'https://pubmed.ncbi.nlm.nih.gov/26709141/' },
       { label: 'Grove 2019 — autism GWAS', url: 'https://www.nature.com/articles/s41588-019-0344-8' },
@@ -530,7 +530,7 @@ const TRAITS: Trait[] = [
       'Whether someone ever starts smoking is moderately heritable (h² ≈ 0.50) and shows strong assortative mating (smokers pair with smokers). Direct biology accounts for ~30%; the rest is family setup and shifting cultural-policy environment.',
     variance: { direct: 0.30, family: 0.25, env: 0.45 },
     familyNote:
-      'Strong like-pair mating drives substantial structural inflation. Family modeling and shared cultural exposure to smoking norms also persist into adulthood.',
+      'Family modeling, shared cultural exposure to smoking norms, and a small persistent shared-family-environment effect drive most of this bucket. Within-sibship h² is 0.30 vs. twin h² 0.50 (Howe 2022); the gap is partly genetic nurture (parents who smoke pass on both alleles affecting nicotine response and a household where smoking is normalized). Strong assortative mating (m=0.38) contributes population-level LD inflation but with the same opposite-direction caveat for twin estimates as for other traits.',
     envNote:
       'About 45% environment + chance. Tobacco taxation, public-smoking bans, peer norms, and age of first opportunity have all shifted dramatically over the 20th century, moving population-level smoking rates by orders of magnitude with no genetic change. This is the closest thing to height-style "heritable trait, large between-cohort environmental shift" in the behavioral domain.',
     insults: [],
@@ -582,7 +582,7 @@ const TRAITS: Trait[] = [
       'Religiosity — strength of religious belief and practice — is moderately heritable (h² ≈ 0.38) and has the second-strongest assortative mating of any trait studied (m = 0.56), behind only political orientation.',
     variance: { direct: 0.30, family: 0.33, env: 0.37 },
     familyNote:
-      'Substantial family bucket — about a third of variance — from the combination of strong like-pair mating, shared family environment that persists into adulthood (~25%, unusual for any trait), and structural cultural transmission of religious identity.',
+      'Substantial family bucket — about a third of variance — dominated by shared family environment that persists into adulthood (~25%, unusually large for any trait) and structural cultural transmission of religious identity. Strong assortative mating (m=0.56, second-highest of any trait) contributes population-level LD inflation. Within-family GWAS for religiosity has not been done at scale, so the genetic-nurture component is unmeasured.',
     envNote:
       'About 37% environment + chance. Major life events (births, deaths, illness), peer-group composition, and broader cultural-religious shifts all leave detectable signal. Secular societies show measurably different patterns from religious-majority societies even when the genetic distribution is similar.',
     insults: [],
@@ -606,7 +606,7 @@ const TRAITS: Trait[] = [
       "Political orientation is moderately heritable (h² ≈ 0.40) and has the highest assortative mating of any measured trait (m = 0.58). Most of why people vote differently is a tangled mix of family environment, peer-group selection, and modest genetic loading.",
     variance: { direct: 0.31, family: 0.34, env: 0.35 },
     familyNote:
-      "Highest assortative mating in the field (m = 0.58, slightly above religion at 0.56 — partners pick similar partners on politics more than on any other trait), driving ~23% V(A_LD) share. Shared family environment for politics is also unusually persistent into adulthood (~25%), one of the few traits where 'how your parents voted' continues to predict 'how you vote' decades later.",
+      "Substantial family bucket. Shared family environment for politics is unusually persistent into adulthood (~25%), one of the few traits where 'how your parents voted' continues to predict 'how you vote' decades later — that's the dominant contributor. Highest assortative mating in the field (m=0.58, slightly above religion at 0.56) contributes population-level LD inflation. Within-family GWAS for political orientation has not been done at scale, so the genetic-nurture share is unmeasured.",
     envNote:
       'Peer-group composition, education level, urban / rural geography, life events. Identifiable contributors are modest individually but collectively account for a large share.',
     insults: [],
@@ -852,7 +852,7 @@ const TAKEAWAYS: { title: string; body: string }[] = [
   },
   {
     title: '8% to 60%+ of "genetic" effect is structural inflation, depending on trait.',
-    body: 'Assortative mating (similar partners pairing) creates linkage among trait-relevant alleles. Genetic nurture (parents creating environments matching their own genotypes) leaks into twin estimates. Within-family designs separate these out. The structural-inflation share varies wildly by trait: ~8% for height (within-family h² = 0.78 of twin h² = 0.85), ~37% for adult cognitive ability, ~63% for educational attainment. Higher inflation is the rule for socially-structured traits where like-with-like mating is strong.',
+    body: 'Genetic nurture — parents who pass on certain alleles also create environments correlated with those alleles (vocabulary, books, expectations, peer-group selection) — is the dominant source of inflation in twin-based heritability for socially-structured traits. Classical twin models cannot easily separate this from direct biological causation; within-family designs strip it out by comparing siblings within the same family. Assortative mating contributes a smaller, opposite-direction effect on twin estimates: it does inflate population-level additive genetic variance via LD (Yengo 2018: 14–23% V(A) inflation for height) but actually biases Falconer\'s twin formula downward (because DZ twins share more than 50% of trait-relevant alleles when parents are genetically similar), partially canceling the genetic-nurture upward bias. The net structural-inflation share varies wildly by trait: ~8% for height, ~37% for adult cognitive ability, ~63% for educational attainment. Higher inflation is the rule for socially-structured traits where genetic nurture is strong.',
   },
   {
     title: 'Environmental effects are real and asymmetric.',
