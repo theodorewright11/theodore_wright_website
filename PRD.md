@@ -90,7 +90,7 @@ Active topics — folders exist in `src/content/ai_research/` and `stage_outputs
 
 | Topic slug | Title | Furthest stage |
 |---|---|---|
-| `human-psych-variation` | Psychology of Individual Differences | writeup (pass 4) |
+| `human-psych-variation` | Psychology of Individual Differences | writeup (pass 5) |
 | `navigating-ai-world` | Navigating an AI World | topology (pass 3) |
 | `technology-utilization-architecture` | Technology Utilization Architecture | topology (pass 2) |
 
