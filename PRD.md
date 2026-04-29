@@ -80,6 +80,8 @@ The topic-level `overview.mdx` is **not written during the pipeline** — it is 
 
 Per-stage pages do not surface the `status` frontmatter field as label text. Each stage page shows only the **refinement pass number** (`pass N`); pass 0 stubs render no pass label. The `status` field still drives the binary draft-vs-stub coloring of the stage bars on the `/ai-research` index page (any non-stub status renders the bar dark; stub renders grey), but it is never displayed as text.
 
+Topic cards on `/ai-research` do **not** show a "X/N" stage-completion counter. The colored stage bars and the per-stage labels underneath them carry the same information at a glance, and the explicit count was redundant. Same convention for the home page topic list — the bars are the indicator, no count.
+
 A topic's stage-3 model can be **promoted** to `/models` when polished — copy the formalization to a new `src/content/models/<slug>.mdx` entry.
 
 ### Topic registry
