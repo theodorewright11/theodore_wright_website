@@ -430,15 +430,30 @@ export default function PsychVariationGraph() {
   }
 
   // Wheel: zoom around the cursor so its graph point stays fixed.
-  function handleWheel(e: React.WheelEvent<SVGSVGElement>) {
-    const cursor = pointerToSvg(e);
-    if (!cursor) return;
-    const next = Math.max(0.4, Math.min(3, scale * Math.exp(-e.deltaY * 0.0015)));
-    if (next === scale) return;
-    setPanX(cursor.x - ((cursor.x - panX) * next) / scale);
-    setPanY(cursor.y - ((cursor.y - panY) * next) / scale);
-    setScale(next);
-  }
+  // React's onWheel is passive by default in React 17+, which means preventDefault()
+  // inside the synthetic handler is ignored and the page scrolls. We attach the
+  // listener imperatively with { passive: false } so we can stop the page scroll.
+  useEffect(() => {
+    const svg = svgRef.current;
+    if (!svg) return;
+    function onWheel(ev: WheelEvent) {
+      ev.preventDefault();
+      if (!svg) return;
+      const ctm = svg.getScreenCTM();
+      if (!ctm) return;
+      const pt = svg.createSVGPoint();
+      pt.x = ev.clientX;
+      pt.y = ev.clientY;
+      const c = pt.matrixTransform(ctm.inverse());
+      const next = Math.max(0.4, Math.min(3, scale * Math.exp(-ev.deltaY * 0.0015)));
+      if (next === scale) return;
+      setPanX(c.x - ((c.x - panX) * next) / scale);
+      setPanY(c.y - ((c.y - panY) * next) / scale);
+      setScale(next);
+    }
+    svg.addEventListener('wheel', onWheel, { passive: false });
+    return () => svg.removeEventListener('wheel', onWheel);
+  }, [panX, panY, scale]);
 
   function resetView() {
     setPanX(0);
@@ -499,7 +514,6 @@ export default function PsychVariationGraph() {
             ref={svgRef}
             viewBox={`0 0 ${width} ${height}`}
             preserveAspectRatio="xMidYMid meet"
-            onWheel={handleWheel}
             style={{ width: '100%', height: 'auto', display: 'block', userSelect: 'none', touchAction: 'none' }}
           >
             <defs>
