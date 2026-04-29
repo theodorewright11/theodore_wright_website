@@ -16,13 +16,14 @@ export async function getStaticPaths() {
 const { topic } = Astro.params;
 const all = await getCollection('ai_research');
 
-const stageOrder = ['lit-review', 'topology', 'model', 'data', 'build'];
+const stageOrder = ['lit-review', 'topology', 'model', 'data', 'build', 'writeup'];
 const stageLabel: Record<string, string> = {
   'lit-review': 'Lit Review',
   topology: 'Topology',
   model: 'Model',
   data: 'Data',
   build: 'Build',
+  writeup: 'Writeup',
 };
 
 type StageEntry = typeof all[number];
@@ -103,9 +104,6 @@ for (const id of stageOrder) {
                        data-[active=true]:text-accent
                        data-[active=true]:border-accent">
           {s.label}
-          {s.status === 'in-progress' && (
-            <span class="inline-block w-[5px] h-[5px] rounded-full bg-accent-soft ml-1.5 align-middle"></span>
-          )}
         </button>
       ))}
     </div>

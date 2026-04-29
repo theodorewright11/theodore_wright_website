@@ -94,7 +94,7 @@ Raw outputs from each LLM iterate session live in `stage_outputs/<topic>/<stage>
 
 - **New essay**: `src/content/blog/<slug>.mdx` with frontmatter `tier: 'mine' | 'collab' | 'ai-led'`
 - **New model**: `src/content/models/<slug>.mdx` + (if interactive) `src/components/models/<Name>Dashboard.tsx`. Promote interesting AI-research models here when polished.
-- **New AI research topic**: create `src/content/ai_research/<topic>/` and `stage_outputs/<topic>/`, add an `overview.mdx`, then 5 stage files as work progresses
+- **New AI research topic**: create `src/content/ai_research/<topic>/` and `stage_outputs/<topic>/`, add a minimal placeholder `overview.mdx` (do **not** write substantive overview content during the pipeline — the writeup stage is the canonical synthesis once the pipeline is complete), then 6 stage files as work progresses (lit-review, topology, model, data, build, writeup)
 - **Promote a stage-3 model to /models**: copy the formalization to a new `src/content/models/<slug>.mdx`, set `featured: true` if it should show on `/models` index prominently
 
 ## Don't

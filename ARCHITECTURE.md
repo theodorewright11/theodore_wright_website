@@ -114,8 +114,11 @@ Each topic is a folder under `src/content/ai_research/<topic>/`. Inside:
 - `model.mdx` — stage 3
 - `data.mdx` — stage 4
 - `build.mdx` — stage 5
+- `writeup.mdx` — stage 6 (long-form synthesis for an educated lay reader)
 
-`stage_outputs/<topic>/<stage>.md` holds raw LLM outputs that feed each stage. Topic slugs are kebab-case; stage filenames are exactly one of `lit-review`, `topology`, `model`, `data`, `build` (no version suffixes — git provides history). Polished versions move into `src/content/ai_research/<topic>/<stage>.mdx`.
+`stage_outputs/<topic>/<stage>.md` holds raw LLM outputs that feed each stage. Topic slugs are kebab-case; stage filenames are exactly one of `lit-review`, `topology`, `model`, `data`, `build`, `writeup` (no version suffixes — git provides history). Polished versions move into `src/content/ai_research/<topic>/<stage>.mdx`.
+
+The topic-level `overview.mdx` is **not written during the pipeline**. It is produced or revised only after all six stages are complete; until then the topic page renders the existing overview (or a minimal placeholder for new topics) and the per-stage tabs carry the substance. The writeup stage is the canonical synthesis once the pipeline is done.
 
 For the data stage specifically, raw working drafts can be accompanied by a sibling `stage_outputs/<topic>/data/` folder containing the curated input CSVs, the runnable Python pipeline, and a `data/out/` folder with derived outputs. The CSVs are the canonical artifact (one source-cited row per estimate); the Python script is reference code that reproduces every chart on the published `data.mdx`. Stage-5 build artifacts consume the CSVs directly.
 

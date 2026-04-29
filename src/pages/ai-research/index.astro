@@ -5,13 +5,14 @@ import { getCollection } from 'astro:content';
 
 const all = await getCollection('ai_research');
 
-const stageOrder = ['lit-review', 'topology', 'model', 'data', 'build'] as const;
+const stageOrder = ['lit-review', 'topology', 'model', 'data', 'build', 'writeup'] as const;
 const stageLabel: Record<string, string> = {
   'lit-review': 'lit review',
   topology: 'topology',
   model: 'model',
   data: 'data',
   build: 'build',
+  writeup: 'writeup',
 };
 
 type Stage = { id: string; label: string; status: string };
@@ -73,12 +74,12 @@ const groups = [
 ---
 
 <BaseLayout title="AI’s Research — Teddy Wright"
-  description="Outputs of the LLM Iterate pipeline — topics progressively refined across five stages.">
+  description="Outputs of the LLM Iterate pipeline — topics progressively refined across six stages.">
   <section class="max-w-[760px] mx-auto px-8 pt-14 pb-24">
     <h1 class="font-display font-semibold text-[48px] leading-none m-0 mb-3 text-ink"
         style="letter-spacing: -0.03em">AI’s Research</h1>
     <p class="font-serif text-[17px] text-muted leading-[1.55] max-w-[580px] m-0 mb-3">
-      Outputs of the LLM Iterate pipeline. I supply a topic; AI produces a draft; we refine across five stages — lit review, topology, model, data, build.
+      Outputs of the LLM Iterate pipeline. I supply a topic; AI produces a draft; we refine across six stages — lit review, topology, model, data, build, writeup.
     </p>
     <p class="font-serif italic text-[14px] text-muted m-0 mb-14">
       Each topic is one page; stages live behind tabs.
@@ -112,24 +113,21 @@ const groups = [
                    style="text-wrap: pretty">{t.desc}</p>
               )}
               <div class="flex gap-1 h-1.5 rounded-[3px] overflow-hidden mb-2">
-                {t.stages.map(s => (
-                  <div class:list={[
-                    'flex-1',
-                    s.status === 'complete' ? 'bg-accent'
-                      : s.status === 'in-progress' ? 'bg-accent-soft'
-                      : 'bg-rule',
-                  ]} />
-                ))}
+                {t.stages.map(s => {
+                  const hasDraft = s.status === 'complete' || s.status === 'in-progress';
+                  return (
+                    <div class:list={['flex-1', hasDraft ? 'bg-accent' : 'bg-rule']} />
+                  );
+                })}
               </div>
               <div class="font-mono text-[11px] text-muted flex gap-2.5 flex-wrap"
                    style="letter-spacing: 0.06em">
-                {t.stages.map(s => (
-                  <span class:list={[
-                    s.status === 'complete' ? 'text-ink'
-                      : s.status === 'in-progress' ? 'text-accent'
-                      : 'text-muted',
-                  ]}>{s.label}</span>
-                ))}
+                {t.stages.map(s => {
+                  const hasDraft = s.status === 'complete' || s.status === 'in-progress';
+                  return (
+                    <span class:list={[hasDraft ? 'text-ink' : 'text-muted']}>{s.label}</span>
+                  );
+                })}
               </div>
             </article>
           ))}

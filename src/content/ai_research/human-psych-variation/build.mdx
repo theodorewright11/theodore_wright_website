@@ -3,8 +3,20 @@ title: 'Build'
 description: 'A reader''s tool for the psychology of individual differences. Pick a trait, see the three plain-language buckets (direct genes / family setup / environment + chance) instead of the V(A_d)/V(A_LD)/V(A_i) decomposition. Plus the four motivated-reasoning traps the field gets caught in, the asymmetric environmental-effects finding, three "heritability ≠ destiny" misreadings, and a seven-bullet take-away. Translates the formalization and data pipeline into something a non-specialist can actually use.'
 date: 2026-04-28
 status: in-progress
-refinementPass: 1
+refinementPass: 2
 refinementLog:
+  - pass: 2
+    date: '2026-04-29'
+    passes: ['error check', 'gap scan', 'adversarial + steelman']
+    why: 'On a careful re-derivation, I caught a real computational error in pass 1: I was adding V(A_i) on top of h²_observed in the variance budget, when the model formalization §2.1/§2.2 says V(A_i) under correctly-specified ACE lands inside V(C) (because it''s shared identically by MZ and DZ co-twins). This double-counted V(A_i) and most visibly under-counted the environment+chance bucket for adult IQ (0.08, way too low — should be ~0.16). Separately, for traits with measured within-family h² (educational attainment and height), I was using the formula V(A_d) = h²·(1−r_δ) instead of the published WF figure, even though the model''s H1 result says WF is the canonical direct estimate. This made height''s "Direct genes" bucket 0.68 when it should be 0.78 (Howe 2022 within-sibship, N=178k). Finally, the user asked for substantially more traits — particularly emotional and social ones — because the bucket-breakdown pattern is what makes the artifact actually useful and showing it across more traits surfaces more of the cross-trait variation the field has documented.'
+    changes:
+      - 'Fixed variance bucket computation via Method C: direct = within-family h² (when published or extrapolated) or h²·(1−m·h²) formula fallback; family = h²_obs − direct + V(C); env = 1 − h²_obs − V(C). This avoids the double-count of V(A_i) and matches the model formalization''s pass-5 reading'
+      - 'Most-changed numbers: adult IQ env 0.08 → 0.16; height direct 0.68 → 0.78 (using Howe 2022 measured WF) and family 0.17 → 0.07 (Howe within-sibship picks up rare-variant transmission, smaller structural inflation than formula predicts); minor adjustments elsewhere'
+      - 'Expanded trait list from 10 to 24 across 7 domains (was 5): added 5 individual Big Five subdimensions (O, C, E, A, N) plus self-control and empathy in personality; subjective wellbeing and anxiety in a new "wellbeing & affect" domain; bipolar in psychiatric; smoking initiation and risk tolerance in a new "behavioral" domain; religiosity in attitudes; BMI in physical'
+      - 'Updated take-away #3 from "1/3 to 1/2 of genetic effect is structural" to "8% to 60%+ depending on trait" with explicit examples (height: 8%; adult IQ: 37%; EA: 63%) — the original range was wrong (too narrow) and the trait-by-trait variation is itself part of the take-away'
+      - 'Strengthened D1 and D2 trap-card "what it cites correctly" lists with sophisticated steelmen — D1 now includes population stratification concerns and instrument-cultural-validity; D2 now includes within-homogeneous-sample PGS prediction signal and cross-cultural mean-difference patterns. The integrated readings already addressed these but the cited-correctly columns made the steelmen stronger'
+      - 'Added link from take-aways view to the writeup stage; updated link list to be all four downstream stages (model, data, build, writeup)'
+      - 'Audit table in stage_outputs/human-psych-variation/build.md updated with all 24 traits and Method C numbers'
   - pass: 1
     date: '2026-04-28'
     passes: ['decomposition', 'translation', 'integration']
