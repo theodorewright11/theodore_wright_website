@@ -1,0 +1,70 @@
+[
+  {
+    "title": "Philosophy → Personal Decisions",
+    "desc": "How implicit positions on free will, ethics, knowledge, and identity silently shape career, relationship, risk, and meaning decisions."
+  },
+  {
+    "title": "Philosophy → Human Organizations",
+    "desc": "How foundational assumptions about knowledge, ethics, and human nature shape the structure and failure modes of families, companies, and governments."
+  },
+  {
+    "title": "Philosophy of Mind",
+    "desc": "Major positions on consciousness, personal identity, mental causation, and the mind–body problem — and the dependency structure between them."
+  },
+  {
+    "title": "Philosophy of Ethics",
+    "desc": "The major ethical frameworks — internal logic, where they actually disagree vs. converge, and what each recommends in concrete situations."
+  },
+  {
+    "title": "Philosophy of Epistemology",
+    "desc": "How we know what we know and how we should update beliefs. Major positions and what each implies for thinking, arguing, and changing your mind."
+  },
+  {
+    "title": "Evolution–Modernity Mismatch",
+    "desc": "The gap between the environment human psychology evolved for and the one it now operates in — which mismatches cause the most suffering and what actually addresses them."
+  },
+  {
+    "title": "Navigating an AI World",
+    "desc": "Structural analysis of how the AI transition restructures work, relationships, and meaning — beyond surface-level career advice."
+  },
+  {
+    "title": "Emotions: Origin, Function, Architecture",
+    "desc": "What emotions are, where they come from, and what they're for. Major theories and what each implies about regulation and self-understanding."
+  },
+  {
+    "title": "Meaning, Spirituality, Existential Orientation",
+    "desc": "How humans construct meaning and orient toward existence — across religious, philosophical, and secular frameworks."
+  },
+  {
+    "title": "Bedrock Generating Functions Across Domains",
+    "desc": "Five frameworks (evolution, thermodynamics, information theory, game theory, complex systems) and the structural isomorphisms they generate."
+  },
+  {
+    "title": "AI Decompression Framework",
+    "desc": "AI relaxes bandwidth constraints that historically forced lossy compressions — money, governance, credentialing — into stable categories. What happens when those decompress."
+  },
+  {
+    "title": "Information Fidelity / Semantic Compression",
+    "desc": "How much meaning survives transmission across channels and timescales. The loss function for communication and what it implies for institutions."
+  },
+  {
+    "title": "Trust Architecture",
+    "desc": "How trust is built, maintained, and destroyed at every scale — and how the trust landscape has shifted from past eras."
+  },
+  {
+    "title": "Parent-to-Child Transmission",
+    "desc": "How parents shape their children — genes, environment, parenting style, worldview transmission, and the recursion across generations."
+  },
+  {
+    "title": "Technology Utilization Architecture",
+    "desc": "Optimal workflow architecture for an individual knowledge worker given the current AI/agent/automation toolset."
+  },
+  {
+    "title": "Prediction and Calibration",
+    "desc": "What determines how well-calibrated someone is on a domain, and what interventions actually improve calibration."
+  },
+  {
+    "title": "AI Cognitive Profile",
+    "desc": "Map the orthogonal cognitive dimensions where AI and human capability diverge, using O*NET tasks as the empirical substrate."
+  }
+]

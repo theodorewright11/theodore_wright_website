@@ -1,0 +1,16 @@
+---
+interface Props {
+  label: string;
+  tone?: 'live' | 'planned' | 'soft';
+}
+const { label, tone = 'planned' } = Astro.props;
+const styles =
+  tone === 'live' ? 'text-accent border-accent'
+  : tone === 'soft' ? 'text-ink-soft border-rule'
+  : 'text-muted border-rule';
+---
+
+<span class:list={[
+  'inline-block font-mono text-[10px] uppercase rounded-sm border px-1.5 py-px whitespace-nowrap',
+  styles,
+]} style="letter-spacing: 0.1em">{label}</span>

@@ -4,8 +4,8 @@ import now from '../data/now.json';
 
 export const fmt = (date: Date) => date.toISOString().slice(0, 10);
 
-export const stripImports = (body: string) =>
-  body.replace(/^\s*import\s+[^;]+from\s+['"][^'"]+['"]\s*;?\s*$/gm, '').trim();
+export const stripImports = (body: string | undefined) =>
+  (body ?? '').replace(/^\s*import\s+[^;]+from\s+['"][^'"]+['"]\s*;?\s*$/gm, '').trim();
 
 export const sortByDate = <T extends { data: { date: Date } }>(arr: T[]) =>
   arr.sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
