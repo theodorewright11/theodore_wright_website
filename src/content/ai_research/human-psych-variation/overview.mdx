@@ -1,15 +1,13 @@
 ---
 title: 'Psychology of Individual Differences'
 description: 'What the science actually says about psychological variation — heritability, environmental shaping, gene-environment interaction, sex differences, cognitive capacity. A minefield of motivated reasoning where the actual generating functions are obscured by politics.'
-date: 2026-04-28
-status: in-progress
+date: 2026-04-29
+status: complete
 refinementPass: 0
 ---
 
-The topic running through the LLM Iterate pipeline. The point is not to take a side but to map the dependency structure under the noise — what the field actually knows, what it doesn't, and where motivated reasoning from each direction concentrates.
+The first topic taken end-to-end through the LLM Iterate pipeline. Six stages, completed: lit review (the landscape), topology (dependency graph of what depends on what), model (variance decomposition + closed-form pieces + interactive dashboard), data (eight predictions tested against published consortium estimates), build (interactive explorer with 24 traits), writeup (long-form synthesis for an educated lay reader).
 
-Stage 1 (lit review) is the landscape: ~50 years of twin studies, the post-2010 genomic era, the assortative-mating and genetic-nurture corrections that are actively rewriting older interpretations, sex differences univariate vs. multivariate, the neurodiversity / dimensional turn, and the open questions that aren't currently answerable with the methods available.
+The headline finding is that **heritability is real, replicated, and substantial across most psychological traits — but a sizable fraction of what gets called "genetic" in twin studies is actually environmental in origin, mediated through parents who transmit both the alleles AND the correlated rearing environment** (a phenomenon called genetic nurture). Direct biological causation is genuine and important; it's also typically smaller than the headline numbers suggest, especially for socially-structured traits like educational attainment, where the cleanest estimate of direct genetic effect is about one-third of what classical twin studies report.
 
-Stage 2 (topology) is the dependency graph — three foundational assumptions (twin validity, GWAS signal, g exists) carry roughly 70% of the inferential weight. Six crux nodes are where collapse propagates farthest. The graph also encodes where each direction of motivated reasoning attacks, so the same evidence base can be read four ways without changing the underlying numbers.
-
-Stages 3–5 will formalize the variance decomposition into equations, run it against available data, and ship a small interactive tool.
+If you want the full synthesis in prose, read [the writeup](/ai-research/human-psych-variation/writeup) — it's the canonical end-to-end piece, written for an educated lay reader with all acronyms defined. If you want a hands-on tool, the [explorer](/ai-research/human-psych-variation/build) lets you pick any of two dozen traits and see the variance breakdown in three plain-language buckets (direct genes / family setup / environment + chance), plus the four motivated-reasoning traps the field gets caught in and the asymmetric environmental-effects finding. The [model](/ai-research/human-psych-variation/model) and [data](/ai-research/human-psych-variation/data) stages have the formal math and the empirical tests behind those numbers; the [topology](/ai-research/human-psych-variation/topology) and [lit review](/ai-research/human-psych-variation/lit-review) document the dependency structure and the underlying literature.

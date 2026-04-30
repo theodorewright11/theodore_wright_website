@@ -25,6 +25,7 @@ type ActiveTopic = {
   stages: Stage[];
   done: number;
   active: boolean;
+  finished: boolean;
   latestDate: number;
 };
 
@@ -57,6 +58,7 @@ const activeTopics: ActiveTopic[] = Array.from(topicMap.entries())
     );
     const done = stages.filter(s => s.status === 'complete').length;
     const active = stages.some(s => s.status === 'in-progress' || s.status === 'complete');
+    const finished = done === stages.length;
     return {
       slug,
       title: t.overview?.data.title ?? slug,
@@ -64,14 +66,19 @@ const activeTopics: ActiveTopic[] = Array.from(topicMap.entries())
       stages,
       done,
       active,
+      finished,
       latestDate: t.latest,
     };
   })
   .filter(t => t.active)
   .sort((a, b) => b.latestDate - a.latestDate);
 
+const finishedTopics = activeTopics.filter(t => t.finished);
+const inProgressTopics = activeTopics.filter(t => !t.finished);
+
 const groups = [
-  { l: 'In Progress', items: activeTopics, planned: false },
+  { l: 'Finished', items: finishedTopics, planned: false },
+  { l: 'In Progress', items: inProgressTopics, planned: false },
   { l: 'Planned', items: plannedTopics, planned: true },
 ].filter(g => g.items.length > 0);
 ---
@@ -133,6 +140,10 @@ const groups = [
                         {t.title}
                       </a>
                     </h3>
+                    {t.finished && (
+                      <span class="font-mono text-[10px] uppercase text-accent border border-accent rounded px-1.5 py-0.5 shrink-0"
+                            style="letter-spacing: 0.12em">finished</span>
+                    )}
                   </div>
                   {t.desc && (
                     <p class="font-serif text-[15px] text-ink-soft leading-[1.55] m-0 mb-3"

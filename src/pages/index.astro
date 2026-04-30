@@ -48,7 +48,9 @@ for (const entry of aiAll) {
 const aiTopics = Array.from(topicMap.entries()).map(([slug, t]) => {
   const stages = stageOrder.map(id => t.stages.find(s => s.id === id) ?? { id, status: 'planned' });
   const active = stages.some(s => s.status === 'in-progress' || s.status === 'complete');
-  return { slug, title: t.overview?.data.title ?? slug, active };
+  const done = stages.filter(s => s.status === 'complete').length;
+  const finished = done === stages.length;
+  return { slug, title: t.overview?.data.title ?? slug, active, finished };
 });
 
 // Show 3 planned topics on the home column.
@@ -178,8 +180,8 @@ const researchStatusTone = (status: string): 'live' | 'planned' | 'soft' =>
         {aiTopics.map(t => (
           <article class="mb-3">
             <div class="mb-1">
-              <StatusPill label={t.active ? 'in progress' : 'planned'}
-                          tone={t.active ? 'live' : 'planned'} />
+              <StatusPill label={t.finished ? 'finished' : t.active ? 'in progress' : 'planned'}
+                          tone={t.finished ? 'live' : t.active ? 'live' : 'planned'} />
             </div>
             <h3 class="font-serif font-semibold text-[15px] leading-[1.3] m-0 text-ink">
               <a href={`/ai-research/${t.slug}`}
