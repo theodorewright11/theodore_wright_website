@@ -3,8 +3,21 @@ title: 'Model'
 description: 'Generating function for the AI transition as life restructuring. ΔNet = ΔV − ΔM, partitioned across work, relationships, and meaning. Closed-form pieces: telic-absorption defensive term, competence-erosion bridge through ρ, gated novice-skill compression, dose-response in the relational channel, exponential atrophy of retained practice. Interactive dashboard with scenario presets and time trajectory.'
 date: 2026-04-29
 status: in-progress
-refinementPass: 1
+refinementPass: 2
 refinementLog:
+  - pass: 2
+    date: '2026-04-29'
+    passes: ['error check', 'internal consistency check', 'truth/accuracy override on bias']
+    why: 'Five real issues from a fresh-eyes pass on pass 1. (1) Numerical error in §3.1 worked anchor — claimed g ≈ 0.92 for f=ρ=0.7 at τ=0.40, actual is 0.82. (2) Channel-count error compounded in TLDR, §2.4, and the PRD decisions log: claimed "ρ enters all three defensive channels and the offensive gate" / "four of the six channels" — wrong. ρ enters ΔM_comp directly and the gate g (which propagates to ΔV_prod and ΔV_trap), so three of six channels touch ρ; ΔM_telic and ΔM_rel do not. (3) β_R = 0.004 was too high — at 30 min/day in a thin baseline it produced ΔV_rel ≈ 0.10, which dominates ΔV_prod even in moderate-AI-use scenarios. Therabot''s clinical effect doesn''t generalise to the median user; β_R = 0.001 keeps the qualitative shape but matches the right order of magnitude. (4) τ = 0.40 was over-calibrated: at the median worker (f=ρ=0.5, f·ρ=0.25) it gives g ≈ 0.07, implying 84% of knowledge workers are deeply trapped — much stronger than the BCG 27% self-automator share supports. Lowered to τ = 0.30, which puts the median at g ≈ 0.30 (on the threshold), matching the topology''s actual structural claim ("on the edge, conscious intervention pushes them above"). (5) Trajectory tab had ρ(t) exponential and s(t) linear with an arbitrary 0.6× rate — asymmetric without principled basis, and doubles-counts the deskilling effect already captured through ρ → g closing → ΔV_trap. Dropped s(t) decay; trajectory tab now varies only ρ.'
+    changes:
+      - '§3.1: corrected g ≈ 0.92 → 0.96 (under new τ=0.30) for f=ρ=0.7 worked anchor; updated all three worked anchors to τ=0.30; rewrote the τ-calibration paragraph to honestly disclose it is structural-claim-driven rather than tightly fit to BCG data'
+      - 'TLDR para 1: rewrote ρ-bridge sentence — "enters all three defensive channels and the offensive gate" replaced with "enters ΔM_comp directly and the gate g(f,ρ), which propagates to ΔV_prod and ΔV_trap; three of the six channels move with ρ"'
+      - '§2.4: rewrote bridge-mathematics paragraph — "non-trivial leverage in four of the six channels" → "non-trivial leverage in three of the six channels"; clarified the propagation path (ΔM_comp directly; ΔV_prod and ΔV_trap through g)'
+      - 'TSX dashboard: TAU 0.40 → 0.30, BETA_R 0.004 → 0.001, removed s(t) decay from trajectory and added d / δ_R sliders to the trajectory tab so the held-fixed values are visible rather than hardcoded'
+      - '§2.5 + §3.6: updated trajectory description to drop s(t) decay; clarified that only ρ evolves and the deskilling effect propagates through g'
+      - '§3.4: updated β_R 0.004 → 0.001 in the formula and the surrounding prose; recomputed the worked numbers (peak benefit at d=d_safe in thin baseline ≈ 0.030, comparable to ΔV_prod at moderate productivity gain)'
+      - 'PRD decisions log: corrected the pass-1 entry to remove the four-of-six error so the registry doesn''t propagate the mistake'
+      - 'Recomputed scenario-anchor expected outputs in §4 to match the new τ=0.30 + β_R=0.001 calibration'
   - pass: 1
     date: '2026-04-29'
     passes: ['decomposition', 'generating function', 'integration']
@@ -27,7 +40,7 @@ import AITransitionModel from '../../../components/ai-research/AITransitionModel
 
 ## TLDR
 
-This stage formalises the topology's recommended target: a generating function for **net life-outcome change under AI transition**, partitioned into a defensive side (meaning lost when AI absorbs work that produced it) and an offensive side (value gained when AI compresses the price of ambitious projects). The spine is **ΔNet = ΔV + ΔM** (with ΔM ≤ 0 by construction). Each side decomposes into three additive channels — for ΔM, telic absorption + competence erosion + relational dose-response; for ΔV, gated novice-skill compression + therapeutic-grade relational benefit + a self-automator-trap penalty when the gate closes. The single conceptual move that makes the pieces fit is encoding the topology's cross-domain bridge G4 (cognitive offloading via practice atrophy) as one global parameter — **ρ, retained effortful practice** — that enters all three defensive channels and the offensive gate. ρ is what makes the bridge non-decorative: lowering it degrades work, relationships, and meaning simultaneously, and raising it protects all three.
+This stage formalises the topology's recommended target: a generating function for **net life-outcome change under AI transition**, partitioned into a defensive side (meaning lost when AI absorbs work that produced it) and an offensive side (value gained when AI compresses the price of ambitious projects). The spine is **ΔNet = ΔV + ΔM** (with ΔM ≤ 0 by construction). Each side decomposes into three additive channels — for ΔM, telic absorption + competence erosion + relational dose-response; for ΔV, gated novice-skill compression + therapeutic-grade relational benefit + a self-automator-trap penalty when the gate closes. The single conceptual move that makes the pieces fit is encoding the topology's cross-domain bridge G4 (cognitive offloading via practice atrophy) as one global parameter — **ρ, retained effortful practice** — that enters the competence-erosion channel directly and the self-automator gate g(f, ρ) that governs both productivity gain and trap penalty. Three of the six channels move with ρ; the other three (telic absorption, therapeutic-grade relational benefit, relational dose-response) are independent of it. ρ is what makes the bridge non-decorative: lowering it degrades the analytical-work and meaning-architecture channels simultaneously while leaving identity-allocation (T, B) and relational-dose (d, δ_R) decisions with their own independent leverage.
 
 The dashboard exposes ten levers (T telic share, B atelic ballast, φ AI-absorbable fraction, κ competence-frustration sensitivity, s pre-attempt skill, a AI capability, f feedback-loop richness, ρ retained practice, d daily AI-emotional minutes, δ_R relational baseline thickness) and reports ΔV, ΔM, ΔNet, the channel-level decomposition, and three structural flags — below the self-automator gate, above the relational dose-safe threshold, telic share exceeding atelic ballast. Six scenario presets anchor recognisable positions: the default risk path (telic-heavy knowledge worker), the same person after the S3 atelic-ballast intervention, the Randazzo self-automator trap, the asymmetric exploiter (novice using AI to attempt previously-out-of-reach projects), the creative-displacement-anxiety vector, and the heavy companion-app user. The trajectory tab makes the A3 crux (O3 in the topology) directly parametric: under λ = 0 (calculator analogue), ρ stays put; under λ > 0 (cumulative atrophy), ρ decays exponentially in the offloading-rate × time product and ΔNet drifts down with it as the gate closes.
 
@@ -126,18 +139,18 @@ g(f, ρ) = 1 / (1 + exp(−(f · ρ − τ) / σ))
 
 ### 2.4 The bridge through ρ
 
-The cross-domain bridge G4 from the topology is encoded as one fact: ρ enters four places simultaneously.
+The cross-domain bridge G4 from the topology is encoded as one fact: ρ enters three of the six channels — one defensive directly, two offensive via the gate.
 
 ```
-ΔM_comp = −λ_M · (1 − ρ) · T          ← bridge: ρ low → competence erosion
-g       = sigmoid((f · ρ − τ) / σ)    ← bridge: ρ low → gate closes → ΔV penalty
-ΔV_prod = g · α · a · (1 − s)         ← gated by ρ via g
-ΔV_trap = −(1 − g) · η_trap · a       ← gated by ρ via g
+ΔM_comp = −λ_M · (1 − ρ) · T          ← direct: ρ low → competence erosion
+g       = sigmoid((f · ρ − τ) / σ)    ← intermediate: ρ low → gate closes
+ΔV_prod = g · α · a · (1 − s)         ← gated: lower g → less productivity gain
+ΔV_trap = −(1 − g) · η_trap · a       ← gated: lower g → larger trap penalty
 ```
 
-Lowering ρ has compounding effects: it directly increases ΔM_comp, and it lowers g which simultaneously reduces ΔV_prod and increases ΔV_trap. This is the mathematical content of the topology's claim that S6 (maintain effortful practice) is load-bearing across all three domains — it is the only single-parameter intervention with non-trivial leverage in four of the six channels.
+The remaining three channels (ΔM_telic, ΔM_rel, ΔV_rel) do not depend on ρ. ΔM_telic depends on (T, B, φ, κ) — the identity-allocation and AI-exposure parameters. ΔM_rel and ΔV_rel depend on (d, δ_R) — the daily-relational-dose and baseline-thickness parameters. Lowering ρ has compounding effects across the three ρ-coupled channels: it directly increases ΔM_comp, and it lowers g which simultaneously reduces ΔV_prod and increases ΔV_trap. This is the mathematical content of the topology's claim that S6 (maintain effortful practice) is load-bearing — it is a single-parameter intervention with leverage in three of the six channels.
 
-The bridge is also why the channel-level decomposition is *not* fully orthogonal even though each channel is written as an additive term. The channels are **block-coupled through ρ**: at fixed ρ, the channels are independent; varying ρ moves multiple channels in coordinated ways. This is the model's representation of the lit review's structural finding that work, relationships, and meaning are not three separate transitions but one transition with three projections.
+The bridge is also why the channel-level decomposition is *not* fully orthogonal even though each channel is written as an additive term. The three ρ-coupled channels are **block-coupled through ρ**: at fixed ρ, they are independent; varying ρ moves them in coordinated ways. This is the model's representation of the lit review's structural finding that the work-deskilling and meaning-competence channels share a generating function (G4) — they are not separate transitions but one transition with two projections. The topology's broader claim that *all three* domains (work, relationships, meaning) share a generating function is a stronger version that the model represents weakly: ρ couples the work and meaning channels directly, while the relational channel is coupled only via the topology's parallel-mechanism inference (which the model leaves unencoded; see Objection 2 in §7 for why).
 
 ### 2.5 Time evolution
 
@@ -145,13 +158,12 @@ The trajectory tab makes A3 (cumulative offloading) parametric:
 
 ```
 ρ(t) = ρ₀ · exp(−λ · u · t)
-s(t) = max(0, s₀ − 0.6 · λ · u · t)
-ΔNet(t) = compute with ρ(t), s(t)
+ΔNet(t) = compute with ρ(t); all other parameters held fixed
 ```
 
-Where λ is the atrophy speed and u is the offloading rate. λ = 0 is the calculator-analogue: using AI is structurally like using a calculator and retained practice does not decay. λ > 0 is the cumulative-atrophy regime: ρ falls exponentially in the offloading-rate × time product. The skill-stock s atrophies at 0.6× the rate of ρ (the model's small claim that skill is somewhat more durable than the practice-derived component of capacity, mirroring Ehsan's "intuition rust" framing — explicit knowledge survives longer than felt-capacity).
+Where λ is the atrophy speed and u is the offloading rate. λ = 0 is the calculator-analogue: using AI is structurally like using a calculator and retained practice does not decay. λ > 0 is the cumulative-atrophy regime: ρ falls exponentially in the offloading-rate × time product. Only ρ evolves; pre-attempt skill stock s, AI capability a, feedback richness f, and the identity / relational parameters are held fixed across the trajectory. The deskilling-over-time effect is captured *through* ρ, not as a separate s(t) decay: as ρ drops, the gate g(f, ρ) closes, which propagates to ΔV_prod (smaller productivity gain) and ΔV_trap (larger penalty), while ΔM_comp grows directly. Adding a second decaying variable would either double-count the deskilling or imply the user becomes a fresh novice with full upside available — neither of which matches the lit-review evidence.
 
-The empirical question O3 from the topology is which regime is correct for AI-augmented knowledge work. The dashboard makes the answer visibly consequential: under λ = 0, a knowledge worker offloading at u = 0.6 with ρ₀ = 0.8 has flat ΔNet over 10 years; under λ = 0.06 the same person has ρ(10) ≈ 0.36 and ΔNet drifting from positive into firmly negative territory as the gate closes. The model cannot answer which is right; it can only make the difference legible.
+The empirical question O3 from the topology is which regime is correct for AI-augmented knowledge work. The dashboard makes the answer visibly consequential: under λ = 0, a knowledge worker offloading at u = 0.6 with ρ₀ = 0.8 has flat ΔNet over 10 years; under λ = 0.06 the same person has ρ(10) ≈ 0.36, the gate closes from g ≈ 0.86 to g ≈ 0.12, and ΔNet drifts from moderate-positive into firmly negative territory. The model cannot answer which regime is right; it can only make the difference legible.
 
 ## 3. Closed-form pieces
 
@@ -165,12 +177,12 @@ g(f, ρ) = 1 / (1 + exp(−(f · ρ − τ) / σ))
 
 Standard logistic with location τ and scale σ. The product f · ρ on the location axis is the substantive choice: feedback-loop richness alone is not enough (you can have great feedback loops but no practice if you've fully delegated to AI), and retained practice alone is not enough (you can grind without ever testing your work against reality). Both must be present.
 
-Worked anchors:
-- f = 0.7, ρ = 0.7 (cyborg / centaur centroid in BCG): f·ρ = 0.49 → g ≈ 0.92. Strong upside regime.
-- f = 0.5, ρ = 0.5 (median knowledge worker): f·ρ = 0.25 → g ≈ 0.07. Already mostly in the trap regime — surprising at first, but consistent with the BCG self-automator share (27%) plus the surrounding band of partial-self-automation.
-- f = 0.2, ρ = 0.3 (full self-automator): f·ρ = 0.06 → g ≈ 0.003. Trap fully closed.
+Worked anchors at τ = 0.30:
+- f = 0.7, ρ = 0.7 (cyborg / centaur centroid in BCG): f·ρ = 0.49 → g ≈ 0.96. Strong upside regime.
+- f = 0.5, ρ = 0.5 (median knowledge worker): f·ρ = 0.25 → g ≈ 0.30. Just below the inflection — small interventions push them above; small drift pushes them below.
+- f = 0.2, ρ = 0.3 (full self-automator): f·ρ = 0.06 → g ≈ 0.02. Trap effectively closed.
 
-The threshold τ = 0.40 is the model's load-bearing claim about where the upside-vs-trap inflection sits. It is calibrated to the BCG-Randazzo data; whether it generalises beyond consulting work is a Stage-4 question. σ = 0.06 makes the transition smooth (10–90% transition over an f·ρ range of about 0.27, or roughly two standard deviations of within-population variation in either parameter alone).
+The threshold τ = 0.30 is a structural-claim choice, not a tight fit. The substantive claim is "the median knowledge worker without conscious intervention is *on the edge* — small movements in f or ρ push them either way" — which the topology supports but no single dataset cleanly calibrates. The BCG-Randazzo 27% self-automator share gives a rough lower-bound anchor (someone with f ≈ ρ ≈ 0.2–0.3 should be in the trap), and the centaur upper-tail (f ≈ ρ ≈ 0.7–0.8) gives a rough upper-bound anchor (clearly above the gate) — but the precise location of τ between these points is a modelling choice. Pass 1 used τ = 0.40 and produced g ≈ 0.07 at the median, which encoded a stronger structural claim than the data supports ("most knowledge workers are deeply trapped"); pass 2 lowered to τ = 0.30 to encode the weaker, better-supported claim ("the median is on the edge"). Stage 4 should test τ directly against the BCG individual-level data; whether the value generalises beyond consulting work is a separate question that requires non-BCG samples to answer. σ = 0.06 makes the transition smooth (10–90% transition over an f·ρ range of about 0.27, or roughly two standard deviations of within-population variation in either parameter alone).
 
 ### 3.2 Telic-absorption ΔM_telic
 
@@ -199,7 +211,7 @@ Note the asymmetry with ΔM_telic. Building atelic ballast (raising B) is **no d
 ΔV_rel = +β_R · min(d, d_safe) · (1 − δ_R / 2)
 ```
 
-Piecewise-linear, with the kink at d_safe = 30 minutes/day. Below d_safe, the dose carries therapeutic-grade benefit (Therabot scale, scaled by β_R = 0.004). Above d_safe, every additional minute carries a dose-response penalty (ψ_R = 0.003 per minute per (1 − δ_R)).
+Piecewise-linear, with the kink at d_safe = 30 minutes/day. Below d_safe, the dose carries therapeutic-grade benefit (Therabot scale, scaled by β_R = 0.001). Above d_safe, every additional minute carries a dose-response penalty (ψ_R = 0.003 per minute per (1 − δ_R)). At the maximum below-threshold dose (d = d_safe = 30) in a fully thin baseline (δ_R = 0), peak benefit is β_R · 30 · 1 = 0.030 — comparable to ΔV_prod at moderate productivity gain. Pass 1 used β_R = 0.004 which made peak benefit ≈ 0.12, dominating ΔV_prod even in well-functioning AI-use scenarios; that overstated the generalisation from Therabot's clinical-population effect to the median user.
 
 Two things this form does not capture and which Stage 4 should refit:
 - **Possible sigmoidal saturation at very high doses.** ψ_R may fall once d gets large enough — at some point further engagement does not produce *additional* harm because the relational substitution is already complete. The OpenAI-MIT data is too narrow in dose range to show this.
@@ -223,25 +235,28 @@ Already covered above. Worth flagging that the (1 − s) novice-skill-compressio
 
 Standard exponential decay. λ is the per-unit-offloading atrophy rate; u is the offloading rate. Their product is the effective atrophy speed. Half-life = ln(2) / (λ · u) — under λ = 0.06 and u = 0.6 (heavy offloading, cumulative regime), half-life ≈ 19 years; under λ = 0.04, half-life ≈ 29 years; under λ = 0.02, half-life ≈ 58 years. Even in the cumulative-atrophy regime, the timescale is multi-decadal, which is consistent with intuition rust being a slow process.
 
+Only ρ evolves in the trajectory tab; pre-attempt skill stock s, AI capability a, feedback richness f, and the identity / relational parameters are held fixed across the horizon. This is a deliberate simplification (pass 1 had s also decaying, but the asymmetric exponential-vs-linear decay was unprincipled, and adding a second decaying variable doubles-counts deskilling-over-time which is already fully captured through ρ → g closing → ΔV_prod giving way to ΔV_trap).
+
 The form is phenomenological — λ is not derived from a deeper biological model. It's a calibration knob whose value is the falsification window for A3. Stage 4 will bound it from below using the existing cross-sectional evidence; pinning it down requires longitudinal data that does not exist yet.
 
 ## 4. Composing the parts: scenario anchors
 
 The dashboard's six presets are calibration targets — each should produce a recognisable position from the lit review.
 
-| Preset | T | B | φ | κ | s | a | f | ρ | d | δ_R | Expected output |
+| Preset | T | B | φ | κ | s | a | f | ρ | d | δ_R | Expected output (τ=0.30, β_R=0.001) |
 |---|---|---|---|---|---|---|---|---|---|---|---|
-| Default risk | 0.70 | 0.20 | 0.60 | 0.50 | 0.60 | 0.70 | 0.50 | 0.60 | 15 | 0.40 | Below gate (g ≈ 0.16); large negative ΔM_comp + ΔM_telic; modest ΔV_prod; ΔNet negative |
-| Ballast intervention | 0.50 | 0.50 | 0.60 | 0.50 | 0.60 | 0.70 | 0.50 | 0.60 | 15 | 0.40 | ΔM_telic = 0; ΔM_comp unchanged; small positive ΔNet shift |
-| Self-automator | 0.60 | 0.30 | 0.70 | 0.40 | 0.40 | 0.80 | 0.20 | 0.30 | 10 | 0.40 | Gate fully closed; large negative ΔV_trap; catastrophic ΔNet |
-| Asymmetric exploiter | 0.40 | 0.40 | 0.40 | 0.40 | 0.20 | 0.80 | 0.70 | 0.70 | 5 | 0.50 | Gate open; large ΔV_prod from (1−s); modest ΔM; large positive ΔNet |
-| Creative pre-AI | 0.80 | 0.10 | 0.80 | 0.70 | 0.70 | 0.80 | 0.40 | 0.50 | 10 | 0.30 | Below gate; very large ΔM_telic and ΔM_comp; the displacement-anxiety trajectory |
-| Heavy companion | 0.50 | 0.30 | 0.40 | 0.40 | 0.50 | 0.70 | 0.50 | 0.60 | 90 | 0.20 | ΔM_rel dominant; thin baseline amplifies; ΔNet driven by relational channel |
+| Default risk | 0.70 | 0.20 | 0.60 | 0.50 | 0.60 | 0.70 | 0.50 | 0.60 | 15 | 0.40 | g ≈ 0.50 (on the threshold); ΔV slightly negative (trap and productivity roughly cancel); ΔM dominated by telic absorption + competence erosion; ΔNet ≈ −0.27 |
+| Ballast intervention | 0.50 | 0.50 | 0.60 | 0.50 | 0.60 | 0.70 | 0.50 | 0.60 | 15 | 0.40 | Same g, same ΔV; ΔM_telic → 0 (B = T); ΔM_comp unchanged; ΔNet ≈ −0.10 (≈ +0.17 improvement over default risk) |
+| Self-automator | 0.60 | 0.30 | 0.70 | 0.40 | 0.40 | 0.80 | 0.20 | 0.30 | 10 | 0.40 | g ≈ 0.02 (gate effectively closed); large negative ΔV_trap; catastrophic ΔNet ≈ −0.45 |
+| Asymmetric exploiter | 0.40 | 0.40 | 0.40 | 0.40 | 0.20 | 0.80 | 0.70 | 0.70 | 5 | 0.50 | g ≈ 0.96; large ΔV_prod from (1−s = 0.8); ΔM_telic = 0; modest ΔM_comp; ΔNet ≈ +0.20 |
+| Creative pre-AI | 0.80 | 0.10 | 0.80 | 0.70 | 0.70 | 0.80 | 0.40 | 0.50 | 10 | 0.30 | g ≈ 0.30; small ΔV (high s + partial gate); large ΔM_telic from (T − B = 0.7); displacement-anxiety trajectory; ΔNet ≈ −0.50 |
+| Heavy companion | 0.50 | 0.30 | 0.40 | 0.40 | 0.50 | 0.70 | 0.50 | 0.60 | 90 | 0.20 | g ≈ 0.50; relational channel dominant — ΔM_rel ≈ −0.14 from 60-min dose excess in thin baseline; ΔNet ≈ −0.36 |
 
-Two non-obvious calibration targets:
+Three non-obvious calibration targets:
 
-1. **The default-risk preset should produce ΔNet < 0** — if it does not, τ is too low and the gate is too easy to clear. The topology's claim is that the default trajectory of a knowledge worker without conscious intervention is structurally negative; the dashboard should reflect that.
-2. **The asymmetric-exploiter preset should produce ΔNet > 0 by a margin that exceeds any single S-recommendation in isolation.** The point of the upside path is that it's not "be defensive"; it's "exploit the capability-vs-price asymmetry deliberately." If the preset doesn't beat the ballast-intervention preset, α is too low or τ too high.
+1. **The default-risk preset should produce ΔNet < 0 driven by the meaning side, not the gate.** Under the new τ = 0.30 the gate sits at g ≈ 0.50 for default risk — ΔV is approximately neutral, and the negative ΔNet comes from ΔM_telic + ΔM_comp. This is the right structural reading: the default knowledge-worker risk is not that AI use is broken (the gate isn't fully closed) but that meaning is leaking from the unballasted telic identity and from competence erosion at moderate ρ.
+2. **Ballast intervention should improve ΔNet without changing ΔV.** Raising B alone zeroes ΔM_telic; nothing else changes. The dashboard makes this visible: the ΔV bar is identical between default risk and ballast intervention, only the ΔM_telic channel collapses.
+3. **The asymmetric-exploiter preset should beat the ballast intervention by a large margin.** ΔNet ≈ +0.20 vs ≈ −0.10 — the offensive path is not just "different" from the defensive path, it dominates when the conditions are met. The point of the upside framing is to make this comparison legible; a user comparing the two presets should see that S3 (ballast) is a partial mitigation while the asymmetric-exploiter regime is a positive-sum strategy.
 
 ## 5. Boundary conditions and where the model breaks
 

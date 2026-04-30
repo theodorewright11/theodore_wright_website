@@ -13,10 +13,15 @@ type Tab = 'integrated' | 'trajectory';
 // "no skill development in either domain" outcome. Penalty as fraction of α.
 //
 // τ, σ (gate threshold and width). The product f · ρ governs whether AI use
-// upskills (f > τ) or deskills (f < τ). τ = 0.40 puts the threshold roughly
-// where Mollick's "centaur vs cyborg" line falls in BCG: people with rich
-// feedback loops AND maintained practice augment; people with neither
-// degrade. σ = 0.06 makes the transition smooth rather than a step.
+// upskills (f·ρ > τ) or deskills (f·ρ < τ). τ = 0.30 places the median
+// knowledge worker (f ≈ ρ ≈ 0.5, f·ρ ≈ 0.25) just below the threshold —
+// a small intervention pushes them above it; a small drift pushes them
+// below. This matches the topology's structural claim that the median
+// worker without conscious intervention sits on the edge, rather than
+// the stronger claim (which τ = 0.40 would encode) that they are
+// already deeply trapped. σ = 0.06 makes the transition smooth rather
+// than a step. Pass-2 calibration; pass-1 used τ = 0.40, which over-
+// stated how far below the gate the median worker sits.
 //
 // λ_M (competence-erosion coefficient). SDT competence-frustration produces
 // amotivation roughly linearly in the magnitude of the competence shortfall.
@@ -29,16 +34,22 @@ type Tab = 'integrated' | 'trajectory';
 // precisely measured but is roughly in the 20–40 min/day range across modes.
 //
 // ψ_R (dose-response slope). Linear above d_safe. β_R is the therapeutic-
-// grade benefit slope below d_safe (Therabot RCT scale).
+// grade benefit slope below d_safe (Therabot RCT scale). Pass 1 used
+// β_R = 0.004, which made 30 min/day at thin baseline give ΔV_rel ≈ 0.10
+// — implausibly large relative to ΔV_prod in moderate-AI-use scenarios.
+// Therabot's effect was on diagnosed clinical conditions, not on the
+// general user. β_R = 0.001 (pass 2) keeps the qualitative shape but
+// scales the benefit to a level comparable to ΔV_prod at moderate
+// productivity gain, which is the right order of magnitude.
 
 const ALPHA = 0.40;
 const ETA_TRAP = 0.30;
-const TAU = 0.40;
+const TAU = 0.30;
 const SIGMA = 0.06;
 const LAMBDA_M = 0.30;
 const D_SAFE = 30; // minutes per day
 const PSI_R = 0.003; // ΔM per minute above d_safe per (1 − relational thickness)
-const BETA_R = 0.004; // ΔV per minute up to d_safe (therapeutic-grade scale)
+const BETA_R = 0.001; // ΔV per minute up to d_safe (therapeutic-grade scale)
 
 // ---- Gate function ------------------------------------------------------
 
@@ -384,6 +395,10 @@ function IntegratedPanel() {
 // analogue) directly parametric. Under λ_atrophy = 0, ρ stays put — the
 // calculator analogue. Under λ_atrophy > 0, ρ decays exponentially in the
 // product of offloading rate u and time t, and ΔNet drifts down accordingly.
+// Only ρ evolves: deskilling-over-time is captured through ρ → g closing
+// → ΔV_trap dominating. Adding a separate s(t) decay would either double-
+// count the deskilling effect or imply the user becomes a fresh novice
+// with full upside available — neither matches the lit-review finding.
 
 function TrajectoryPanel() {
   const [u, setU] = useState(0.6);            // offloading rate
@@ -393,30 +408,29 @@ function TrajectoryPanel() {
   const [T, setT] = useState(0.70);
   const [B, setB] = useState(0.20);
   const [a, setA] = useState(0.70);
-  const [s0, setS0] = useState(0.60);
+  const [s, setS] = useState(0.60);
   const [f, setF] = useState(0.50);
   const [kappa, setKappa] = useState(0.50);
+  const [d, setD] = useState(15);
+  const [delta_R, setDeltaR] = useState(0.40);
   const [horizon, setHorizon] = useState(10);
 
   const series = useMemo(() => {
     const xs: number[] = [];
     const dNets: number[] = [];
     const rhos: number[] = [];
-    const ss: number[] = [];
     for (let t = 0; t <= horizon; t += 0.5) {
       const rho_t = rho0 * Math.exp(-lambda * u * t);
-      const s_t = Math.max(0, s0 - lambda * u * t * 0.6); // skill atrophies in the same regime, slower
       const inputs: Inputs = {
-        T, B, phi, kappa, s: s_t, a, f, rho: rho_t, d: 15, delta_R: 0.40,
+        T, B, phi, kappa, s, a, f, rho: rho_t, d, delta_R,
       };
       const out = compute(inputs);
       xs.push(t);
       dNets.push(out.dNet);
       rhos.push(rho_t);
-      ss.push(s_t);
     }
-    return { xs, dNets, rhos, ss };
-  }, [u, lambda, rho0, phi, T, B, a, s0, f, kappa, horizon]);
+    return { xs, dNets, rhos };
+  }, [u, lambda, rho0, phi, T, B, a, s, f, kappa, d, delta_R, horizon]);
 
   // SVG plot dimensions
   const W = 380;
@@ -462,17 +476,19 @@ function TrajectoryPanel() {
           <Slider symbol="λ" label="Atrophy speed" value={lambda} min={0} max={0.10} step={0.005} decimals={3} onChange={setLambda} />
           <Slider symbol="u" label="Offloading rate" value={u} min={0} max={1} step={0.01} onChange={setU} />
           <Slider symbol="ρ₀" label="Initial retained practice" value={rho0} min={0} max={1} step={0.01} onChange={setRho0} />
-          <Slider symbol="s₀" label="Initial skill stock" value={s0} min={0} max={1} step={0.01} onChange={setS0} />
         </div>
 
-        <h4 className="text-[11px] font-mono uppercase tracking-wider text-muted mt-6 mb-3">Held fixed</h4>
+        <h4 className="text-[11px] font-mono uppercase tracking-wider text-muted mt-6 mb-3">Held fixed across the trajectory</h4>
         <div className="space-y-4">
           <Slider symbol="T" label="Telic share" value={T} min={0} max={1} step={0.01} onChange={setT} />
           <Slider symbol="B" label="Atelic ballast" value={B} min={0} max={1} step={0.01} onChange={setB} />
           <Slider symbol="φ" label="AI-absorbable fraction" value={phi} min={0} max={1} step={0.01} onChange={setPhi} />
+          <Slider symbol="κ" label="Competence-frustration sensitivity" value={kappa} min={0} max={1} step={0.01} onChange={setKappa} />
+          <Slider symbol="s" label="Pre-attempt skill stock" value={s} min={0} max={1} step={0.01} onChange={setS} />
           <Slider symbol="a" label="AI capability" value={a} min={0} max={1} step={0.01} onChange={setA} />
           <Slider symbol="f" label="Feedback-loop richness" value={f} min={0} max={1} step={0.01} onChange={setF} />
-          <Slider symbol="κ" label="Competence-frustration sensitivity" value={kappa} min={0} max={1} step={0.01} onChange={setKappa} />
+          <Slider symbol="d" label="Daily AI-emotional minutes" value={d} min={0} max={180} step={1} decimals={0} unit=" min" onChange={setD} />
+          <Slider symbol="δ_R" label="Relational baseline thickness" value={delta_R} min={0} max={1} step={0.01} onChange={setDeltaR} />
           <Slider label="Horizon (years)" value={horizon} min={1} max={20} step={1} decimals={0} unit=" yr" onChange={setHorizon} />
         </div>
       </div>
@@ -513,7 +529,7 @@ function TrajectoryPanel() {
         </svg>
 
         <p className="text-[11px] text-muted mt-5 leading-relaxed">
-          ρ(t) = ρ₀ · exp(−λ · u · t). Under the calculator-analogue regime (λ = 0), retained practice does not decay — using AI is structurally like using a calculator. Under the cumulative-atrophy regime (λ &gt; 0), ρ falls exponentially in the offloading-rate × time product, and ΔNet drifts down with it because the gate g(f, ρ) closes and ΔV_prod gives way to ΔV_trap. The A3 crux (O3 in the topology) is whether the empirical λ for AI-augmented knowledge work is closer to 0 or to 0.06; this will be answered, if at all, by 2+ year longitudinal studies that do not yet exist.
+          ρ(t) = ρ₀ · exp(−λ · u · t). Under the calculator-analogue regime (λ = 0), retained practice does not decay — using AI is structurally like using a calculator. Under the cumulative-atrophy regime (λ &gt; 0), ρ falls exponentially in the offloading-rate × time product, and ΔNet drifts down with it because the gate g(f, ρ) closes and ΔV_prod gives way to ΔV_trap. Only ρ evolves; everything else is held fixed across the trajectory so the bridge effect is visible in isolation. The A3 crux (O3 in the topology) is whether the empirical λ for AI-augmented knowledge work is closer to 0 or to 0.06; this will be answered, if at all, by 2+ year longitudinal studies that do not yet exist.
         </p>
       </div>
     </div>
