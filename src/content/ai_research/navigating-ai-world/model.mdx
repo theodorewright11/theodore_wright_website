@@ -3,8 +3,16 @@ title: 'Model'
 description: 'Generating function for the AI transition as life restructuring. ΔNet = ΔV − ΔM, partitioned across work, relationships, and meaning. Closed-form pieces: telic-absorption defensive term, competence-erosion bridge through ρ, gated novice-skill compression, dose-response in the relational channel, exponential atrophy of retained practice. Interactive dashboard with scenario presets and time trajectory.'
 date: 2026-04-29
 status: in-progress
-refinementPass: 4
+refinementPass: 5
 refinementLog:
+  - pass: 5
+    date: '2026-04-29'
+    passes: ['fresh-eyes audit', 'error check']
+    why: 'Three issues from a cold read with by-hand numerical verification. (1) §2.5 trajectory example was numerically wrong: claimed "under λ = 0.06 the same person has ρ(10) ≈ 0.36 ... gate closes from g ≈ 0.86 to g ≈ 0.12" but actual computation gives ρ(10) = 0.8·exp(−0.06·0.6·10) ≈ 0.56 and g(0.5, 0.56) ≈ 0.42. The "drifts from positive into firmly negative territory" framing was overclaiming — at λ = 0.06 (the doc''s stated "heavy cumulative regime"), the trajectory is moderate over 10 years, not dramatic. To get ρ(10) ≈ 0.36 with u = 0.6 you would need λ ≈ 0.13, more than double the cumulative-regime anchor. The cumulative-atrophy story is a slow process even in its strong form (half-life 19 years at λ = 0.06), and the prose was inflating its 10-year visibility. (2) §1 listed G3 (engagement-optimized substitution) as one of three reframer mechanisms that "admit clean closed-form representations," but G3 is not actually represented mechanistically in the model — it informs the calibration of ψ_R (the dose-response slope above d_safe) but the model has no machinery for the engagement-optimization mechanism itself. If G3 weakened (regulation, design changes), ψ_R would re-calibrate but the model''s structure would not change. G3 is a parameter source, not a represented mechanism. Softened the claim. (3) "How to read this stage" §3 referenced "the Brynjolfsson-Chandar-Chen entry-level worker" as one of the dashboard presets, but no such preset exists — Brynjolfsson-Chandar-Chen is the apprenticeship-break paper, now in §5 as scope-limit G5, not as a preset. The asymmetric-exploiter preset is the Brynjolfsson-Li-Raymond novice-skill-compression archetype (a different paper). Misattribution; corrected.'
+    changes:
+      - '§2.5: replaced wrong numerical example. Was: "ρ(10) ≈ 0.36, the gate closes from g ≈ 0.86 to g ≈ 0.12, and ΔNet drifts from moderate-positive into firmly negative territory." Now: "ρ(10) ≈ 0.56, the gate closes from g ≈ 0.84 to g ≈ 0.42, and ΔNet drifts measurably more negative as ΔV_prod compresses and ΔV_trap grows — drift magnitude over 10 years on the order of −0.15 ΔNet under default identity parameters; meaningful but not catastrophic, cumulative-atrophy is a slow process even in its strong regime"'
+      - '§1: softened the closed-form-representation claim. G3 is correctly characterised as a parameter source (informing ψ_R calibration) rather than a represented mechanism. The G4 / G7 representations remain correctly characterised as mechanistic — G4 lives in ρ and the gate, G7 lives in the telic-absorption form'
+      - 'How to read this stage §3: replaced "the Brynjolfsson-Chandar-Chen entry-level worker" with "the Brynjolfsson-Li-Raymond novice-skill-compression archetype" (which is what the asymmetric-exploiter preset actually instantiates); also added "the OpenAI-MIT high-dose companion-app user" for the heavy-companion preset which had no lit-review attribution'
   - pass: 4
     date: '2026-04-29'
     passes: ['cross-context verification', 'crux identification', 'adversarial + steelman']
@@ -77,7 +85,7 @@ Three reading rules:
 
 1. **The signs and the channel-level decomposition carry the most signal.** A positive ΔNet that is small but balanced across channels reads very differently from a positive ΔNet of the same magnitude where ΔV_prod is huge and ΔM_comp is large-and-negative. The first is robust; the second is a self-automator trap waiting to spring.
 2. **Pull one slider at a time and watch what moves.** The point of the bridge encoding through ρ is that ρ enters multiple terms — moving it shows which terms it touches. Moving T (telic share) at fixed B (atelic ballast) shows how the ΔM_telic channel responds to identity allocation. The structural flags below the channel chart fire when the configuration crosses a meaningful threshold; they are the model's way of saying "you have entered a regime where one of the topology's recommendations is load-bearing for you specifically."
-3. **The presets are not personality types.** Each preset is a recognisable position from the lit review — the Randazzo self-automator, the Brynjolfsson-Chandar-Chen entry-level worker, the Caporusso creatively-displaced practitioner. Use them to calibrate your intuition for what each region of the parameter space looks like, then move the sliders toward your own position.
+3. **The presets are not personality types.** Each preset is a recognisable position from the lit review — the Randazzo self-automator (BCG 27%), the OpenAI-MIT high-dose companion-app user, the Caporusso creatively-displaced practitioner, the Brynjolfsson-Li-Raymond novice-skill-compression archetype (which is what the asymmetric-exploiter preset instantiates). Use them to calibrate your intuition for what each region of the parameter space looks like, then move the sliders toward your own position.
 
 The rest of the document spells out what each parameter means, what closed-form pieces compose the dashboard, where the model breaks, and the four objections it has to defend against.
 
@@ -94,11 +102,13 @@ What is **ready for formalisation**:
 | Piece | Source | Form |
 |---|---|---|
 | Productivity scale α | Brynjolfsson-Li-Raymond, BCG RCT | α ≈ 0.40, gated by f·ρ |
-| Self-automator gate τ | Randazzo BCG self-automator share + skill-development null | τ ≈ 0.40, σ ≈ 0.06 |
-| Telic-absorption ΔM | Setiya telic/atelic + topology A5 | −κ·φ·max(0, T−B) |
-| Competence-erosion ΔM | SDT competence-frustration + topology G10 | −λ_M·(1−ρ)·T |
+| Self-automator gate τ | Randazzo BCG self-automator share + skill-development null | τ ≈ 0.30, σ ≈ 0.06 |
+| Telic-absorption ΔM (G7) | Setiya telic/atelic + topology A5 | −κ·φ·max(0, T−B) |
+| Competence-erosion ΔM (G4) | SDT competence-frustration + topology G10 | −λ_M·(1−ρ)·T |
 | Relational dose-response | OpenAI-MIT N=981 | piecewise: protective ≤ d_safe, harm > d_safe |
 | Time evolution of ρ | A3 crux made parametric | ρ(t) = ρ₀·exp(−λ·u·t) |
+
+Two of the topology's reframer mechanisms (G4 cognitive offloading bridge, G7 telic exhaustion) admit mechanistic closed-form representations as listed above. The third reframer (G3 engagement-optimized substitution) is *not* represented mechanistically — it is a *parameter source* for ψ_R: G3 informs the calibration of the dose-response slope above d_safe, but the model has no machinery for the engagement-optimization mechanism itself. If G3 weakens (regulation, consumer demand, competitor design), ψ_R would re-calibrate but the model's structure would not change. This is a real scope difference: G4 / G7 are encoded in the model; G3 is encoded only in the calibration of one parameter.
 
 What is **still observational** and inherited by Stage 4 as fitting targets:
 
@@ -186,7 +196,7 @@ The trajectory tab makes A3 (cumulative offloading) parametric:
 
 Where λ is the atrophy speed and u is the offloading rate. λ = 0 is the calculator-analogue: using AI is structurally like using a calculator and retained practice does not decay. λ > 0 is the cumulative-atrophy regime: ρ falls exponentially in the offloading-rate × time product. Only ρ evolves; pre-attempt skill stock s, AI capability a, feedback richness f, and the identity / relational parameters are held fixed across the trajectory. The deskilling-over-time effect is captured *through* ρ, not as a separate s(t) decay: as ρ drops, the gate g(f, ρ) closes, which propagates to ΔV_prod (smaller productivity gain) and ΔV_trap (larger penalty), while ΔM_comp grows directly. Adding a second decaying variable would either double-count the deskilling or imply the user becomes a fresh novice with full upside available — neither of which matches the lit-review evidence.
 
-The empirical question O3 from the topology is which regime is correct for AI-augmented knowledge work. The dashboard makes the answer visibly consequential: under λ = 0, a knowledge worker offloading at u = 0.6 with ρ₀ = 0.8 has flat ΔNet over 10 years; under λ = 0.06 the same person has ρ(10) ≈ 0.36, the gate closes from g ≈ 0.86 to g ≈ 0.12, and ΔNet drifts from moderate-positive into firmly negative territory. The model cannot answer which regime is right; it can only make the difference legible.
+The empirical question O3 from the topology is which regime is correct for AI-augmented knowledge work. The dashboard makes the answer visibly consequential: under λ = 0 (calculator analogue), a knowledge worker with ρ₀ = 0.8 has flat ΔNet over 10 years; under λ = 0.06 (heavy cumulative regime, ρ-half-life ≈ 19 years), the same person has ρ(10) ≈ 0.56, the gate closes from g ≈ 0.84 to g ≈ 0.42, and ΔNet drifts measurably more negative as ΔV_prod compresses and ΔV_trap grows — the drift magnitude over 10 years is on the order of −0.15 ΔNet under default identity parameters (T = 0.7, B = 0.2). Meaningful, but not catastrophic; cumulative-atrophy is a slow process even in its strong regime, and the dramatic-collapse intuition some readers bring to "AI rots your brain" framings does not map onto the model's actual trajectory at calibrated λ. The model cannot answer which regime is right; it can only make the difference legible.
 
 ## 3. Closed-form pieces
 
