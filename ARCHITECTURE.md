@@ -38,6 +38,7 @@
 │   │       ├── PsychVariationData.tsx   ← data findings panel (six-tab H1–H6 prediction tests, hand-rolled SVG charts)
 │   │       ├── PsychVariationExplorer.tsx ← build-stage reader's tool (trait lookup + traps + asymmetric environmental effects)
 │   │       ├── AITransitionGraph.tsx    ← topology graph for navigating-ai-world (~50 nodes, 5 variants, pan + wheel-zoom + reset)
+│   │       ├── AITransitionModel.tsx    ← model dashboard for navigating-ai-world (integrated ΔNet = ΔV + ΔM with channel decomposition + structural flags + ρ(t) trajectory tab)
 │   │       └── CognitivePartnershipGraph.tsx ← topology graph for technology-utilization-architecture (~66 nodes, 5 variants incl. capability-regime fragility, P-type practitioner nodes + op edge, pan + wheel-zoom + reset)
 │   ├── content/
 │   │   ├── blog/<slug>.mdx              ← essays
