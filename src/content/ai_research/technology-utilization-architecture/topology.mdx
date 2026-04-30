@@ -1,9 +1,9 @@
 ---
 title: 'Topology'
-description: 'Dependency graph of the lit review. 65 nodes typed across nine classes (foundational assumptions / methods / empirical claims / logical necessities / generating mechanisms / synthesis / practitioner frameworks / open questions / distortions); seven cruxes (A1, A2, A3, A6, L1, L2, L3 — every weight-5 A node + every weight-5 L node) and four variant views (Vulnerability / Flow / Minimal / Capability-regime). The genuinely novel structural move for this topic: encoding the practitioner ↔ academic operationalization bridge that runs 12–18 months out of phase.'
+description: 'Dependency graph of the lit review. 66 nodes typed across nine classes (foundational assumptions / methods / empirical claims / logical necessities / generating mechanisms / synthesis / practitioner frameworks / open questions / distortions); seven cruxes (A1, A2, A3, A6, L1, L2, L3 — every weight-5 A node + every weight-5 L node) and four variant views (Vulnerability / Flow / Minimal / Capability-regime). The genuinely novel structural move for this topic: encoding the practitioner ↔ academic operationalization bridge that runs 12–18 months out of phase.'
 date: 2026-04-29
 status: in-progress
-refinementPass: 3
+refinementPass: 4
 refinementLog:
   - pass: 1
     date: '2026-04-29'
@@ -41,6 +41,16 @@ refinementLog:
       - 'Tightened §7 Option B recommendation to make explicit which invariants and assumptions it engages — L1 (substitution myth), L2 (joint surface), L3 (parameterize by capability), G3 (verification trade-off), and A6 (the loop''s testability assumes individual-level optimization is meaningful)'
       - 'Added §6 sibling-topic connection paragraph: O7 (verification cost vs. verification calibration) is the natural attachment point for the planned Prediction & Calibration topic — calibration on AI error rates IS the calibration question that topic will need to formalize'
       - 'Updated component variant blurb count 6 → 7 cruxes; component CRUX_IDS now matches the prose'
+  - pass: 4
+    date: '2026-04-29'
+    passes: ['gap scan', 'cross-context verification']
+    why: 'Two real issues remained on a careful reread. First, the lit review explicitly named Wickens'' Multiple Resource Theory as "absent from AI workflow research" — a well-established cognitive-load mechanism predicting tool-stack attention interference (Cursor + ChatGPT + meeting simultaneously) — but my topology only carried G1 (general metacognitive demand) and missed the multi-tool interference mechanism specifically. This is load-bearing for the Stage-3 model: Option B''s autonomy slider needs a concurrent-tool-load dimension, not just per-task parameters. Second, §4 said "Bastani''s 17% drop is one study at under six months" but the lit review never actually states a duration — that was a number I invented.'
+    changes:
+      - 'Added G10 (multi-tool attention interference — Wickens MRT) as a corroborating mechanism node, weight 3, status ~. The mechanism is well-established but unmeasured in AI workflow contexts. Distinct from G1 (general metacognitive demand) — G10 is specifically about parallel-tool resource contention. Edges: A1 → G10 (attention scarcity → multi-tool interference), G10 → S2 (minimize concurrent-tool cost), G10 → E10 (cyborgs incur higher MRT cost than centaurs — this is testable). G10 added to REGIME_STABLE in Variant D since human cognitive architecture is regime-invariant'
+      - 'Updated node count 65 → 66 across frontmatter, TLDR, and component variant blurb'
+      - 'Tightened §7 Option B recommendation to note that the loop should include a concurrent-tool-load dimension (G10) — the routing function should account for whether the user is in single-tool or multi-tool mode, not just per-task parameters'
+      - 'Added MRT (Multiple Resource Theory) glossary entry'
+      - 'Fixed Bastani timeframe claim in §4: replaced invented "one study at under six months" with lit-review-supported "single-session study with a short post-session window" — the lit review specifies "in-session... afterward" but no specific duration, and inventing a number was a cross-context-verification slip'
 ---
 
 import CognitivePartnershipGraph from '../../../components/ai-research/CognitivePartnershipGraph';
@@ -174,6 +184,7 @@ Each node carries: type code · weight · short claim · key citation · status.
 | G7 | 4 | Skill atrophy — capacities not exercised decay. | ✓ |
 | G8 | 4 | Cross-task productivity bundling — speedups bottlenecked by linked tasks. (Cowen 2026) | ~ |
 | G9 | 4 | Generator-verifier asymmetry — production cheap, checking expensive. (Karpathy) | ✓ |
+| G10 | 3 | Multi-tool attention interference — Wickens' Multiple Resource Theory predicts tool-stack overload (Cursor + ChatGPT + meeting incurs cost beyond the sum of per-tool costs). Mechanism well-established; absent from AI workflow research. | ~ |
 
 ### S — Synthesis claims
 
@@ -226,7 +237,7 @@ Each node carries: type code · weight · short claim · key citation · status.
 
 **Method → Empirical.** M1 produces the productivity record (E1–E9). M2 → E5 (Bansal explanations don't help once strategy-graded). M2 → E12 (CUPS is the strategy-graded measure of coding). M3 → E2 (METR shows experts gain less in real repos).
 
-**Mechanism → Empirical.** G1 → E12 (metacognitive load shows up as verification time). G2 → E13 (sycophancy is the rare critical error ironies-of-automation predicts will get missed). G3 → E5 (rational verification trade-off explains why explanations fail). G4 → E3 (jagged frontier produces outside-frontier harm). G7 → E9 (skill atrophy → unassisted-performance drop). G8 → E4 (cross-task bundling explains aggregate zero).
+**Mechanism → Empirical.** G1 → E12 (metacognitive load shows up as verification time). G2 → E13 (sycophancy is the rare critical error ironies-of-automation predicts will get missed). G3 → E5 (rational verification trade-off explains why explanations fail). G4 → E3 (jagged frontier produces outside-frontier harm). G7 → E9 (skill atrophy → unassisted-performance drop). G8 → E4 (cross-task bundling explains aggregate zero). G10 → E10 (cyborgs interleaving multiple tools should incur higher MRT interference than centaurs handing off discrete sub-tasks — testable but unmeasured prediction).
 
 **Empirical → Synthesis.** E1, E2, E3, E8 → S1 (workflow architecture > model capability — the integrated headline). E12, E16 → S2 (metacognitive efficiency target). E11 → S3. E14, E15, E17 → S4 (context engineering as central craft). E18 → S5.
 
@@ -290,7 +301,7 @@ D1–D4 are pedagogically intentional, not decorative. Each names a real motivat
 Where the graph is genuinely fragile in 2026, ranked by potential propagation if the link breaks:
 
 1. **A6 / O2 / O5 (the aggregate-zero / unit-of-analysis cluster).** The most consequential weakness in the graph. Humlum-Vestergaard's precise zero across 25,000 Danish workers is direct evidence that individual workflow gains may not aggregate; if true, A6 falsifies, the project-frame inverts, and individual workflow optimization becomes locally optimal but globally insufficient. Possible mechanisms (cross-task bundling per Cowen 2026, organizational reabsorption, weak wage pass-through) are testable but untested. Until O2 is resolved, every claim about *organizational* benefit downstream of S1 is contingent.
-2. **O3 (long-term cognitive effects).** Bastani's 17% drop is one study at under six months. If a 2-year longitudinal RCT confirms broad skill atrophy across cognitive operations, the design implication becomes "AI-free zones" at much larger scale than current practice — and the productivity-only distortion (D2) goes from intellectually wrong to materially harmful.
+2. **O3 (long-term cognitive effects).** Bastani's 17% drop is a single-session study with a short post-session window — the lit review documents the in-session vs. afterward contrast but no specific durability timescale. If a 2-year longitudinal RCT confirms broad skill atrophy across cognitive operations, the design implication becomes "AI-free zones" at much larger scale than current practice — and the productivity-only distortion (D2) goes from intellectually wrong to materially harmful.
 3. **O4 (frontier migration vs. calibration rate).** If model capabilities shift faster than humans can recalibrate their personal frontier maps, the "map your jagged frontier" design imperative becomes unfollowable. The likely partial resolution is that the frontier has stable topological features (A5) even when the boundary moves, but A5 is empirically untested.
 4. **O7 (verification cost vs. calibration as binding constraint).** Reducing verification cost helps a rational actor; improving calibration helps a miscalibrated one. The interventions are different. The sycophancy finding (E13) suggests calibration is a real second binding constraint.
 5. **S5 / O6 (centaur regime persistence).** If a capability discontinuity makes AI better than humans on the full task, the centaur typology becomes historical.
@@ -316,11 +327,11 @@ Smallest set of claims that still yields the headline conclusion (S1: workflow a
 
 ### Variant D — Capability-regime fragility (the topic-specific variant)
 
-Which nodes go stale if frontier capability jumps? The central worry the lit review's adversarial section names. Of the 65 nodes, 34 sort into one of three regime-fragility classes; the rest (methods, supporting empirical findings, distortions) are regime-orthogonal. The classification:
+Which nodes go stale if frontier capability jumps? The central worry the lit review's adversarial section names. Of the 66 nodes, 35 sort into one of three regime-fragility classes; the rest (methods, supporting empirical findings, distortions) are regime-orthogonal. The classification:
 
 - **Stale-on-jump (6 nodes — likely to invert).** E2 (skill-leveling: if AI exceeds top performers, the +34/0 pattern flips). E3 (outside-frontier harm: dissolves if frontier becomes uniform). E10 (60/30/10 behavior distribution: regime-bound to current tool affordances). E18 (overconfident-AI-still-helps: if AI is reliably correct, the "structured reasoning is the gain" reading dissolves). S5 (centaur transience: literally about transitioning out). P1 (Mollick taxonomy: becomes historical the way the chess centaur literature reads as historical now).
 
-- **Stable-on-jump (17 nodes — structurally invariant).** All four logical necessities: L1 (substitution myth), L2 (joint performance surface), L3 (parameterize-by-capability), L4 (autonomy + control coexist). The mechanism invariants: G1 (metacognitive load just shifts to new decisions), G2 (ironies of automation are a property of any principal-agent delegation), G3 (verification trade-off — the threshold moves but the shape is invariant), G9 (generator-verifier asymmetry). The foundational A1 (attention-as-binding-constraint is a fact about humans, not about AI). The synthesis claims that follow from the invariants: S2 (metacognitive efficiency target), S3 (production → critical integration), S4 (context engineering as central craft). The control-surface practitioner patterns: P2 (autonomy slider), P3 (Anthropic agent design patterns), P5 (compound engineering), P6 (spec-driven development), P7 (CLAUDE.md context files).
+- **Stable-on-jump (18 nodes — structurally invariant).** All four logical necessities: L1 (substitution myth), L2 (joint performance surface), L3 (parameterize-by-capability), L4 (autonomy + control coexist). The mechanism invariants: G1 (metacognitive load just shifts to new decisions), G2 (ironies of automation are a property of any principal-agent delegation), G3 (verification trade-off — the threshold moves but the shape is invariant), G9 (generator-verifier asymmetry), G10 (multi-tool attention interference — Wickens MRT is a property of human cognitive architecture, not of AI capability). The foundational A1 (attention-as-binding-constraint is a fact about humans, not about AI). The synthesis claims that follow from the invariants: S2 (metacognitive efficiency target), S3 (production → critical integration), S4 (context engineering as central craft). The control-surface practitioner patterns: P2 (autonomy slider), P3 (Anthropic agent design patterns), P5 (compound engineering), P6 (spec-driven development), P7 (CLAUDE.md context files).
 
 - **Regime-dependent (11 nodes — depends on which way capability jumps).** Foundational A2 (jagged frontier could become smooth or fragment into a different jagged shape), A3 (verification cost could fall further or rise as outputs become more complex), A5 (frontier-mappability depends on rate of migration), A6 (aggregation could go either way as tools get integrated). The headline S1 (workflow > capability could invert if a capability gap dominates). The high-leverage empirical claims: E14 (multi-agent could become moot if single-agent matches), E15 (routing depends on heterogeneity A2), E17 (read/write asymmetry depends on whether AI handles serial writes natively). The mechanism G4 (jagged frontier follows A2). The open question O4 (frontier migration rate IS the regime question).
 
@@ -379,7 +390,7 @@ Three formalization paths, each with pros / cons / Stage-4 implications.
 - **Cons.** Heavyweight; principal-agent assumes strategic agents, but LLMs are imperfect-but-non-strategic.
 - **Stage-4 implication.** Hardest to validate against the existing RCT record.
 
-**Recommendation: Option B.** The generator-verifier loop with an autonomy slider is the most directly testable, the most actionable as an interactive site artifact (Stage 5), and the most clearly L3-compatible. Specifically, Option B engages the regime-stable invariants identified in Variant D — L1 (every offload creates new monitoring work, baked into the loop's verification gate), L2 (joint-surface allocation, baked into the autonomy-level choice), L3 (parameterized by capability inputs rather than hardcoded), G3 (verification trade-off, the parameter that sets gate strictness), G9 (generator-verifier asymmetry, the loop's central asymmetry) — while taking A6 (individual optimization aggregates) as the explicit assumption whose falsification would mean the loop is locally optimal but globally insufficient. Option A can be a sub-component of Option B (the dispatch table determines the autonomy-level choice). Option C is held in reserve.
+**Recommendation: Option B.** The generator-verifier loop with an autonomy slider is the most directly testable, the most actionable as an interactive site artifact (Stage 5), and the most clearly L3-compatible. Specifically, Option B engages the regime-stable invariants identified in Variant D — L1 (every offload creates new monitoring work, baked into the loop's verification gate), L2 (joint-surface allocation, baked into the autonomy-level choice), L3 (parameterized by capability inputs rather than hardcoded), G3 (verification trade-off, the parameter that sets gate strictness), G9 (generator-verifier asymmetry, the loop's central asymmetry), and G10 (multi-tool attention interference — the loop should track concurrent-tool load as a Wickens-MRT input, not just per-task parameters; "running three coding agents in parallel" is a different regime from "running one") — while taking A6 (individual optimization aggregates) as the explicit assumption whose falsification would mean the loop is locally optimal but globally insufficient. Option A can be a sub-component of Option B (the dispatch table determines the autonomy-level choice). Option C is held in reserve.
 
 ---
 
@@ -418,6 +429,7 @@ Three formalization paths, each with pros / cons / Stage-4 implications.
 - **L2D** — Learning to Defer; Madras / Mozannar formal allocation theory.
 - **metacognitive demands** — Tankelevitch 2024 best-paper framework: GenAI reduces production load but increases planning, evaluation, and calibration load.
 - **MABA-MABA** — "Men Are Better At, Machines Are Better At." Dekker & Woods 2002 critique of static function allocation.
+- **MRT (Multiple Resource Theory)** — Wickens. Cognitive resources are partitioned by processing stage, sensory modality, and processing code; tasks competing for the same resource interfere superlinearly while tasks using different resources can be parallelized cheaply. Predicts tool-stack attention overload (Cursor + ChatGPT + meeting incurs cost beyond the sum). Lit review notes MRT is "absent from AI workflow research."
 - **read/write asymmetry** — Cognition: multi-agent works for read-heavy tasks but breaks for write-heavy unless writes are serialized.
 - **routing > model selection** — Paterson 2026: across 38 real daily tasks and 15 models, dispatching by task type beats picking a single best model.
 - **self-automator** — Randazzo 2026 third Mollick-typology mode: full delegation with periodic oversight.

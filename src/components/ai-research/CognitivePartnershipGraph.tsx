@@ -82,6 +82,7 @@ const NODES: GraphNode[] = [
   { id: 'G7', type: 'G', weight: 4, label: 'Skill atrophy', detail: 'Capacities not exercised decay; AI-handled sub-tasks become unrehearsed and the worker loses unassisted competence over time. (Bastani; Lee 2025)', status: '✓' },
   { id: 'G8', type: 'G', weight: 4, label: 'Cross-task productivity bundling', detail: 'Cowen 2026: per-task speedups don\'t translate proportionally because related tasks are productivity-linked. Plausible mechanism for the aggregate-zero puzzle.', status: '~' },
   { id: 'G9', type: 'G', weight: 4, label: 'Generator-verifier asymmetry', detail: 'Karpathy: production cost falls toward zero with AI; verification cost stays roughly constant. The generating function for the metacognitive bottleneck.', status: '✓' },
+  { id: 'G10', type: 'G', weight: 3, label: 'Multi-tool attention interference', detail: 'Wickens\' Multiple Resource Theory: cognitive resources are partitioned by stage / modality / processing code; tasks that compete for the same resource interfere superlinearly. Predicts that running Cursor + ChatGPT + meeting simultaneously incurs interference cost beyond the sum of per-tool costs. Lit review notes MRT is "absent from AI workflow research" — the mechanism is well-established but unmeasured in this context. Implies the routing function should have a concurrent-tool-load parameter, not just a per-task one. Distinct from G1 (general metacognitive demand) — G10 is specifically about parallel-tool contention.', status: '~' },
 
   // Synthesis
   { id: 'S1', type: 'S', weight: 5, label: 'Workflow architecture > capability', detail: 'The headline finding. The same model yields very different outcomes under different interaction designs. Supported by Dell\'Acqua, Everett, and the broader RCT pattern.', status: '✓' },
@@ -192,8 +193,11 @@ const LINKS: GraphLink[] = [
 
   // Foundations directly carry weight on big findings
   { source: 'A1', target: 'G1', type: 'sup' },
+  { source: 'A1', target: 'G10', type: 'sup', label: 'attention scarcity → multi-tool interference' },
   { source: 'A2', target: 'G4', type: 'sup' },
   { source: 'A3', target: 'G3', type: 'sup' },
+  { source: 'G10', target: 'S2', type: 'sup', label: 'minimize concurrent-tool cost' },
+  { source: 'G10', target: 'E10', type: 'mod', label: 'cyborgs incur higher MRT cost than centaurs' },
   { source: 'A6', target: 'S1', type: 'imp', label: 'individual frame is meaningful' },
   { source: 'E4', target: 'A6', type: 'conf', label: 'aggregate-zero attacks individual frame' },
   { source: 'O2', target: 'A6', type: 'imp', label: 'resolves A6 either way' },
@@ -268,8 +272,8 @@ const CRUX_IDS = new Set(['A1', 'A2', 'A3', 'A6', 'L1', 'L2', 'L3']);
 // Capability-regime fragility classification.
 // Stale-on-jump: invert if frontier capability discontinuously improves.
 const REGIME_STALE = new Set(['E2', 'E3', 'E18', 'S5', 'P1', 'E10']);
-// Stable-on-jump: structurally invariant (definitions, principal-agent properties, control-surface architecture).
-const REGIME_STABLE = new Set(['L1', 'L2', 'L3', 'L4', 'G1', 'G2', 'G3', 'G9', 'A1', 'S2', 'S3', 'S4', 'P2', 'P3', 'P5', 'P6', 'P7']);
+// Stable-on-jump: structurally invariant (definitions, principal-agent properties, control-surface architecture, human cognitive architecture).
+const REGIME_STABLE = new Set(['L1', 'L2', 'L3', 'L4', 'G1', 'G2', 'G3', 'G9', 'G10', 'A1', 'S2', 'S3', 'S4', 'P2', 'P3', 'P5', 'P6', 'P7']);
 // Regime-dependent: depends on direction of capability change.
 const REGIME_DEPENDENT = new Set(['A2', 'A3', 'A5', 'A6', 'S1', 'O4', 'E14', 'E15', 'E17', 'P4', 'G4']);
 
@@ -500,7 +504,7 @@ export default function CognitivePartnershipGraph() {
   );
 
   const variantBlurb: Record<Variant, string> = {
-    full: 'All 65 nodes and their dependencies. Click a node for detail; drag to rearrange.',
+    full: 'All 66 nodes and their dependencies. Click a node for detail; drag to rearrange.',
     vulnerability: 'The 7 crux nodes (A1/A2/A3/A6 foundational assumptions + L1/L2/L3 logical guardrails — every weight-5 A node + every weight-5 L node) plus weight-5 load-bearing nodes. Highlights open questions too.',
     flow: 'How causation propagates: foundational assumptions → methods → empirical claims → mechanisms → synthesis, with practitioner frameworks (P) operationalizing the academic claims.',
     minimal: 'The 8-node minimal claim set that yields the headline conclusion (S1: workflow architecture > model capability). Removing any one breaks the qualitative shape.',
