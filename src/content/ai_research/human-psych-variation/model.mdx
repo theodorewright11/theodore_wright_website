@@ -3,8 +3,15 @@ title: 'Model'
 description: 'Generating function for human psychological variation. One equation per person; variance decomposition follows. Closed-form pieces: Crow–Felsenstein AM inflation, Wilson-Effect saturation, genetic-nurture additive split, multivariate sex-difference Mahalanobis D. Twin / SNP / within-family heritability are projections of the same decomposition. Interactive dashboard included.'
 date: 2026-04-28
 status: in-progress
-refinementPass: 6
+refinementPass: 7
 refinementLog:
+  - pass: 7
+    date: '2026-04-29'
+    passes: ['internal consistency check', 'error check']
+    why: 'On a careful re-read after pass 6 added clarifying notes to §2.2 and §3.1 about the AM downward bias on Falconer, two more places in the model still carried the old wrong-direction framing or stale numbers. (a) §6 distortion-aware reading''s row for V(A_LD) said "Inflates V(A_d) by ~10–25% in twin studies" — same wrong-direction error the friend caught originally. (b) §7 Objection 2''s response cited SNP-h² recovery numbers ("for height ~85%, for cognition ~50–70%, for EA ~30–40%") that I had already corrected in the writeup at pass 3 (cognition is actually 25–40% recovery, height is 60% common-SNP / 80% WGS, EA is 30–50%) but never propagated back to the model. Both were left over from earlier passes.'
+    changes:
+      - '§6 distortion-aware reading V(A_LD) row rewritten: "Inflates V(A_d) by ~10–25% in twin studies; a chunk of \"genetic\" effect is structural, not biological" → "Inflates V(A) at the population level by ~10–25% via AM-induced LD between trait-relevant alleles (Yengo 2018: 14–23% for height, matching the formula prediction). Does NOT on net inflate Falconer twin h² — AM actually biases Falconer downward, partially offsetting other classical-ACE biases (see §2.2 caveat)."'
+      - '§7 Objection 2 SNP-h² recovery numbers updated to match writeup pass 3 (and primary sources): "for height ~85%, for cognition ~50–70%, for EA ~30–40%" → "for height about 60% with common SNPs alone (rising to ~80% with whole-genome sequencing that captures rare variants), for cognitive ability about 25–40%, for educational attainment about 30–50%"'
   - pass: 6
     date: '2026-04-29'
     passes: ['error check', 'cross-stage consistency']
@@ -333,7 +340,7 @@ Each component of the decomposition has a public-discourse failure mode. The mod
 |---|---|---|
 | `V(A_d)` (high) | "Genes determine outcomes" | Population variance. Says nothing about a specific person's prospects. |
 | `V(A_i)` (large) | "Family environment doesn't matter" | The opposite: this term *is* family environment, mediated by parental genotypes that correlate with parental phenotypes. |
-| `V(A_LD)` | Usually invisible to public discourse | Inflates `V(A_d)` by ~10–25% in twin studies; a chunk of "genetic" effect is structural, not biological. |
+| `V(A_LD)` | Usually invisible to public discourse | Inflates V(A) at the population level by ~10–25% via AM-induced LD between trait-relevant alleles (Yengo 2018: 14–23% for height, matching the formula prediction). Does NOT on net inflate Falconer twin h² — AM actually biases Falconer downward, partially offsetting other classical-ACE biases (see §2.2 caveat). |
 | `Cov(A_d, E_m)` (active rGE) | "People shape their environments" → therefore environments don't matter | They matter — the covariance term *is* their effect, just non-orthogonal to genes. |
 | Twin h² ≥ within-family h² | "Twin studies overestimate" | They estimate a different quantity (population additive variance vs. direct effect). Both are real. |
 | Multivariate `D` large | "Sexes are categorically different" | `D` is a distribution distance; individuals across the distributions still overlap substantially. Dimensional, not taxonic. |
@@ -359,7 +366,7 @@ EEA fails (MZ co-twins are treated more similarly than DZ); shared-environment e
 
 **Steelman**: Joseph and Richardson's critique of behavior genetics rests partly on this argument: the assumptions that make twin h² meaningful are violated enough to make the resulting numbers epistemically empty. The strongest version isn't that twin studies are "wrong" but that they're under-determined — multiple causal worlds produce the same `rMZ` and `rDZ` patterns.
 
-**Response**: Partially conceded. Classical ACE is under-determined and the assumption-violation issue is real. However, two empirical findings constrain the under-determination: (a) **SNP-based heritability** (which uses unrelated individuals and bypasses EEA entirely) recovers a substantial fraction of twin h² across major traits — for height ~85%, for cognition ~50–70%, for EA ~30–40%. The fraction varies by trait but is consistently large enough that the EEA-bias-only explanation for twin h² is empirically untenable; (b) **MZ-reared-apart studies** (Bouchard 1990 and updates) reproduce the basic Wilson Effect pattern with EEA structurally absent. The model takes twin h² as an *upper bound* on direct + indirect additive variance, not as a precise estimate. The method gradient is what makes the imprecision survivable: comparing twin to within-family bounds the gap.
+**Response**: Partially conceded. Classical ACE is under-determined and the assumption-violation issue is real. However, two empirical findings constrain the under-determination: (a) **SNP-based heritability** (which uses unrelated individuals and bypasses EEA entirely) recovers a substantial fraction of twin h² across major traits — for height about 60% with common SNPs alone (rising to ~80% with whole-genome sequencing that captures rare variants), for cognitive ability about 25–40%, for educational attainment about 30–50%. The fraction varies by trait but is consistently non-trivial — the EEA-bias-only explanation for twin h² is empirically untenable; (b) **MZ-reared-apart studies** (Bouchard 1990 and updates) reproduce the basic Wilson Effect pattern with EEA structurally absent. The model takes twin h² as an *upper bound* on direct + indirect additive variance, not as a precise estimate. The method gradient is what makes the imprecision survivable: comparing twin to within-family bounds the gap.
 
 ### Objection 3 — Additive form misses dominance and epistasis
 
