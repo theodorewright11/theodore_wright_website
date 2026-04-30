@@ -3,7 +3,7 @@ title: 'Topology'
 description: 'Dependency graph of the lit review. 66 nodes typed across nine classes (foundational assumptions / methods / empirical claims / logical necessities / generating mechanisms / synthesis / practitioner frameworks / open questions / distortions); seven cruxes (A1, A2, A3, A6, L1, L2, L3 — every weight-5 A node + every weight-5 L node) and four variant views (Vulnerability / Flow / Minimal / Capability-regime). The genuinely novel structural move for this topic: encoding the practitioner ↔ academic operationalization bridge that runs 12–18 months out of phase.'
 date: 2026-04-29
 status: in-progress
-refinementPass: 7
+refinementPass: 8
 refinementLog:
   - pass: 1
     date: '2026-04-29'
@@ -76,6 +76,12 @@ refinementLog:
     changes:
       - 'Updated Objection 5 to reflect Variant D''s actual 18-node regime-stable subgraph: all four logical necessities (L1, L2, L3, L4), the five mechanism invariants (G1, G2, G3, G9, G10), the foundational A1, the three synthesis claims that follow from the invariants (S2, S3, S4), and the five control-surface practitioner patterns (P2, P3, P5, P6, P7). Defense now matches the topology actually built.'
       - 'Updated ARCHITECTURE.md component description from "~55 nodes" to "~66 nodes" so the project spec tracks the topology state.'
+  - pass: 8
+    date: '2026-04-29'
+    passes: ['internal consistency check']
+    why: '§3e listed E10 and P5 in the "genuinely droppable without changing the structural picture" group, but both are explicitly used in TLDR para 2 as the canonical (a) and (b) bridge examples (Mollick → Randazzo on the 60/30/10 distribution; AI Sandwich / Compound Engineering concretizing Tankelevitch). Calling them droppable without breaking the structural picture contradicts their headline use as exemplars of the topology''s practitioner ↔ academic classification.'
+    changes:
+      - 'Restructured §3e to distinguish two senses of "droppable": (1) load-bearing as exemplars but removing wouldn''t break S1''s conclusion (E10 and P5 — the canonical (a) and (b) bridge examples), and (2) droppable in both senses (E18, G6, P6 — neither load-bearing for S1 nor used as bridge exemplars). The framing now matches their actual roles in the topology.'
 ---
 
 import CognitivePartnershipGraph from '../../../components/ai-research/CognitivePartnershipGraph';
@@ -313,7 +319,10 @@ High-weight non-crux mechanism nodes whose *magnitude* (not existence) is what r
 
 ### 3e. Corroborating / illustrative
 
-Genuinely droppable without changing the structural picture: E10 (60/30/10 distribution — illustrative datum), E18 (Schoenegger overconfident-AI-still-helps — interesting but tangential to S1), G6 (cognitive forcing as mechanism — local, not load-bearing), P5 (compound engineering), P6 (spec-driven development).
+Two senses of "droppable" need to be distinguished here. Some nodes can be removed without breaking S1's *conclusion* but are load-bearing as *exemplars* of the topology's classification structure (especially the practitioner ↔ academic bridge in TLDR para 2); others are droppable in both senses.
+
+- **Load-bearing as exemplars, droppable for S1**: E10 (60/30/10 distribution — the canonical (a) bridge example, paired with P1 to demonstrate "practitioners ahead of academic measurement"; if removed, S1 still holds but the (a) example loses its empirical anchor), P5 (compound engineering / AI Sandwich — the canonical (b) bridge example, paired with S2 to demonstrate "practitioners concretizing prior academic principles"; if removed, S1 still holds but the (b) example weakens).
+- **Droppable in both senses**: E18 (Schoenegger overconfident-AI-still-helps — interesting but tangential to S1 and not used as a bridge example), G6 (cognitive forcing as mechanism — local, not load-bearing for S1 or the bridge framing), P6 (spec-driven development — practitioner-internal P → S4 edge, not a bridge example, not load-bearing for S1).
 
 ### 3f. Distortion vectors
 
