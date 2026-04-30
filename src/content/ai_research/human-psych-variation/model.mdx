@@ -3,8 +3,15 @@ title: 'Model'
 description: 'Generating function for human psychological variation. One equation per person; variance decomposition follows. Closed-form pieces: Crow–Felsenstein AM inflation, Wilson-Effect saturation, genetic-nurture additive split, multivariate sex-difference Mahalanobis D. Twin / SNP / within-family heritability are projections of the same decomposition. Interactive dashboard included.'
 date: 2026-04-28
 status: in-progress
-refinementPass: 7
+refinementPass: 8
 refinementLog:
+  - pass: 8
+    date: '2026-04-29'
+    passes: ['internal consistency check']
+    why: 'Passes 6-7 added clarifying notes to §2.2, §3.1, §6, and §7 about the AM-direction error, but the dashboard React component (PsychVariationModel.tsx) still had the dashboard prose displaying alongside the variance partition that called V(A_LD) "structural inflation from non-random mating." This is the user-facing prose every visitor sees when they interact with the model dashboard — the most-visible piece of model-stage content — and it propagated the wrong-direction framing. Final cross-pipeline grep caught it.'
+    changes:
+      - 'Dashboard prose rewritten: was "Wilson h²(t) is the *observed* (AM-equilibrium) heritability twin studies estimate. AM-LD partitions it into V(A_d) (clean direct, what within-family designs estimate) and V(A_LD) (structural inflation from non-random mating). V(A_i) is added on top as the variance contribution of genetic nurture; classical ACE without AM correction tends to leak some of V(A_i) into A..."; now "Wilson h²(t) is the AM-equilibrium population heritability V(A_AM)/V(P). The Crow-Felsenstein partition splits V(A_AM) into V(A_d) (clean direct, what within-family designs estimate) and V(A_LD) (population-level linkage among trait-relevant alleles induced by non-random mating). Note that classical twin h² (Falconer) is *biased downward* relative to V(A_AM)/V(P) by factor (1 − m_A) ... but is typically inflated upward by EEA violations and genetic-nurture leakage, with the net effect for socially-structured traits being upward overall. ... the gap between empirical twin h² and within-family h² for socially-structured traits is dominated by genetic nurture and EEA, not AM (see the model stage §2.2 caveat)."'
+      - 'Build clean. The model dashboard now displays prose consistent with the §2.2 / §3.1 / §6 / §7 corrections'
   - pass: 7
     date: '2026-04-29'
     passes: ['internal consistency check', 'error check']

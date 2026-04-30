@@ -324,7 +324,7 @@ function VariancePanel() {
         </div>
 
         <p className="text-[11px] text-muted mt-5 leading-relaxed">
-          Wilson h²(t) is the *observed* (AM-equilibrium) heritability twin studies estimate. AM-LD partitions it into V(A_d) (clean direct, what within-family designs estimate) and V(A_LD) (structural inflation from non-random mating). V(A_i) is added on top as the variance contribution of genetic nurture; classical ACE without AM correction tends to leak some of V(A_i) into A, which is why empirical twin h² often exceeds the dashboard's "Twin h² (ACE)" output.
+          Wilson h²(t) is the AM-equilibrium population heritability V(A_AM)/V(P). The Crow-Felsenstein partition splits V(A_AM) into V(A_d) (clean direct, what within-family designs estimate) and V(A_LD) (population-level linkage among trait-relevant alleles induced by non-random mating). Note that classical twin h² (Falconer) is *biased downward* relative to V(A_AM)/V(P) by factor (1 − m_A) — AM raises DZ correlation relative to MZ correlation — but is typically inflated upward by EEA violations and genetic-nurture leakage, with the net effect for socially-structured traits being upward overall. V(A_i) is added on top as the variance contribution of genetic nurture; the gap between empirical twin h² and within-family h² for socially-structured traits is dominated by genetic nurture and EEA, not AM (see the model stage §2.2 caveat).
         </p>
       </div>
     </div>

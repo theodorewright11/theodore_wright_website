@@ -418,7 +418,7 @@ const TRAITS: Trait[] = [
       'Bipolar disorder is highly heritable (h² ≈ 0.78) like schizophrenia, but with much weaker assortative mating (m ≈ 0.18). The direct-biology share is correspondingly larger — bipolar is one of the cleaner "direct biology" reads in psychiatry.',
     variance: { direct: 0.67, family: 0.16, env: 0.17 },
     familyNote:
-      "Modest family bucket. Bipolar's assortative mating is weak (typical of affective conditions), so the structural inflation is much smaller than for schizophrenia / ADHD / autism. About two-thirds of variance is direct biology rather than structural family-setup effects.",
+      "Modest family bucket. Bipolar's assortative mating is weak (m=0.18, typical of affective conditions), so the Crow-Felsenstein V(A_LD) population-level share is much smaller than for schizophrenia / ADHD / autism. About two-thirds of variance is direct biology in the formula partition; with no within-family GWAS at scale, the genetic-nurture contribution is unmeasured.",
     envNote:
       'About 17% environment + chance. Identifiable contributors include sleep deprivation triggers, stimulant exposure, postpartum hormonal shifts, recent severe stressors. Treatment-responsive at clinically meaningful effect sizes (lithium, mood stabilizers).',
     insults: [
@@ -432,7 +432,7 @@ const TRAITS: Trait[] = [
     trapHer:
       "'Bipolar is genetic, period' is mostly right but undersells environmental triggers (sleep, substance use) that are the actionable levers in treatment. Genetic load sets risk; triggers determine episodes.",
     takeaway:
-      'Bipolar disorder is one of the cleaner "direct biology" reads in psychiatry — high heritability, low structural inflation. Genetic load sets risk; environmental triggers and treatment adherence determine the episode course.',
+      'Bipolar disorder is one of the cleaner "direct biology" reads in psychiatry — high heritability and a low Crow-Felsenstein V(A_LD) share at the population level. Genetic load sets risk; environmental triggers and treatment adherence determine the episode course.',
     primarySources: [
       { label: 'Smoller & Finn 2003 — bipolar h²', url: 'https://pubmed.ncbi.nlm.nih.gov/14601685/' },
       { label: 'Mullins 2021 — bipolar GWAS', url: 'https://www.nature.com/articles/s41588-021-00857-4' },

@@ -3,8 +3,15 @@ title: 'Build'
 description: 'A reader''s tool for the psychology of individual differences. Pick a trait, see the three plain-language buckets (direct genes / family setup / environment + chance) instead of the V(A_d)/V(A_LD)/V(A_i) decomposition. Plus the four motivated-reasoning traps the field gets caught in, the asymmetric environmental-effects finding, three "heritability ≠ destiny" misreadings, and a seven-bullet take-away. Translates the formalization and data pipeline into something a non-specialist can actually use.'
 date: 2026-04-28
 status: in-progress
-refinementPass: 5
+refinementPass: 6
 refinementLog:
+  - pass: 6
+    date: '2026-04-29'
+    passes: ['internal consistency check']
+    why: 'After pass 5 caught 8 leftover wrong-direction AM phrasings, a final cross-pipeline grep for "structural inflation" / "AM-induced linkage" / "inflates" surfaced two more in the explorer (bipolar familyNote and takeaway both said "low structural inflation" without the population-level / Falconer-bias clarification). Two non-explorer items were also caught in the same grep — the data stage TLDR and the model dashboard component — and fixed in their respective stages (data pass 8, model pass 8).'
+    changes:
+      - 'Bipolar familyNote rewritten: was "Bipolar''s assortative mating is weak ... so the structural inflation is much smaller than for schizophrenia / ADHD / autism. About two-thirds of variance is direct biology rather than structural family-setup effects" → now "Bipolar''s assortative mating is weak (m=0.18) ... so the Crow-Felsenstein V(A_LD) population-level share is much smaller. About two-thirds of variance is direct biology in the formula partition; with no within-family GWAS at scale, the genetic-nurture contribution is unmeasured" — keeps the relative-comparison correctness but reframes "structural inflation" as the population-level V(A_LD) share rather than as a twin-h² inflation source'
+      - 'Bipolar takeaway rewritten: was "high heritability, low structural inflation" → now "high heritability and a low Crow-Felsenstein V(A_LD) share at the population level"'
   - pass: 5
     date: '2026-04-29'
     passes: ['internal consistency check', 'truth/accuracy override on bias']
