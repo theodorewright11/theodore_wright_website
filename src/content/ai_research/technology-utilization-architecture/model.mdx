@@ -3,8 +3,16 @@ title: 'Model'
 description: 'Generator-verifier loop with a per-task autonomy slider. The per-task value function V(u, v; θ) decomposes into four orthogonal channels (quality, attention, risk, skill); V is exactly bilinear in (u, v) so per-task optima land at three corners — do-yourself, self-automator, spec-driven. Centaur and cyborg arise as aggregate-level patterns from cross-sub-task corner mixing. Portfolio aggregation under a daily attention budget surfaces the Lagrangian shadow price μ that reroutes longer tasks first when budget binds. Five cruxes, six Stage-4 fitting targets, three engaged objections. Interactive two-tab dashboard included.'
 date: 2026-04-29
 status: in-progress
-refinementPass: 4
+refinementPass: 5
 refinementLog:
+  - pass: 5
+    date: '2026-04-30'
+    passes: ['next moves', 'internal consistency check']
+    why: 'Reading the document holistically as input to Stage 4: §11 names six fitting targets (what to test) but does not say where the data lives. Stage 4 will need that pointer first to scope tractability. Adding it now closes the input/output boundary cleanly and saves Stage 4 from re-doing the lit-search to find data. Plus a quick consistency scan after pass-4 numbering changes to catch anything stale.'
+    changes:
+      - 'Added "Data starting points for each Q" subsection at the end of §11. Each Q1-Q6 gets a one-line pointer to the lit-review paper(s) that motivated the corresponding parameter, with honest notes on likely data availability and the cases where new experimental work is the natural path (Q5 cleanly tested only by a new RCT; Q6 likely needs new design as the closest analogs are bandit-with-verification literature in different domains)'
+      - 'Added a closing handoff sentence pointing to the project-internal Stage-4 build convention (data CSVs in stage_outputs/<topic>/data/ with a runnable Python pipeline, mirroring human-psych-variation pass-1 of the data stage) so a Stage-4 starter has a concrete shape to follow'
+      - 'Internal consistency scan: §11 intro line "Six named questions" matches Q1-Q6 ✓; §10 Objection 2 "five things the practitioner literature does not" matches the bullet list ✓; description field "five cruxes, six Stage-4 fitting targets, three engaged objections" matches the artifacts ✓; TLDR para 4 "produces seven things" matches the (1)-(7) list ✓. No stale references found'
   - pass: 4
     date: '2026-04-30'
     passes: ['adversarial + steelman', 'cross-context verification']
@@ -400,6 +408,19 @@ Six named questions Stage 4 should test against data.
 **Q5 — Workflow-architecture-vs-capability bound.** The headline S1 prediction. Construct two simulated workforces: (a) frontier AI + naive flat-cyborg routing, (b) mid-tier AI + optimal routing on the same task mix. The model predicts (b) outperforms (a) on net quality once `c_AI_naive` falls below some threshold. Stage 4 should locate the threshold and test against Everett 2025 / Dell'Acqua at that precision.
 
 **Q6 — Calibration uncertainty and explore-vs-exploit on `c_AI`.** The model treats `c_AI` as a known input. In practice, workers learn `c_AI` by running the task and verifying the output (Vasconcelos verification-economics). For novel tasks, the spec-driven corner doubles as a calibration mechanism — verification reveals `c_AI` for next time. Stage 4 should formalise the explore-vs-exploit structure: what is the optimal exploration premium when `c_AI` variance is high? When does verifying-to-learn dominate verifying-to-quality-control? The §9 scope-limit on `c_AI` miscalibration becomes a structural extension via this question, not just an acknowledged gap. Engages the §10 Objection 1 directly.
+
+### Data starting points for each Q
+
+The natural starting point for each fitting target is the lit-review paper(s) that motivated the corresponding parameter. Honest notes on likely data availability:
+
+- **Q1 (`α`, `ε`)** — Mozannar CUPS 2024 (E12) telemetry across coding interaction states. Process-level data is likely Microsoft Research-internal; replication via Cursor / Claude Code anonymized usage logs is the alternative path.
+- **Q2 (`β`)** — Bastani PNAS 2025 (E9) is the primary anchor; PNAS supplementary materials likely include the longitudinal panel needed to estimate per-task atrophy. Lee-Sarkar CHI 2025 (E16) provides multi-task panel context for a complementary fit.
+- **Q3 (mode distribution)** — Randazzo HBS WP 26-036 (E10) for the 60/30/10 BCG distribution. HBS supplementary materials may include individual-level mode tags; failing that, an in-house replication on a smaller knowledge-worker sample is tractable.
+- **Q4 (outside-frontier slope)** — Dell'Acqua BCG study (E3); HBS data release may include individual-level outcome grades plus inside/outside frontier classification per task. The linearity test of `u·(c_H − c_AI)` is a clean within-subjects design.
+- **Q5 (workflow > capability)** — Everett 2025 (E8) demonstrates the workflow-restoration mechanism but does not directly test the bound. The cleanest test is a new RCT comparing routing strategies on the same `c_AI` (e.g., GPT-4 + naive flat-cyborg vs. GPT-3.5 + optimal routing on a matched task mix); existing data is suggestive, not decisive.
+- **Q6 (explore-exploit on `c_AI`)** — Likely requires new experimental work or simulation. Closest analogs are the contextual-bandit and multi-armed-bandit-with-costly-verification literatures, but the knowledge-workflow application is novel; this is a Stage-4 originated study, not a re-analysis of existing data.
+
+Stage 4's first move is to scope data availability for Q1-Q5; Q6 may require originating new data or a simulation harness. Following the human-psych-variation pattern, the Stage-4 build should live at `stage_outputs/technology-utilization-architecture/data/` with a curated CSV per fitting target, a runnable Python pipeline that reproduces every chart on the published `data.mdx`, and a `data/out/` folder for derived outputs.
 
 ## 12. Connections to other topics
 
