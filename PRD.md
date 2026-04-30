@@ -73,6 +73,7 @@ Each stage:
 - Lives at `/ai-research/<topic>/<stage>`
 - Has a refinement log (REFINEMENT / WHY / CHANGES) showing iteration history
 - Feeds the next stage as input
+- Carries a `refinementPass` integer in frontmatter that **increments on every refinement pass that makes changes** to that stage. The topic registry below tracks the *furthest* stage and its pass number; refining an earlier stage while a later stage already exists does not update the registry. No-op passes (concluded "no refinement needed") do not bump `refinementPass`.
 
 Raw working drafts live in `stage_outputs/<topic>/<stage>.md` (kebab-case topic slug, stage filename one of `lit-review`, `topology`, `model`, `data`, `build`, `writeup`). Polished versions move into `src/content/ai_research/<topic>/<stage>.mdx`.
 

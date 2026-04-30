@@ -170,7 +170,9 @@ refinementLog:
       - 'Compressed intro from 6 paragraphs to 3'
 ```
 
-Rendered at the bottom of each stage page by `<RefinementLog>`.
+Rendered at the bottom of each stage page by `<RefinementLog>`. Newest pass is prepended (top of the array); the rendered log shows passes in reverse-chronological order.
+
+**Frontmatter pass-number convention.** Every refinement pass that makes changes to a stage MUST: (1) increment the integer `refinementPass` field in the stage's frontmatter, (2) prepend a new entry to the `refinementLog` array, and (3) trigger an update to the PRD topic registry only if the *furthest* stage's pass number changed. Refining an earlier stage while a later stage exists does NOT update the registry. A no-op pass (concluded "no refinement needed") does not bump `refinementPass` and does not add a log entry — but the standard REFINEMENT / WHY / CHANGES report still goes to chat with `CHANGES: none`.
 
 ## Design system
 
