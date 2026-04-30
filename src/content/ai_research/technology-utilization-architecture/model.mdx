@@ -3,8 +3,19 @@ title: 'Model'
 description: 'Generator-verifier loop with a per-task autonomy slider. The per-task value function V(u, v; θ) decomposes into four orthogonal channels (quality, attention, risk, skill); its corner solutions reproduce the five empirically observed workflow modes (do-yourself, centaur, cyborg, self-automator, spec-driven). Portfolio aggregation under a daily attention budget produces the S1 headline (workflow architecture > model capability) as a comparable-strategies experiment. Five cruxes, five Stage-4 fitting targets. Interactive two-tab dashboard included.'
 date: 2026-04-29
 status: in-progress
-refinementPass: 2
+refinementPass: 3
 refinementLog:
+  - pass: 3
+    date: '2026-04-30'
+    passes: ['internal consistency check', 'gap scan']
+    why: 'A pass-2 cold read surfaced two distinct issues. (a) §5 claimed that under attention scarcity the Lagrangian shadow price μ adjusts the per-task choice rule (argmax V_i − μ·A_i·g_i), biasing optimal routing toward higher u when budget binds. The dashboard component did not actually implement this — the "optimal routing" strategy computed per-task argmax V independent of the budget; when budget binds, the dashboard just flagged "over budget" rather than rerouting. The dashboard claimed to demonstrate something it did not. Real prose-vs-code gap. (b) §7C Bastani anchor arithmetic: I wrote "self-automator dominates spec-driven by ~0.07 net at default constants" but V(1,0) − V(1,1) = α·φ − K_uv = 0.30 − (0.12 + 0.025 + 0.06) = 0.30 − 0.205 = 0.095, not 0.07. (c) Bonus framing issue: §4 sat awkwardly with a 5-region mode-classification table next to the corner-only finding — readers could plausibly misread the table as a prediction rather than a labelling tool. Wanted cleaner separation.'
+    changes:
+      - 'Implemented budget-aware optimal routing in CognitivePartnershipModel.tsx. Added optimizeAtAlpha (per-task corner optimum at a given α_eff) and optimizeBudgetMu (binary search on the shadow price μ until total absolute attention sum_i A_i·g_i·count_i fits the budget). Per-task α_eff_i = α + μ·g_i — longer-base-time tasks feel budget pressure proportionally more, which is the right Lagrangian dimensional analysis. evaluatePortfolio now takes the budget and runs the shadow-price binary search for the optimal strategy; other strategies (always-self / max-AI / naive) keep their fixed (u, v) policy as comparators'
+      - 'Dashboard now surfaces μ in a footer line below the strategy table: when μ = 0 the budget is slack and per-task choice is unconstrained argmax V; when μ > 0 the budget binds and α_eff = α + μ·g routes longer tasks toward self-automator (the lowest-A corner). Tightening the budget slider triggers visible rerouting, demonstrating the §5 claim'
+      - 'Updated §5 prose to describe what the dashboard actually does. Removed the "naive cyborg fits in budget; optimal should also fit" framing (which was true under unconstrained per-task optimization but moot now that optimal is budget-aware). Added an explicit description of how μ rises as budget tightens, and of which task types reroute first (high-g tasks with high-σ low-stakes tradeoffs are the first to flip from spec-driven to self-automator)'
+      - 'Fixed §7C arithmetic: "self-automator dominates spec-driven by ~0.07" → "by 0.095 (α·φ − K_uv = 0.30 − 0.205)" with the explicit subtraction shown. Same direction as before but the number was wrong'
+      - 'Restructured §4. Now leads with the three-corner decision tree (which corner wins under which sign conditions) and treats the five-region table as a labelling tool for observed worker behaviour, explicitly demoted from "prediction" to "vocabulary-mapping." Removed the redundant comparative-statics-row repetition by tightening the table commentary'
+      - 'Tightened §3.5 K_v parenthetical from "always ≤ 0 — verifying nothing has no benefit; verifying anything has cost φ" to "K_v captures the cost of verification when there is no AI to verify (u = 0); pure cost, hence ≤ 0 — this is exactly why corner (0, 1) is dominated by (0, 0)". The new wording connects K_v to the (0, 1)-dominance result that follows in the same section'
   - pass: 2
     date: '2026-04-30'
     passes: ['error check', 'internal consistency check', 'truth/accuracy override on bias']
@@ -182,7 +193,7 @@ with
 
 - `K_0 = c_H − α − α·M + λ`
 - `K_u = (c_AI − c_H) + α·(1 − ε) − λ·(1 + β) − σ·(1 − c_AI)`
-- `K_v = −α·φ` (always ≤ 0 — verifying nothing has no benefit; verifying anything has cost φ)
+- `K_v = −α·φ` (K_v captures the cost of verification when there is no AI to verify, i.e., at `u = 0`; pure cost, hence ≤ 0 — this is exactly why corner `(0, 1)` is dominated by `(0, 0)` below)
 - `K_uv = (c_⋆ − c_AI) + λ·β + σ·(1 − c_AI) = (1 − c_AI)·c_H + λ·β + σ·(1 − c_AI)` (always ≥ 0 — verification gain is monotone in `u`)
 
 Bilinear functions on a unit square attain their maximum at a corner. The interior critical point, when it exists, is a saddle (Hessian eigenvalues `±K_uv`). So the per-task optimum is at one of the four corners — and since `K_v < 0`, `(0, 1)` is dominated by `(0, 0)` (verifying when no AI is involved is pure cost). The three meaningful corners:
@@ -193,31 +204,17 @@ Bilinear functions on a unit square attain their maximum at a corner. The interi
 
 Which corner wins depends on the signs of `K_u`, `K_u + K_uv + K_v`, and `K_v + K_uv` — three linear comparisons over θ.
 
-## 4. Optimal policy and workflow modes
+## 4. Optimal policy: the three corners that win
 
-The optimum `(u*, v*) = argmax V` over the unit square. Since V is bilinear, the maximum is at a corner — and because `(0, 1)` is dominated by `(0, 0)`, only three corners are candidates: `(0, 0)`, `(1, 0)`, `(1, 1)`. The choice rule:
+V is bilinear → max at a corner. Of the four corners, `(0, 1)` is dominated by `(0, 0)` because `K_v < 0` (verifying with no AI involvement is pure cost). Three candidates remain — and a clean decision tree determines the winner:
 
-- `(1, 0)` self-automator beats `(0, 0)` do-yourself iff `K_u > 0`.
-- `(1, 1)` spec-driven beats `(1, 0)` self-automator iff `K_v + K_uv > 0`, i.e., verification benefit at full delegation exceeds verification cost: `(1 − c_AI)·c_H + λ·β + σ·(1 − c_AI) > α·φ`.
-- `(0, 0)` do-yourself beats both AI corners iff `K_u < 0` and `K_u + K_v + K_uv < 0`.
+- **Spec-driven `(1, 1)`** wins iff `K_u + K_v + K_uv > 0` *and* `K_v + K_uv > 0`.
+- Else **self-automator `(1, 0)`** wins iff `K_u > 0`.
+- Else **do-yourself `(0, 0)`** wins.
 
-The five mode-regions in the practitioner literature partition the (u, v) plane:
+Equivalently: spec-driven dominates self-automator when `α·φ < K_uv` (verification cost is below benefit at full delegation: `α·φ < (1 − c_AI)·c_H + λ·β + σ·(1 − c_AI)`); self-automator dominates do-yourself when `K_u > 0` (the attention savings + AI quality gain outweigh skill loss + stakes risk).
 
-| Region | Mode | Practitioner anchor |
-|---|---|---|
-| `u ≈ 0` | **Do-yourself** | (no-AI / refuse-AI) |
-| `u ∈ (0, 1)`, `v` high | **Centaur** | Mollick — clean handoff with verification gate |
-| `u ∈ (0, 1)`, `v` low/mid | **Cyborg** | Mollick — interleaved, partial verification |
-| `u ≈ 1`, `v` high | **Spec-driven / independent-then-synthesize** | Everett 2025; Compound Engineering |
-| `u ≈ 1`, `v` low | **Self-automator** | Randazzo HBS 26-036 (the trap) |
-
-This is a useful spatial decomposition for *labelling* observed worker behaviour at any (u, v). But the per-task router will only ever return one of three corners — `(0, 0)`, `(1, 0)`, `(1, 1)` — never an interior point. Centaur and cyborg do not arise as per-task optima of V.
-
-**This is a substantive prediction of the formalisation, not a limitation.** Bilinearity is faithful to the structure of the problem (the four channels are linear in `u` and `v` separately, and there's exactly one cross-term `u·v`). The model says: at any single sub-task with a single θ, you should pick a corner — fully delegate or don't, fully verify or don't. The empirically observed centaur and cyborg behaviour at the *task* level is a sign that the worker is mixing corner policies across sub-tasks (some sub-tasks done alone, others fully delegated; some AI outputs verified, others shipped). What looks like an interior policy at the task level is corner-policies-being-averaged at the sub-task level.
-
-The Day Portfolio tab demonstrates this: optimal routing assigns each task type to its corner; the *aggregate* `(ū, v̄)` across the day looks interior because different tasks land at different corners. The naive flat-cyborg strategy (`u = 0.7, v = 0.3` everywhere) is the failure mode — applying an interior policy uniformly is exactly what the formalism says is wrong.
-
-**Comparative statics — what moves the optimum:**
+**Comparative statics — what moves the corner choice:**
 
 | Parameter increase | Effect on `u*` | Effect on `v*` (given `u* = 1`) |
 |---|---|---|
@@ -227,29 +224,51 @@ The Day Portfolio tab demonstrates this: optimal routing assigns each task type 
 | `λ` ↑ (skill matters) | weakly ↓ (K_u falls by `λ·(1+β)`) | ↑ slightly (K_uv rises by `λ·β`) |
 | `c_AI` ↑ alone | ↑ | ↓ (both `(1−c_AI)·c_H` and `σ·(1−c_AI)` fall) |
 
-This is the L3 invariant in tabular form: if `c_AI` rises uniformly, optimal `u*` rises and `v*` falls — exactly the calibration the field has been trying to derive. The structural shape of the rule does not change. Note that several signs are non-obvious without the algebra: more reliable AI (`c_AI` ↑) reduces verification benefit because there are fewer errors to catch, and higher stakes (`σ` ↑) pushes both `u*` *down* (refuse AI on high-stakes work) *and* `v*` *up* (if you do use AI, verify carefully) — a real tension the bilinear structure makes explicit.
+This is the L3 invariant in tabular form: if `c_AI` rises uniformly, optimal `u*` rises and `v*` falls. The structural shape of the rule does not change. Two signs worth flagging because they're non-obvious: more reliable AI (`c_AI` ↑) *reduces* verification benefit (fewer errors to catch); higher stakes (`σ` ↑) pushes `u*` *down* (refuse AI when stakes are high) *and* `v*` *up* (if you do use AI, verify carefully) — a real tension the bilinear structure makes explicit.
+
+### The five practitioner modes — labels for the (u, v) plane
+
+The practitioner literature names five workflow modes. They span the (u, v) plane and are useful as **vocabulary for labelling observed worker behaviour** at any `(u, v)`:
+
+| Region | Mode | Practitioner anchor |
+|---|---|---|
+| `u ≈ 0` | **Do-yourself** | (no-AI / refuse-AI) |
+| `u ∈ (0, 1)`, `v` high | **Centaur** | Mollick — clean handoff with verification gate |
+| `u ∈ (0, 1)`, `v` low/mid | **Cyborg** | Mollick — interleaved, partial verification |
+| `u ≈ 1`, `v` high | **Spec-driven / independent-then-synthesize** | Everett 2025; Compound Engineering |
+| `u ≈ 1`, `v` low | **Self-automator** | Randazzo HBS 26-036 (the trap) |
+
+The per-task router only returns the three corners — `(0, 0)`, `(1, 0)`, `(1, 1)` — corresponding to do-yourself, self-automator, and spec-driven. **Centaur and cyborg do not arise as per-task optima.** They appear empirically as **aggregate-level labels** when a worker mixes corner policies across sub-tasks with heterogeneous θ — some sub-tasks done alone, others fully delegated; some AI outputs verified, others shipped. The day-level `(ū, v̄)` averages out to interior values that get labelled "cyborg" or "centaur" depending on the ratio. The Day Portfolio tab demonstrates this directly.
+
+This is a substantive prediction of the formalisation, not a limitation. Bilinearity is faithful to the structure of the problem (four linear channels with one cross-term `u·v`). The model says: at any single sub-task with a single θ, pick a corner — fully delegate or don't, fully verify or don't. The naive flat-cyborg strategy (`u = 0.7, v = 0.3` applied to every task) is exactly the failure mode — applying an interior policy uniformly is what no individual sub-task should do under bilinearity.
 
 ## 5. Portfolio aggregation — the day
 
-A worker faces N tasks per day, each with its own `θ_i`. Total attention budget `T_total`. The portfolio optimisation:
+A worker faces N tasks per day, each with its own `θ_i`. Total attention budget `T`. The portfolio problem:
 
 ```
-maximise   Σ_i Q_i(u_i, v_i)
-subject to Σ_i A_i(u_i, v_i)·g_i ≤ T_total
+maximise   Σ_i Q_i(u_i, v_i) · count_i
+subject to Σ_i A_i(u_i, v_i) · g_i · count_i ≤ T
 ```
 
-where `g_i` is the task's base generation time. Lagrangian gives a shadow price `μ` of attention; the per-task choice rule becomes `argmax V_i − (μ − α)·A_i·g_i`. When `μ > α` (attention-scarce day), the rule biases toward higher `u` (delegate more) — exactly the lit review's "AI helps when time is tight" finding.
+where `g_i` is the task type's base generation time. The Lagrangian gives a shadow price `μ ≥ 0` on the budget constraint, and the per-task choice rule becomes
 
-This is the L2 invariant operationalised at portfolio level. The naive practitioner rule "use AI when AI is better" compares `c_H` to `c_AI` task-by-task in isolation; the joint-surface rule compares marginal Q per unit attention saved against the day's shadow price. They give the same answer when attention is abundant (μ ≈ α); they diverge when the day is tight.
+```
+argmax V_i − μ·A_i·g_i  =  argmax V_i with α replaced by α_eff_i = α + μ·g_i
+```
+
+— that is, **budget pressure raises the effective attention price, more so for longer-base-time tasks**. When `μ = 0` the budget is slack and per-task choice is unconstrained `argmax V`; when `μ > 0` the budget binds and `α_eff` rises until total absolute attention `Σ A_i·g_i·count_i` fits `T`. The biasing is structural: raising `α_eff` raises `K_u` (self-automator becomes more attractive vs. do-yourself) and makes `K_v = −α_eff·φ` more negative (verification becomes less attractive). So as the budget tightens, longer tasks reroute first from spec-driven `(1, 1)` to self-automator `(1, 0)` — the lowest-A corner.
+
+This is the L2 invariant operationalised at portfolio level. The naive practitioner rule "use AI when AI is better" compares `c_H` to `c_AI` task-by-task in isolation; the joint-surface rule compares marginal `Q` per unit attention saved against the day's shadow price. They give the same answer when attention is abundant (`μ ≈ 0`); they diverge sharply when the day is tight.
 
 **Strategies the dashboard compares:**
 
 1. **Always-self.** `u_i = 0` for all i. No AI, no atrophy, no verification cost — but no productivity gain. The pre-AI baseline.
 2. **Max-AI.** `u_i = 1, v_i = 0` for all i. The corner uniformly applied. Fast, but high risk on high-σ tasks and accelerated atrophy on high-λ tasks.
-3. **Naive cyborg.** `u_i = 0.7, v_i = 0.3` for all i. A flat *interior* policy applied uniformly. Notably, this is exactly the policy the bilinear structure says no individual task should land at — interior values arise legitimately only as averages over heterogeneous-θ sub-tasks. Applying them uniformly violates the structure and underperforms.
-4. **Optimal routing.** Per-task `(u_i*, v_i*)` from V — each task lands at the corner appropriate to its θ. Some go to do-yourself, some to self-automator, some to spec-driven. The aggregate `(ū, v̄)` across the day looks interior because different tasks land at different corners.
+3. **Naive cyborg.** `u_i = 0.7, v_i = 0.3` for all i. A flat *interior* policy applied uniformly — exactly what the bilinear structure says no individual task should land at. Interior values arise legitimately only as averages over heterogeneous-θ sub-tasks. Applying them uniformly violates the structure and underperforms.
+4. **Optimal routing (budget-aware).** Per-task corner choice under the shadow-price-adjusted `α_eff_i = α + μ·g_i`, with `μ` solved by binary search until the budget is met (or until even uniform self-automator overflows). Each task lands at the corner appropriate to its θ *and* the day's binding budget. The aggregate `(ū, v̄)` across the day looks interior because different tasks land at different corners; the dashboard surfaces `μ` below the strategy table so the user can see when the budget is biting.
 
-The headline prediction (S1): **optimal routing dominates max-AI by quality-per-attention and dominates always-self by attention efficiency, on the same `c_AI`**. The gap between optimal routing on mid-tier AI and naive-flat routing on frontier AI is the empirical bound the model places on "workflow architecture > model capability." The mechanism: optimal routing differentiates across tasks (different corners for different θ); naive uniformly applies an interior policy that is structurally never the per-task optimum.
+The headline prediction (S1): **optimal routing dominates max-AI by quality-per-attention and dominates always-self by attention efficiency, on the same `c_AI`**. The gap between optimal routing on mid-tier AI and naive-flat routing on frontier AI is the empirical bound the model places on "workflow architecture > model capability." Mechanism: optimal routing differentiates across tasks (different corners for different θ) and reroutes under budget pressure (shadow price `μ`); naive uniformly applies an interior policy that is structurally never the per-task optimum at any α.
 
 ## 6. Calibration anchors
 
@@ -278,7 +297,7 @@ So the model produces: novice at full-delegate-no-verify (Q = 0.70 from c_AI alo
 
 **C. Bastani PNAS (E9) — guardrails preserve skill.** Generic learning task with high skill-formation: `θ = (c_H = 0.40, c_AI = 0.70, φ = 0.30, σ = 0.20, λ = 0.50)`. `c_⋆ = 0.82`. `K_u = 0.30 + 0.85 − 0.525 − 0.06 = 0.565 > 0`. `K_v + K_uv = −0.30 + (0.12 + 0.025 + 0.06) = −0.095 < 0`. **Optimum: `(1, 0)` self-automator.**
 
-This is a real and honest finding: at lit-review-anchored constants (β = 0.05), the skill-preservation push toward verification (`λ·β·u = 0.025` at u = 1) is too small to flip the corner against verification cost. The guardrail effect is *structurally present* — at the (1, 1) corner, `S = 0` (no atrophy) versus `S = −0.05` at (1, 0), so `λ·ΔS = +0.025` — but the verification cost (`α·φ = 0.30`) dominates. To make guardrails decisive (flip the corner), the model needs `λ·β + (1 − c_AI)·c_H + σ·(1 − c_AI) > α·φ`. With these θ, you'd need `β ≈ 0.20+` or higher `λ` (~0.80+) or lower `φ` (~0.20).
+This is a real and honest finding: at lit-review-anchored constants (β = 0.05), the skill-preservation push toward verification (`λ·β·u = 0.025` at u = 1) is too small to flip the corner against verification cost. The guardrail effect is *structurally present* — at the (1, 1) corner, `S = 0` (no atrophy) versus `S = −0.05` at (1, 0), so `λ·ΔS = +0.025` — but the verification cost (`α·φ = 0.30`) dominates. Numerically, self-automator beats spec-driven by `α·φ − K_uv = 0.30 − 0.205 = 0.095` net at default constants. To make guardrails decisive (flip the corner to spec-driven), the model needs `λ·β + (1 − c_AI)·c_H + σ·(1 − c_AI) > α·φ`. With these θ, you'd need `β ≈ 0.20+` or higher `λ` (~0.80+) or lower `φ` (~0.20).
 
 **Honest reading:** the model says the guardrail effect is real but weak at default constants. Stage-4 fitting target Q2 is whether `β` should be larger to match Bastani's empirical magnitude. This is not a model failure — it's the model surfacing a calibration question the lit review left implicit.
 

@@ -395,31 +395,87 @@ const DEFAULT_PORTFOLIO: PortfolioTask[] = [
   { key: 'strategic_decision', label: 'Strategic decision', params: ROUTER_PRESETS.strategic_decision.params, count: 1, g: 4.0 },
 ];
 
-function strategyChoice(strategy: Strategy, params: TaskParams): { u: number; v: number } {
+// Per-task corner optimum at a given effective attention price α_eff.
+// V is bilinear so the maximum is at one of three corners (0,0), (1,0), (1,1);
+// (0,1) is dominated. This evaluates V at each corner under α_eff and returns
+// the winner. Used by the budget-aware portfolio optimisation below.
+function optimizeAtAlpha(p: TaskParams, alphaEff: number): { u: number; v: number; A: number } {
+  const cStar = p.cAI + (1 - p.cAI) * p.cH;
+  const corners: Array<[number, number]> = [[0, 0], [1, 0], [1, 1]];
+  let best = { u: 0, v: 0, A: 1 + M_ROUTE, V: -Infinity };
+  for (const [u, v] of corners) {
+    const Q = (1 - u) * p.cH + u * ((1 - v) * p.cAI + v * cStar);
+    const A = (1 - u * (1 - EPSILON)) + v * p.phi + M_ROUTE;
+    const R = u * (1 - v) * (1 - p.cAI);
+    const S = (1 - u) - BETA * u * (1 - v);
+    const V = Q - alphaEff * A + p.lambda * S - p.sigma * R;
+    if (V > best.V) best = { u, v, A, V };
+  }
+  return best;
+}
+
+// Budget-aware optimal routing. Implements the §5 Lagrangian story exactly:
+// the per-task choice rule is argmax V_i − μ·A_i·g_i, equivalently argmax V
+// with α replaced by α_eff_i = ALPHA + μ·g_i (longer-base-time tasks feel
+// budget pressure proportionally more — the Lagrangian shadow price has units
+// of "value per unit absolute time"). Binary search μ until total absolute
+// attention sum_i A_i·g_i·count_i fits the budget, or until even uniform
+// self-automator (the minimum-A corner) overflows.
+function optimizeBudgetMu(tasks: PortfolioTask[], budget: number): number {
+  // Check if μ = 0 already fits.
+  let total0 = 0;
+  for (const t of tasks) {
+    const opt = optimizeAtAlpha(t.params, ALPHA);
+    total0 += opt.A * t.count * t.g;
+  }
+  if (total0 <= budget) return 0;
+
+  // Binary search μ in [0, 100]. At μ very large, every task → self-automator
+  // (minimum A); if even that overflows, the worker is over-capacity and we
+  // return the largest μ tried.
+  let muLo = 0;
+  let muHi = 100;
+  for (let i = 0; i < 50; i++) {
+    const mu = (muLo + muHi) / 2;
+    let total = 0;
+    for (const t of tasks) {
+      const alphaEff = ALPHA + mu * t.g;
+      const opt = optimizeAtAlpha(t.params, alphaEff);
+      total += opt.A * t.count * t.g;
+    }
+    if (total > budget) muLo = mu; else muHi = mu;
+  }
+  return muHi;
+}
+
+function strategyChoice(strategy: Strategy, params: TaskParams, alphaEff: number = ALPHA): { u: number; v: number } {
   if (strategy === 'self') return { u: 0, v: 0 };
   if (strategy === 'maxai') return { u: 1, v: 0 };
   if (strategy === 'naive') return { u: 0.7, v: 0.3 };
-  // optimal
-  const opt = optimize(params);
+  // optimal — use shadow-price-adjusted α
+  const opt = optimizeAtAlpha(params, alphaEff);
   return { u: opt.u, v: opt.v };
 }
 
-function evaluatePortfolio(tasks: PortfolioTask[], strategy: Strategy) {
+function evaluatePortfolio(tasks: PortfolioTask[], strategy: Strategy, budget: number) {
+  // For the optimal strategy, compute the shadow price μ that binds the
+  // budget (μ = 0 if budget is slack); per-task α_eff = α + μ·g.
+  const mu = strategy === 'optimal' ? optimizeBudgetMu(tasks, budget) : 0;
+
   let totalQ = 0;
   let totalA = 0;
   let totalS = 0;
   let totalR = 0;
-  let totalQ_baseline = 0; // total quality if everything were always-self
   for (const t of tasks) {
-    const { u, v } = strategyChoice(strategy, t.params);
+    const alphaEff = ALPHA + mu * t.g;
+    const { u, v } = strategyChoice(strategy, t.params, alphaEff);
     const r = computeV(u, v, t.params);
     totalQ += r.Q * t.count;
     totalA += r.A * t.count * t.g;
     totalS += (r.S - 1) * t.count * t.params.lambda;
     totalR += r.R * t.count * t.params.sigma;
-    totalQ_baseline += t.params.cH * t.count;
   }
-  return { totalQ, totalA, totalS, totalR, totalQ_baseline };
+  return { totalQ, totalA, totalS, totalR, mu };
 }
 
 function PortfolioPanel() {
@@ -432,8 +488,8 @@ function PortfolioPanel() {
 
   const evaluations = useMemo(() => {
     const strategies: Strategy[] = ['self', 'maxai', 'naive', 'optimal'];
-    return strategies.map(s => ({ strategy: s, ...evaluatePortfolio(tasks, s) }));
-  }, [tasks]);
+    return strategies.map(s => ({ strategy: s, ...evaluatePortfolio(tasks, s, budget) }));
+  }, [tasks, budget]);
 
   const optEval = evaluations.find(e => e.strategy === 'optimal')!;
   const naiveEval = evaluations.find(e => e.strategy === 'naive')!;
@@ -512,7 +568,7 @@ function PortfolioPanel() {
             <tbody>
               {evaluations.map(e => {
                 const isOptimal = e.strategy === 'optimal';
-                const inBudget = e.totalA <= budget;
+                const inBudget = e.totalA <= budget + 0.01;
                 return (
                   <tr key={e.strategy} className={`border-b border-rule-soft ${isOptimal ? 'bg-paper-edge' : ''}`}>
                     <td className={`py-2 pr-3 ${isOptimal ? 'text-accent font-medium' : 'text-ink-soft'}`}>{STRATEGY_LABEL[e.strategy]}</td>
@@ -528,6 +584,17 @@ function PortfolioPanel() {
             </tbody>
           </table>
         </div>
+        <p className="text-[11px] text-muted mt-3 leading-relaxed">
+          {optEval.mu > 0.001 ? (
+            <>
+              <span className="text-accent font-mono">μ = {optEval.mu.toFixed(2)}</span> — the budget binds for optimal routing. Per-task effective attention price α_eff = α + μ·g rises proportionally with task length, biasing longer-base-time tasks toward self-automator (the lowest-A corner). Loosening the budget slider drives μ to 0, at which point optimal routing is unconstrained per-task argmax V.
+            </>
+          ) : (
+            <>
+              <span className="font-mono">μ = 0</span> — budget is slack for optimal routing. Per-task choice is unconstrained argmax V. Tighten the budget slider until μ rises above 0 to see the shadow-price mechanism reroute tasks toward the cheaper-attention corner.
+            </>
+          )}
+        </p>
       </div>
 
       <div>
