@@ -185,7 +185,7 @@ const LINKS: GraphLink[] = [
   // Practitioner ↔ Academic (operationalizes)
   { source: 'P1', target: 'E10', type: 'op', label: 'taxonomy ↔ distribution' },
   { source: 'P2', target: 'L4', type: 'op', label: '2D framework concretized' },
-  { source: 'P3', target: 'L2', type: 'op', label: 'patterns operationalize L2D' },
+  { source: 'P3', target: 'L2', type: 'op', label: 'shared concern: joint allocation (parallel convergence)' },
   { source: 'P4', target: 'E17', type: 'op' },
   { source: 'P5', target: 'S2', type: 'op' },
   { source: 'P6', target: 'S4', type: 'op' },
