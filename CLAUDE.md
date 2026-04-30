@@ -64,7 +64,12 @@ After each pass, output to the chat:
 - CHANGES: [bullet list of what moved]
 ```
 
-Increment `refinementPass` on each pass.
+**Pass-number bookkeeping (mandatory on every pass that makes changes):**
+
+1. **Increment `refinementPass`** in the stage frontmatter to the new pass number.
+2. **Prepend a new log entry** to the `refinementLog` array (newest first) with `pass`, `date`, `passes`, `why`, `changes` filled in.
+3. **Update the PRD topic registry** if the *furthest* stage's pass number changed (or a new stage was reached). The registry shows `furthest stage (pass N)` — it does NOT update when an earlier stage gets a refinement pass while a later stage already exists. (E.g., refining the model stage while the writeup is the furthest stage means model frontmatter advances but the registry stays on `writeup (pass M)`.)
+4. **No-op passes** (where you concluded no refinement was needed and made no changes) do NOT bump pass numbers. The chat report still goes out, with `CHANGES: none`.
 
 ## Stage outputs convention
 
