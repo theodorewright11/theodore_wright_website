@@ -1,10 +1,19 @@
 ---
 title: 'Model'
-description: 'Generator-verifier loop with a per-task autonomy slider. The per-task value function V(u, v; θ) decomposes into four orthogonal channels (quality, attention, risk, skill); its corner solutions reproduce the five empirically observed workflow modes (do-yourself, centaur, cyborg, self-automator, spec-driven). Portfolio aggregation under a daily attention budget produces the S1 headline (workflow architecture > model capability) as a comparable-strategies experiment. Five cruxes, five Stage-4 fitting targets. Interactive two-tab dashboard included.'
+description: 'Generator-verifier loop with a per-task autonomy slider. The per-task value function V(u, v; θ) decomposes into four orthogonal channels (quality, attention, risk, skill); V is exactly bilinear in (u, v) so per-task optima land at three corners — do-yourself, self-automator, spec-driven. Centaur and cyborg arise as aggregate-level patterns from cross-sub-task corner mixing. Portfolio aggregation under a daily attention budget surfaces the Lagrangian shadow price μ that reroutes longer tasks first when budget binds. Five cruxes, six Stage-4 fitting targets, three engaged objections. Interactive two-tab dashboard included.'
 date: 2026-04-29
 status: in-progress
-refinementPass: 3
+refinementPass: 4
 refinementLog:
+  - pass: 4
+    date: '2026-04-30'
+    passes: ['adversarial + steelman', 'cross-context verification']
+    why: 'Two structural omissions surfaced on a fresh read of pass 3. (a) The topology had a §8 Objections section engaging the strongest critiques head-on; the model has no equivalent, and three real objections deserve direct engagement: c_AI is unobservable in practice (so the model is unactionable on novel tasks), the model recovers practitioner intuitions and adds nothing new, and the model is single-shot when the topic asks about an evolving capability landscape. Without addressing these, the model reads as undefended on its weakest flanks. (b) §7 worked anchors silently treat six papers measuring different outcome variables (Brynjolfsson is throughput × quality, Dell''Acqua/Everett/Schoenegger are clean Q, Bastani is unassisted-retest performance — a downstream of S over many task instances, Randazzo is behavioural-mode distribution, Mozannar is process telemetry) as if they all calibrated the same model parameter. That is methodologically loose; Stage 4 needs to disaggregate which constants get calibrated against which outcome types.'
+    changes:
+      - 'Added §10 "Adversarial + steelman" with three objections engaged head-on. (1) c_AI is unobservable on novel tasks: steelman that calibration is the binding constraint Vasconcelos already named; survives because the corner structure is robust across c_AI ranges (deeply self-automator or deeply do-yourself for almost any c_AI in the right (σ, λ, φ) regime), and the spec-driven corner doubles as a Bayesian-update mechanism (verify to learn c_AI for next time) — the verification cost α·v·φ is the explicit price of resolving the uncertainty. (2) Model recovers practitioner intuitions: steelman that Mollick/Karpathy/Anthropic already say the headline conclusions; survives because the model contributes five things the practitioner literature does not — quantitative trade-offs (the 0.095 Bastani gap, etc.), simultaneous constraint (σ ↑ pushes both u down AND v up, not made explicit by practitioners), naive cyborg as structural failure mode (sharper than "be thoughtful"), budget-aware shadow-price reformulation (reroute long tasks first), and Stage-4 calibration targets (practitioner heuristics are unfalsifiable by design). (3) Single-shot vs strategic: brief steelman that the topic asks for a static answer to a dynamic question; survives because Parasuraman 2000 has been useful for 25+ years despite being static, and trajectory questions belong to sibling topics (navigating-ai-world for AI-induced trajectory; planned prediction-calibration for c_AI calibration drift) rather than this one.'
+      - 'Added cross-context outcome-heterogeneity note at end of §7. Six anchors measure different outcome variables: Q (Dell''Acqua/Everett/Schoenegger) cleanly map to the model''s Q; Brynjolfsson maps approximately to Q × call-rate where call-rate depends on attention saved A; Bastani maps to S over many task instances; Randazzo maps to a categorical prediction over corners; Mozannar is process telemetry. Stage 4 should not pool these as a single calibration target — different constants fit against different outcome types.'
+      - 'Added Stage-4 fitting target Q6 — calibration uncertainty and explore-vs-exploit on c_AI. The model treats c_AI as a known input but in practice workers learn c_AI by running the task; for novel tasks, the spec-driven corner doubles as a calibration mechanism. Stage 4 should formalise what optimal exploration premium looks like when c_AI variance is high. The §9 scope-limit on c_AI miscalibration becomes a structural extension here, not just an acknowledged gap.'
+      - 'Renumbered: §10 Stage-4 fitting targets → §11; §11 Connections to other topics → §12. Added §10 Adversarial + steelman.'
   - pass: 3
     date: '2026-04-30'
     passes: ['internal consistency check', 'gap scan']
@@ -60,7 +69,7 @@ The per-task value function is `V(u, v; θ) = Q(u,v) − α·A(u,v) + λ·S(u,v)
 
 The portfolio extension aggregates per-task decisions under a daily attention budget. The headline result the model is designed to produce is **S1** (workflow architecture > model capability): on the same task mix and same `c_AI`, optimal routing dominates "max-AI" (self-automate everything) and dominates the naive flat-cyborg heuristic (`u=0.7, v=0.3` everywhere). The bilinearity finding sharpens this: the naive flat-cyborg policy is exactly the failure mode — it applies an interior `(u, v)` value that the bilinear structure says no individual sub-task should land at. Optimal routing differentiates across tasks (different corners for different θ); the aggregate `(ū, v̄)` across the day looks interior because the corners differ, not because any single decision is interior. The generating function is **parameterised by capability** (the L3 invariant): if `c_AI` rises uniformly across tasks, the model rebalances; if it rises only on certain task types, the boundary of optimal `u*` shifts but the *shape* of the routing rule stays put.
 
-This stage produces six things: (1) a math object — `V(u, v; θ)` and the four-channel decomposition; (2) a workflow-mode classifier — the five-region partition of the unit square; (3) a portfolio aggregator — daily attention budget × N task types; (4) the interactive two-tab dashboard below; (5) **five cruxes** of the model (load-bearing claims whose collapse rebuilds it); (6) **five Stage-4 fitting targets** (parameter calibrations and qualitative predictions the data pipeline should test). The formalisation is honest about scope: it does *not* capture the aggregate-zero puzzle (E4/O2 — organisational dynamics), it does *not* capture cross-task productivity bundling (G8/Cowen), it treats `c_AI` as known (no calibration error), and it assumes verification is honest (no sycophancy E13). These are named scope-limits, not silent assumptions.
+This stage produces seven things: (1) a math object — `V(u, v; θ)` and the four-channel decomposition; (2) a workflow-mode classifier — three-corner per-task router plus a five-region label-partition of the (u, v) plane for observed worker behaviour; (3) a portfolio aggregator with budget-aware shadow-price routing (μ-binary-search over per-task `α_eff = α + μ·g`); (4) the interactive two-tab dashboard below; (5) **five cruxes** of the model (load-bearing claims whose collapse rebuilds it); (6) **six Stage-4 fitting targets** (parameter calibrations and qualitative predictions the data pipeline should test); (7) three engaged objections (`c_AI` unobservable, model just recovers practitioner intuitions, model is single-shot not strategic) with steelmen and what survives. Scope is explicit: the formalisation does *not* capture the aggregate-zero puzzle (E4/O2 — organisational dynamics), cross-task productivity bundling (G8/Cowen), `c_AI` miscalibration on novel tasks (O7), sycophancy as a verification-degrader (E13), or frontier migration over time (O4). These are named scope-limits, not silent assumptions.
 
 <CognitivePartnershipModel client:load />
 
@@ -307,6 +316,12 @@ This is a real and honest finding: at lit-review-anchored constants (β = 0.05),
 
 **F. Schoenegger (E18) — even overconfident GPT improves forecasting +23–43%.** This is *outside* the model's current formalism. The model attributes any gain at `u > 0` to `c_AI` (advice quality), but Schoenegger's finding suggests structured reasoning is doing significant work independent of the AI's confidence calibration. A constant `+δ` to Q whenever `u > 0` would represent this — held for future passes if it changes downstream predictions. **Honest gap.**
 
+### Cross-context note: outcome heterogeneity across these anchors
+
+The six papers above measure different outcome variables. The model's `Q` ("probability of correct/high-quality output") maps cleanly onto Dell'Acqua, Everett, and Schoenegger (all output-quality measures). Brynjolfsson's "issues resolved per hour" maps approximately onto `Q × call-rate`, where call-rate depends on attention saved (`A`); the model's `+34% novice` prediction is a Q-only claim, while Brynjolfsson's empirical 34% bundles throughput. Bastani's "unassisted retest performance" is a downstream effect of the `S` channel accumulated over many task instances, not a per-task `Q` measurement. Randazzo's "behavioural-mode distribution" is a categorical prediction over which corner the worker chooses, not a quality measure at all. Mozannar's CUPS data is process telemetry (time fractions across interaction states), informative for `α` and `ε` calibration but not for `Q`.
+
+Stage 4 must disaggregate which constants get fit against which outcome types — pooling them as a single calibration target would silently average over methodological apples and oranges. This is named explicitly as Q1–Q6 in §11.
+
 ## 8. The five cruxes
 
 Load-bearing claims of the model. Collapse rebuilds it.
@@ -336,9 +351,43 @@ Honest disclosure of where the formalisation stops.
 
 These seven are not bugs of the formalisation. They are the boundary of what an individual-task bilinear generator-verifier loop can carry. Beyond it lies organisational design, dynamic learning, and team-level cognition — sibling artifacts.
 
-## 10. Stage-4 fitting targets
+## 10. Adversarial + steelman
 
-Five named questions Stage 4 should test against data.
+Three objections the formalisation has not yet engaged head-on, and the strongest version that survives each.
+
+### Objection 1: `c_AI` is unobservable, so the model is unactionable on novel tasks.
+
+**Steelman.** The optimal policy depends on `c_AI`, but in any new task or unfamiliar domain the worker doesn't know `c_AI` ahead of time. Calibrating `c_AI` requires running the task and verifying the output — but the model says "compute `argmax V` using `c_AI` you don't have." For experienced task types `c_AI` is calibratable from history; for genuinely novel tasks (much of knowledge work) it isn't. The Vasconcelos / Fok & Weld verification-economics frame already captures this — engagement is rational when verification is cheap; verifying a single AI output IS your way of measuring `c_AI` for that task type. The model assumes the calibration question is solved when it's actually the binding constraint.
+
+**Why partially right.** For genuinely novel tasks where `c_AI` is unknown, the model cannot make a precise recommendation. Stage-4 fitting target Q3 (mode-distribution match against Randazzo BCG) implicitly assumes calibrated `c_AI` distributions across BCG-like tasks — only valid for well-studied domains.
+
+**Why the strongest version survives.** The model doesn't need precise `c_AI`; it needs robustness across `c_AI` ranges, and the corner structure is robust. For almost any `c_AI < 0.4` in a high-stakes regime (`σ ≥ 0.7`), the corner is do-yourself; for almost any `c_AI > 0.8` in low-stakes routine (`σ ≤ 0.2`, low `λ`), the corner is self-automator. The "interesting" boundary regions — where `c_AI` uncertainty matters — are precisely the spec-driven regions. So the model's prescription under uncertainty is: **set `v = 1` to verify and learn**. The spec-driven corner doubles as a Bayesian-update mechanism; the verification cost `α·v·φ` is the explicit price of resolving the uncertainty. Stage 4 should formalise the explore-vs-exploit dynamics this implies (Q6 in §11).
+
+### Objection 2: The model recovers practitioner intuitions and adds no new predictions.
+
+**Steelman.** Mollick, Karpathy, Anthropic, and Cognition collectively say "match the workflow to the task." The model's predictions of corner solutions match Randazzo's empirical mode distribution. So what is the formalism contributing beyond a formal scaffold for intuitions practitioners already had?
+
+**Why partially right.** Many model predictions match practitioner consensus on headline conclusions. Self-automator for routine, do-yourself for novel-and-high-stakes, spec-driven for high-stakes-with-cheap-verify — practitioners already say these.
+
+**Why the strongest version survives.** The model contributes five things the practitioner literature does not:
+
+1. **Quantitative trade-offs.** The model says how much worse self-automator is than spec-driven at default constants — at the Bastani anchor specifically, `0.095` net (`α·φ − K_uv = 0.30 − 0.205`). Practitioner literature is qualitative; this is parametrically calibratable, and Stage 4 will pin the constants.
+2. **Non-obvious simultaneous constraints.** Higher stakes (`σ ↑`) push BOTH `u` DOWN (refuse AI for high-stakes work) AND `v` UP (if you do use AI, verify carefully) — a simultaneous prescription the practitioner literature does not make explicit. §4's comparative-statics surfaces this; intuition often conflates the two.
+3. **Naive cyborg as structural failure mode.** Bilinearity says applying interior `(u, v)` uniformly is what no individual sub-task should do. This is a sharper criticism than "be thoughtful about which mode you use" — it identifies a specific failure mode (the BCG cyborg majority running flat-`(0.7, 0.3)` policies) and says they're structurally wrong, not just suboptimal.
+4. **Budget-aware shadow-price reformulation.** The `μ` mechanism says: under attention scarcity, reroute longer-base-time tasks first (since `α_eff_i = α + μ·g_i` rises proportionally with `g_i`). Practitioner literature has nothing like this prescriptive structure for portfolio-level decisions.
+5. **Stage-4 calibration targets.** The model identifies six specific empirical questions (Q1–Q6 in §11) that fit a generator-verifier dispatch framework. Practitioner heuristics are unfalsifiable by design — they update without preserving the reasoning, so users can't tell when a heuristic stops applying. The L3 invariant is the antidote.
+
+The model recovers practitioner intuitions on top-line conclusions and adds quantitative, edge-case, and falsifiable structure beyond. The contribution is in calibration, simultaneous constraints, structural failure modes, portfolio-level shadow pricing, and Stage-4 testability — not in inventing new top-level recommendations.
+
+### Objection 3: The model is single-shot; the topic question is dynamic.
+
+**Steelman.** "Optimal configuration for an individual knowledge worker" is implicitly a static answer to a fundamentally dynamic question — AI capability shifts month-over-month, the worker's skill atrophies under sustained delegation, calibration on `c_AI` drifts as new model versions ship. A static dispatcher with parametric flexibility doesn't tell the worker how to *anticipate* and *prepare for* capability change.
+
+**Survives because** (a) Parasuraman, Sheridan & Wickens' (2000) function-allocation framework has been useful for 25+ years despite being static — parametric statics IS what's wanted from a generating function (the L3 invariant); (b) the trajectory questions properly belong to sibling topics in the LLM Iterate roster — `navigating-ai-world` for AI-induced trajectory of skill/meaning/relational channels, the planned `prediction-calibration` topic for `c_AI` calibration drift, the planned `bedrock-generating-functions` for the temporal-aggregation patterns this and other models share. Static-but-parameterised is the right scope here; dynamic extensions are cross-topic by design, not gaps in the present formalisation.
+
+## 11. Stage-4 fitting targets
+
+Six named questions Stage 4 should test against data.
 
 **Q1 — `(α, ε)` from CUPS telemetry.** Mozannar CUPS gives time fractions across coding interaction states. Calibrate `ε` from observed monitoring-time-at-high-`u`; calibrate `α` from observed cyborg-vs-centaur time efficiency.
 
@@ -350,7 +399,9 @@ Five named questions Stage 4 should test against data.
 
 **Q5 — Workflow-architecture-vs-capability bound.** The headline S1 prediction. Construct two simulated workforces: (a) frontier AI + naive flat-cyborg routing, (b) mid-tier AI + optimal routing on the same task mix. The model predicts (b) outperforms (a) on net quality once `c_AI_naive` falls below some threshold. Stage 4 should locate the threshold and test against Everett 2025 / Dell'Acqua at that precision.
 
-## 11. Connections to other topics
+**Q6 — Calibration uncertainty and explore-vs-exploit on `c_AI`.** The model treats `c_AI` as a known input. In practice, workers learn `c_AI` by running the task and verifying the output (Vasconcelos verification-economics). For novel tasks, the spec-driven corner doubles as a calibration mechanism — verification reveals `c_AI` for next time. Stage 4 should formalise the explore-vs-exploit structure: what is the optimal exploration premium when `c_AI` variance is high? When does verifying-to-learn dominate verifying-to-quality-control? The §9 scope-limit on `c_AI` miscalibration becomes a structural extension via this question, not just an acknowledged gap. Engages the §10 Objection 1 directly.
+
+## 12. Connections to other topics
 
 Where this model attaches to sibling AI's-Research topics.
 
