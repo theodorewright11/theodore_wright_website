@@ -3,8 +3,21 @@ title: 'Build'
 description: 'A reader''s tool for the psychology of individual differences. Pick a trait, see the three plain-language buckets (direct genes / family setup / environment + chance) instead of the V(A_d)/V(A_LD)/V(A_i) decomposition. Plus the four motivated-reasoning traps the field gets caught in, the asymmetric environmental-effects finding, three "heritability ≠ destiny" misreadings, and a seven-bullet take-away. Translates the formalization and data pipeline into something a non-specialist can actually use.'
 date: 2026-04-28
 status: in-progress
-refinementPass: 4
+refinementPass: 5
 refinementLog:
+  - pass: 5
+    date: '2026-04-29'
+    passes: ['internal consistency check', 'truth/accuracy override on bias']
+    why: 'After pass 4 fixed the wrong-direction AM framing across most of the explorer''s trait family-bucket notes and take-away 3, I did one more grep across the file looking for any remaining "structural inflation from like-pair mating" / "AM-induced linkage" / "AM-LD account for" type phrasing. Found 8 places that pass 4 missed: the iq_adult trapHer (still attributed gap partly to AM-LD), openness trapHer + takeaway (called AM "structural inflation"), schizophrenia and ADHD oneliners (still framed Crow-Felsenstein V(A_LD)/h² as "not direct biological causation"), religiosity takeaway and political_orientation trapHer (called AM "structural inflation"), BMI familyNote (attributed gap partly to AM-LD), and the D2 trap-card "what it ignores" entry (still said "genetic nurture + assortative-mating-induced linkage" as the source of structural inflation). Pass 4''s sweep was systematic but not comprehensive — these were leftover instances I missed.'
+    changes:
+      - 'iq_adult trapHer rewritten: was "the gap to twin h² is partly assortative-mating-induced linkage and partly parental-environment effects"; now "the gap to twin h² is dominated by genetic nurture and equal-environments-assumption violations rather than direct biological causation"'
+      - 'openness trapHer + takeaway rewritten: was "strongest structural inflation from like-with-like pairing"; now correctly framed as strongest population-level V(A_LD) (AM-induced linkage) per the Crow-Felsenstein partition, with explicit note that AM does not on net inflate Falconer twin h²'
+      - 'schizophrenia oneliner rewritten: was "about a third of the additive genetic variance is assortative-mating-induced linkage, not independent direct biological causation"; now "the Crow-Felsenstein partition predicts ~36% of population-level V(A) is AM-induced linkage; with no within-family GWAS at scale, the within-trait genetic-nurture contribution is unmeasured" — distinguishes the population-level V(A) decomposition from the (unmeasured) within-trait twin-vs-direct-biology gap'
+      - 'ADHD oneliner rewritten in parallel structure to schizophrenia'
+      - 'religiosity takeaway rewritten: was "substantial structural inflation from like-pair mating"; now "the dominant contributor is shared family environment / cultural transmission" with AM correctly framed as inflating population-level V(A) via LD'
+      - 'political_orientation trapHer rewritten: was "structurally inflated by like-pair mating"; now correctly distinguishes the moderate direct-genetic share, the persistent shared family environment, and AM as a population-level V(A) inflator'
+      - 'BMI familyNote rewritten: was "genetic-nurture-style effects through parental food environment plus AM-LD account for ~25 percentage points"; now "dominated by genetic-nurture-style effects" with AM correctly framed'
+      - 'D2 trap-card "what it ignores" entry rewritten: was "40–60% of \"genetic\" effect ... is actually genetic nurture + assortative-mating-induced linkage"; now "30–60% (over 60% for EA specifically) is dominated by genetic nurture and EEA violations rather than direct biological causation; AM contributes population-level V(A) inflation but biases Falconer twin estimates downward, partially offsetting" — accurate to the corrected framing and consistent with the writeup section 4 D2'
   - pass: 4
     date: '2026-04-29'
     passes: ['error check', 'truth/accuracy override on bias', 'cross-stage sync']

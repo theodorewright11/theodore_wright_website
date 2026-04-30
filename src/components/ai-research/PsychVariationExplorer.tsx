@@ -68,7 +68,7 @@ const TRAITS: Trait[] = [
     trapEnv:
       "'Heritability is just methodological artifact' is not what the evidence shows. SNP-based heritability bypasses twin-design assumptions and recovers most of twin h²; adoption studies converge on similar numbers. The signal is real. But citing 0.79 as if it means 'genes determine 79% of cognitive ability' confuses a population-variance ratio with an individual partition. Both moves drop information.",
     trapHer:
-      "Citing 0.79 to argue 'environment doesn't matter much for cognition' ignores that ~37% of the 'genetic' bucket disappears when you switch to within-family designs. The direct-biological component is closer to ~50%, and the gap to twin h² is partly assortative-mating-induced linkage and partly parental-environment effects mediated through genetically similar parents.",
+      "Citing 0.79 to argue 'environment doesn't matter much for cognition' ignores that ~37% of the 'genetic' bucket disappears when you switch to within-family designs. The direct-biological component is closer to ~50%, and the gap to twin h² is dominated by genetic nurture and equal-environments-assumption violations rather than direct biological causation.",
     takeaway:
       "About half of why adults differ in cognitive ability is direct genetic effect; another ~35% is the family setup that genetically-similar parents create around their kids; ~15% is everything else. The interesting policy levers are at the tails (preventing severe insults like lead, malnutrition, fetal alcohol, and severe deprivation), not at the middle (parenting style within Western normal).",
     primarySources: [
@@ -177,9 +177,9 @@ const TRAITS: Trait[] = [
     trapEnv:
       "'Openness is just educated/cultured upbringing' loses the heritability finding, which replicates across cultures and study designs.",
     trapHer:
-      "'Some people are wired curious' misses that openness has the strongest structural inflation among Big Five dimensions and is the personality trait most predicted by openness-correlated environments (literacy access, urban exposure, formal education).",
+      "'Some people are wired curious' misses that openness has the strongest population-level V(A_LD) (AM-induced linkage) among Big Five dimensions per the Crow-Felsenstein formula and is the personality trait most predicted by openness-correlated environments (literacy access, urban exposure, formal education).",
     takeaway:
-      'Openness is moderately heritable like other Big Five dimensions but stands out for having the strongest structural inflation from like-with-like pairing. The clean direct-biology share is somewhat smaller than the headline twin estimate suggests.',
+      'Openness is moderately heritable like other Big Five dimensions and stands out for having the strongest assortative-mating-induced LD inflation of population-level V(A) among Big Five. (AM does not on net inflate Falconer twin h²; see take-away 3.) Openness-correlated environments and formal education exposure are the more substantive within-trait modifiers.',
     primarySources: [
       { label: 'Vukasović & Bratko 2015 — Big Five h² meta', url: 'https://pubmed.ncbi.nlm.nih.gov/25938582/' },
       { label: 'Horwitz 2023 — assortative mating panel', url: 'https://www.nature.com/articles/s41562-023-01672-z' },
@@ -387,7 +387,7 @@ const TRAITS: Trait[] = [
     name: 'Schizophrenia',
     domain: 'psychiatric',
     oneliner:
-      "Schizophrenia is one of the most heritable psychiatric conditions (h² ≈ 0.79), but 'heritable' here is partly structural: about a third of the additive genetic variance is assortative-mating-induced linkage, not independent direct biological causation.",
+      "Schizophrenia is one of the most heritable psychiatric conditions (h² ≈ 0.79), with strong assortative mating (Nordsletten 2016 reports tetrachoric partner correlations >0.40 — the most extreme in psychiatry). The Crow-Felsenstein partition predicts ~36% of population-level V(A) is AM-induced linkage; with no within-family GWAS at scale, the within-trait genetic-nurture contribution is unmeasured.",
     variance: { direct: 0.51, family: 0.33, env: 0.16 },
     familyNote:
       'For severe psychiatric conditions there is no published within-family GWAS at scale, so the within-trait twin-vs-direct-biology decomposition is uncertain. The displayed family bucket is the Crow-Felsenstein V(A_LD) prediction (m·h² with m=0.45 from Nordsletten 2016, the most extreme assortative-mating signal in psychiatry — affected partners pair at tetrachoric correlations >0.40) plus residual shared environment. This represents population-level LD inflation of V(A), not the (unmeasured) genetic-nurture component. Cross-disorder genetic correlations with bipolar / MDD / etc. ARE substantially inflated by cross-trait assortative mating (Border 2022) — that finding is about between-trait LD inflating reported rg, which is a separate and well-supported phenomenon.',
@@ -472,7 +472,7 @@ const TRAITS: Trait[] = [
     name: 'ADHD',
     domain: 'psychiatric',
     oneliner:
-      "ADHD is highly heritable (h² ≈ 0.74) with strong assortative mating. Like schizophrenia, about a third of the genetic variance is structural assortative-mating-induced linkage rather than independent biological signal.",
+      "ADHD is highly heritable (h² ≈ 0.74) with strong assortative mating (Nordsletten 2016 tetrachoric partner correlations >0.40). The Crow-Felsenstein partition predicts ~33% of population-level V(A) is AM-induced linkage; with no within-family GWAS at scale, the within-trait genetic-nurture contribution is unmeasured.",
     variance: { direct: 0.49, family: 0.35, env: 0.16 },
     familyNote:
       "No published within-family GWAS at scale for ADHD, so the within-trait genetic-nurture vs direct-biology split is uncertain. The displayed family bucket is the Crow-Felsenstein V(A_LD) prediction (m=0.45 from Nordsletten 2016, strong assortative mating typical of AM-strong psychiatric conditions) plus residual shared environment. This represents population-level LD inflation of V(A), not the (unmeasured) genetic-nurture component.",
@@ -592,7 +592,7 @@ const TRAITS: Trait[] = [
     trapHer:
       "'Religious people are wired that way' is mostly wrong — most of why people differ on religiosity is the family they were raised in, the era they grew up in, and the peer group they inhabit. Generation-to-generation shifts in secularization could not occur if heritability were the dominant driver.",
     takeaway:
-      "Religiosity is one of the most 'family setup' traits, with substantial structural inflation from like-pair mating and persistent shared-environment effects into adulthood. Heritable, but most of the explanation is upbringing and culture.",
+      "Religiosity is one of the most 'family setup' traits — the dominant contributor is shared family environment / cultural transmission persisting into adulthood (~25% of variance, unusual for any trait), plus moderate direct genetic loading on temperamental dispositions. Strong assortative mating (m=0.56, second-highest of any trait) inflates population-level V(A) via LD. Most of the explanation is upbringing and culture.",
     primarySources: [
       { label: 'Bouchard 2004 — religiosity h²', url: 'https://pubmed.ncbi.nlm.nih.gov/15040623/' },
       { label: 'Horwitz 2023 — assortative mating across traits', url: 'https://www.nature.com/articles/s41562-023-01672-z' },
@@ -614,7 +614,7 @@ const TRAITS: Trait[] = [
     trapEnv:
       "'Politics is purely socialized / framed by media' loses information. There is a real heritable component (~31% direct genetic variance) — temperamental dispositions toward openness, order, threat-sensitivity have moderate genetic loading and predict political orientation reliably across cultures.",
     trapHer:
-      "'Politics has a genetic basis' is technically right but easily over-read. The direct-genetic share is moderate (~31%), the AM-induced share is substantial, and the family-environment share persists through adulthood (unusual for any trait). 'Born this way' is the wrong frame — political orientation is heritable AND substantially shaped by upbringing AND structurally inflated by like-pair mating.",
+      "'Politics has a genetic basis' is technically right but easily over-read. The direct-genetic share is moderate (~31%) and the family-environment share persists through adulthood (unusual for any trait). Strong assortative mating (m=0.58, the highest of any measured trait) inflates population-level V(A) via LD. 'Born this way' is the wrong frame — political orientation is heritable AND substantially shaped by upbringing AND part of the apparent 'genetic' signal is family environment that genetically-similar parents create.",
     takeaway:
       "Political orientation is the most assortatively-mated trait the field has measured. About 30% of why people differ is direct genetic temperament; another 30% is family setup; the last 40% is everything else. The 'born blue / born red' frame is wrong; the 'pure socialization' frame is also wrong.",
     primarySources: [
@@ -661,7 +661,7 @@ const TRAITS: Trait[] = [
       "Body mass index is highly heritable within a generation (h² ≈ 0.75), but population-level BMI has shifted dramatically with the food environment over the past 50 years — the same trait-level analogy as height.",
     variance: { direct: 0.50, family: 0.30, env: 0.20 },
     familyNote:
-      'Substantial family bucket. The within-sibship h² (0.50, Howe 2022) is much lower than twin h² (0.75), suggesting genetic-nurture-style effects through parental food environment plus AM-LD account for ~25 percentage points of "genetic" effect — comparable to socially-stratified traits.',
+      'Substantial family bucket. The within-sibship h² (0.50, Howe 2022) is much lower than twin h² (0.75); the 25-percentage-point gap is dominated by genetic-nurture-style effects through parental food environment (parents pass on both BMI-affecting alleles AND the household food environment that correlates with them). Modest assortative mating (m=0.16) inflates population-level V(A) slightly via LD but does not on net add to the twin-vs-direct-biology gap.',
     envNote:
       'About 20% environment + chance within a cohort, but the cohort-level food environment is the dominant driver of why average BMI has shifted ~10 points in the US over 50 years. Like height, BMI shows large between-cohort environmental shifts coexisting with high within-cohort heritability.',
     insults: [],
@@ -730,7 +730,7 @@ const TRAPS: TrapCard[] = [
       'Polygenic-score prediction within homogeneous samples produces real signal',
     ],
     ignores: [
-      'About 40–60% of "genetic" effect for socially-structured traits like educational attainment is actually genetic nurture + assortative-mating-induced linkage, not direct biological causation',
+      'About 30–60% of "genetic" effect for socially-structured traits like educational attainment (over 60% for EA specifically) is dominated by genetic nurture and equal-environments-assumption violations rather than direct biological causation; AM contributes population-level V(A) inflation but biases Falconer twin estimates downward, partially offsetting',
       "PGS portability collapse: scores trained on European-ancestry samples lose 30–80% of their accuracy in non-European populations (Ding 2023, Martin 2019). The same SNP 'effect sizes' do not estimate the same causal coefficients across populations",
       'L4 (Lewontin) firewall: within-population heritability provides no information about between-population mean differences — this is a logical/algebraic point, not an empirical claim',
       'High heritability is fully compatible with large environmental shifts (height +10 cm in a century at h² = 0.85; smoking rates collapsed 80% in the same population genome)',
