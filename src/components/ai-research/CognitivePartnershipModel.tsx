@@ -76,7 +76,16 @@ type TaskResult = {
 };
 
 function computeV(u: number, v: number, p: TaskParams): TaskResult {
-  const cStar = Math.max(p.cH, p.cAI);
+  // Verified-output ceiling: c_⋆ = c_AI + (1 − c_AI)·c_H = 1 − (1 − c_AI)·(1 − c_H).
+  // "Either AI got it right OR human catches the error." This naturally
+  // handles deskilled verifier (c_H → 0 ⇒ c_⋆ → c_AI, verification adds
+  // nothing) and verifier-stronger (c_H → 1 ⇒ c_⋆ → 1) without a piecewise
+  // max. Pass-1 used Math.max(c_H, c_AI), which over-credited verification
+  // when c_H > c_AI (as if the human catches every AI error) and under-
+  // credited it when c_H < c_AI (as if a partly-skilled human catches no
+  // AI errors). The complementary-product form is what falls out from
+  // independent error events; pass 2 fix.
+  const cStar = p.cAI + (1 - p.cAI) * p.cH;
   const Q = (1 - u) * p.cH + u * ((1 - v) * p.cAI + v * cStar);
   const A = (1 - u * (1 - EPSILON)) + v * p.phi + M_ROUTE;
   const R = u * (1 - v) * (1 - p.cAI);
@@ -211,7 +220,7 @@ type RouterPresetKey =
   | 'lit_synthesis'
   | 'strategic_decision'
   | 'routine_email'
-  | 'novice_centaur'
+  | 'novice_spec'
   | 'expert_outside_frontier';
 
 const ROUTER_PRESETS: Record<RouterPresetKey, { label: string; params: TaskParams; note: string }> = {
@@ -227,8 +236,8 @@ const ROUTER_PRESETS: Record<RouterPresetKey, { label: string; params: TaskParam
   },
   lit_synthesis: {
     label: 'Literature synthesis',
-    params: { cH: 0.50, cAI: 0.65, phi: 0.40, sigma: 0.40, lambda: 0.40 },
-    note: 'AI mildly stronger, moderate verification cost, moderate stakes. The cyborg sweet spot.',
+    params: { cH: 0.50, cAI: 0.65, phi: 0.30, sigma: 0.40, lambda: 0.40 },
+    note: 'AI mildly stronger, modestly cheap verification, moderate stakes. Optimum lands at spec-driven — AI does the synthesis, you read the output.',
   },
   strategic_decision: {
     label: 'Strategic decision',
@@ -238,12 +247,12 @@ const ROUTER_PRESETS: Record<RouterPresetKey, { label: string; params: TaskParam
   routine_email: {
     label: 'Routine email',
     params: { cH: 0.75, cAI: 0.85, phi: 0.10, sigma: 0.05, lambda: 0.05 },
-    note: 'AI slightly stronger, costless to verify (skim), no stakes, no skill. Pure self-automator territory.',
+    note: 'AI stronger, very cheap to verify, low stakes, no skill. Optimum: spec-driven — but interpret v=1 here as the empirical "skim" (the bilinear model rounds skim to full-verify).',
   },
-  novice_centaur: {
-    label: 'Novice on a hard task (Brynjolfsson)',
-    params: { cH: 0.30, cAI: 0.70, phi: 0.30, sigma: 0.30, lambda: 0.40 },
-    note: 'Big AI capability advantage on a task the worker is still learning. Optimum: high u with non-trivial v (centaur — verify to learn).',
+  novice_spec: {
+    label: 'Novice on a hard task (Brynjolfsson + Bastani)',
+    params: { cH: 0.30, cAI: 0.70, phi: 0.20, sigma: 0.50, lambda: 0.50 },
+    note: 'Big AI capability advantage on a task the worker is still learning, real stakes, real skill-formation value, cheap-verify. Optimum: spec-driven — full delegation with full verification (read the AI output to learn from it).',
   },
   expert_outside_frontier: {
     label: 'Expert outside the frontier (Dell\'Acqua)',
@@ -345,7 +354,8 @@ function RouterPanel() {
         <h4 className="text-[11px] font-mono uppercase tracking-wider text-muted mt-6 mb-3">Diagnostics</h4>
         <div className="space-y-2 text-[11px] text-muted">
           <div>Q (quality) = {opt.result.Q.toFixed(3)}, A (attention) = {opt.result.A.toFixed(3)}, R (risk) = {opt.result.R.toFixed(3)}, S (skill) = {opt.result.S.toFixed(3)}</div>
-          <div>c_⋆ = max(c_H, c_AI) = {Math.max(params.cH, params.cAI).toFixed(2)}</div>
+          <div>c_⋆ = c_AI + (1 − c_AI)·c_H = {(params.cAI + (1 - params.cAI) * params.cH).toFixed(3)}</div>
+          <div className="text-[10px] italic">V is bilinear in (u, v); the maximum on the unit square is at a corner. The router will return one of three corners — (0, 0) do-yourself, (1, 0) self-automator, or (1, 1) spec-driven. Centaur and cyborg modes appear at the aggregate level when a worker mixes corner policies across sub-tasks with heterogeneous θ — see Day Portfolio.</div>
           {params.cH > params.cAI && opt.u > U_LO && (
             <div className="text-accent">⚠ Outside-frontier regime (c_H &gt; c_AI) but optimum still uses AI — verify your φ and σ are right; the Dell&apos;Acqua harm pattern starts here.</div>
           )}

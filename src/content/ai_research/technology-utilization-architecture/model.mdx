@@ -3,8 +3,22 @@ title: 'Model'
 description: 'Generator-verifier loop with a per-task autonomy slider. The per-task value function V(u, v; θ) decomposes into four orthogonal channels (quality, attention, risk, skill); its corner solutions reproduce the five empirically observed workflow modes (do-yourself, centaur, cyborg, self-automator, spec-driven). Portfolio aggregation under a daily attention budget produces the S1 headline (workflow architecture > model capability) as a comparable-strategies experiment. Five cruxes, five Stage-4 fitting targets. Interactive two-tab dashboard included.'
 date: 2026-04-29
 status: in-progress
-refinementPass: 1
+refinementPass: 2
 refinementLog:
+  - pass: 2
+    date: '2026-04-30'
+    passes: ['error check', 'internal consistency check', 'truth/accuracy override on bias']
+    why: 'A fresh-eyes audit of pass 1 surfaced three real problems. (a) c_⋆ = max(c_H, c_AI) over-credits verification when c_H > c_AI (treats the human as catching every AI error) and under-credits it when c_H < c_AI (treats a partly-skilled human as catching no AI errors); the empirically defensible form is the complementary product c_⋆ = c_AI + (1−c_AI)·c_H = 1 − (1−c_H)·(1−c_AI), which falls out from independent error events and naturally handles both the deskilled-verifier limit and the verifier-stronger limit. (b) The bilinearity claim was sloppy — V is exactly bilinear in (u, v), so the maximum on the unit square is at a corner. The interior critical point is a saddle. The pass-1 prose said "near a corner or on an edge or at a unique interior critical point" which is wrong. (c) The comparative-statics table had two wrong rows: under (c_AI − c_H) ↑, c_⋆ − c_AI = (1−c_AI)·c_H weakly decreases in c_AI, and σ·(1−c_AI) decreases too, so K_uv falls and v* weakly decreases (pass 1 said "slightly ↑"); under φ ↑, u* responds via the v* corner-flip and is weakly decreasing (pass 1 said "ambiguous"). The bilinearity finding has a substantive consequence: per-task optima land at one of three corners — (0, 0) do-yourself, (1, 0) self-automator, (1, 1) spec-driven — and centaur/cyborg modes appear only as aggregate-level patterns from mixing corners across sub-tasks with heterogeneous θ. The pass-1 mode-region table implied otherwise.'
+    changes:
+      - 'Replaced c_⋆ = max(c_H, c_AI) with c_⋆ = c_AI + (1−c_AI)·c_H = 1 − (1−c_H)·(1−c_AI) in §3.1, the React component, and the dashboard diagnostic readout. The deskilled-verifier scope-limit caveat in §3.1 is now subsumed by the formula itself (c_H → 0 ⇒ c_⋆ → c_AI without any extra parameter)'
+      - 'Sharpened §3.5 and §4: V is exactly bilinear in (u, v) with V = K_0 + K_u·u + K_v·v + K_uv·u·v; the maximum on the unit square is always at a corner, never interior'
+      - 'Reinterpreted §4 mode classification: per-task optimum lands at one of three corners — (0, 0), (1, 0), (1, 1). Centaur and cyborg modes are aggregate-level patterns where a worker mixes corner policies across sub-tasks with heterogeneous θ. The five mode-regions remain a useful spatial decomposition of the (u, v) plane (for labelling observed worker behaviour at any (u, v)), but the per-task router will only return three corners. Updated the "naive cyborg" framing in §5 accordingly: applying interior (u, v) values to every task is exactly what the model says is wrong — optimal routing differentiates across tasks (different corners for different θ), naive uses the same interior for all'
+      - 'Fixed §4 comparative-statics table: (c_AI − c_H) ↑ now correctly shows v* weakly ↓ (was "↑ slightly"); φ ↑ now shows u* weakly ↓ via v*-flip (was "ambiguous"); c_AI ↑ alone shows v* ↓ (matches "AI more reliable → less verification benefit")'
+      - 'Recomputed all six worked anchors in §7 under corrected math. Novice (Brynjolfsson) now correctly lands at (1, 0) self-automator with quality lift c_AI − c_H = +0.30; expert at (1, 1) spec-driven with smaller lift +0.06 = +7%. Dell''Acqua outside-frontier at (0, 0) do-yourself with 30 pp loss if mis-routed. Everett high-stakes at (1, 1) spec-driven (matches). Randazzo low-stakes routine at (1, 0) self-automator (matches)'
+      - 'Bastani guardrail anchor (§7C) honesty fix: at default β = 0.05 and σ ≤ 0.40, the skill-preservation push toward v=1 is too small to flip the corner — the guardrail effect is structural-but-weak in the model. The model says "self-automator dominates spec-driven by ~0.07 net at default constants; raise β or λ to flip." This is now explicitly named as Stage-4 fitting target Q2 (was already there) plus a new diagnostic note that β ≈ 0.20+ would give skill-preservation real corner-flipping leverage'
+      - 'React component preset notes updated to match what the model actually predicts: novice_centaur preset renamed to novice_spec with adjusted params (φ=0.20, σ=0.50, λ=0.50) producing the (1, 1) spec-driven optimum that "verify to learn" implies; lit_synthesis φ=0.40 → 0.30 to land cleanly at spec-driven; routine_email note acknowledges that the model''s v=1 here is the empirical "skim" with the bilinear model rounding partial-verify up to full-verify'
+      - 'Added a small dashboard note explaining the bilinearity → corner-only finding inline in the diagnostic panel, so users do not conclude the dashboard is broken when v* always returns 0 or 1'
+      - 'Added scope-limit item in §9: verification effectiveness is modelled as equal to generation skill (c_H drives both c_⋆ and the verification benefit). Karpathy''s G9 generator-verifier-asymmetry suggests verification is often easier than generation; a future c_V (verifier skill) parameter separate from c_H would make low-c_H verifiers more effective. Held for Stage 4 / future passes'
   - pass: 1
     date: '2026-04-29'
     passes: ['decomposition', 'generating function', 'integration']
@@ -31,9 +45,9 @@ import CognitivePartnershipModel from '../../../components/ai-research/Cognitive
 
 The lit review documents a research landscape; the topology stripped it down to load-bearing structure. This stage formalises the cleanest target the topology surfaced: a **generator-verifier loop with a per-task autonomy slider**, designed to survive capability change rather than encode a snapshot of any specific model's frontier. The optimisation target is **output quality per unit of human attention** for an individual knowledge worker. The formalisation makes three moves at once — **decomposition** (four orthogonal value channels: quality, attention, risk, skill), **generating function** (a per-task value function whose corner solutions reproduce the five empirically observed workflow modes), and **integration** (a single formalism that composes Karpathy's slider, Mollick's typology, Vasconcelos verification-economics, Bastani's atrophy, Bainbridge's substitution myth, and Madras-Mozannar L2D into one object).
 
-The per-task value function is `V(u, v; θ) = Q(u,v) − α·A(u,v) + λ·S(u,v) − σ·R(u,v)`, where `u` is the autonomy level (fraction of the task delegated to AI) and `v` is the verification depth (fraction of AI output independently checked). The four channels are orthogonal in design space: quality `Q` rewards letting the better agent do the work; attention `A` charges for human time *and* for the irreducible monitoring cost even at full delegation (the L1 substitution-myth invariant baked in via ε > 0); risk `R` penalises uncaught AI errors at a rate proportional to stakes σ; skill `S` rewards practice and penalises unverified delegation (Bastani-style atrophy). The optimal policy `(u*, v*)` is found by maximising V over the unit square; the corner and interior solutions are the five workflow modes — **do-yourself**, **centaur**, **cyborg**, **self-automator**, **spec-driven** — that the practitioner literature has been naming for two years without a generating function behind them.
+The per-task value function is `V(u, v; θ) = Q(u,v) − α·A(u,v) + λ·S(u,v) − σ·R(u,v)`, where `u` is the autonomy level (fraction of the task delegated to AI) and `v` is the verification depth (fraction of AI output independently checked). The four channels are conceptually distinct mechanisms: quality `Q` rewards letting the better agent do the work, with verified output achieving the complementary-product ceiling `c_⋆ = c_AI + (1 − c_AI)·c_H` (either AI was right or human catches the error); attention `A` charges for human time *and* for the irreducible monitoring cost even at full delegation (the L1 substitution-myth invariant baked in via `ε > 0`); risk `R` penalises uncaught AI errors at a rate proportional to stakes σ; skill `S` rewards practice and penalises unverified delegation (Bastani-style atrophy). V turns out to be *exactly bilinear* in `(u, v)` — collecting terms gives `V = K_0 + K_u·u + K_v·v + K_uv·u·v` — which means the maximum on the unit square is always at a corner. Three corners are candidates: `(0, 0)` do-yourself, `(1, 0)` self-automator, `(1, 1)` spec-driven (the corner `(0, 1)` is dominated since verifying with no AI involvement is pure cost). **Centaur and cyborg modes do not arise as per-task optima** — they appear only as aggregate-level patterns when a worker mixes corner policies across sub-tasks with heterogeneous θ. This is a substantive prediction, not a limitation.
 
-The portfolio extension aggregates per-task decisions under a daily attention budget. The headline result the model is designed to produce is **S1** (workflow architecture > model capability): on the same task mix and same `c_AI`, optimal routing dominates "max-AI" (self-automate everything) and dominates the naive flat-cyborg heuristic (`u=0.7, v=0.3` everywhere). It does so because the optimisation respects the heterogeneity of `(c_H, c_AI, φ, σ, λ)` across task types — which is exactly what the topology's L2 (joint surface) and G4 (jagged frontier) invariants require. The generating function is **parameterised by capability** (the L3 invariant): if `c_AI` rises uniformly across tasks, the model rebalances; if it rises only on certain task types, the boundary of optimal `u*` shifts but the *shape* of the routing rule stays put.
+The portfolio extension aggregates per-task decisions under a daily attention budget. The headline result the model is designed to produce is **S1** (workflow architecture > model capability): on the same task mix and same `c_AI`, optimal routing dominates "max-AI" (self-automate everything) and dominates the naive flat-cyborg heuristic (`u=0.7, v=0.3` everywhere). The bilinearity finding sharpens this: the naive flat-cyborg policy is exactly the failure mode — it applies an interior `(u, v)` value that the bilinear structure says no individual sub-task should land at. Optimal routing differentiates across tasks (different corners for different θ); the aggregate `(ū, v̄)` across the day looks interior because the corners differ, not because any single decision is interior. The generating function is **parameterised by capability** (the L3 invariant): if `c_AI` rises uniformly across tasks, the model rebalances; if it rises only on certain task types, the boundary of optimal `u*` shifts but the *shape* of the routing rule stays put.
 
 This stage produces six things: (1) a math object — `V(u, v; θ)` and the four-channel decomposition; (2) a workflow-mode classifier — the five-region partition of the unit square; (3) a portfolio aggregator — daily attention budget × N task types; (4) the interactive two-tab dashboard below; (5) **five cruxes** of the model (load-bearing claims whose collapse rebuilds it); (6) **five Stage-4 fitting targets** (parameter calibrations and qualitative predictions the data pipeline should test). The formalisation is honest about scope: it does *not* capture the aggregate-zero puzzle (E4/O2 — organisational dynamics), it does *not* capture cross-task productivity bundling (G8/Cowen), it treats `c_AI` as known (no calibration error), and it assumes verification is honest (no sycophancy E13). These are named scope-limits, not silent assumptions.
 
@@ -90,7 +104,7 @@ What's *not* yet ready for formalisation, kept in §9 as scope-limits: cross-tas
 | `ε` | 0.15 | Residual attention at full delegation — L1 invariant (substitution myth) |
 | `β` | 0.05 | Skill-atrophy rate per unit of unverified delegation |
 | `M` | 0.08 | Per-task metacognitive routing tax — A1/G1 invariant |
-| `c_⋆` | `max(c_H, c_AI)` | Verified-output ceiling (under successful verification) |
+| `c_⋆` | `c_AI + (1−c_AI)·c_H` | Verified-output ceiling — "either AI got it right OR human catches the error" (complementary product of independent error events) |
 
 The constants are calibrated to the lit-review anchors (Mozannar CUPS for ε; Bastani 17% drop for β; Tankelevitch metacognitive load for M). They can be re-fit by Stage 4 against telemetry data.
 
@@ -106,9 +120,11 @@ V(u, v; θ) = Q(u, v) − α·A(u, v) + λ·S(u, v) − σ·R(u, v)
 Q(u, v) = (1 − u)·c_H + u·[(1 − v)·c_AI + v·c_⋆]
 ```
 
-With probability `(1 − u)` the human did the generation and quality is `c_H`. With probability `u` the AI did the generation, of which fraction `(1 − v)` ships unverified at quality `c_AI` and fraction `v` is verified — verified output achieves `c_⋆ = max(c_H, c_AI)` (the human catches AI errors and applies human judgment when needed; AI catches human gaps and lifts the floor when AI is the stronger party). Linear in `u` for fixed `v`; linear in `v` for fixed `u`.
+With probability `(1 − u)` the human did the generation and quality is `c_H`. With probability `u` the AI did the generation, of which fraction `(1 − v)` ships unverified at quality `c_AI` and fraction `v` is verified. Verified output achieves quality `c_⋆ = c_AI + (1 − c_AI)·c_H = 1 − (1 − c_H)·(1 − c_AI)` — the probability that *either* the AI got it right *or* (it didn't and) the human catches the error, treating the two error events as independent. Linear in `u` for fixed `v`; linear in `v` for fixed `u`.
 
-The `c_⋆ = max(c_H, c_AI)` assumption is honest only when the human is competent enough to verify. For tasks where `c_H` is far below `c_AI` and the human cannot recognise correct AI output (the deskilled-verifier problem from the lit review), `c_⋆ → c_AI` and the verification term collapses. This is in scope but not separately parameterised; Stage 4 should test whether a "verifier-floor" parameter `c_H_min` is needed.
+The complementary-product form natively handles the deskilled-verifier limit (`c_H → 0` ⇒ `c_⋆ → c_AI` — verification adds nothing when the human can't recognise errors) and the verifier-stronger limit (`c_H → 1` ⇒ `c_⋆ → 1` — careful human verification approaches a quality ceiling). Pass 1 used `c_⋆ = max(c_H, c_AI)`, which over-credits verification when `c_H > c_AI` (as if the human catches every AI error) and under-credits it when `c_H < c_AI` (as if a partly-skilled human catches no AI errors). The form here treats both with one expression and one structural assumption (independence of human and AI error events).
+
+Caveat: `c_H` enters both the generation cost (when `u = 0`) and the verification benefit (the extra catching power at `v > 0`). Karpathy's G9 generator-verifier-asymmetry says verification is typically *easier* than generation — recognising an error costs less than producing a correct answer from scratch. A more accurate model would carry a separate `c_V` (verifier capability) ≥ `c_H` for low-`c_H` workers. Held for Stage 4; named in §9 scope-limits.
 
 ### 3.2 Attention channel `A`
 
@@ -156,35 +172,62 @@ V(u, v; θ) =   (1 − u)·c_H + u·[(1 − v)·c_AI + v·c_⋆]            ← 
              − σ·[u·(1 − v)·(1 − c_AI)]                            ← −σ·R
 ```
 
-Five parameters in θ, two decisions, four channels. Bilinear in `(u, v)` for fixed θ.
+Five parameters in θ, two decisions, four channels. **Exactly bilinear** in `(u, v)`: collecting terms,
+
+```
+V(u, v; θ) = K_0 + K_u·u + K_v·v + K_uv·u·v
+```
+
+with
+
+- `K_0 = c_H − α − α·M + λ`
+- `K_u = (c_AI − c_H) + α·(1 − ε) − λ·(1 + β) − σ·(1 − c_AI)`
+- `K_v = −α·φ` (always ≤ 0 — verifying nothing has no benefit; verifying anything has cost φ)
+- `K_uv = (c_⋆ − c_AI) + λ·β + σ·(1 − c_AI) = (1 − c_AI)·c_H + λ·β + σ·(1 − c_AI)` (always ≥ 0 — verification gain is monotone in `u`)
+
+Bilinear functions on a unit square attain their maximum at a corner. The interior critical point, when it exists, is a saddle (Hessian eigenvalues `±K_uv`). So the per-task optimum is at one of the four corners — and since `K_v < 0`, `(0, 1)` is dominated by `(0, 0)` (verifying when no AI is involved is pure cost). The three meaningful corners:
+
+- **`(0, 0)`** — do-yourself.
+- **`(1, 0)`** — full delegation, no verification (self-automator).
+- **`(1, 1)`** — full delegation with full verification (spec-driven / independent-then-synthesize).
+
+Which corner wins depends on the signs of `K_u`, `K_u + K_uv + K_v`, and `K_v + K_uv` — three linear comparisons over θ.
 
 ## 4. Optimal policy and workflow modes
 
-The optimum `(u*, v*) = argmax V` over the unit square. Since V is bilinear in (u, v), the global max lies at a corner, on an edge, or at the unique interior critical point. For the parameter ranges we care about (`c_H, c_AI ∈ [0,1]`, `φ ∈ [0, 2]`, `σ, λ ∈ [0, 1]`), the optimum is generically near a corner or on an edge — which is why the practitioner literature converged on a small number of named modes.
+The optimum `(u*, v*) = argmax V` over the unit square. Since V is bilinear, the maximum is at a corner — and because `(0, 1)` is dominated by `(0, 0)`, only three corners are candidates: `(0, 0)`, `(1, 0)`, `(1, 1)`. The choice rule:
 
-**Five mode-regions** (with default thresholds `u_lo = 0.15, u_hi = 0.85, v_lo = 0.30, v_hi = 0.60`):
+- `(1, 0)` self-automator beats `(0, 0)` do-yourself iff `K_u > 0`.
+- `(1, 1)` spec-driven beats `(1, 0)` self-automator iff `K_v + K_uv > 0`, i.e., verification benefit at full delegation exceeds verification cost: `(1 − c_AI)·c_H + λ·β + σ·(1 − c_AI) > α·φ`.
+- `(0, 0)` do-yourself beats both AI corners iff `K_u < 0` and `K_u + K_v + K_uv < 0`.
+
+The five mode-regions in the practitioner literature partition the (u, v) plane:
 
 | Region | Mode | Practitioner anchor |
 |---|---|---|
-| `u < u_lo` | **Do-yourself** | (no-AI / refuse-AI) |
-| `u_lo ≤ u < u_hi`, `v ≥ v_hi` | **Centaur** | Mollick — clean handoff with verification gate |
-| `u_lo ≤ u < u_hi`, `v < v_hi` | **Cyborg** | Mollick — interleaved, partial verification |
-| `u ≥ u_hi`, `v ≥ v_hi` | **Spec-driven / independent-then-synthesize** | Everett 2025; Compound Engineering |
-| `u ≥ u_hi`, `v < v_lo` | **Self-automator** | Randazzo HBS 26-036 (the trap) |
+| `u ≈ 0` | **Do-yourself** | (no-AI / refuse-AI) |
+| `u ∈ (0, 1)`, `v` high | **Centaur** | Mollick — clean handoff with verification gate |
+| `u ∈ (0, 1)`, `v` low/mid | **Cyborg** | Mollick — interleaved, partial verification |
+| `u ≈ 1`, `v` high | **Spec-driven / independent-then-synthesize** | Everett 2025; Compound Engineering |
+| `u ≈ 1`, `v` low | **Self-automator** | Randazzo HBS 26-036 (the trap) |
 
-Two things to notice. First, the modes are not assumed — they fall out of the value function as the (u\*, v\*)-region the optimum lands in for a given θ. Second, the mode labels do not appear in V at all; they are post-hoc descriptions of where the optimum sits. This is the L3 invariant operationalised: the *generating function* is V; the *modes* are emergent.
+This is a useful spatial decomposition for *labelling* observed worker behaviour at any (u, v). But the per-task router will only ever return one of three corners — `(0, 0)`, `(1, 0)`, `(1, 1)` — never an interior point. Centaur and cyborg do not arise as per-task optima of V.
+
+**This is a substantive prediction of the formalisation, not a limitation.** Bilinearity is faithful to the structure of the problem (the four channels are linear in `u` and `v` separately, and there's exactly one cross-term `u·v`). The model says: at any single sub-task with a single θ, you should pick a corner — fully delegate or don't, fully verify or don't. The empirically observed centaur and cyborg behaviour at the *task* level is a sign that the worker is mixing corner policies across sub-tasks (some sub-tasks done alone, others fully delegated; some AI outputs verified, others shipped). What looks like an interior policy at the task level is corner-policies-being-averaged at the sub-task level.
+
+The Day Portfolio tab demonstrates this: optimal routing assigns each task type to its corner; the *aggregate* `(ū, v̄)` across the day looks interior because different tasks land at different corners. The naive flat-cyborg strategy (`u = 0.7, v = 0.3` everywhere) is the failure mode — applying an interior policy uniformly is exactly what the formalism says is wrong.
 
 **Comparative statics — what moves the optimum:**
 
-| Parameter increase | Effect on `u*` | Effect on `v*` |
+| Parameter increase | Effect on `u*` | Effect on `v*` (given `u* = 1`) |
 |---|---|---|
-| `c_AI − c_H` ↑ (AI capability advantage) | ↑ | ↑ slightly |
-| `φ` ↑ (verification expensive) | ambiguous | ↓ |
-| `σ` ↑ (stakes) | ↓ slightly | ↑ |
-| `λ` ↑ (skill matters) | ↓ | ↑ slightly |
-| `c_AI` ↑ (AI more reliable) | ↑ | ↓ (less risk to verify against) |
+| `c_AI − c_H` ↑ via `c_AI` rising (`c_H` fixed) | ↑ (K_u rises) | ↓ (K_uv falls: less verification benefit) |
+| `φ` ↑ (verification expensive) | weakly ↓ via v\*-flip | ↓ (K_v more negative) |
+| `σ` ↑ (stakes) | weakly ↓ (K_u falls by `σ·(1−c_AI)`) | ↑ (K_uv rises by `σ·(1−c_AI)`) |
+| `λ` ↑ (skill matters) | weakly ↓ (K_u falls by `λ·(1+β)`) | ↑ slightly (K_uv rises by `λ·β`) |
+| `c_AI` ↑ alone | ↑ | ↓ (both `(1−c_AI)·c_H` and `σ·(1−c_AI)` fall) |
 
-This is the L3 invariant in tabular form: if `c_AI` rises, optimal `u*` rises and `v*` falls — exactly the calibration the field has been trying to derive. The structural shape of the rule does not change.
+This is the L3 invariant in tabular form: if `c_AI` rises uniformly, optimal `u*` rises and `v*` falls — exactly the calibration the field has been trying to derive. The structural shape of the rule does not change. Note that several signs are non-obvious without the algebra: more reliable AI (`c_AI` ↑) reduces verification benefit because there are fewer errors to catch, and higher stakes (`σ` ↑) pushes both `u*` *down* (refuse AI on high-stakes work) *and* `v*` *up* (if you do use AI, verify carefully) — a real tension the bilinear structure makes explicit.
 
 ## 5. Portfolio aggregation — the day
 
@@ -202,11 +245,11 @@ This is the L2 invariant operationalised at portfolio level. The naive practitio
 **Strategies the dashboard compares:**
 
 1. **Always-self.** `u_i = 0` for all i. No AI, no atrophy, no verification cost — but no productivity gain. The pre-AI baseline.
-2. **Max-AI.** `u_i = 1, v_i = 0` for all i. Fast, but high risk on high-σ tasks and accelerated atrophy on high-λ tasks.
-3. **Naive cyborg.** `u_i = 0.7, v_i = 0.3` for all i. The flat untutored heuristic — what most workers do.
-4. **Optimal routing.** Per-task `(u_i*, v_i*)` from V. The workflow-architecture-wins outcome.
+2. **Max-AI.** `u_i = 1, v_i = 0` for all i. The corner uniformly applied. Fast, but high risk on high-σ tasks and accelerated atrophy on high-λ tasks.
+3. **Naive cyborg.** `u_i = 0.7, v_i = 0.3` for all i. A flat *interior* policy applied uniformly. Notably, this is exactly the policy the bilinear structure says no individual task should land at — interior values arise legitimately only as averages over heterogeneous-θ sub-tasks. Applying them uniformly violates the structure and underperforms.
+4. **Optimal routing.** Per-task `(u_i*, v_i*)` from V — each task lands at the corner appropriate to its θ. Some go to do-yourself, some to self-automator, some to spec-driven. The aggregate `(ū, v̄)` across the day looks interior because different tasks land at different corners.
 
-The headline prediction the model produces (S1): for typical task mixes, **optimal routing dominates max-AI by quality and dominates always-self by attention efficiency, on the same `c_AI`**. The gap between optimal-routing-with-mid-tier-AI and naive-flat-with-frontier-AI is the empirical bound the model places on "workflow architecture > model capability."
+The headline prediction (S1): **optimal routing dominates max-AI by quality-per-attention and dominates always-self by attention efficiency, on the same `c_AI`**. The gap between optimal routing on mid-tier AI and naive-flat routing on frontier AI is the empirical bound the model places on "workflow architecture > model capability." The mechanism: optimal routing differentiates across tasks (different corners for different θ); naive uniformly applies an interior policy that is structurally never the per-task optimum.
 
 ## 6. Calibration anchors
 
@@ -221,19 +264,29 @@ The defaults reproduce the empirical mode distribution (Randazzo: ~60% cyborg, ~
 
 ## 7. Worked anchors against the empirical record
 
-Six probes. Each picks a parameter regime and reports what the model says, then compares to the lit-review anchor.
+Six probes. Each picks a parameter regime, computes the corner optimum exactly, and compares to the lit-review anchor.
 
-**A. Brynjolfsson (E1, E2) — customer-service novice +34%, top performers ~0%.** Set `θ_novice = (c_H = 0.40, c_AI = 0.70, φ = 0.20, σ = 0.20, λ = 0.10)` and `θ_expert = (c_H = 0.85, c_AI = 0.70, φ = 0.20, σ = 0.20, λ = 0.10)`. Optimal routing: novice gets `u* ≈ 0.95` (AI capability dominates), `v* ≈ 0.20` — large quality lift. Expert gets `u* ≈ 0.10` (own capability dominates), `v* ≈ low` — minimal quality lift. **Direction matches; magnitude depends on α calibration.**
+**A. Brynjolfsson (E1, E2) — customer-service novice +34%, top performers ~0%.**
 
-**B. Dell'Acqua BCG (E3) — outside-frontier 19-pp quality drop.** Set `θ_outside = (c_H = 0.70, c_AI = 0.40, φ = 0.30, σ = 0.50, λ = 0.50)`. Optimal routing: `u* ≈ 0.05` (do-yourself). The quality drop in the empirical study reflects subjects who ignored the optimal `u*` and used AI anyway — the model would predict a 30+ pp quality drop in that mis-routed regime, consistent with the observed 19 pp. **Outside-frontier harm reproduces qualitatively.**
+*Novice:* `θ = (c_H = 0.40, c_AI = 0.70, φ = 0.20, σ = 0.20, λ = 0.10)`. `c_⋆ = 0.70 + 0.30·0.40 = 0.82`. Then `K_u = 0.30 + 0.85 − 0.105 − 0.06 = 0.985 > 0` (full delegation beats do-yourself), and `K_v + K_uv = −0.20 + (0.12 + 0.005 + 0.06) = −0.015 < 0` (verification cost barely exceeds benefit). **Optimum: `(1, 0)` self-automator.** Quality lift over always-self: `c_AI − c_H = +0.30`. Direction matches the +34% Brynjolfsson finding (which is in resolution rate, mixing speed and accuracy).
 
-**C. Bastani PNAS (E9) — 17% unassisted-performance drop without guardrails; preserved with guardrails.** With `λ = 0.4` and `u = 0.9`: `v = 0` gives `S = (1−0.9) − 0.05·0.9·1 = 0.055` — atrophy. `v = 0.8` gives `S = (1−0.9) − 0.05·0.9·0.2 = 0.091` — barely any atrophy. **Guardrail effect (verification preserves skill) is structural, not assumed.**
+*Expert:* `θ = (c_H = 0.85, c_AI = 0.70, φ = 0.20, σ = 0.20, λ = 0.10)`. `c_⋆ = 0.70 + 0.30·0.85 = 0.955`. Then `K_u = −0.15 + 0.85 − 0.105 − 0.06 = 0.535 > 0`, and `K_v + K_uv = −0.20 + (0.255 + 0.005 + 0.06) = +0.12 > 0` (verification benefit dominates because `c_⋆ − c_AI = 0.255` is large — a skilled human catches AI errors). **Optimum: `(1, 1)` spec-driven.** Quality lift: `c_⋆ − c_H = +0.105`, only +12% relative.
 
-**D. Everett (E8) — independent-then-synthesize restores complementarity.** Set `θ_high_stakes = (c_H = 0.65, c_AI = 0.70, φ = 0.40, σ = 0.90, λ = 0.30)`. Naive use (`u = 0.7, v = 0.3`) leaves a substantial uncaught-risk term. Spec-driven (`u = 0.9, v = 0.95`) **wins by collapsing R** at the cost of slightly higher A — exactly the lit-review explanation. **Mechanism reproduces.**
+So the model produces: novice at full-delegate-no-verify (Q = 0.70 from c_AI alone), expert at full-delegate-full-verify (Q = 0.955 = AI augmented by skilled human catching). Both delegate; the difference is in verification depth. The empirical "expert ~0%" finding reflects throughput ceiling (experts already at maximum call rate, can't redeploy saved attention to more calls) rather than zero quality lift — a context the model doesn't carry.
 
-**E. Randazzo self-automator (E10, E13) — ~10% of consultants in the trap.** With `θ_routine = (c_H = 0.70, c_AI = 0.85, φ = 0.20, σ = 0.20, λ = 0.10)`, optimal `(u*, v*) ≈ (1, 0.1)` — self-automator is *correct* for low-stakes low-skill-formation routine. The model predicts that ~10% of *task instances* (not workers) should land in the self-automator region under realistic θ distributions. **Frequency match depends on θ-distribution priors; Stage 4 should fit to BCG sample.**
+**B. Dell'Acqua BCG (E3) — outside-frontier 19-pp quality drop.** `θ = (c_H = 0.70, c_AI = 0.40, φ = 0.30, σ = 0.50, λ = 0.50)`. `c_⋆ = 0.40 + 0.60·0.70 = 0.82`. Then `K_u = −0.30 + 0.85 − 0.525 − 0.30 = −0.275 < 0`. **Optimum: `(0, 0)` do-yourself.** If the worker mis-routes to `(1, 0)`, quality drops from `c_H = 0.70` to `c_AI = 0.40` — a 30 pp loss. The empirical 19 pp reflects partial mis-routing (some subjects partially used AI, some didn't); the model's prediction is a clean upper bound on the harm.
 
-**F. Schoenegger (E18) — even overconfident GPT improves forecasting +23–43%.** This is *outside* the model's current formalism — the model does not separately represent "structured-reasoning gain" from "advice-quality gain." If implemented, it would be a constant `+δ` to Q whenever `u > 0`, capturing the forced-structured-reasoning effect. Honest disclosure: **this is a gap; the model attributes E18's gain to ΔQ from `c_AI`, which probably overstates how much of the gain is advice-driven.**
+**C. Bastani PNAS (E9) — guardrails preserve skill.** Generic learning task with high skill-formation: `θ = (c_H = 0.40, c_AI = 0.70, φ = 0.30, σ = 0.20, λ = 0.50)`. `c_⋆ = 0.82`. `K_u = 0.30 + 0.85 − 0.525 − 0.06 = 0.565 > 0`. `K_v + K_uv = −0.30 + (0.12 + 0.025 + 0.06) = −0.095 < 0`. **Optimum: `(1, 0)` self-automator.**
+
+This is a real and honest finding: at lit-review-anchored constants (β = 0.05), the skill-preservation push toward verification (`λ·β·u = 0.025` at u = 1) is too small to flip the corner against verification cost. The guardrail effect is *structurally present* — at the (1, 1) corner, `S = 0` (no atrophy) versus `S = −0.05` at (1, 0), so `λ·ΔS = +0.025` — but the verification cost (`α·φ = 0.30`) dominates. To make guardrails decisive (flip the corner), the model needs `λ·β + (1 − c_AI)·c_H + σ·(1 − c_AI) > α·φ`. With these θ, you'd need `β ≈ 0.20+` or higher `λ` (~0.80+) or lower `φ` (~0.20).
+
+**Honest reading:** the model says the guardrail effect is real but weak at default constants. Stage-4 fitting target Q2 is whether `β` should be larger to match Bastani's empirical magnitude. This is not a model failure — it's the model surfacing a calibration question the lit review left implicit.
+
+**D. Everett (E8) — independent-then-synthesize restores complementarity.** `θ = (c_H = 0.65, c_AI = 0.70, φ = 0.40, σ = 0.90, λ = 0.30)`. `c_⋆ = 0.70 + 0.30·0.65 = 0.895`. `K_u = 0.05 + 0.85 − 0.315 − 0.27 = 0.315 > 0`. `K_v + K_uv = −0.40 + (0.195 + 0.015 + 0.27) = +0.08 > 0`. **Optimum: `(1, 1)` spec-driven.** Mechanism: the `σ·(1 − c_AI) = 0.27` term in `K_uv` makes verification valuable precisely because stakes are high and AI is fallible. Matches Everett's lit-review story exactly.
+
+**E. Randazzo self-automator (E10) — ~10% of consultants in the trap.** Routine consulting task: `θ = (c_H = 0.70, c_AI = 0.85, φ = 0.20, σ = 0.20, λ = 0.10)`. `c_⋆ = 0.955`. `K_u = 0.15 + 0.85 − 0.105 − 0.03 = 0.865 > 0`. `K_v + K_uv = −0.20 + (0.105 + 0.005 + 0.03) = −0.06 < 0`. **Optimum: `(1, 0)` self-automator.** Self-automator is the correct policy at this θ — the empirical finding "~10% of consultants are self-automators" is about θ-distribution (~10% of work-instances have these characteristics), not about systematic mis-routing. A misread of Randazzo's data as "self-automator is always wrong" is a category error the model corrects.
+
+**F. Schoenegger (E18) — even overconfident GPT improves forecasting +23–43%.** This is *outside* the model's current formalism. The model attributes any gain at `u > 0` to `c_AI` (advice quality), but Schoenegger's finding suggests structured reasoning is doing significant work independent of the AI's confidence calibration. A constant `+δ` to Q whenever `u > 0` would represent this — held for future passes if it changes downstream predictions. **Honest gap.**
 
 ## 8. The five cruxes
 
@@ -241,7 +294,7 @@ Load-bearing claims of the model. Collapse rebuilds it.
 
 **C1 — Two-axis decision space (u, v).** The decision is reduced to autonomy and verification depth. If the actual workflow choice space has more dimensions that matter — e.g., context-engineering depth, prompt-iteration count, tool selection — the model is incomplete. *What would flip it:* empirical evidence that two workflows with identical `(u, v)` but different context-engineering produce systematically different outcomes (which the practitioner literature suggests is real — S4).
 
-**C2 — Verified output achieves `c_⋆ = max(c_H, c_AI)`.** Assumes the human can recognise correct AI output. For deskilled verifiers, `c_⋆ → c_AI` and verification becomes ritual. *What would flip it:* longitudinal evidence that workers in high-`u`, low-`v` regimes lose verifier capacity (the predictive form of the deskilled-verifier worry).
+**C2 — Verification effectiveness equals generation skill.** `c_⋆ = c_AI + (1 − c_AI)·c_H` treats `c_H` as both generation skill *and* verifier capability — a worker who'd produce 40%-quality output alone catches 40% of AI errors. Karpathy's G9 generator-verifier-asymmetry says verification is typically *easier* than generation; a separate `c_V ≥ c_H` parameter would make low-`c_H` workers more effective verifiers. *What would flip it:* empirical evidence that verifier-recognition rates are uncorrelated with generation skill (would require introducing `c_V`). Deskilled-verifier worry is partially handled by the formula already (`c_H → 0` ⇒ `c_⋆ → c_AI`), but the *mechanism* of skilled-but-not-creative verifier (the editor archetype) is not in scope.
 
 **C3 — `ε > 0` is the right operationalisation of L1.** The substitution-myth invariant is captured as residual attention at full delegation. If the actual structure is more like "delegation creates new tasks of comparable effort" rather than "delegation creates monitoring overhead", a constant ε is wrong shape. *What would flip it:* evidence that delegation-induced work scales with task complexity, not as a flat constant.
 
@@ -259,8 +312,10 @@ Honest disclosure of where the formalisation stops.
 - **Sycophancy as quality-degrader (E13).** The model assumes verification only helps. Randazzo HBS 26-021 documents AI flipping correct human judgments under pushback — verification can *worsen* outcomes when sycophancy escalates. Not encoded; would require a `c_⋆` that depends on the human's resistance to AI-pushback.
 - **Frontier migration (O4).** `c_AI` is static within a session. Over months the frontier moves; the user must recalibrate. The model is a snapshot — extending it to a dynamic version would couple `c_AI(t)` to a learning model of the user's frontier-mapping rate.
 - **Multi-tool attention interference (G10 — Wickens MRT).** The model is per-task; it does not capture the cost of running Cursor + ChatGPT + Slack simultaneously. The topology added G10 specifically to flag this; Stage 4 / Stage 5 should test whether a `M_concurrent(N_tools)` extension is needed.
+- **Verifier skill ≠ generation skill (Karpathy G9).** The model uses `c_H` as both generation capability and verification effectiveness. Empirically, verification is often easier than generation — recognising an error costs less than producing a correct answer. A `c_V ≥ c_H` parameter would let low-`c_H` workers benefit from verification more than the current formula predicts. Held for Stage 4 / future passes; the C2 crux names this.
+- **Partial verification ("skim") rounds to full or none.** Bilinearity makes `v* ∈ {0, 1}`. The empirical reality of skimming (partial-depth verification at reduced cost and reduced effectiveness) does not map onto the model — the model rounds skim up to full-verify when verification is cheap and down to no-verify when it's expensive. A future variant with convex verification cost (`v²·φ` instead of `v·φ`) or with a separate verification-depth-vs-effectiveness curve would produce interior `v*` solutions. Not added in this pass to preserve bilinearity's analytical clarity.
 
-These six are not bugs of the formalisation. They are the boundary of what an individual-task generator-verifier loop can carry. Beyond it lies organisational design, dynamic learning, and team-level cognition — sibling artifacts.
+These seven are not bugs of the formalisation. They are the boundary of what an individual-task bilinear generator-verifier loop can carry. Beyond it lies organisational design, dynamic learning, and team-level cognition — sibling artifacts.
 
 ## 10. Stage-4 fitting targets
 
