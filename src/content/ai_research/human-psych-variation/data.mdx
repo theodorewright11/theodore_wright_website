@@ -3,8 +3,16 @@ title: 'Data'
 description: 'Empirical pipeline that confronts the model''s eight testable predictions with currently-published consortium estimates. Seven hold cleanly (AM partition, Wilson curve, multivariate-D gap, PGS portability decay, xAM inflation, environmental causes, G×E interaction-conditional); one (the cross-paper method gradient) is mixed in an informative way. Curated CSVs (downloadable) + Python pipeline + interactive findings panel.'
 date: 2026-04-28
 status: in-progress
-refinementPass: 8
+refinementPass: 9
 refinementLog:
+  - pass: 9
+    date: '2026-04-29'
+    passes: ['internal consistency check']
+    why: 'Pass 8 fixed the data MDX TLDR''s wrong-direction AM framing but did not check the data findings panel React component (PsychVariationData.tsx) that ships alongside it. The H2 AM partition tab''s description prose still said "AM-LD accounts for >19% of total observed h²" — same wrong-direction framing where "observed h²" without qualification implies Falconer twin h² (which AM actually biases downward) rather than population-level V(A_AM). The findings panel is what users actually see when they click the H2 tab in the data stage.'
+    changes:
+      - 'PsychVariationData.tsx H2 AM partition tab description rewritten: was "AM-LD accounts for >19% of total observed h²"; now "the Crow-Felsenstein partition predicts >19% V(A_LD)/V(A_AM) at the population level" with explicit caveat that AM does NOT inflate Falconer twin h² (it biases Falconer downward) and the empirical twin-vs-within-family gap for socially-structured traits is dominated by genetic nurture / EEA, with pointer to the H2 caveat in the MDX prose'
+      - 'Did NOT change the H2 NumberCard hints ("V(A_LD) / h² (Yengo 2018: 14–23%)" etc.): these are correct as Crow-Felsenstein population-level partition labels; the qualifier "V(A_LD) / h²" makes the population-level scope explicit'
+      - 'Did NOT change H6 cross-trait AM inflation tab: that addresses cross-disorder rg inflation (Border 2022), a separate and well-supported phenomenon'
   - pass: 8
     date: '2026-04-29'
     passes: ['internal consistency check']

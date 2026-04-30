@@ -426,7 +426,7 @@ function AmPartitionPanel() {
       </ChartFrame>
 
       <p className="text-[11px] text-muted mt-3 leading-relaxed">
-        Marker size scales with twin h². Every trait with strong AM (m &gt; 0.40 — political orientation, religiosity, EA, IQ, drinking) lands in the upper-right region where AM-LD accounts for &gt;19% of total observed h². Personality traits (neuroticism, Big Five) sit near the origin: low m, low V(A_LD).
+        Marker size scales with twin h². Every trait with strong AM (m &gt; 0.40 — political orientation, religiosity, EA, IQ, drinking) lands in the upper-right region where the Crow-Felsenstein partition predicts &gt;19% V(A_LD)/V(A_AM) at the population level. Personality traits (neuroticism, Big Five) sit near the origin: low m, low V(A_LD). Note: these are population-level V(A) decompositions; AM does NOT inflate Falconer twin h² (it biases Falconer downward) — the empirical twin-vs-within-family gap for socially-structured traits is dominated by genetic nurture / EEA, not AM. See the H2 caveat below.
       </p>
 
       <div className="mt-4 grid grid-cols-2 md:grid-cols-3 gap-2">
