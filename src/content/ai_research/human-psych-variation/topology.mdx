@@ -3,8 +3,18 @@ title: 'Topology'
 description: 'Dependency graph of the lit review. Three categories of high-stakes node (foundational cruxes / reframer nodes / logical guardrails) plus weakest links, four variant views, three Stage-3 options, an objections section, and a glossary. Updated through 2024-2025 literature on AM correction, within-family GWAS at scale, PGS portability, Scarr-Rowe collapse, GEP replication, and missing-heritability closure.'
 date: 2026-04-28
 status: in-progress
-refinementPass: 3
+refinementPass: 4
 refinementLog:
+  - pass: 4
+    date: '2026-04-29'
+    passes: ['internal consistency check', 'cross-stage consistency']
+    why: 'After the pipeline-wide AM-direction correction propagated through writeup (pass 5), build (pass 6), model (pass 8), and data (pass 8), the topology stage was the only remaining stage that had not been audited for the same wrong-direction framing. A targeted check found three places that needed correction: the topology graph component (PsychVariationGraph.tsx) had G5 node detail saying "Assortative mating creates linkage among causal variants → inflates h² and PGS" (true for population V(A) and PGS effect sizes, but "inflates h²" without qualification implies twin h² which AM actually deflates) plus the G5 → E1 edge label "AM inflates h²" (same issue); the topology.mdx node catalog G5 entry had the parallel "Inflates additive genetic variance, h²" framing.'
+    changes:
+      - 'PsychVariationGraph.tsx G5 node detail rewritten to specify "inflates V(A) at population level (Yengo 2018: 14–23% V(A_LD)/V(A) for height) and PGS effect sizes" with the explicit caveat that this counterintuitively biases Falconer twin h² downward and that the empirical twin-vs-WF gap for socially-structured traits is dominated by genetic nurture / EEA, with AM partially offsetting'
+      - 'PsychVariationGraph.tsx G5 → E1 edge label changed from "AM inflates h²" to "AM inflates V(A) at population level"'
+      - 'topology.mdx node-catalog G5 entry rewritten to match the React component description'
+      - 'Did NOT modify topology.mdx line 271 (E1 + E4 + G2 + G5 ──imp──> S2 cascade): this is a high-level dependency claim that G5 contributes to the method gradient, which is true at the population-V(A) level — the detail of who-inflates-what under different estimators lives in the model formalization stage'
+      - 'Did NOT modify edge type table line 99 ("AM inflates rg"): refers to cross-trait AM inflating cross-disorder rg, which is the Border 2022 finding and is correct as stated'
   - pass: 1
     date: '2026-04-28'
     passes: ['error check', 'gap scan', 'adversarial + steelman', 'readability']
@@ -212,7 +222,7 @@ Psychopathology:
 | **G2** | 5 | Passive rGE. Wang 2021 / Isungset 2022 confirm indirect ≈ ½ direct genetic effect for EA. Nivard et al. 2024 found indirect genetic effects on offspring achievement extend *beyond* the nuclear family — dynastic / extended-family / community processes contribute, so the "parents transmit gene + correlated environment" framing understates the spread | E6 (genetic nurture); inflation of population-level h² |
 | **G3** | 3 | Evocative rGE | Heritability of "environments" (Kendler & Baker 2007) |
 | **G4** | 3 | Critical-period plasticity (GABAergic maturation) | Asymmetric environmental effects on early development |
-| **G5** | 4 | Assortative mating → LD induction | Inflates additive genetic variance, h² |
+| **G5** | 4 | Assortative mating → LD induction | Inflates additive genetic variance V(A) at the population level (Yengo 2018: 14–23% for height); inflates SNP h² and PGS effect sizes. Counterintuitively biases Falconer twin h² downward (raises rDZ relative to rMZ); twin-vs-WF gap for socially-structured traits is dominated by genetic nurture / EEA, with AM partially offsetting. |
 | **G6** | 5 | Cross-trait AM → spurious genetic correlations | Confounds E16, E17 (p-factor) |
 | **G7** | 4 | Stochastic developmental noise | Dominant source of non-shared environment |
 | **G8** | 3 | Selection / niche construction across the lifespan | Bridges temperament → personality → outcome cascade |

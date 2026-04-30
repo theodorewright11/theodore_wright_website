@@ -73,7 +73,7 @@ const NODES: GraphNode[] = [
   // Mechanisms
   { id: 'G1', type: 'G', weight: 4, label: 'Active rGE / niche-picking', detail: 'People select environments matching genetic propensities. Drives Wilson Effect amplification.', status: '✓' },
   { id: 'G2', type: 'G', weight: 5, label: 'Passive rGE / genetic nurture', detail: 'Parents transmit genes AND correlated environments. Reframes ~50% of "genetic" effect as environmental (Wang 2021 / Isungset 2022 confirm). Nivard et al. 2024 found indirect genetic effects extend BEYOND the nuclear family — dynastic / extended-family / community processes contribute, so the "parents transmit gene + correlated environment" framing actually understates the spread.', status: '✓' },
-  { id: 'G5', type: 'G', weight: 4, label: 'AM → LD induction', detail: 'Assortative mating creates linkage among causal variants → inflates h² and PGS.', status: '✓' },
+  { id: 'G5', type: 'G', weight: 4, label: 'AM → LD induction', detail: 'Assortative mating creates linkage among causal variants → inflates V(A) at population level (Yengo 2018: 14–23% V(A_LD)/V(A) for height) and PGS effect sizes. Counterintuitively biases Falconer twin h² downward (raises rDZ relative to rMZ); empirical twin-vs-WF gap for socially-structured traits is dominated by genetic nurture / EEA, with AM partially offsetting.', status: '✓' },
   { id: 'G6', type: 'G', weight: 5, label: 'Cross-trait AM → spurious rg', detail: 'xAM creates genetic correlations between phenotypes with distinct genetic bases. Confounds p-factor / shared-biology stories.', status: '✓' },
   { id: 'G7', type: 'G', weight: 4, label: 'Stochastic developmental noise', detail: 'Dominant source of non-shared environment (~50% of personality variance). Not yet mechanistically characterized.', status: '~' },
 
@@ -123,7 +123,7 @@ const LINKS: GraphLink[] = [
   // Mechanisms → empirical patterns
   { source: 'G1', target: 'E3', type: 'sup', label: 'niche-picking drives Wilson' },
   { source: 'G2', target: 'E6', type: 'sup' },
-  { source: 'G5', target: 'E1', type: 'conf', label: 'AM inflates h²' },
+  { source: 'G5', target: 'E1', type: 'conf', label: 'AM inflates V(A) at population level' },
   { source: 'G6', target: 'E16', type: 'conf', label: 'xAM → spurious rg' },
   { source: 'G6', target: 'E17', type: 'conf' },
 
