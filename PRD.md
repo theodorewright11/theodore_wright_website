@@ -89,11 +89,13 @@ A topic's stage-3 model can be **promoted** to `/models` when polished — copy 
 
 Active topics — folders exist in `src/content/ai_research/` and `stage_outputs/`:
 
-| Topic slug | Title | Furthest stage |
-|---|---|---|
-| `human-psych-variation` | Psychology of Individual Differences | writeup (pass 5) |
-| `navigating-ai-world` | Navigating an AI World | model (pass 2) |
-| `technology-utilization-architecture` | Technology Utilization Architecture | topology (pass 9) |
+| Topic slug | Title | Furthest stage | Status |
+|---|---|---|---|
+| `human-psych-variation` | Psychology of Individual Differences | writeup (pass 5) | **finished** |
+| `navigating-ai-world` | Navigating an AI World | model (pass 2) | in progress |
+| `technology-utilization-architecture` | Technology Utilization Architecture | topology (pass 9) | in progress |
+
+A topic is **finished** when every one of its six stages (lit-review, topology, model, data, build, writeup) has `status: complete` in the stage frontmatter. The `/ai-research` index page renders finished topics in a "Finished" bucket above the "In Progress" bucket; cards carry a small `finished` accent tag next to the title; the home page status pill reads `finished`.
 
 Planned topics (full list in `prompts.md`): philosophy → personal decisions; philosophy → organizations; philosophy of mind / ethics / epistemology; evolution-modernity mismatch; emotions architecture; meaning & spirituality; bedrock generating functions; AI decompression; information fidelity; trust architecture; parent-child transmission; prediction & calibration; AI cognitive profile. Each spins up its own folder pair when started.
 
