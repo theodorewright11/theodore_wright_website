@@ -3,7 +3,7 @@ title: 'Topology'
 description: 'Dependency graph of the AI-transition lit review. Five foundational-assumption cruxes, four reframer mechanisms (the cognitive-offloading bridge, telic exhaustion, apprenticeship-ladder break, engagement-optimized substitution), three logical guardrails, seven strategic recommendations forming the high-leverage core, and four distortion vectors. Cognitive offloading (G4) is the only mechanism that produces effects across all three domains under a single generating function.'
 date: 2026-04-29
 status: in-progress
-refinementPass: 4
+refinementPass: 5
 refinementLog:
   - pass: 1
     date: '2026-04-29'
@@ -46,6 +46,15 @@ refinementLog:
       - 'Replaced Steelman point (c) with atelic-ballast class-position critique — strategic recommendations implicitly assume social/community/time-affluence conditions that are themselves contingent and unevenly distributed'
       - 'Compressed TLDR para 1 (dropped the legend reprint), Cross-domain bridges intro (now defers to Reframer-mechanisms G4 entry for the framing claim), and Decision-leverage variant prose (removed redundant S6-at-center claim — bridges section now carries it)'
       - 'Restructured Stage-3 handoff as one integrated ΔNet = ΔV − ΔM formalization (defensive ΔM + offensive ΔV combined into a single dashboard) with defensive-only and dose-response models as fallback alternatives'
+  - pass: 5
+    date: '2026-04-29'
+    passes: ['gap scan', 'truth-accuracy override on bias']
+    why: 'Three small honest-disclosure issues remained on a fifth read. (1) Almost every empirical anchor in the topology is US or Western (Brynjolfsson-Chandar-Chen ADP, OpenAI-MIT chatbot RCT, Therabot, Common Sense adolescent survey, Anti-Social Century, Acemoglu-Humlum-Vestergaard Danish nulls). The strategic recommendations may not generalize cleanly across cultures with different relational baselines or work-identity expectations, and the topology never said so. (2) The Open questions table had time-to-resolution numbers that looked authoritative but were unsourced estimates of mine — should be marked as such. (3) The five A-nodes were never explicitly defended as the right cruxes; they are a faithful transcription of the lit review own load-bearing-assumptions section, but a reader could plausibly ask "why these five and not others" and not find the answer. Honest disclosure of the derivation handles it.'
+    changes:
+      - 'Added population caveat to Scope note in TLDR: empirical anchors are US/Western, recommendations should be treated as hypotheses-not-findings in non-Western contexts until tested locally'
+      - 'Marked Open questions time-to-resolution column as "(estimated)" with explicit note that the numbers are rough ordering, not calibrated forecasts'
+      - 'Added one-sentence A-node-selection defense to Cruxes intro: the five A-nodes are a faithful transcription of the lit review own load-bearing-assumptions section, not a curated subset chosen for narrative shape'
+      - 'After this pass: topology is at the level of polish where further refinement would be diminishing returns. Any additional pass would either invent issues to fix, do pre-emptive Stage-3 work, or make cosmetic edits — none worth doing. Stage is ready for handoff to model formalization (Stage 3, integrated ΔNet = ΔV − ΔM target).'
 ---
 
 import AITransitionGraph from '../../../components/ai-research/AITransitionGraph';
@@ -54,7 +63,7 @@ import AITransitionGraph from '../../../components/ai-research/AITransitionGraph
 
 The lit review documents what the literature says about how AI restructures work, relationships, and meaning. This topology asks the structural question underneath: **what depends on what?** The field collapses to roughly fifty load-bearing claims across eight types (assumptions, empirical findings, mechanisms, guardrails, strategic recommendations, frameworks, open questions, distortions — see the legend on the graph). The graph encodes their dependencies so that the cruxes, the contested mechanisms, and the practical handles can each be read off cleanly without conflating them.
 
-**Scope.** This topology takes the *individual decision-maker* as the unit of analysis — someone navigating career, relationships, and meaning architecture in a world where AI capability is accelerating. Institutional design (how organizations should structure AI integration), policy and governance (regulation, antitrust, AI safety), and aggregate-society dynamics (labor-share macro, geopolitics, civilizational risk) are out of frame. They affect the structural backdrop the individual operates in, but the strategic recommendations here are addressed to people, not to firms or governments.
+**Scope.** This topology takes the *individual decision-maker* as the unit of analysis — someone navigating career, relationships, and meaning architecture in a world where AI capability is accelerating. Institutional design (how organizations should structure AI integration), policy and governance (regulation, antitrust, AI safety), and aggregate-society dynamics (labor-share macro, geopolitics, civilizational risk) are out of frame. They affect the structural backdrop the individual operates in, but the strategic recommendations here are addressed to people, not to firms or governments. **Population caveat:** the empirical anchors (Brynjolfsson-Chandar-Chen ADP, OpenAI-MIT chatbot RCT, Therabot, Common Sense adolescent survey, Anti-Social Century, Acemoglu-Humlum-Vestergaard Danish nulls) are almost entirely US or Western. The strategic recommendations may not generalize cleanly across cultures with thicker baseline community, different family structures, or different work-identity expectations — readers in those contexts should treat the recommendations as hypotheses, not findings, until tested locally.
 
 The single most useful conceptual move in this topology is **separating the foundational cruxes from the reframer mechanisms from the logical guardrails**. The foundational cruxes (A1 timelines, A2 relationship irreplaceability, A3 cumulative cognitive offloading, A4 structural relational depletion, A5 telic/atelic mapping) are the assumptions that, if falsified, would force rebuilding regions of the picture; A2 and A5 are most contestable, A3 has the most active falsification window (O3), A1 is the live-discourse fault line. The **reframer mechanisms** (G3 engagement-optimized substitution, G4 cognitive offloading bridge, G5 apprenticeship-ladder break, G7 telic exhaustion) don't break the picture if they reverse — they change what the empirical findings *mean*, and their precise magnitudes are where the field is moving fastest. The **logical guardrails** (L1 finding/forecast/interpretation, L2 material-floor primacy, L3 substitution-vs-complement-is-the-wrong-binary) cannot be falsified — they can only be ignored, which is how most surface-level discourse on this topic proceeds.
 
@@ -100,7 +109,7 @@ Every claim in the lit review collapses to one of eight node types. Edges betwee
 
 ## Cruxes
 
-The five foundational assumptions are not equally uncertain. Naming the difference matters, because public discourse routinely conflates "this is a working assumption that has held so far" with "this is contested and a coin flip" — which leads to either complacency or fatalism depending on which assumption is in question.
+The five A-nodes are a faithful transcription of the lit review's own "Load-bearing assumptions" section — these are the assumptions the literature *itself* rests on, not a curated subset chosen for narrative shape. The five foundational assumptions are not equally uncertain, however. Naming the difference matters, because public discourse routinely conflates "this is a working assumption that has held so far" with "this is contested and a coin flip" — which leads to either complacency or fatalism depending on which assumption is in question.
 
 **A1 — AI advances without full substitution by ~2030.** The live-discourse fault line. The slow-camp evidence (Acemoglu, Humlum-Vestergaard, the J-curve dynamics, Anthropic Economic Index aggregate task shares) supports A1; the fast-camp forecasts (Aschenbrenner, AI 2027, Korinek-Suh) target it. A1 has the most discourse heat, but **falsification has asymmetric consequences across the S cluster**. Under fast-AGI scenarios: S7 (career bet) collapses entirely — its targets (judgment, taste, AI-managerial framing) all become AI-substitutable. S2 (identity diversification), S3 (atelic ballast), S4 (in-person relationships), S5 (dose-limit), S6 (effortful practice) all survive — but their *meaning* shifts: they become more important, not less, because humans need their own practice ground when the entire knowledge-work surface is AI-saturated. The asymmetry is not "planning is wasted under fast timelines" — it is "skill-investment recommendations collapse, meaning-architecture and relational-infrastructure recommendations strengthen."
 
@@ -212,14 +221,14 @@ Distortions are how others read the picture badly. The honest move is to also as
 
 The four open questions are the falsification windows for the assumptions:
 
-| Question | Crux it gates | Time-to-resolution |
+| Question | Crux it gates | Time-to-resolution (estimated) |
 |---|---|---|
 | O1 — AGI by 2028? | A1 | 1–3 years |
 | O2 — Asymmetric-adoption couples | E11 generalization | 2–4 years |
 | O3 — Calculator-analogue or cumulative atrophy? | A3 | 2–5 years |
 | O4 — AI-augmented atelic activities — less meaningful? | A5 / S3 | 3–7 years |
 
-O1 has the most variance in resolution time and the largest discourse footprint; O3 has the cleanest empirical operationalization; O2 is the lowest-hanging fruit for an empirical study; O4 is the hardest to operationalize but would have the deepest impact if it resolves yes.
+The time-to-resolution column is my own estimate based on what kind of study would have to be designed and run to produce a defensible answer; treat as rough ordering, not calibrated forecasts. O1 has the most variance in resolution time and the largest discourse footprint; O3 has the cleanest empirical operationalization; O2 is the lowest-hanging fruit for an empirical study; O4 is the hardest to operationalize but would have the deepest impact if it resolves yes.
 
 ---
 
