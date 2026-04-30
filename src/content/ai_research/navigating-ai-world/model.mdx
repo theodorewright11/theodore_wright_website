@@ -3,8 +3,15 @@ title: 'Model'
 description: 'Generating function for the AI transition as life restructuring. ΔNet = ΔV − ΔM, partitioned across work, relationships, and meaning. Closed-form pieces: telic-absorption defensive term, competence-erosion bridge through ρ, gated novice-skill compression, dose-response in the relational channel, exponential atrophy of retained practice. Interactive dashboard with scenario presets and time trajectory.'
 date: 2026-04-29
 status: in-progress
-refinementPass: 7
+refinementPass: 8
 refinementLog:
+  - pass: 8
+    date: '2026-04-29'
+    passes: ['internal consistency check', 'completeness']
+    why: 'Two small but real notational issues from a final fresh-eyes scan. (1) §10 tech-utilization-architecture connection said "the current model''s λ parameter is the connection point" — but the model has *two* parameters named λ (the atrophy speed in ρ(t) = ρ₀·exp(−λ·u·t) and λ_M, the competence-erosion coefficient in ΔM_comp). Context disambiguates here in favor of atrophy-speed, but a reader scanning §10 directly would have to backtrack. Bare "λ" reference is sloppy when two λs exist. (2) §11 glossary had entries for every other model constant (α, η_trap, λ_M, ψ_R, β_R, d_safe, τ) but not σ — the logistic-gate transition width. σ is defined inline in §3.1 but absent from the glossary, breaking the otherwise complete reference list. After this pass, the model is at the genuine diminishing-returns threshold and ready for handoff to Stage 4.'
+    changes:
+      - '§10 tech-utilization-architecture connection: clarified bare "λ" as "λ (atrophy speed)" with parenthetical, removing the two-λs ambiguity'
+      - '§11 glossary: added σ entry — "logistic-gate transition width; σ = 0.06 makes the gate transition smooth (10–90% transition over an f·ρ range of about 0.27)"'
   - pass: 7
     date: '2026-04-29'
     passes: ['error check']
@@ -429,7 +436,7 @@ Six empirical targets the formalisation makes sharp:
 The model touches five sibling topics in the planned-topics list and two active topics.
 
 - **Bedrock generating functions.** The ΔNet = ΔV + ΔM form is itself a candidate bedrock function for "transitions that restructure life simultaneously across multiple domains." The structure (positive sum + negative sum gated by a shared bridge parameter) is more general than AI; it would apply to industrialisation, the printing press, suburbanisation, smartphones. The bedrock-generating-functions topic should consider whether the structure is an instance of a broader class.
-- **Technology utilization architecture (active).** The cognitive-partnership-stack model in the sibling topology has its own variant D (regime-stable subgraph) that survives capability change. The current model's λ parameter is the connection point: if λ ≈ 0, the technology-utilization-architecture's strategic recommendations are sufficient; if λ > 0, they need to be supplemented with practice-maintenance (S6) machinery. The two topologies' shared concern is verification — both name it as load-bearing under different parameter names.
+- **Technology utilization architecture (active).** The cognitive-partnership-stack model in the sibling topology has its own variant D (regime-stable subgraph) that survives capability change. The current model's λ (atrophy speed) parameter is the connection point: if λ ≈ 0, the technology-utilization-architecture's strategic recommendations are sufficient; if λ > 0, they need to be supplemented with practice-maintenance (S6) machinery. The two topologies' shared concern is verification — both name it as load-bearing under different parameter names. Tech-utilization's per-shot deskilling β coefficient (Bastani's 17% drop scaled per-task) is the per-event analogue of this model's per-time atrophy: integrating tech-utilization β over the offloading rate u and time t recovers something like λ·u·t.
 - **Prediction & calibration.** The model's gate g(f, ρ) and the topology's L3 (substitution-vs-complement is the wrong binary) are both arguments about verification. A user's ability to verify AI output — and to know when their verification is itself compromised by reduced ρ — is a cross-cutting parameter that the prediction-and-calibration topic should address directly.
 - **Human-psych-variation (active).** The model treats κ (competence-frustration sensitivity) as a personal slider with values in [0, 1]. The cross-population calibration of κ — *how* it varies across people, what predicts variation, whether it stratifies by personality trait class — properly belongs to the individual-differences topic. The current model takes κ as exogenous; integrating with the human-psych-variation framework would let κ be drawn from a population distribution with measurable correlates (conscientiousness, neuroticism, achievement-orientation), which would in turn make the model's predictions for specific persons more grounded.
 - **Evolution-modernity mismatch.** δ_R (relational baseline thickness) is the depleted-baseline parameter the topology's A4 names: AI lands into a relational environment that has been depleted for sixty years. Why has it been depleted? The mismatch topic — humans evolved for thicker community than modernity provides — is the upstream causal story. The model uses δ_R as an exogenous input, but the *distribution* of δ_R across the modern population is itself an output of the evolution-modernity-mismatch dynamics: industrialisation, suburbanisation, smartphone displacement of in-person time, atomised housing, decline of religious affiliation, and so on. The dose-response curve in the model is sharper for users in thinner δ_R baselines because the mismatch is sharper there too.
@@ -450,7 +457,8 @@ The model touches five sibling topics in the planned-topics list and two active 
 - **d (daily AI-emotional minutes)** — daily voluntary AI engagement minutes for relational / emotional purposes.
 - **δ_R (relational baseline thickness)** — how thick the user's existing in-person relational infrastructure is. Anti-Social-Century baseline corresponds to low δ_R.
 - **g(f, ρ)** — self-automator gate; smooth logistic over f·ρ at threshold τ.
-- **τ (gate threshold)** — the f·ρ value at which AI use flips from upskilling to deskilling.
+- **τ (gate threshold)** — the f·ρ value at which AI use flips from upskilling to deskilling. Currently τ = 0.30.
+- **σ (gate transition width)** — controls how sharply the logistic gate flips around τ. σ = 0.06 makes the transition smooth — 10–90% transition over an f·ρ range of about 0.27, roughly two standard deviations of within-population variation in either f or ρ alone.
 - **λ (atrophy speed)** — rate of practice-decay per unit offloading-time.
 - **u (offloading rate)** — fraction of relevant tasks the user offloads to AI per unit time.
 - **α (productivity scale)** — calibration constant on ΔV_prod; ≈ 0.40 from Brynjolfsson-Li-Raymond.
