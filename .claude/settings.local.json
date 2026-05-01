@@ -1,0 +1,23 @@
+{
+  "permissions": {
+    "allow": [
+      "WebSearch",
+      "WebFetch(domain:www.nature.com)",
+      "WebFetch(domain:pubmed.ncbi.nlm.nih.gov)",
+      "WebFetch(domain:matthewckeller.com)",
+      "WebFetch(domain:pmc.ncbi.nlm.nih.gov)",
+      "Bash(python pipeline.py)",
+      "Bash(awk -F',' 'NR<=4 {print NR\": \"NF\" fields\"}' \"c:/Users/teddy/Downloads/Coding Personal Projects/theodore-wright-site/stage_outputs/human-psych-variation/data/heritability_estimates.csv\")",
+      "Bash(npm run *)",
+      "Bash(curl -s http://localhost:4321/ai-research/human-psych-variation/data/)",
+      "Bash(taskkill //F //IM node.exe //T)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git push *)",
+      "WebFetch(domain:www.medrxiv.org)",
+      "Bash(git commit *)",
+      "Bash(xargs -I {} grep -H \"^status:\" {})",
+      "Bash(git check-ignore *)"
+    ]
+  }
+}
