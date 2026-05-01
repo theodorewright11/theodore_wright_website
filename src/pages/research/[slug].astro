@@ -17,7 +17,7 @@ const { Content } = await entry.render();
 const statusLabel: Record<string, string> = {
   'in-progress': 'In Progress',
   published: 'Finished',
-  upcoming: 'Upcoming',
+  upcoming: 'Planned',
   contribution: 'Contribution',
 };
 
@@ -40,10 +40,6 @@ const fmtYear = (date: Date) => String(date.getFullYear());
           {statusLabel[entry.data.status] ?? entry.data.status}
         </span>
         <span class="font-mono text-[11px] text-muted">{fmtYear(entry.data.date)}</span>
-        {entry.data.paperStatus && (
-          <span class="font-mono text-[10px] uppercase text-muted border border-rule rounded-sm px-1.5 py-px"
-                style="letter-spacing: 0.1em">{entry.data.paperStatus}</span>
-        )}
       </div>
       <h1 class="font-display font-semibold text-[42px] leading-[1.08] m-0 mb-3 text-ink"
           style="letter-spacing: -0.025em; text-wrap: balance">{entry.data.title}</h1>

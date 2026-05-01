@@ -61,7 +61,7 @@ const featured = writing[0];
 const researchStatusLabel = (status: string) =>
   status === 'in-progress' ? 'in progress'
   : status === 'published' ? 'finished'
-  : status === 'upcoming' ? 'upcoming'
+  : status === 'upcoming' ? 'planned'
   : 'contribution';
 const researchStatusTone = (status: string): 'live' | 'planned' | 'soft' =>
   status === 'in-progress' ? 'live'

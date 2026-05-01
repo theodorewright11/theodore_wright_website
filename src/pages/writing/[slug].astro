@@ -33,9 +33,6 @@ const fmt = (date: Date) =>
       <div class="flex items-baseline gap-3 mb-4 flex-wrap">
         <span class="font-mono text-[11px] text-muted">{fmt(entry.data.date)}</span>
         <TierChip tier={entry.data.tier} />
-        {entry.data.tags.map(tag => (
-          <span class="font-mono text-[10px] text-muted" style="letter-spacing: 0.06em">#{tag}</span>
-        ))}
       </div>
       <h1 class="font-display font-semibold text-[42px] leading-[1.08] m-0 text-ink"
           style="letter-spacing: -0.025em; text-wrap: balance">{entry.data.title}</h1>
@@ -47,8 +44,8 @@ const fmt = (date: Date) =>
 
     <hr class="border-0 border-t border-rule mt-14 mb-8" />
     <p class="font-serif italic text-[14px] text-muted m-0">
-      Written by Teddy. Comments welcome at
-      <a href={`mailto:${bio.email}`} class="text-accent">{bio.email}</a>.
+      Comments welcome on
+      <a href={bio.substack} target="_blank" rel="noopener" class="text-accent">Substack</a>.
     </p>
   </article>
 </BaseLayout>
