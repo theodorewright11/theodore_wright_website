@@ -1,0 +1,4 @@
+mode,share_pct,domain_skill_delta,ai_skill_delta,modal_workflow_pattern,inferred_f_richness,inferred_rho_practice,implied_f_times_rho,gate_position,notes,source
+centaur,13,positive,small_or_zero,divide_tasks_human_strategic,0.70,0.80,0.56,above_gate,"Centaur splits work; high f because human verifies AI output; ρ stays high because human keeps doing strategic part. ~13% remainder after self-automator and cyborg shares",randazzo_etal_2025
+cyborg,60,small_positive,positive,fuse_with_AI_full_workflow,0.65,0.65,0.42,above_gate,"Cyborg integrates AI into every step; learns AI deeply; some domain practice retained because still verifying outputs. Roughly 60% per MIT Sloan summary of HBS WP 26-036",randazzo_etal_2025
+self_automator,27,zero,zero,abdicated_one_or_two_interactions,0.20,0.30,0.06,below_gate,"Hands off both what and how; 44% accept AI output with zero modification; no skill development in either domain",randazzo_etal_2025

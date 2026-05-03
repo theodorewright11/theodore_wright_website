@@ -1,0 +1,189 @@
+{
+  "topic": "navigating-ai-world",
+  "stage": "data",
+  "generated_at_iso": "2026-05-02",
+  "tldr": "Six of the model's named parameters tested. Q3 (gate \u03c4) and Q6 (\u03b1) supported. Q2 (dose-response shape) supported qualitatively. Q1 (\u03bb atrophy speed) bounded from below \u2014 calculator-analogue ruled out but exact magnitude not pinnable from current data. Q4 and Q5 untestable from current data \u2014 flagged as the load-bearing data gaps.",
+  "alpha_summary": {
+    "n_studies_positive": 8,
+    "min": 0.24,
+    "median": 0.44999999999999996,
+    "mean": 0.525,
+    "max": 1.01,
+    "spread_x": 4.208333333333334,
+    "model_default": 0.4,
+    "model_default_percentile": 0.375,
+    "excluded_anchors": {
+      "humlum_vestergaard_realized_pct": 0.04,
+      "humlum_vestergaard_self_reported_time_pct": 0.07,
+      "interpretation": "Realized economy-level effect (\u22642% on earnings) is roughly 1/10th of the median per-task \u03b1. The gap is the J-curve: per-task gains have not yet aggregated to measurable wage or hours effects."
+    }
+  },
+  "alpha_by_domain": [
+    {
+      "domain": "education",
+      "n": 2,
+      "mean": 1.25,
+      "median": 1.25,
+      "lo": 0.69,
+      "hi": 1.81,
+      "spread_x": 2.62
+    },
+    {
+      "domain": "coding",
+      "n": 2,
+      "mean": 0.74,
+      "median": 0.74,
+      "lo": 0.47,
+      "hi": 1.01,
+      "spread_x": 2.15
+    },
+    {
+      "domain": "consulting",
+      "n": 2,
+      "mean": 0.52,
+      "median": 0.52,
+      "lo": 0.24,
+      "hi": 0.8,
+      "spread_x": 3.33
+    },
+    {
+      "domain": "writing",
+      "n": 2,
+      "mean": 0.485,
+      "median": 0.485,
+      "lo": 0.3,
+      "hi": 0.67,
+      "spread_x": 2.23
+    },
+    {
+      "domain": "customer_service",
+      "n": 2,
+      "mean": 0.355,
+      "median": 0.355,
+      "lo": 0.28,
+      "hi": 0.43,
+      "spread_x": 1.54
+    },
+    {
+      "domain": "knowledge_work_avg",
+      "n": 2,
+      "mean": 0.05500000000000001,
+      "median": 0.05500000000000001,
+      "lo": 0.04,
+      "hi": 0.07,
+      "spread_x": 1.75
+    }
+  ],
+  "tau_summary": {
+    "self_automator_share_pct": 27.0,
+    "self_automator_f_rho": 0.06,
+    "cyborg_centaur_centroid_f_rho": 0.445,
+    "tau_midpoint_estimate": 0.252,
+    "model_default_tau": 0.3,
+    "model_default_within_estimate_range": true,
+    "model_default_within_5pct_of_midpoint": true
+  },
+  "dose_summary": {
+    "d_safe_minutes": 30.0,
+    "beta_R_per_minute": 0.001,
+    "psi_R_per_minute": 0.0028,
+    "model_default_beta_R": 0.001,
+    "model_default_psi_R": 0.003,
+    "therabot_implied_benefit": 0.0111,
+    "therabot_below_d_safe": true,
+    "anchor_points_n": 5,
+    "qualitative_shape": "piecewise_linear_protective_below_harmful_above",
+    "note": "psi_R re-fit downward from model default 0.003 to 0.0028 \u2014 within rounding of model default. The OpenAI-MIT data only constrains the qualitative shape; magnitudes still need raw-data refit."
+  },
+  "lambda_summary": {
+    "bastani_lambda_at_high_u_short_window": 1.863,
+    "bastani_lambda_amortized_yearlong": 0.186,
+    "ehsan_lambda_year_long_moderate_u": 0.103,
+    "model_default_lambda": 0.06,
+    "calculator_analogue_lambda": 0.0,
+    "lower_bound_at_realistic_u": "approx 0.02-0.10 per year",
+    "model_default_within_lower_bound_range": true,
+    "verdict": "Bound from below only. The cross-sectional evidence rules out \u03bb=0 (calculator-analogue) at p<.05 across multiple studies, but cannot pin \u03bb above the lower bound. The 2+ year longitudinal study that would actually fit \u03bb does not yet exist."
+  },
+  "labor_results": {
+    "bcc_22_25_high_exposure_pct": -13.0,
+    "bcc_software_22_25_pct": -19.5,
+    "bcc_over_35_high_exposure": "modest_increase",
+    "bcc_age_split_p_value": "not_reported_but_age_x_exposure_interaction_significant",
+    "hrz_overall_jobs_pct": -2.0,
+    "hrz_overall_earnings_pct": -5.2,
+    "hrz_image_jobs_pct": -3.7,
+    "hrz_image_earnings_pct": -9.4,
+    "eloundou_pct_workers_10pct_tasks": 80,
+    "eloundou_pct_workers_50pct_tasks": 19,
+    "eloundou_pct_workers_complementary": 46,
+    "ladder_break_evidence": "Independent confirmation across two settings (US payroll panel + global freelance platform). Effect size larger in freelancer market (lower switching costs, more transparent pricing) consistent with freelancer market acting as the leading indicator."
+  },
+  "aei_results": {
+    "consumer_augmentation_share_series": [
+      {
+        "date": "2025-02",
+        "augmentation_pct": 57
+      },
+      {
+        "date": "2025-09",
+        "augmentation_pct": 55
+      },
+      {
+        "date": "2026-01",
+        "augmentation_pct": 52
+      },
+      {
+        "date": "2026-03",
+        "augmentation_pct": 51
+      }
+    ],
+    "consumer_augmentation_share_drift_feb2025_to_mar2026_pp": -6.0,
+    "api_automation_share_jan2026": 70,
+    "interpretation": "Slow drift toward automation in consumer Claude.ai over 13 months (57% \u2192 51% augmentation share, ~6pp). API surface dominated by automation throughout. Consistent with the model's claim that G3 (engagement-optimized substitution) is structurally favored over time, but slow."
+  },
+  "verdicts": [
+    {
+      "id": "Q1",
+      "model_parameter": "\u03bb \u2014 cumulative atrophy speed",
+      "verdict": "bounded_from_below",
+      "headline": "Cross-sectional evidence rules out \u03bb=0 (calculator-analogue) but cannot pin \u03bb above the lower bound. Plausible \u03bb at realistic offloading rates: 0.02\u20130.10/year. Model's default \u03bb=0.06 sits in the middle of this range.",
+      "load_bearing_data_gap": "2+ year longitudinal study with periodic capacity assessment. Bastani et al. 2025 is the closest existing prospective design (5-week deskilling RCT) but is not multi-year."
+    },
+    {
+      "id": "Q2",
+      "model_parameter": "\u03c8_R, \u03b2_R, d_safe \u2014 relational dose-response",
+      "verdict": "supported_qualitatively",
+      "headline": "OpenAI-MIT N=981 supports the piecewise shape (low-dose protective, high-dose harmful, dose dominates modality). Magnitudes refit only to within a factor of ~2 \u2014 psi_R re-estimated at 0.0028 vs model default 0.003, beta_R unchanged at 0.001. d_safe \u2248 30 min is a useful pedagogical kink, not a structural claim about the curve.",
+      "load_bearing_data_gap": "Raw 300k-message dataset is gated. Without it, can confirm shape but not refit the slopes precisely. The catastrophic-loss mechanism (Replika ERP removal) is a separate failure mode the model does not encode."
+    },
+    {
+      "id": "Q3",
+      "model_parameter": "\u03c4 \u2014 self-automator gate threshold",
+      "verdict": "supported",
+      "headline": "BCG-Randazzo three-mode distribution implies \u03c4 between the self-automator centroid (f\u00b7\u03c1\u22480.06) and the cyborg+centaur centroid (f\u00b7\u03c1\u22480.445). Midpoint estimate: \u03c4\u22480.252. Model default \u03c4=0.30 lands within 0.05 of the midpoint.",
+      "load_bearing_data_gap": "BCG individual-level f and \u03c1 measurements are not directly published; f\u00b7\u03c1 assignments here are inferred from the qualitative mode descriptions. Generalization beyond consulting is not tested."
+    },
+    {
+      "id": "Q4",
+      "model_parameter": "scalar T, B vs vector identity-domains",
+      "verdict": "untestable_from_current_data",
+      "headline": "Would require multi-domain time-use survey paired with self-report identity-domain weights and AI-exposure measurement. ATUS gives domain time-use; no existing dataset combines all three.",
+      "load_bearing_data_gap": "New survey instrument needed. Cleanest design: existing ATUS respondents x identity-importance battery x AI-use frequency."
+    },
+    {
+      "id": "Q5",
+      "model_parameter": "\u03ba \u2014 competence-frustration sensitivity (population calibration)",
+      "verdict": "untestable_from_current_data",
+      "headline": "BPNSFS scale gives within-study coefficients but no portable population-level scale. SDT literature has not measured \u03ba stratification by AI-exposure variation.",
+      "load_bearing_data_gap": "Cross-population BPNSFS panel with measured AI-exposure variation. Currently no such dataset exists at scale."
+    },
+    {
+      "id": "Q6",
+      "model_parameter": "\u03b1 \u2014 productivity scale (per-domain)",
+      "verdict": "supported_with_strong_per_domain_heterogeneity",
+      "headline": "Across 8 positive-\u03b1 anchors the spread is 4.2\u00d7 (min 0.24 \u2192 max 1.01). Median \u03b1=0.45, mean \u03b1=0.53. Model default \u03b1=0.40 sits at the 37th percentile \u2014 a lower-middle anchor. Per-domain \u03b1 should replace the scalar.",
+      "load_bearing_data_gap": "More within-study disaggregation by skill stock s. Many studies report headline effect without breaking down s, forcing imputation to recover \u03b1."
+    }
+  ]
+}

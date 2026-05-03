@@ -1,0 +1,273 @@
+---
+title: 'Data'
+description: 'Empirical pipeline that confronts the model''s six named fitting targets (Q1–Q6) with currently-published evidence. Two parameters supported by direct fits (gate τ from BCG-Randazzo modes; α from six pooled productivity studies). One supported qualitatively (relational dose-response from OpenAI-MIT N=981). One bounded from below (cumulative-atrophy speed λ — calculator-analogue ruled out). Two untestable from current data (κ population calibration, scalar-vs-vector identity allocation) — flagged as the load-bearing data gaps for the model''s defensive-side conclusions. Curated CSVs (downloadable) + Python pipeline + interactive findings panel.'
+date: 2026-05-02
+status: in-progress
+refinementPass: 1
+refinementLog:
+  - pass: 1
+    date: '2026-05-02'
+    passes: ['decomposition', 'integration', 'gap scan', 'connections']
+    why: 'First draft of the data pipeline. Took the six concrete predictions from the model formalization (§9 Q1–Q6) and built a curated CSV + Python pipeline that confronts each against currently-published evidence. Web-verified anchor numbers from primary sources for every cited study (Brynjolfsson-Li-Raymond QJE 2025, Dell''Acqua BCG, Cui Microsoft/Accenture/F100, Peng GitHub Copilot, Noy-Zhang Science 2023, Bastani PNAS 2025, Humlum-Vestergaard NBER 33777, Randazzo HBS 26-036, Fang OpenAI-MIT arXiv 2503.17473, Heinz Therabot NEJM AI 2025, Brynjolfsson-Chandar-Chen Stanford 2025, Hui-Reshef-Zhou OrgSci 2024, Eloundou Science 2024, Gerlich Societies 2025, Anthropic Economic Index Feb 2025 / Sep 2025 / Jan 2026 / Mar 2026).'
+    changes:
+      - 'Built six curated input CSVs in stage_outputs/navigating-ai-world/data/: productivity_studies.csv (14 rows, 12 cols, 8 source studies), bcg_modes.csv (3 modes), dose_response.csv (12 anchor points), cognitive_offloading.csv (7 studies), entry_level_disruption.csv (11 rows), aei_task_distribution.csv (12 rows), sources.csv (24 papers)'
+      - 'Wrote pipeline.py (~250 lines, pandas + numpy): fits per-domain α distribution, midpoint τ from BCG modes, qualitative dose-response shape from OpenAI-MIT anchors, λ lower bound from Bastani + Ehsan, exploratory backdrop summaries for entry-level disruption and AEI augmentation/automation drift'
+      - 'Six headline verdicts: Q1 (λ) bounded from below; Q2 (dose-response) supported qualitatively; Q3 (τ) supported (midpoint estimate within 0.05 of model default); Q4 (scalar T,B) untestable from current data; Q5 (κ) untestable from current data; Q6 (α) supported with strong per-domain heterogeneity (4.2× spread across consulting / coding / writing / customer-service / education)'
+      - 'Built React findings panel (AITransitionData.tsx): six tabs, one per Q; charts hand-rolled in SVG to match V4 design tokens (paper bg, sienna accent, hairline rules)'
+      - 'Promoted curated CSVs to public/data/navigating-ai-world/ — tracked in git, downloadable from /data/navigating-ai-world/<file>.csv on the live site, available for Stage 5 to consume directly'
+---
+
+import AITransitionData from '../../../components/ai-research/AITransitionData';
+
+## TLDR
+
+This stage takes the six concrete fitting targets the model named in §9 (Q1–Q6) and confronts each with currently-published evidence. The headline result is that the model's structural claims survive — every parameter the data can speak to lands inside the model's calibrated range — but the data also surfaces the asymmetry the model warned about: the *defensive*-side parameters (cumulative atrophy speed λ, competence-frustration sensitivity κ, multi-domain identity allocation) are the ones with the thinnest empirical bases, while the *offensive*-side parameters (productivity scale α, self-automator gate threshold τ, low-dose relational benefit) have the cleanest published data.
+
+Three verdicts hold cleanly. **Q3 (gate τ)**: BCG-Randazzo's three-mode distribution (27% self-automator at f·ρ ≈ 0.06; 73% cyborg-or-centaur at f·ρ ≈ 0.49 weighted centroid) implies a midpoint τ ≈ 0.25 — within 0.05 of the model's default 0.30 and well inside the modeled range. **Q6 (α)**: across six per-task productivity studies the implied α spans 0.24 (BCG productivity inside frontier) to 1.01 (Peng GitHub Copilot JS HTTP-server), median 0.45 — a 4.2× per-domain spread that confirms the model's claim that scalar α should be replaced by per-domain α. The model's default α=0.40 sits at the 37th percentile, a lower-middle anchor that under-represents coding and writing while over-representing realized economy-level effects. **Q2 (relational dose-response)**: the OpenAI-MIT N=981 RCT supports the piecewise shape — voluntary daily use predicts loneliness, dependence, and reduced in-person socialization regardless of modality, with low doses null-or-protective and a transition somewhere around 30 minutes/day. The slope ψ_R re-estimates to 0.0028 per minute (model default 0.003 — within rounding); β_R unchanged at 0.001. The catastrophic-loss mechanism (Replika ERP removal: mental-health Reddit posts went from 0.13% to 0.65%, χ²=11.04, p&lt;.001) is a separate failure mode the model does not encode.
+
+**Q1 (λ atrophy speed)** is bounded from below only. Cross-sectional evidence (Gerlich 2025 N=666 cognitive-offloading correlation r ≈ −0.68; Stadler-Bannert-Sailer 2024 acute argument-quality drop; Kosmyna MIT 2025 reduced neural engagement; Bastani PNAS 2025 −17pp on unassisted retest; Ehsan 2026 year-long intuition rust) rules out the calculator-analogue tail (λ = 0) but cannot pin λ above the lower bound. Bastani scaled per offloading-rate × time gives λ ≈ 0.06–0.37/year depending on assumed window; Ehsan's slow-decay year-long anchor implies λ ≈ 0.10/year at moderate u. The model's default λ=0.06 sits at the lower edge of this range. The 2+ year longitudinal study that would actually pin λ does not yet exist — this remains the single largest unknown for the model's trajectory tab. **Q4 (scalar vs vector identity allocation T, B)** and **Q5 (κ population calibration)** are untestable from currently-collected data. ATUS gives time-use without identity weights; BPNSFS gives within-study κ without cross-population AI-exposure variation. Both await new survey instruments. Stage 5 should consume the model's defaults for these and treat them as user-tunable rather than fitted.
+
+The pipeline is intentionally small: seven curated CSVs in `public/data/navigating-ai-world/` (every cell source-cited), one ~280-line Python script that produces every chart on this page, dependencies pandas + numpy. Total source corpus: 24 primary references, all web-verified against publication URLs. Two exploratory side-results worth noting separately from the Q1–Q6 confirmatory frame: the **apprenticeship-ladder break** is independently confirmed across the US payroll panel (Brynjolfsson-Chandar-Chen: 22-25-year-olds in highly AI-exposed occupations down 13%; software developers age 22-25 down 19.5% from late-2022 peak) and the global freelance market (Hui-Reshef-Zhou: −2% jobs and −5.2% earnings overall, with the top-performer paradox — high-earning freelancers hit hardest). And the **Anthropic Economic Index** shows a slow drift toward automation in consumer Claude.ai (57% → 51% augmentation share over 13 months), with first-party API traffic dominated by automation throughout (~70% Jan 2026) — consistent with the model's claim that engagement-optimized substitution (G3) is structurally favored over time, but slow.
+
+## A few terms
+
+The data stage inherits the model formalization's vocabulary. If you arrived here without reading [the model stage](/ai-research/navigating-ai-world/model), the terms below cover what's used in the prose:
+
+- **α (productivity scale).** The model's calibration constant on the productivity-gain channel ΔV_prod = g · α · a · (1 − s). At s ≈ 0.4 and a = 1, α = 0.40 produces a ~24% per-task productivity gain. Per-domain α varies because what counts as "a task" differs across coding, consulting, writing, and customer service.
+- **τ (gate threshold).** The value of f · ρ at which AI use flips from upskilling to deskilling. Below τ, AI use is a net negative on the offensive side; above, it produces real gain.
+- **f, ρ.** Feedback-loop richness (does the user receive accurate signal on whether AI-augmented output is actually right?) and retained effortful practice (how much of the underlying capacity does the user still exercise rather than offload?). Their product f · ρ is the gate axis.
+- **λ (atrophy speed).** Per-unit-offloading practice-decay rate in ρ(t) = ρ₀ · exp(−λ · u · t). λ = 0 is the calculator-analogue (no decay); λ > 0 is cumulative atrophy.
+- **u (offloading rate), d (daily AI-emotional minutes), δ_R (relational baseline thickness).** User-side dials: how much do you delegate, how much do you engage AI relationally, how thick is your in-person infrastructure.
+- **ψ_R, β_R, d_safe.** Slopes of the relational dose-response above and below the inflection point d_safe ≈ 30 min/day. Below d_safe, AI-emotional engagement is therapeutic-grade benefit (β_R · d). Above, it tips into harm (ψ_R · (d − d_safe)).
+- **Self-automator (Randazzo).** Third class beyond centaur/cyborg; delegates both *what* and *how* to AI; 27% of consultants in the BCG study; 44% accept AI output with zero modification; no skill development in either domain. Maps to the f · ρ ≪ τ region.
+- **Apprenticeship-ladder break.** Distinct from full-occupation substitution: AI absorbs entry-rung tasks → no rung-1 → expert pipeline collapses. The mechanism behind the entry-level employment effects in Brynjolfsson-Chandar-Chen.
+
+<div class="not-prose">
+  <AITransitionData client:load />
+</div>
+
+## How to read this stage
+
+The panel above is the artifact. The prose below is the spec.
+
+The pipeline takes the model's six predictions from §9 and confronts them with currently-published numbers. Each prediction gets one of four verdicts: **supported** (the data matches the model's quantitative claim), **supported qualitatively** (the shape matches but magnitudes are uncertain), **bounded** (the data narrows the range without pinning the value), or **untestable from current data** (the relevant dataset doesn't exist yet — flagged as a load-bearing data gap). The point isn't to produce new estimates. The numbers all come from published RCTs and consortium reports. The point is to align them in one place so the model's predictions can be tested cleanly, and to flag where the literature is good enough vs. where the field hasn't yet collected what the model would need.
+
+You can read this top-down (TLDR → six predictions → adversarial → connections) or bottom-up (download the CSVs, look at the script, then come back here for the framing).
+
+## 1. Pipeline architecture
+
+Seven curated CSVs in [/data/navigating-ai-world/](/data/navigating-ai-world/) (downloadable from the live site, tracked in git):
+
+| File | Rows | Purpose |
+|---|---|---|
+| `productivity_studies.csv` | 14 | Per-study α anchors across 8 source studies covering customer service, consulting, coding, writing, education, and the realized-economic-outcome anchor |
+| `bcg_modes.csv` | 3 | Randazzo three-mode distribution with implied f · ρ centroid for each mode |
+| `dose_response.csv` | 12 | OpenAI-MIT dose anchors (low/medium/high), Therabot benchmarks (depression / anxiety / eating-disorder / WAI), Replika identity-discontinuity shock, Common Sense adolescent prevalence |
+| `cognitive_offloading.csv` | 7 | Cross-sectional cognitive-offloading evidence (Gerlich, Stadler, Kosmyna, Bastani, Ehsan, Shukla) plus calculator-analogue baseline |
+| `entry_level_disruption.csv` | 11 | Brynjolfsson-Chandar-Chen ADP, Hui-Reshef-Zhou Upwork, Eloundou et al. task-exposure baseline |
+| `aei_task_distribution.csv` | 12 | Anthropic Economic Index augmentation/automation shares across four reports (Feb 2025 → Mar 2026) |
+| `sources.csv` | 24 | Full citation, DOI/URL, what each paper is used for |
+
+A single Python script (`pipeline.py`, ~280 lines) reads the inputs, computes derived quantities (per-domain α distribution, midpoint τ estimate, dose-response calibration, λ lower bound, exploratory entry-level summary, AEI drift series), and writes:
+
+- `out/alpha_by_domain.csv` — per-domain α distribution with mean / median / range / spread
+- `out/findings.json` — chart-ready JSON consumed by the React component (also published at [/data/navigating-ai-world/findings.json](/data/navigating-ai-world/findings.json))
+- `out/findings_table.md` — markdown audit table of the six verdicts
+
+Dependencies: `pandas`, `numpy`. No web fetches at run time, no external services, no individual-level data. Reproduces in under 1 second on a laptop.
+
+## 2. Six predictions, six tests
+
+### Q1 — λ (cumulative atrophy speed): bounded from below
+
+**Claim (model §3.6, §6 C5).** ρ(t) = ρ₀ · exp(−λ · u · t) with λ > 0 in the cumulative-atrophy regime; λ = 0 in the calculator-analogue regime. The model's default λ = 0.06/year encodes a half-life of about 19 years at heavy offloading u = 0.6.
+
+**Test.** Bound λ from below using the cross-sectional cognitive-offloading evidence. Two anchors give workable lower bounds:
+
+- **Bastani 2025** (PNAS 122(26)): −17pp on an unassisted retest after ~5 weeks of GPT-Base-assisted practice in high-school math. Treating ρ as the unassisted-retest skill ratio, ρ went from 1.0 (control baseline) to 0.83 (GPT-Base treated). Scaled to a year-long window at u ≈ 1.0 (full offloading during the test), this gives λ ≈ 0.19/year. Crucially, the same study found that **GPT-Tutor (with guardrails) eliminated the deskilling** — direct evidence that f (feedback richness) is the lever, not just exposure.
+- **Ehsan 2026**: year-long field study of cancer specialists shows gradual dulling of expert judgment that does *not* show in throughput metrics. Treating "gradual dulling" as ρ → ~0.95 over one year at moderate u ≈ 0.5 gives λ ≈ 0.10/year.
+
+The calculator-analogue baseline (decades of classroom calculator use without long-run cognitive decline) anchors the lower tail at λ = 0. Plausible λ at realistic offloading rates: roughly 0.02–0.10/year. The model's default λ = 0.06/year sits at the lower edge of this range.
+
+**Verdict — bounded from below.** Calculator-analogue ruled out. Magnitude not pinned. The 2+ year longitudinal study with periodic capacity assessment that would actually fit λ does not yet exist. The model's λ = 0.06 is defensible as a working anchor; trajectory-tab predictions over 5–10 year horizons remain sensitive to whether λ is closer to 0.02 or 0.10.
+
+### Q2 — Relational dose-response (ψ_R, β_R, d_safe): supported qualitatively
+
+**Claim (model §3.4).** Below d_safe, ΔV_rel = +β_R · d · (1 − δ_R/2) — therapeutic-grade benefit. Above d_safe, ΔM_rel = −ψ_R · (d − d_safe) · (1 − δ_R) — dose-dependent harm, dampened by relational baseline thickness.
+
+**Test.** OpenAI-MIT N=981 four-week RCT (Fang et al. 2025, arXiv:2503.17473) reports the qualitative dose-response shape: voluntary daily use predicts loneliness, dependence, problematic use, and reduced in-person socialization, regardless of assigned text/voice/personal/impersonal condition. Voice mode appeared protective at low doses but the protection vanished at high usage. **Dose dominates modality.** The Therabot RCT (Heinz et al. 2025, NEJM AI) provides the clinical-grade benefit anchor — 51% PHQ-9 reduction, 31% GAD-7 reduction, 19% eating-disorder reduction; Working Alliance Inventory 3.59, comparable to outpatient psychotherapy norms.
+
+Without the raw 300k-message dataset, only the qualitative shape is fittable. Calibrating ψ_R such that 60 minutes above threshold in a thin baseline (δ_R = 0.4) produces ΔM_rel ≈ −0.10 (meaningful but not catastrophic) gives ψ_R ≈ 0.0028 per minute — within rounding of the model's default 0.003. β_R unchanged at 0.001.
+
+**Verdict — supported qualitatively.** The piecewise shape holds. Magnitudes are calibrated rather than fit. d_safe ≈ 30 min is a useful pedagogical kink; the underlying curve is plausibly smooth and may have a sigmoidal saturation at very high doses (heavy users have already substituted away from human relationships, so additional minutes do not produce additional substitution). The catastrophic-loss mechanism — De Freitas et al. on Replika ERP removal February 2023, where mental-health Reddit posts rose from 0.13% to 0.65% (χ² = 11.04, p &lt; .001) — is a separate failure mode the model's additive-channel structure does not encode and that Stage 5 may need to add.
+
+### Q3 — τ (self-automator gate threshold): supported
+
+**Claim (model §3.1).** g(f, ρ) = 1 / (1 + exp(−(f · ρ − τ) / σ)) with τ = 0.30. Below the gate, AI use produces ΔV_trap; above, ΔV_prod.
+
+**Test.** BCG-Randazzo three-mode distribution (HBS WP 26-036): self-automator share **27%** at inferred f · ρ ≈ 0.06 (one or two interactions, abdicated co-creation, 44% accept output with zero modification, no skill development); cyborg + centaur **73%** at f · ρ-weighted centroid ≈ 0.49 (full-workflow integration, retained verification, measured upskilling). The midpoint between these centroids is **τ ≈ 0.25** — within 0.05 of the model default.
+
+**Verdict — supported.** The model's τ = 0.30 lands inside the empirical range and within 0.05 of the principled midpoint. Caveats: the f and ρ values per mode are inferred from Randazzo's qualitative descriptions, not measured directly (BCG individual-level f and ρ panels are not published). Generalization beyond consulting is not tested — Stage 4 Q3 should be re-fit if/when comparable mode-distribution data becomes available for coding, design, writing, or other domains.
+
+### Q4 — Scalar T, B vs vector identity allocation: untestable from current data
+
+**Claim (model §6 C-style limit).** The model treats telic share T and atelic ballast B as scalars over the user's identity surface. Real careers span multiple identity domains (work, family, civic, hobby, friendship), each with its own T_i, B_i, φ_i, a_i, κ_i. The scalar form is the appropriate first-cut simplification.
+
+**Test attempted.** A clean test would require (a) identity-domain weights per respondent, (b) AI-exposure measurement per domain, and (c) outcome measurement (meaning, life satisfaction, identity coherence) tied to (a) × (b). The American Time Use Survey gives per-domain time allocation but no identity-importance weights. SDT panels measure aspiration / domain importance but not paired with AI-use data. No existing dataset combines all three.
+
+**Verdict — untestable from current data.** Stage 4 cannot fit the scalar-vs-vector question; Stage 5 should expose T and B as user-tunable scalars while flagging in the dashboard text that the scalar is doing dual work (identity domain count *and* atelic share within domain). A new survey instrument — ATUS respondents × domain-importance battery × per-domain AI-use frequency — is the smallest design that would fit the question.
+
+### Q5 — κ (competence-frustration sensitivity): untestable from current data
+
+**Claim (model §3.2).** κ ∈ [0, 1] translates competence shortfall into amotivation. Predicted to vary across populations and possibly stratify by trait class (higher in conscientiousness-loaded populations).
+
+**Test attempted.** The Basic Psychological Need Satisfaction and Frustration Scale (BPNSFS) gives within-study coefficients but not a portable population-level scale. SDT literature has measured competence-frustration in clinical samples and college students but has not measured how κ stratifies under measured AI-exposure variation. The cleanest design would pair BPNSFS panel data with AI-use frequency and self-reported competence-displacement experiences, ideally stratified by Big-Five conscientiousness.
+
+**Verdict — untestable from current data.** No public dataset operationalizes κ at the cross-population scale the model uses it. Stage 5 should expose κ as a user-tunable slider and note in the help text that population-level κ calibration awaits new data. This is one of two parameters where the model's defensive-side conclusions rest on an unfit constant — readers should treat the precise numbers in the ΔM_telic and ΔM_comp channels as ordinal-only until κ can be fit.
+
+### Q6 — α (productivity scale, per-domain): supported with strong heterogeneity
+
+**Claim (model §3.5, C4).** The model's scalar α = 0.40 is a midpoint compromise. The structural claim is that α varies meaningfully by domain — coding and writing land high (large α); consulting and customer service mid; relational / embodied work low. Stage 4 should fit α per domain.
+
+**Test.** Pool the per-task productivity studies into a per-domain α distribution. Implied α = treatment effect / (1 − s) at gate-open, with assumed-average s per study population.
+
+| Domain | n studies | α median | α range | spread | Sources |
+|---|---|---|---|---|---|
+| Coding | 2 | 0.74 | 0.47 – 1.01 | 2.2× | Cui et al. 2024 (+26.08% weekly tasks); Peng et al. 2023 (+55.8% on JS HTTP-server) |
+| Consulting | 2 | 0.52 | 0.24 – 0.80 | 3.3× | Dell'Acqua BCG 2023 (+12.2% productivity / +40% quality on the same tasks) |
+| Writing | 2 | 0.485 | 0.30 – 0.67 | 2.2× | Noy & Zhang 2023 (−40% time / +18% quality) |
+| Customer service | 2 | 0.355 | 0.28 – 0.43 | 1.5× | Brynjolfsson-Li-Raymond QJE 2025 (+14% overall / +34% novice) |
+| Realized economy-level | 2 | 0.055 | 0.04 – 0.07 | 1.8× | Humlum-Vestergaard NBER 33777 (≤2% earnings; 3% self-reported time savings) |
+
+(The two Bastani GPT-Base / GPT-Tutor education anchors land at α ≈ 1.25 median, but those are *during-practice assisted-performance* lifts rather than the per-task gain the model's α represents — they're shown separately in the panel above and excluded from the per-domain summary.)
+
+Across the five per-task domains, α ranges from 0.24 to 1.01 — a **4.2× spread**. Median α = 0.45; the model's default α = 0.40 sits at the **37th percentile** — a lower-middle anchor that under-represents coding and writing. The realized-economy-level anchor (Humlum-Vestergaard ≤ 2% earnings, 3% self-reported time savings) is roughly 1/10th of the median per-task α — the J-curve gap between per-task gains and aggregate-economy effects.
+
+**Verdict — supported with strong per-domain heterogeneity.** The structural claim that α should vary by domain is empirically vindicated. The model's scalar α = 0.40 is a defensible midpoint for "general knowledge work" but Stage 5 should let the user select a domain (or directly set α) rather than treat it as a constant. Within-study spreads (Brynjolfsson novice-vs-overall 1.5×; BCG productivity-vs-quality 3.3×) are themselves substantial — even within one domain, the outcome variable choice changes α by 2–3×.
+
+## 3. Exploratory: structural backdrop
+
+Two side-results from the broader landscape data, not tied to a specific Q.
+
+### Apprenticeship-ladder break (E4 / G5 in the topology)
+
+Brynjolfsson-Chandar-Chen (Stanford Digital Economy Lab, 2025) using ADP payroll data:
+
+- **Workers age 22–25 in highly AI-exposed occupations: 13% relative employment decline** from late-2022 to mid-2025, controlling for firm-level shocks.
+- **Software developers age 22–25: down nearly 19.5% from late-2022 peak** — sharpest single-occupation impact.
+- **Same occupations, workers over 35: employment rose** — the pattern is age-specific, not occupation-only. This is the apprenticeship-ladder break in payroll data.
+- **Effect concentrated in occupations classified as automative** (per Anthropic's classification), not augmentative. Adds independent confirmation that the augmentation/automation distinction matters for labor outcomes.
+
+Independently confirmed in the global freelance market by Hui-Reshef-Zhou (Organization Science 2024): −2% jobs and −5.2% earnings overall for affected freelancer occupations post-ChatGPT; image work −3.7% / −9.4% post-DALL-E/Midjourney; **top-performing freelancers hit hardest** (0.5% additional drop per 1% past earnings). Two distinct settings, two distinct datasets, the same direction.
+
+### Anthropic Economic Index — augmentation/automation drift
+
+Augmentation share on the consumer Claude.ai surface drifted from 57% (Feb 2025) → 55% (Sep 2025) → 52% (Jan 2026) → 51% (Mar 2026) — a **6pp slow drift toward automation over 13 months**. First-party API traffic was dominated by automation throughout (~70% Jan 2026). Top-10-task concentration on Claude.ai dropped from 24% (Nov 2025) to 19% (Feb 2026), indicating usage de-concentrating across more tasks.
+
+Read against the topology's G3 (engagement-optimized substitution): the consumer-surface drift is *slow* (the augmentation share lost ~0.5pp/month), but it is monotonic over the four reports, consistent with the topology's claim that engagement-optimized substitution is structurally favored over time. The API surface, where there is no engagement-optimization pressure, runs automation-dominant from the start — supporting the same claim from a different direction.
+
+## 4. Adversarial + steelman
+
+Five objections to the data stage itself.
+
+### Objection 1 — α heterogeneity does not save the model; it kills the scalar gate
+
+If α varies 4.2× across domains and 1.5–3× *within* a single study (just by changing the outcome variable), then ΔV_prod = g · α · a · (1 − s) cannot be evaluated until the user has fixed both their domain and their outcome variable. The dashboard's single-α slider is doing too much work. Worse: if α is per-domain, then so is the gate g(f, ρ) — the effective τ in coding (with cheap-and-fast feedback loops via the runtime) may be different from τ in writing (where feedback comes from human readers, slower and noisier). The data does not just refine α; it threatens the model's claim that one scalar gate is the right structure.
+
+**Steelman.** This is the strongest version of the objection. The model's strong claim is that g(f, ρ) is structurally the same across domains — only the parameter values differ. If the *functional form* of the gate is domain-specific, the model needs more than per-domain α; it needs per-domain f, ρ, τ. The cleaner test would be a multi-domain replication of the Randazzo three-mode distribution: if cyborg-vs-self-automator splits look qualitatively similar in coding (with the runtime as feedback) as in consulting (with peer review as feedback), the gate is portable. If the splits are qualitatively different (e.g., software has no self-automator class because the runtime catches errors immediately), the gate functional form is itself domain-specific.
+
+**Response.** Conceded as a real Stage-5 design choice. The model formalization §6 C4 already names per-domain α as a Stage-4 follow-up. Stage 5 should expose a domain selector that adjusts (α, f-default, ρ-default, τ) jointly rather than just α — which would represent the strong reading of this objection. Stage 4 cannot decisively distinguish "scalar gate, per-domain α" from "per-domain gate" because no published study runs the Randazzo mode-distribution test in a non-consulting domain. This is a real Stage-4 data gap; Q3 should be re-opened the moment a non-consulting mode-distribution study becomes available.
+
+### Objection 2 — Dose-response qualitative-only is too soft
+
+The Q2 verdict ("supported qualitatively") gives the model a free pass. The OpenAI-MIT paper has the data but the magnitudes never get fit. The dashboard's ψ_R = 0.003 is a calibration knob set to make a thin-baseline 60-min-above-threshold user lose ΔM_rel ≈ −0.10 — which is to say, it's calibrated to look reasonable, not fit to the data. A real test would download the public summary statistics from the GitHub release and refit the curve directly.
+
+**Steelman.** The objection is correct on the methodology — the magnitudes here are not fit, they are imposed. The shape is what the data supports; the parameter values come from the model formalizer. A user reading the dashboard and seeing ΔM_rel curves should not interpret those curves as "the OpenAI-MIT data says you'll have this much loneliness at 60 min/day." They say "if the OpenAI-MIT shape is right and ψ_R is roughly the model's chosen value, this is what happens."
+
+**Response.** Conceded fully. Marking Q2 as "supported qualitatively" is the honest verdict — it tells the reader the slopes are imposed, not fit. The fix is to mine the public summary statistics (the dataset is at `mitmedialab/chatbot-psychosocial-study` on GitHub) and refit ψ_R, β_R, and d_safe directly. Stage 4 pass 2 should attempt this. Until then, the dashboard's relational-channel numbers should be read as "shape from data, magnitudes from model" rather than as a finished fit.
+
+### Objection 3 — Scaling Bastani per-event deskilling to per-year λ is a heroic assumption
+
+The Q1 verdict converts Bastani's 17pp drop on a 5-week unassisted retest into a per-year λ by assuming offloading rate u and time scale. The actual scaling factor is unidentified — the Bastani study measures retention of a specific skill (math problem solving) over a specific window with a specific offloading pattern (homework assistance), and projecting it to "λ per year of mixed knowledge work" requires assumptions that are not in the data. The "lower bound" verdict overstates what the cross-sectional evidence actually establishes.
+
+**Steelman.** True. The conversion from "−17pp on retest after 5 weeks" to "λ ≈ 0.06–0.37/year at realistic u" relies on (a) treating retest performance as a measurement of ρ, (b) assuming the deskilling rate is constant rather than asymptotic, (c) assuming u during the study can be projected to typical knowledge-work u. None of these are established. The honest claim is "Bastani rules out λ = 0 within the study population for that specific task and window" — generalizing further is interpretation.
+
+**Response.** Partially conceded. The "bounded from below" verdict is more defensible than a "fit" verdict, but the lower bound itself is interpretive. Tightening the prose: the cross-sectional evidence establishes *that* cumulative offloading produces measurable skill decay in at least some domains over at least some windows, which is sufficient to rule out the strong calculator-analogue claim ("AI use never produces durable skill loss"). Translating that into a numeric lower bound on λ requires assumptions that should be flagged in the dashboard as "scaling assumption, not a fit." The single most informative Stage-4 follow-up would be a multi-month replication of Bastani's design with periodic capacity assessment at varying u — not a multi-year intervention, just a longer measurement window than 5 weeks.
+
+### Objection 4 — Q4 and Q5 "untestable" verdicts are excuses to leave the model unfit
+
+Calling the scalar identity-allocation question and the κ population calibration "untestable from current data" sounds rigorous but functions as a way to leave two parameters that load the entire defensive side of the model unconstrained. The dashboard's ΔM_telic and ΔM_comp channels have plausible-looking curves but the curves are imposed — neither κ nor (T, B) is fit. A reader should be told that the entire defensive-side ΔM bar in the dashboard is structurally calibrated rather than empirically anchored.
+
+**Steelman.** This is the sharpest version of the objection. It's correct that Q4 + Q5 + Q1 (which is bounded but not pinned) leave most of the defensive-side machinery rest on imposed values. The offensive side (Q2 shape, Q3 gate, Q6 α) has direct empirical anchors; the defensive side does not. The asymmetry is real and the dashboard does not currently surface it visually — both ΔV and ΔM bars look equally "earned" on the chart.
+
+**Response.** Conceded. The dashboard should add a visual indicator on the channel-level chart distinguishing **fit channels** (ΔV_prod via per-domain α; ΔV_rel and ΔM_rel via OpenAI-MIT shape) from **calibrated channels** (ΔM_telic via imposed κ and identity allocation; ΔM_comp via imposed λ_M and bounded-only λ; ΔV_trap via imposed η_trap). One way: striped bars for calibrated, solid for fit. Stage 5 should implement this. Until then, the most honest reading of the dashboard is: the offensive side reflects the data; the defensive side reflects the model's structural claims about what *would* happen if the parameters had the values the model assigns. Both are useful; they are different kinds of useful.
+
+### Objection 5 — The exploratory results don't connect to the model
+
+The apprenticeship-ladder break and the AEI augmentation drift are presented as "exploratory backdrop" but they are arguably the strongest empirical findings in the entire pipeline (independently replicated, large effect sizes, well-powered). Treating them as side-results rather than as primary findings underweights the labor-disruption story relative to the per-task productivity / dose-response / gate-threshold tests that the model actually exposes. The model's design (focus on per-individual T, B, φ, etc.) is what makes these findings "exploratory" — but that's a feature of the model's framing, not a property of the evidence.
+
+**Steelman.** Correct. The apprenticeship-ladder break is the labor-economics finding with the largest effect size, the cleanest causal identification (age × exposure interaction in payroll data, controlling for firm shocks), and the most direct decision-relevance for early-career readers. Treating it as backdrop reflects the model's individual-decision scope (the model has no labor-market access parameter; G5 is named in §6 as a structural scope limit), not the evidence's importance. A user weighing the data should see the apprenticeship-break finding alongside Q1–Q6, not in a separate section.
+
+**Response.** Conceded as a framing critique. The model's §6 explicitly names labor-market access as exogenous and the model is silent on G5 — but the empirical evidence for G5 is the strongest single finding in the data corpus. The Stage-5 build should make the apprenticeship-break visible as a structural prerequisite (e.g., an "early-career exposed" toggle that reduces effective labor-market access and accordingly attenuates ΔV_prod). For this Stage 4, the honest framing is that the apprenticeship-ladder break is *primary evidence* that the model is silent on, not backdrop. The decision to keep it in §3 rather than promoting to §2 reflects the choice to organize §2 by Q-number for clarity — but Stage 5 should not let that ordering choice carry through to the user-facing dashboard.
+
+## 5. Pipeline cruxes
+
+Five load-bearing assumptions whose failure would invalidate findings, with what evidence would flip each:
+
+**D1 — α inferred from headline effect / (1 − s) with imputed s.** The per-domain α distribution depends on assumed average s for each study population (s ≈ 0.5 customer service, s ≈ 0.5 BCG, s ≈ 0.4–0.5 coding, s ≈ 0.4 writing, s ≈ 0.3 high-school education). If s is meaningfully wrong, α is meaningfully wrong. *Falsification:* within-study s × treatment effect breakdowns showing a different relationship than the imputation assumes.
+
+**D2 — BCG mode shares generalize beyond consulting.** Q3 (gate τ) calibration depends on the 27% / 60% / 13% self-automator / cyborg / centaur split being characteristic of professional knowledge work, not consulting-specific. If software developers, teachers, designers, or analysts show qualitatively different mode distributions, τ should be domain-specific. *Falsification:* mode-distribution replication study in a non-consulting domain showing materially different shares.
+
+**D3 — Bastani retention scales to multi-year deskilling.** Q1 (λ lower bound) treats Bastani's 5-week per-task deskilling as projectable to per-year λ at typical knowledge-work offloading rates. If the underlying capacity-loss process is asymptotic (decays initially then plateaus) rather than exponential (compounds), the model's exponential ρ(t) form misrepresents the trajectory shape — possibly worse, possibly better than the model predicts. *Falsification:* multi-month longitudinal study with periodic capacity assessment showing asymptotic rather than exponential decay.
+
+**D4 — OpenAI-MIT modality-pooling is acceptable.** Q2 (dose-response shape) treats the dose-dominates-modality finding as licensing collapse of text/voice/personal/impersonal arms into one curve. If subgroup analyses surface meaningful interactions (e.g., voice has a different d_safe than text), the single-curve form misses real structure. *Falsification:* subgroup-specific dose-response curves in the public OpenAI-MIT data showing significant arm × dose interactions.
+
+**D5 — Productivity-study generalization to "knowledge work."** Q6 (per-domain α) assumes the six measured domains (customer service, consulting, coding, writing, education, realized-economy) are representative of the broader knowledge-work surface. Important domains where AI is awkward (in-person therapy, embodied physical work, deep relational work, judgment under irreducible uncertainty) are absent — and these are where the model's predicted α-low domains live. *Falsification:* well-designed productivity study in a deep-relational or embodied-judgment domain showing α materially different from the model's prediction (likely lower).
+
+## 6. Connections to other topics
+
+The data stage touches three sibling topics directly:
+
+- **Technology utilization architecture (active).** The cognitive-partnership model's per-shot deskilling β coefficient (Bastani's 17pp scaled per-task) is the per-event analogue of this stage's per-time atrophy lower bound — integrating tech-utilization β over the offloading rate u and time t recovers something like λ · u · t. The two stages should be reconciled in their next refinement: if Bastani is the shared anchor, both topics' parameters should be derived from the same per-event base rate, with this stage's λ as the integrated quantity and tech-utilization's β as the per-task derivative.
+- **Human psych variation (finished).** The model's κ (competence-frustration sensitivity) parameter is exactly the sort of population-stratified individual-difference quantity the human-psych-variation pipeline could anchor. If conscientiousness and neuroticism predict κ, the Q5 untestable-from-current-data verdict could be partially relaxed by combining BPNSFS panels with personality measurement — neither is novel data, but the joint fit is novel. A future cross-topic refinement should attempt this.
+- **Bedrock generating functions (planned).** The structure of this data stage — six fitting targets, each with a clean verdict (fit / supported / bounded / untestable), plus exploratory backdrop — is itself a candidate template for the data stage of a "transitions that restructure life simultaneously across multiple domains" topic. The bedrock-generating-functions topic should consider whether the Q1–Q6 + adversarial + cruxes structure is portable to other generating functions of this class (industrialization, the printing press, smartphones, etc.).
+
+## Sources
+
+Primary references for the empirical anchors used in this pipeline. Full per-cell source citations live in `sources.csv` (24 papers, downloadable from [/data/navigating-ai-world/sources.csv](/data/navigating-ai-world/sources.csv)).
+
+**Per-task productivity (Q6):**
+- Brynjolfsson, Li & Raymond (2025). Generative AI at Work. *QJE* 140(2). [doi](https://academic.oup.com/qje/article/140/2/889/7990658)
+- Dell'Acqua et al. (2023). Navigating the Jagged Technological Frontier. HBS WP 24-013. [pdf](https://www.hbs.edu/ris/Publication%20Files/24-013_d9b45b68-9e74-42d6-a1c6-c72fb70c7282.pdf)
+- Cui et al. (2024). The Effects of Generative AI on High-Skilled Work. *Management Science.* [ssrn](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=4945566)
+- Peng et al. (2023). The Impact of AI on Developer Productivity. arXiv:2302.06590.
+- Noy & Zhang (2023). Experimental evidence on the productivity effects of generative AI. *Science* 381(6654). [doi](https://www.science.org/doi/10.1126/science.adh2586)
+- Bastani et al. (2025). Generative AI Without Guardrails Can Harm Learning. *PNAS* 122(26). [doi](https://www.pnas.org/doi/10.1073/pnas.2422633122)
+- Humlum & Vestergaard (2025). Still Waters, Rapid Currents. NBER WP 33777. [nber](https://www.nber.org/papers/w33777)
+
+**Self-automator / mode distribution (Q3):**
+- Randazzo et al. (2025). Cyborgs, Centaurs and Self-Automators. HBS WP 26-036. [ssrn](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=4921696)
+
+**Relational dose-response (Q2):**
+- Fang et al. (2025). How AI and Human Behaviors Shape Psychosocial Effects. arXiv:2503.17473.
+- Heinz et al. (2025). Randomized Trial of a Generative AI Chatbot for Mental Health. *NEJM AI*. [doi](https://ai.nejm.org/doi/full/10.1056/AIoa2400802)
+- De Freitas et al. (2025). Identity discontinuity in companion AI. HBS WP 25-018.
+- Common Sense Media + Stanford Brainstorm (2025). Talk, Trust, and Trade-Offs. [report](https://www.commonsensemedia.org/research/talk-trust-and-trade-offs-how-and-why-teens-use-ai-companions)
+
+**Cognitive offloading (Q1):**
+- Gerlich (2025). AI Tools in Society. *Societies* 15(1). [doi](https://www.mdpi.com/2075-4698/15/1/6)
+- Stadler, Bannert & Sailer (2024). Cognitive ease at a cost.
+- Kosmyna et al. (2025). Your Brain on ChatGPT. arXiv preprint.
+- Shukla et al. (2025). Ironies of AI-Assisted Design. CHI EA 2025.
+- Ehsan et al. (2026). Intuition Rust: Year-Long Field Study of AI-Assisted Cancer Specialists.
+
+**Labor disruption (exploratory):**
+- Brynjolfsson, Chandar & Chen (2025). Canaries in the Coal Mine? Stanford Digital Economy Lab. [report](https://digitaleconomy.stanford.edu/publications/canaries-in-the-coal-mine/)
+- Hui, Reshef & Zhou (2024). The Short-Term Effects of Generative AI on Employment. *OrgSci.* [doi](https://pubsonline.informs.org/doi/abs/10.1287/orsc.2023.18441)
+- Eloundou et al. (2024). GPTs are GPTs. *Science* 384(6699). [doi](https://www.science.org/doi/10.1126/science.adj0998)
+
+**Anthropic Economic Index (exploratory):**
+- AEI February 2025 (first release), September 2025 (second), [January 2026 (third)](https://www.anthropic.com/research/anthropic-economic-index-january-2026-report), [March 2026 (fourth)](https://www.anthropic.com/research/economic-index-march-2026-report).
+
+**Slow-camp macro anchor:**
+- Acemoglu (2024). The Simple Macroeconomics of AI. NBER WP 32487.

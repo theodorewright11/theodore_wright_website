@@ -1,0 +1,13 @@
+report_key,date,surface,interaction_class,share_pct,notes,source
+aei_feb_2025_augmentation,2025-02,claude_ai_consumer,augmentation,57,"First AEI report. Augmentation slightly leads automation in consumer-facing surface",anthropic_economic_index_2025_feb
+aei_feb_2025_automation,2025-02,claude_ai_consumer,automation,43,"Complement of above",anthropic_economic_index_2025_feb
+aei_sep_2025_augmentation,2025-09,claude_ai_consumer,augmentation,55,"Slight drift toward automation in consumer Claude.ai over the year",anthropic_economic_index_2025_sep
+aei_sep_2025_automation,2025-09,claude_ai_consumer,automation,45,"",anthropic_economic_index_2025_sep
+aei_jan_2026_augmentation,2026-01,claude_ai_consumer,augmentation,52,"Augmentation patterns just over half of conversations on Claude.ai",anthropic_economic_index_2026_jan
+aei_jan_2026_automation,2026-01,claude_ai_consumer,automation,48,"",anthropic_economic_index_2026_jan
+aei_jan_2026_api_augmentation,2026-01,first_party_api,augmentation,30,"In 1P API traffic automation dominates — programmatic agentic use",anthropic_economic_index_2026_jan
+aei_jan_2026_api_automation,2026-01,first_party_api,automation,70,"Migration of coding tasks toward more automated workflows",anthropic_economic_index_2026_jan
+aei_mar_2026_augmentation,2026-03,claude_ai_consumer,augmentation,51,"Augmentation share continues slow drift downward in consumer surface",anthropic_economic_index_2026_mar
+aei_mar_2026_automation,2026-03,claude_ai_consumer,automation,49,"",anthropic_economic_index_2026_mar
+aei_top10_concentration_nov_2025,2025-11,claude_ai_consumer,top_10_task_share,24,"Top 10 tasks made up 24% of all traffic — concentration measure",anthropic_economic_index_2026_jan
+aei_top10_concentration_feb_2026,2026-02,claude_ai_consumer,top_10_task_share,19,"Down from 24% to 19% — usage de-concentrating across more tasks",anthropic_economic_index_2026_jan
