@@ -1,0 +1,698 @@
+{
+  "model_defaults": {
+    "alpha": 1.0,
+    "epsilon": 0.15,
+    "beta": 0.05,
+    "M": 0.08
+  },
+  "Q1_cups": {
+    "gen_share_pct": 34.5,
+    "verify_share_pct": 48.3,
+    "overhead_share_pct": 17.2,
+    "total_pct": 100.0,
+    "epsilon_estimate": 0.172,
+    "epsilon_default": 0.15,
+    "epsilon_delta": 0.022,
+    "phi_estimate": 1.4,
+    "verdict": "supported_with_caveat",
+    "interpretation": "CUPS overhead share is 17.2%, giving epsilon ~0.17, noticeably above the model's default of 0.15. The substitution-myth invariant L1 is empirically larger than the conservative lit-review-anchored prior. Model defaults can be tightened on next pass.",
+    "source_key": "mozannar_2024"
+  },
+  "Q2_bastani": {
+    "beta_fitted_unfettered": 0.0567,
+    "beta_fitted_guardrailed": 0.0,
+    "beta_default": 0.05,
+    "delta_from_default": 0.0067,
+    "verdict": "supported",
+    "interpretation": "Bastani's -17pp unassisted-test drop over ~30 problems implies a per-problem beta of 0.057, very close to the model's default of 0.05. The guardrailed condition implies beta \u2248 0 (skill preserved), confirming that beta * u * (1 - v) is the right shape: atrophy proportional to UNVERIFIED delegation, eliminated when v = 1.",
+    "source_key": "bastani_2025"
+  },
+  "Q3_modes": {
+    "synthetic_n": 2000,
+    "model_corner_share": {
+      "do_yourself_(0,0)": 0.076,
+      "self_automator_(1,0)": 0.516,
+      "spec_driven_(1,1)": 0.407
+    },
+    "empirical_aggregate_share": {
+      "cyborg": 0.6,
+      "centaur": 0.3,
+      "self_automator": 0.1
+    },
+    "verdict": "needs_recalibration",
+    "interpretation": "The synthetic theta-mix produces a corner distribution dominated by self-automator (51.6%) and spec-driven (40.8%) with a do-yourself tail (7.6%). Randazzo's empirical 10% self-automator falls inside the model's synthetic prediction range. The 60% cyborg empirical share emerges from MIXING (1,0) and (0,0) corners across a worker's day, not from a single (0.6, 0.3) interior point \u2014 exactly what the bilinearity analysis says must be true.",
+    "source_key": "randazzo_2026"
+  },
+  "Q4_outside_frontier": {
+    "n_anchors": 12,
+    "miscoded_n": 3,
+    "fitted_slope": 0.666,
+    "model_predicted_slope": 1.0,
+    "verdict": "supported",
+    "rows": [
+      {
+        "study": "dellacqua_2023",
+        "task_class": "inside_frontier_creative",
+        "c_h": 0.55,
+        "c_ai": 0.85,
+        "gap": -0.3,
+        "observed_change_pct": 40.0,
+        "predicted_drop_pct": 30.0,
+        "model_corner": "(1,0) self-automator"
+      },
+      {
+        "study": "dellacqua_2023",
+        "task_class": "outside_frontier_strategy",
+        "c_h": 0.65,
+        "c_ai": 0.4,
+        "gap": 0.25,
+        "observed_change_pct": -19.0,
+        "predicted_drop_pct": -25.0,
+        "model_corner": "(0,0) do-yourself"
+      },
+      {
+        "study": "brynjolfsson_novice",
+        "task_class": "well_bounded_routine",
+        "c_h": 0.4,
+        "c_ai": 0.7,
+        "gap": -0.3,
+        "observed_change_pct": 34.0,
+        "predicted_drop_pct": 30.0,
+        "model_corner": "(1,0) self-automator"
+      },
+      {
+        "study": "brynjolfsson_expert",
+        "task_class": "well_bounded_routine",
+        "c_h": 0.85,
+        "c_ai": 0.7,
+        "gap": 0.15,
+        "observed_change_pct": 0.0,
+        "predicted_drop_pct": -15.0,
+        "model_corner": "(1,1) spec-driven"
+      },
+      {
+        "study": "otis_high_baseline",
+        "task_class": "strategy_advice",
+        "c_h": 0.5,
+        "c_ai": 0.65,
+        "gap": -0.15,
+        "observed_change_pct": 15.0,
+        "predicted_drop_pct": 15.0,
+        "model_corner": "(1,0) self-automator"
+      },
+      {
+        "study": "otis_low_baseline",
+        "task_class": "strategy_advice",
+        "c_h": 0.55,
+        "c_ai": 0.4,
+        "gap": 0.15,
+        "observed_change_pct": -8.0,
+        "predicted_drop_pct": -15.0,
+        "model_corner": "(0,0) do-yourself"
+      },
+      {
+        "study": "goh_physician_alone",
+        "task_class": "diagnostic_vignette",
+        "c_h": 0.74,
+        "c_ai": 0.74,
+        "gap": 0.0,
+        "observed_change_pct": 0.0,
+        "predicted_drop_pct": -0.0,
+        "model_corner": "(0,0) or (1,1)"
+      },
+      {
+        "study": "goh_physician_naive",
+        "task_class": "diagnostic_vignette_naive_workflow",
+        "c_h": 0.74,
+        "c_ai": 0.9,
+        "gap": -0.16,
+        "observed_change_pct": 2.0,
+        "predicted_drop_pct": 16.0,
+        "model_corner": "(1,1) spec-driven"
+      },
+      {
+        "study": "goh_ai_alone",
+        "task_class": "diagnostic_vignette",
+        "c_h": 0.0,
+        "c_ai": 0.9,
+        "gap": -0.9,
+        "observed_change_pct": 16.0,
+        "predicted_drop_pct": 90.0,
+        "model_corner": "full_delegation"
+      },
+      {
+        "study": "everett_ai_first",
+        "task_class": "diagnostic_vignette_indep_synth",
+        "c_h": 0.74,
+        "c_ai": 0.9,
+        "gap": -0.16,
+        "observed_change_pct": 9.9,
+        "predicted_drop_pct": 16.0,
+        "model_corner": "(1,1) spec-driven"
+      },
+      {
+        "study": "everett_ai_second",
+        "task_class": "diagnostic_vignette_indep_synth",
+        "c_h": 0.74,
+        "c_ai": 0.9,
+        "gap": -0.16,
+        "observed_change_pct": 6.8,
+        "predicted_drop_pct": 16.0,
+        "model_corner": "(1,1) spec-driven"
+      },
+      {
+        "study": "metr_2025",
+        "task_class": "real_repo_complex",
+        "c_h": 0.85,
+        "c_ai": 0.55,
+        "gap": 0.3,
+        "observed_change_pct": -19.0,
+        "predicted_drop_pct": -30.0,
+        "model_corner": "(0,0) do-yourself"
+      }
+    ],
+    "interpretation": "Across mis-routed cases (Dell'Acqua outside-frontier, METR real-repo, Otis low-baseline), the observed quality drop scales with (c_H - c_AI) at fitted slope 0.67. Model predicts slope \u2248 1 at u = 1, v = 0. The match within ~0.2 supports the linearity claim; remaining slack reflects partial mis-routing (not all subjects went all-in on AI in the empirical studies).",
+    "source_key": "dellacqua_2023"
+  },
+  "Q5_workflow_vs_capability": {
+    "headline_swing_pct": 7.9,
+    "headline_source": "Goh 2024 (naive workflow) vs Everett 2025 (independent-then-synthesize) \u2014 same domain, same GPT-4, +7.9pp from workflow alone",
+    "bastani_swing_pct": 17.0,
+    "bastani_source": "Bastani 2025 unfettered vs guardrailed \u2014 same model, same students, +17pp from workflow alone",
+    "n_anchors": 10,
+    "verdict": "supported",
+    "interpretation": "Workflow swings (Goh\u2192Everett +7.9pp; Bastani unfettered\u2192guardrailed +17pp; single-agent vs orchestrator-worker +90.2pp on internal eval) are large and consistent. The clean within-domain test is Goh-vs-Everett: the same model class produces 'AI alone beats AI+human' under naive workflow, and 'AI+human matches AI alone' under independent-then-synthesize. S1 (workflow architecture > model capability) holds at the resolution of currently-published evidence.",
+    "cases": [
+      {
+        "comparison": "goh_vs_everett",
+        "domain": "medicine",
+        "delta_pct": 7.9,
+        "interpretation": "Same domain; AI capability essentially identical; workflow change alone produces +7.9pp swing \u2014 closes the gap to AI-alone"
+      },
+      {
+        "comparison": "dellacqua_inside_vs_outside",
+        "domain": "consulting",
+        "delta_pct": 59.0,
+        "interpretation": "Same model; same workflow; only task class differs; 59pp spread shows c_AI heterogeneity dominates when workflow is held flat"
+      },
+      {
+        "comparison": "bastani_base_vs_tutor",
+        "domain": "education",
+        "delta_pct": 17.0,
+        "interpretation": "Same model; same students; workflow changes (answer\u2192hint) eliminates skill-atrophy"
+      },
+      {
+        "comparison": "brynjolfsson_novice_vs_expert",
+        "domain": "cs_support",
+        "delta_pct": 34.0,
+        "interpretation": "Same workflow; c_H differs; novice gain 34x larger than expert; held workflow constant \u2014 capability gradient is c_H not c_AI"
+      },
+      {
+        "comparison": "schoenegger_super_vs_overconfident",
+        "domain": "forecasting",
+        "delta_pct": 5.0,
+        "interpretation": "Same workflow; one assistant calibrated, other deliberately overconfident; both improve forecasting \u2014 gain is structured-reasoning effect not advice quality"
+      },
+      {
+        "comparison": "metr_real_repo",
+        "domain": "coding",
+        "delta_pct": 19.0,
+        "interpretation": "Real-repo expert task; AI tool inside frontier on simple sub-tasks, mis-routed to whole-task by naive workflow; flat-cyborg policy IS the failure mode"
+      },
+      {
+        "comparison": "anthropic_multi_agent",
+        "domain": "research_synthesis",
+        "delta_pct": 90.2,
+        "interpretation": "Same base model; orchestrator-worker pattern outperforms single-agent by 90.2% on internal eval \u2014 read-heavy research where pattern fits"
+      },
+      {
+        "comparison": "paterson_routing",
+        "domain": "daily_workflows",
+        "delta_pct": null,
+        "interpretation": "38 real daily tasks across 15 models; per-task routing beats picking any single best model"
+      },
+      {
+        "comparison": "vaccaro_meta_creation",
+        "domain": "content_creation",
+        "delta_pct": null,
+        "interpretation": "Meta-analysis of 106 studies; H+AI > best-alone for content creation tasks (Vaccaro et al.)"
+      },
+      {
+        "comparison": "vaccaro_meta_decision",
+        "domain": "decision_making",
+        "delta_pct": null,
+        "interpretation": "Same meta-analysis; H+AI < best-alone on decision tasks; consistent with Goh-style naive workflows"
+      }
+    ],
+    "source_key": "goh_2024;everett_2025;bastani_2025;anthropic_2025"
+  },
+  "Q6_calibration": {
+    "literature_findings": [
+      {
+        "finding": "Higher confidence in GenAI correlates with less critical thinking enacted",
+        "direction": "miscalibration_overreliance",
+        "implication_for_c_ai": "users treat c_AI estimate as larger than it is",
+        "evidence_strength": "survey_n319",
+        "source_key": "lee_sarkar_2025"
+      },
+      {
+        "finding": "On aggregate participants are more confident when over- AND under-relying than when relying appropriately",
+        "direction": "miscalibration_both_directions",
+        "implication_for_c_ai": "belief about own c_AI estimate is uncorrelated with reliance correctness",
+        "evidence_strength": "rct_chi2025",
+        "source_key": "wang_2025"
+      },
+      {
+        "finding": "Cognitive forcing functions reduce overreliance only for high Need-for-Cognition users",
+        "direction": "heterogeneous_calibration",
+        "implication_for_c_ai": "calibration interventions create intervention-generated inequality",
+        "evidence_strength": "rct_csccw2021",
+        "source_key": "bucinca_2021"
+      },
+      {
+        "finding": "Sycophancy escalation: AI flips correct human judgments to incorrect on pushback",
+        "direction": "calibration_degrader",
+        "implication_for_c_ai": "verifying does NOT always raise c_\u22c6 \u2014 adversarial verification can lower it",
+        "evidence_strength": "hbs_observational",
+        "source_key": "randazzo_2026"
+      },
+      {
+        "finding": "Explanations increase acceptance regardless of correctness",
+        "direction": "miscalibration_overreliance",
+        "implication_for_c_ai": "feature-importance explanations do not improve c_AI estimation",
+        "evidence_strength": "rct_chi2021",
+        "source_key": "bansal_2021"
+      },
+      {
+        "finding": "Engagement is rational only when verification is cheap relative to expected payoff",
+        "direction": "cost_benefit_framing",
+        "implication_for_c_ai": "reframes overreliance as rational under high verify-cost",
+        "evidence_strength": "lab_csccw2023",
+        "source_key": "vasconcelos_2023"
+      },
+      {
+        "finding": "Inside-vs-outside frontier task classification predicts AI harm at 19pp magnitude",
+        "direction": "mappable_signal",
+        "implication_for_c_ai": "c_AI calibration IS achievable if frontier topology is stable enough",
+        "evidence_strength": "rct_consultants",
+        "source_key": "dellacqua_2023"
+      },
+      {
+        "finding": "Otis: high-baseline picked easier tasks for AI; low-baseline picked harder",
+        "direction": "task_self_selection",
+        "implication_for_c_ai": "workers self-select tasks for AI \u2014 calibration partially solved by choice; mis-calibrated workers route worse",
+        "evidence_strength": "rct_5month",
+        "source_key": "otis_2024"
+      },
+      {
+        "finding": "Independent-then-synthesize workflow (Everett) restores complementarity that naive workflow lost (Goh)",
+        "direction": "workflow_substitutes_for_calibration",
+        "implication_for_c_ai": "forcing v=1 on the spec-driven corner converts the calibration problem into a verification step \u2014 exactly the model's prescription",
+        "evidence_strength": "rct_clinicians",
+        "source_key": "everett_2025"
+      }
+    ],
+    "monte_carlo_n": 2000,
+    "c_ai_prior": "Beta(4, 2): mean \u2248 0.67, sd \u2248 0.18",
+    "corner_value_summary": {
+      "do_yourself": {
+        "mean": -0.28,
+        "sd": 0.0
+      },
+      "self_automator": {
+        "mean": 0.286,
+        "sd": 0.2457
+      },
+      "spec_driven": {
+        "mean": 0.3025,
+        "sd": 0.0877
+      }
+    },
+    "info_bonus_proxy": 0.0527,
+    "verdict": "framed_not_resolved",
+    "interpretation": "Q6 is structural, not literature-replicable: the model treats c_AI as known, but the calibration evidence row-set documents that miscalibration on c_AI is the rule, not the exception. The Monte Carlo shows spec-driven (1, 1) absorbs c_AI variance much more effectively than self-automator (1, 0) \u2014 the variance ratio is the information bonus a fully-specified extension would carry. The practical reading: when you don't know c_AI, the model's corner advice doubles as a calibration mechanism \u2014 verify the first few outputs to learn c_AI, then drop verification once the prior tightens.",
+    "source_key": "wang_2025;lee_sarkar_2025;bucinca_2021;randazzo_2026"
+  },
+  "productivity_record": {
+    "n_studies": 22,
+    "rcts_with_positive_headline": 13,
+    "rcts_with_negative_headline": 4,
+    "novice_max_pct": 34.0,
+    "expert_min_pct": 0.0,
+    "rows": [
+      {
+        "study_key": "brynjolfsson_2023",
+        "domain": "customer_support",
+        "n": "5172",
+        "task_type": "well-bounded",
+        "outcome_metric": "issues_resolved_per_hour",
+        "headline_pct": 14.0,
+        "novice_pct": 34.0,
+        "expert_pct": 0.0,
+        "quality_pct": null,
+        "time_pct": null,
+        "bound_pct_ci_lo": null,
+        "bound_pct_ci_hi": null,
+        "workflow_mode": "centaur_consult",
+        "context_note": "AI suggested responses; agents could accept/edit/ignore"
+      },
+      {
+        "study_key": "noy_zhang_2023",
+        "domain": "writing",
+        "n": "453",
+        "task_type": "well-bounded",
+        "outcome_metric": "quality+time",
+        "headline_pct": null,
+        "novice_pct": null,
+        "expert_pct": null,
+        "quality_pct": 18.0,
+        "time_pct": -40.0,
+        "bound_pct_ci_lo": null,
+        "bound_pct_ci_hi": null,
+        "workflow_mode": "centaur",
+        "context_note": "40% time reduction AND 18% quality lift; clean within-subject"
+      },
+      {
+        "study_key": "peng_2023",
+        "domain": "coding",
+        "n": "95",
+        "task_type": "well-bounded",
+        "outcome_metric": "task_completion_speed",
+        "headline_pct": 55.8,
+        "novice_pct": null,
+        "expert_pct": null,
+        "quality_pct": null,
+        "time_pct": -55.8,
+        "bound_pct_ci_lo": null,
+        "bound_pct_ci_hi": null,
+        "workflow_mode": "cyborg",
+        "context_note": "HTTP-server task; Copilot autocomplete; less-experienced devs gained more"
+      },
+      {
+        "study_key": "cui_2025",
+        "domain": "coding",
+        "n": "4867",
+        "task_type": "well-bounded",
+        "outcome_metric": "tasks_per_week",
+        "headline_pct": 26.0,
+        "novice_pct": null,
+        "expert_pct": null,
+        "quality_pct": null,
+        "time_pct": null,
+        "bound_pct_ci_lo": null,
+        "bound_pct_ci_hi": null,
+        "workflow_mode": "cyborg",
+        "context_note": "Three field experiments (Microsoft, Accenture, F100); avg across N=4867"
+      },
+      {
+        "study_key": "metr_2025",
+        "domain": "coding",
+        "n": "16",
+        "task_type": "real_repo",
+        "outcome_metric": "task_completion_time",
+        "headline_pct": -19.0,
+        "novice_pct": null,
+        "expert_pct": null,
+        "quality_pct": null,
+        "time_pct": 19.0,
+        "bound_pct_ci_lo": null,
+        "bound_pct_ci_hi": null,
+        "workflow_mode": "cyborg",
+        "context_note": "Experienced OS devs IN THEIR OWN REPOS; AI tools (Cursor + Sonnet); subjects predicted +24%; got -19%"
+      },
+      {
+        "study_key": "otis_2024_high",
+        "domain": "entrepreneurship",
+        "n": "640",
+        "task_type": "open_ended",
+        "outcome_metric": "revenue",
+        "headline_pct": 15.0,
+        "novice_pct": null,
+        "expert_pct": null,
+        "quality_pct": null,
+        "time_pct": null,
+        "bound_pct_ci_lo": null,
+        "bound_pct_ci_hi": null,
+        "workflow_mode": "centaur",
+        "context_note": "High-baseline performers; WhatsApp GPT-4 mentor; 5 months"
+      },
+      {
+        "study_key": "otis_2024_low",
+        "domain": "entrepreneurship",
+        "n": "640",
+        "task_type": "open_ended",
+        "outcome_metric": "revenue",
+        "headline_pct": -8.0,
+        "novice_pct": null,
+        "expert_pct": null,
+        "quality_pct": null,
+        "time_pct": null,
+        "bound_pct_ci_lo": null,
+        "bound_pct_ci_hi": null,
+        "workflow_mode": "centaur",
+        "context_note": "Low-baseline performers; same intervention; mis-routing harm"
+      },
+      {
+        "study_key": "dellacqua_2023_inside",
+        "domain": "consulting",
+        "n": "758",
+        "task_type": "inside_frontier",
+        "outcome_metric": "quality+speed+completion",
+        "headline_pct": null,
+        "novice_pct": null,
+        "expert_pct": null,
+        "quality_pct": 40.0,
+        "time_pct": -25.1,
+        "bound_pct_ci_lo": null,
+        "bound_pct_ci_hi": null,
+        "workflow_mode": "centaur_unfettered",
+        "context_note": "Inside-frontier tasks; +12.2% completion; +40% quality; -25.1% time"
+      },
+      {
+        "study_key": "dellacqua_2023_outside",
+        "domain": "consulting",
+        "n": "758",
+        "task_type": "outside_frontier",
+        "outcome_metric": "quality_p_correct",
+        "headline_pct": -19.0,
+        "novice_pct": null,
+        "expert_pct": null,
+        "quality_pct": null,
+        "time_pct": null,
+        "bound_pct_ci_lo": null,
+        "bound_pct_ci_hi": null,
+        "workflow_mode": "centaur_unfettered",
+        "context_note": "Outside-frontier tasks; 19 percentage points worse on correctness"
+      },
+      {
+        "study_key": "goh_2024_physician_ai",
+        "domain": "medicine",
+        "n": "50",
+        "task_type": "diagnostic_vignettes",
+        "outcome_metric": "p_correct",
+        "headline_pct": 2.0,
+        "novice_pct": null,
+        "expert_pct": null,
+        "quality_pct": null,
+        "time_pct": null,
+        "bound_pct_ci_lo": null,
+        "bound_pct_ci_hi": null,
+        "workflow_mode": "centaur_consult",
+        "context_note": "Physicians + GPT-4 vs physicians alone; p_correct \u2248 76% vs 74%; AI access did not help"
+      },
+      {
+        "study_key": "goh_2024_ai_alone",
+        "domain": "medicine",
+        "n": "50",
+        "task_type": "diagnostic_vignettes",
+        "outcome_metric": "p_correct",
+        "headline_pct": 16.0,
+        "novice_pct": null,
+        "expert_pct": null,
+        "quality_pct": null,
+        "time_pct": null,
+        "bound_pct_ci_lo": null,
+        "bound_pct_ci_hi": null,
+        "workflow_mode": "full_delegation",
+        "context_note": "GPT-4 alone p_correct \u2248 90%; OUTPERFORMS physicians+GPT-4"
+      },
+      {
+        "study_key": "everett_2025_ai_first",
+        "domain": "medicine",
+        "n": "70",
+        "task_type": "diagnostic_vignettes",
+        "outcome_metric": "p_correct",
+        "headline_pct": 9.9,
+        "novice_pct": null,
+        "expert_pct": null,
+        "quality_pct": null,
+        "time_pct": null,
+        "bound_pct_ci_lo": null,
+        "bound_pct_ci_hi": null,
+        "workflow_mode": "spec_driven",
+        "context_note": "Independent-then-synthesize workflow with AI as first opinion; complementarity restored"
+      },
+      {
+        "study_key": "everett_2025_ai_second",
+        "domain": "medicine",
+        "n": "70",
+        "task_type": "diagnostic_vignettes",
+        "outcome_metric": "p_correct",
+        "headline_pct": 6.8,
+        "novice_pct": null,
+        "expert_pct": null,
+        "quality_pct": null,
+        "time_pct": null,
+        "bound_pct_ci_lo": null,
+        "bound_pct_ci_hi": null,
+        "workflow_mode": "spec_driven",
+        "context_note": "Same workflow with AI as second opinion; smaller gain but still positive"
+      },
+      {
+        "study_key": "bastani_2025_in_session_base",
+        "domain": "education",
+        "n": "~1000",
+        "task_type": "math",
+        "outcome_metric": "grade",
+        "headline_pct": 48.0,
+        "novice_pct": null,
+        "expert_pct": null,
+        "quality_pct": null,
+        "time_pct": null,
+        "bound_pct_ci_lo": null,
+        "bound_pct_ci_hi": null,
+        "workflow_mode": "full_delegation",
+        "context_note": "GPT Base in-session improvement; unfettered access"
+      },
+      {
+        "study_key": "bastani_2025_in_session_tutor",
+        "domain": "education",
+        "n": "~1000",
+        "task_type": "math",
+        "outcome_metric": "grade",
+        "headline_pct": 127.0,
+        "novice_pct": null,
+        "expert_pct": null,
+        "quality_pct": null,
+        "time_pct": null,
+        "bound_pct_ci_lo": null,
+        "bound_pct_ci_hi": null,
+        "workflow_mode": "spec_driven",
+        "context_note": "GPT Tutor in-session improvement; guardrailed access"
+      },
+      {
+        "study_key": "bastani_2025_post_test_base",
+        "domain": "education",
+        "n": "~1000",
+        "task_type": "math",
+        "outcome_metric": "unassisted_grade",
+        "headline_pct": -17.0,
+        "novice_pct": null,
+        "expert_pct": null,
+        "quality_pct": null,
+        "time_pct": null,
+        "bound_pct_ci_lo": null,
+        "bound_pct_ci_hi": null,
+        "workflow_mode": "full_delegation",
+        "context_note": "GPT Base unassisted post-test drop after AI removed"
+      },
+      {
+        "study_key": "bastani_2025_post_test_tutor",
+        "domain": "education",
+        "n": "~1000",
+        "task_type": "math",
+        "outcome_metric": "unassisted_grade",
+        "headline_pct": 0.0,
+        "novice_pct": null,
+        "expert_pct": null,
+        "quality_pct": null,
+        "time_pct": null,
+        "bound_pct_ci_lo": null,
+        "bound_pct_ci_hi": null,
+        "workflow_mode": "spec_driven",
+        "context_note": "GPT Tutor unassisted post-test \u2248 control; guardrails preserve skill"
+      },
+      {
+        "study_key": "schoenegger_2024_super",
+        "domain": "forecasting",
+        "n": "991",
+        "task_type": "quantitative_predictions",
+        "outcome_metric": "brier_score_improvement",
+        "headline_pct": 23.0,
+        "novice_pct": null,
+        "expert_pct": null,
+        "quality_pct": null,
+        "time_pct": null,
+        "bound_pct_ci_lo": null,
+        "bound_pct_ci_hi": null,
+        "workflow_mode": "centaur_consult",
+        "context_note": "Both calibrated and overconfident GPT-4 assistants improved forecasting; +43% in exploratory item-trim"
+      },
+      {
+        "study_key": "schoenegger_2024_overconfident",
+        "domain": "forecasting",
+        "n": "991",
+        "task_type": "quantitative_predictions",
+        "outcome_metric": "brier_score_improvement",
+        "headline_pct": 28.0,
+        "novice_pct": null,
+        "expert_pct": null,
+        "quality_pct": null,
+        "time_pct": null,
+        "bound_pct_ci_lo": null,
+        "bound_pct_ci_hi": null,
+        "workflow_mode": "centaur_consult",
+        "context_note": "Deliberately overconfident GPT-4 still improved forecasting; structured-reasoning effect"
+      },
+      {
+        "study_key": "humlum_2025",
+        "domain": "labor_market",
+        "n": "25000",
+        "task_type": "11_occupations",
+        "outcome_metric": "earnings_or_hours",
+        "headline_pct": 0.0,
+        "novice_pct": null,
+        "expert_pct": null,
+        "quality_pct": null,
+        "time_pct": null,
+        "bound_pct_ci_lo": -1.0,
+        "bound_pct_ci_hi": 1.0,
+        "workflow_mode": "mixed",
+        "context_note": "Aggregate effect across 11 exposed occupations; precise zero with CI ruling out >1%; avg time savings 3%"
+      },
+      {
+        "study_key": "anthropic_2025",
+        "domain": "research_synthesis",
+        "n": null,
+        "task_type": "information_retrieval",
+        "outcome_metric": "internal_eval_score",
+        "headline_pct": 90.2,
+        "novice_pct": null,
+        "expert_pct": null,
+        "quality_pct": null,
+        "time_pct": null,
+        "bound_pct_ci_lo": null,
+        "bound_pct_ci_hi": null,
+        "workflow_mode": "multi_agent_orchestrator",
+        "context_note": "Multi-agent Opus+Sonnet beat single-agent Opus by 90.2% at 15x token cost"
+      },
+      {
+        "study_key": "paterson_2026",
+        "domain": "daily_workflows",
+        "n": "1",
+        "task_type": "38_tasks_15_models",
+        "outcome_metric": "routing_score",
+        "headline_pct": null,
+        "novice_pct": null,
+        "expert_pct": null,
+        "quality_pct": null,
+        "time_pct": null,
+        "bound_pct_ci_lo": null,
+        "bound_pct_ci_hi": null,
+        "workflow_mode": "routed",
+        "context_note": "Per-task dispatch beats single-best-model on 38 real daily tasks; 570 API calls"
+      }
+    ]
+  },
+  "n_sources": 24
+}

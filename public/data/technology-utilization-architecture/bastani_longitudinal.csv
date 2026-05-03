@@ -1,0 +1,4 @@
+condition,n,in_session_lift_pct,unassisted_post_test_change_pct,sessions_or_problems,implied_per_problem_atrophy_pct,implied_beta_at_u1_v0,source_key
+control,~330,0,0,~30,0.000,0.000,bastani_2025
+gpt_base_unfettered,~330,48,-17,~30,0.567,0.0567,bastani_2025
+gpt_tutor_guardrailed,~330,127,0,~30,0.000,0.000,bastani_2025

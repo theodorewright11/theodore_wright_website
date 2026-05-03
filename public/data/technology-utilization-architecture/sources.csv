@@ -1,0 +1,25 @@
+key,authors,year,title,venue,n,url
+brynjolfsson_2023,"Brynjolfsson, Li, Raymond",2023/2025,Generative AI at Work,Quarterly Journal of Economics,5172,https://academic.oup.com/qje/article/140/2/889/7990658
+noy_zhang_2023,"Noy & Zhang",2023,Experimental Evidence on the Productivity Effects of Generative AI,Science,453,https://www.science.org/doi/10.1126/science.adh2586
+peng_2023,"Peng, Kalliamvakou et al.",2023,The Impact of AI on Developer Productivity: Evidence from GitHub Copilot,arXiv,95,https://arxiv.org/abs/2302.06590
+cui_2025,"Cui, Demirer, Jaffe et al.",2025,The Effects of Generative AI on High-Skilled Work: Three Field Experiments with Software Developers,Management Science,4867,https://pubsonline.informs.org/doi/10.1287/mnsc.2025.00535
+metr_2025,"Becker, Rush, Barnes, Rein (METR)",2025,Measuring the Impact of Early-2025 AI on Experienced Open-Source Developer Productivity,arXiv,16,https://arxiv.org/abs/2507.09089
+otis_2024,"Otis, Clarke, Delecourt, Holtz, Koning",2024,The Uneven Impact of Generative AI on Entrepreneurial Performance,HBS WP 24-042,640,https://www.hbs.edu/faculty/Pages/item.aspx?num=65159
+dellacqua_2023,"Dell'Acqua, McFowland, Mollick et al.",2023/2025,Navigating the Jagged Technological Frontier,Organization Science,758,https://pubsonline.informs.org/doi/10.1287/orsc.2025.21838
+randazzo_2026,"Randazzo, Lifshitz-Assaf, Kellogg, Dell'Acqua, Mollick, Candelon, Lakhani",2026,"Cyborgs, Centaurs and Self-Automators: Three Modes of Human-GenAI Knowledge Work",HBS WP 26-036,244,https://www.hbs.edu/faculty/Pages/item.aspx?num=68273
+goh_2024,"Goh, Gallo, Hom et al.",2024,Large Language Model Influence on Diagnostic Reasoning: A Randomized Clinical Trial,JAMA Network Open,50,https://jamanetwork.com/journals/jamanetworkopen/fullarticle/2825399
+everett_2025,"Everett et al.",2025,From Tool to Teammate: A Randomized Controlled Trial of Clinician-AI Collaborative Workflows for Diagnosis,medRxiv,70,https://www.medrxiv.org/content/10.1101/2025.06.07.25329176v1.full
+bastani_2025,"Bastani, Bastani, Sungu, Ge, Kabakcı, Mariman",2025,Generative AI Without Guardrails Can Harm Learning,PNAS,~1000,https://www.pnas.org/doi/10.1073/pnas.2422633122
+mozannar_2024,"Mozannar, Bansal, Fourney, Horvitz",2024,Reading Between the Lines: Modeling User Behavior and Costs in AI-Assisted Programming (CUPS),CHI,21,https://arxiv.org/abs/2210.14306
+schoenegger_2024,"Schoenegger, Park, Karger, Tetlock",2024/2025,AI-Augmented Predictions: LLM Assistants Improve Human Forecasting Accuracy,ACM TiiS,991,https://dl.acm.org/doi/abs/10.1145/3707649
+bansal_2021,"Bansal, Wu, Zhou et al.",2021,Does the Whole Exceed its Parts? The Effect of AI Explanations on Complementary Team Performance,CHI,,https://dl.acm.org/doi/10.1145/3411764.3445717
+vasconcelos_2023,"Vasconcelos, Jörke, Grunde-McLaughlin et al.",2023,Explanations Can Reduce Overreliance on AI Systems During Decision-Making,CSCW,,https://arxiv.org/abs/2212.06823
+bucinca_2021,"Buçinca, Malaya, Gajos",2021,To Trust or to Think: Cognitive Forcing Functions Can Reduce Overreliance on AI,CSCW,,https://dl.acm.org/doi/10.1145/3449287
+vaccaro_2024,"Vaccaro, Almaatouq, Malone",2024,When combinations of humans and AI are useful: A systematic review and meta-analysis,Nature Human Behaviour,106 studies / 370 effect sizes,https://www.nature.com/articles/s41562-024-02024-1
+humlum_2025,"Humlum, Vestergaard",2025,"Large Language Models, Small Labor Market Effects",NBER WP 33777,~25000,https://papers.ssrn.com/sol3/papers.cfm?abstract_id=5250742
+lee_sarkar_2025,"Lee, Sarkar et al.",2025,The Impact of Generative AI on Critical Thinking: Self-Reported Reductions From a Survey of Knowledge Workers,CHI,319,https://dl.acm.org/doi/abs/10.1145/3706598.3713778
+wang_2025,"Wang, Liu, Pan, Hong, Lee, Glassman",2025,To Rely or Not to Rely? Evaluating Interventions for Appropriate Reliance on LLMs,CHI,,https://dl.acm.org/doi/10.1145/3706598.3714097
+anthropic_2025,"Schluntz, Zhang et al. (Anthropic)",2025,How we built our multi-agent research system,Anthropic Engineering blog,,https://www.anthropic.com/engineering/multi-agent-research-system
+paterson_2026,Paterson,2026,I Tested 15 LLMs on 38 Real Coding Tasks: Routing > Model Selection,personal blog,15 models / 38 tasks / 570 calls,https://ianlpaterson.com/blog/llm-benchmark-2026-38-actual-tasks-15-models-for-2-29/
+tankelevitch_2024,"Tankelevitch, Sarkar, Sellen, Rintel et al.",2024,The Metacognitive Demands and Opportunities of Generative AI,CHI Best Paper,,https://arxiv.org/abs/2312.10893
+simkute_2024,"Simkute, Tankelevitch, Kewenig, Scott, Sellen, Rintel",2024/2025,Ironies of Generative AI: Understanding and Mitigating Productivity Loss in Human-AI Interaction,IJHCI,,https://arxiv.org/abs/2402.11364

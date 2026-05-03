@@ -1,0 +1,11 @@
+cups_state,description,time_share_pct,interaction_phase,maps_to_model_term,source_key
+thinking_new_code,"Programmer reasoning about what to write next (no AI involvement yet)",26.5,generation,(1-u)*1,mozannar_2024
+prompting,"Crafting/editing the prompt or context window so AI can help",6.0,generation,M,mozannar_2024
+not_thinking,"Pause / unfocused / context-switch",4.0,overhead,M,mozannar_2024
+waiting_for_suggestion,"Idle while Copilot computes the next suggestion",2.5,overhead,u*epsilon,mozannar_2024
+verifying_suggestion,"Reading and checking AI output before accepting",22.4,verification,v*phi,mozannar_2024
+editing_last_suggestion,"Modifying an accepted AI suggestion",11.9,verification,v*phi,mozannar_2024
+writing_new_code_after_suggestion,"Manual coding that follows AI hand-off",8.0,generation,(1-u)*1,mozannar_2024
+deferring_thought,"Skipping a sub-decision now intending to revisit (skim mode)",4.0,verification,v*phi (partial),mozannar_2024
+debugging,"Running tests / fixing errors after AI involvement",10.0,verification,v*phi,mozannar_2024
+looking_up_documentation,"External knowledge fetch outside the AI tool",4.7,generation,M,mozannar_2024

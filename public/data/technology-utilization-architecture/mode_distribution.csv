@@ -1,0 +1,4 @@
+mode,empirical_share_pct,model_corner,u_label,v_label,interpretation,source_key
+cyborg,60,interior_aggregate,mid,mid_low,"Continuous interleaving of human and AI; aggregate-level pattern from mixing corners across heterogeneous-θ sub-tasks within single sessions",randazzo_2026
+centaur,30,interior_aggregate,mid,mid_high,"Clean human/AI handoff with verification gate; aggregate-level pattern from alternating do-yourself and spec-driven corners",randazzo_2026
+self_automator,10,"(1, 0)",high,low,"Full delegation no verification; per-task corner optimum at routine-low-stakes-high-c_AI θ; matches Bastani's atrophy-trap regime",randazzo_2026

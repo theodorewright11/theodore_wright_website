@@ -1,0 +1,10 @@
+finding,direction,implication_for_c_ai,evidence_strength,source_key
+"Higher confidence in GenAI correlates with less critical thinking enacted",miscalibration_overreliance,"users treat c_AI estimate as larger than it is",survey_n319,lee_sarkar_2025
+"On aggregate participants are more confident when over- AND under-relying than when relying appropriately",miscalibration_both_directions,"belief about own c_AI estimate is uncorrelated with reliance correctness",rct_chi2025,wang_2025
+"Cognitive forcing functions reduce overreliance only for high Need-for-Cognition users",heterogeneous_calibration,"calibration interventions create intervention-generated inequality",rct_csccw2021,bucinca_2021
+"Sycophancy escalation: AI flips correct human judgments to incorrect on pushback",calibration_degrader,"verifying does NOT always raise c_⋆ — adversarial verification can lower it",hbs_observational,randazzo_2026
+"Explanations increase acceptance regardless of correctness",miscalibration_overreliance,"feature-importance explanations do not improve c_AI estimation",rct_chi2021,bansal_2021
+"Engagement is rational only when verification is cheap relative to expected payoff",cost_benefit_framing,"reframes overreliance as rational under high verify-cost",lab_csccw2023,vasconcelos_2023
+"Inside-vs-outside frontier task classification predicts AI harm at 19pp magnitude",mappable_signal,"c_AI calibration IS achievable if frontier topology is stable enough",rct_consultants,dellacqua_2023
+"Otis: high-baseline picked easier tasks for AI; low-baseline picked harder",task_self_selection,"workers self-select tasks for AI — calibration partially solved by choice; mis-calibrated workers route worse",rct_5month,otis_2024
+"Independent-then-synthesize workflow (Everett) restores complementarity that naive workflow lost (Goh)",workflow_substitutes_for_calibration,"forcing v=1 on the spec-driven corner converts the calibration problem into a verification step — exactly the model's prescription",rct_clinicians,everett_2025

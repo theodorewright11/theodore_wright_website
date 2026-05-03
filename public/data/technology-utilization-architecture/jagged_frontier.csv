@@ -1,0 +1,13 @@
+study,sample_class,task_class,c_h_est,c_ai_est,observed_quality_change_pct,model_predicted_corner,model_predicted_quality_lift,note,source_key
+dellacqua_2023,consultants,inside_frontier_creative,0.55,0.85,40,"(1,0) self-automator",0.30,"Inside the frontier; AI dominates so corner is delegate; 40% quality lift",dellacqua_2023
+dellacqua_2023,consultants,outside_frontier_strategy,0.65,0.40,-19,"(0,0) do-yourself",0.00,"Outside the frontier; correct corner is human-only; observed -19pp matches mis-routing harm",dellacqua_2023
+brynjolfsson_novice,cs_agent_novice,well_bounded_routine,0.40,0.70,34,"(1,0) self-automator",0.30,"Novice agent; large c_AI - c_H gap; AI delegation dominates",brynjolfsson_2023
+brynjolfsson_expert,cs_agent_expert,well_bounded_routine,0.85,0.70,0,"(1,1) spec-driven",0.105,"Expert agent; smaller gap; verified output ceiling close to expert; throughput-limited so empirical 0%",brynjolfsson_2023
+otis_high_baseline,kenyan_entrepreneur_high,strategy_advice,0.50,0.65,15,"(1,0) self-automator",0.15,"High-baseline picked tasks where c_AI > c_H; aligned with optimum",otis_2024
+otis_low_baseline,kenyan_entrepreneur_low,strategy_advice,0.55,0.40,-8,"(0,0) do-yourself",0.00,"Low-baseline picked harder tasks where c_AI < c_H; mis-routed (used AI when shouldn't)",otis_2024
+goh_physician_alone,physician,diagnostic_vignette,0.74,0.74,0,"(0,0) or (1,1)",0.00,"Physicians without AI baseline; c_H ≈ 0.74",goh_2024
+goh_physician_naive,physician,diagnostic_vignette_naive_workflow,0.74,0.90,2,"(1,1) spec-driven",0.166,"Physicians + GPT-4 with naive workflow (read AI output and decide); failed to capture c_⋆ gain due to anchoring",goh_2024
+goh_ai_alone,gpt4,diagnostic_vignette,0.0,0.90,16,full_delegation,0.16,"GPT-4 alone outperforms physicians+GPT-4 — but only because human-side workflow was naive; not a stable claim",goh_2024
+everett_ai_first,physician,diagnostic_vignette_indep_synth,0.74,0.90,9.9,"(1,1) spec-driven",0.166,"Same domain as Goh; independent-then-synthesize workflow; complementarity restored",everett_2025
+everett_ai_second,physician,diagnostic_vignette_indep_synth,0.74,0.90,6.8,"(1,1) spec-driven",0.166,"Same workflow; AI as second opinion; smaller gain from anchoring residual",everett_2025
+metr_2025,os_developer_expert,real_repo_complex,0.85,0.55,-19,"(0,0) do-yourself",0.00,"Experienced devs in their own repos; AI inside-frontier on simple sub-tasks but outside-frontier on context-heavy real-repo work; mis-routed",metr_2025
