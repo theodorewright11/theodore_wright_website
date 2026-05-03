@@ -161,7 +161,7 @@ const LAMBDA_BOUNDS = {
   ehsan_year_long_moderate_u: 0.10,
   calculator_analogue: 0.0,
   model_default: 0.06,
-  realistic_lower_bound_band: '0.02 – 0.10 / yr',
+  realistic_lower_bound_band: '0.05 – 0.20 / yr',
   half_life_at_default_heavy_u: 19,     // years at u=0.6, λ=0.06
 };
 
@@ -634,10 +634,10 @@ function Q1Lambda() {
   const u = 0.6;
   const rho0 = 0.8;
   const trajectories: { lambda: number; label: string; color: string }[] = [
-    { lambda: 0.0,  label: 'λ = 0 (calculator)', color: '#7a7166' },
-    { lambda: 0.02, label: 'λ = 0.02 (slow)',    color: '#c98a6e' },
-    { lambda: 0.06, label: 'λ = 0.06 (model)',   color: '#8a4a2b' },
-    { lambda: 0.10, label: 'λ = 0.10 (Ehsan)',   color: '#1a1614' },
+    { lambda: 0.0,  label: 'λ = 0 (calculator)',  color: '#7a7166' },
+    { lambda: 0.06, label: 'λ = 0.06 (model)',    color: '#8a4a2b' },
+    { lambda: 0.10, label: 'λ = 0.10 (Ehsan)',    color: '#c98a6e' },
+    { lambda: 0.20, label: 'λ = 0.20 (Bastani)',  color: '#1a1614' },
   ];
 
   const traj = (lam: number) => {
@@ -652,7 +652,7 @@ function Q1Lambda() {
     <div>
       <PanelHeader
         title="Q1. λ — cumulative atrophy speed"
-        claim="Cross-sectional evidence rules out the calculator-analogue tail (λ = 0) but cannot pin λ above the lower bound. Bastani's −17pp on unassisted retest after 5 weeks of GPT-Base assistance scales (under explicit assumptions) to λ ≈ 0.06–0.37/year; Ehsan's year-long intuition rust implies λ ≈ 0.10/year at moderate u. The calculator analogue (decades of classroom use without long-run cognitive decline) anchors the lower tail at λ = 0. Plausible band: 0.02–0.10/year. The model's λ = 0.06 sits at the lower edge."
+        claim="λ = 0 (calculator-analogue) ruled out for the measured tasks and populations (Bastani math, Ehsan oncology, Gerlich UK adults). Whether the analogue holds for general multi-task knowledge work over multi-year timescales remains open — no existing study has the design. Under standard scaling: Bastani amortized to one year at heavy offloading → λ ≈ 0.19/year; Ehsan year-long at moderate u → λ ≈ 0.10/year. Honest band from positive-evidence studies: 0.05–0.20/year. The model's λ = 0.06 sits at the lower edge — consistent with the data but not centered."
         verdict="bounded from below"
         verdictKind="bounded"
       />

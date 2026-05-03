@@ -101,7 +101,7 @@
     "ehsan_lambda_year_long_moderate_u": 0.103,
     "model_default_lambda": 0.06,
     "calculator_analogue_lambda": 0.0,
-    "lower_bound_at_realistic_u": "approx 0.02-0.10 per year",
+    "lower_bound_at_realistic_u": "approx 0.05-0.20 per year",
     "model_default_within_lower_bound_range": true,
     "verdict": "Bound from below only. The cross-sectional evidence rules out \u03bb=0 (calculator-analogue) at p<.05 across multiple studies, but cannot pin \u03bb above the lower bound. The 2+ year longitudinal study that would actually fit \u03bb does not yet exist."
   },
