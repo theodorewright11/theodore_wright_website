@@ -436,9 +436,9 @@ function Q3Tau() {
     <div>
       <PanelHeader
         title="Q3. Self-automator gate threshold τ"
-        claim={`BCG-Randazzo three-mode distribution implies τ between the self-automator centroid (f·ρ ≈ ${TAU_SUMMARY.self_automator_centroid}) and the cyborg+centaur centroid (f·ρ ≈ ${TAU_SUMMARY.cyborg_centaur_centroid}). Midpoint estimate τ ≈ ${TAU_SUMMARY.midpoint_estimate}. Model default τ = ${TAU_SUMMARY.model_default_tau} lands within 0.05 of the midpoint and inside the empirical range.`}
-        verdict="supported"
-        verdictKind="supported"
+        claim={`BCG-Randazzo three-mode distribution implies τ between the self-automator centroid (f·ρ ≈ ${TAU_SUMMARY.self_automator_centroid}) and the cyborg+centaur centroid (f·ρ ≈ ${TAU_SUMMARY.cyborg_centaur_centroid}). Midpoint estimate τ ≈ ${TAU_SUMMARY.midpoint_estimate}. Model default τ = ${TAU_SUMMARY.model_default_tau} is within 0.05 of the midpoint and inside the empirical range — but the support comes from one well-designed observational study in one professional domain (consulting), with f and ρ inferred from qualitative mode descriptions rather than measured directly. Generalization to coding, writing, design, or relational work is not tested.`}
+        verdict="supported (single-study)"
+        verdictKind="qualitative"
       />
 
       <CardGrid>

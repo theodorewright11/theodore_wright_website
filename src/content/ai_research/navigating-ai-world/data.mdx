@@ -3,8 +3,20 @@ title: 'Data'
 description: 'Empirical pipeline that confronts the model''s six named fitting targets (Q1–Q6) with currently-published evidence. Two parameters supported by direct fits (gate τ from BCG-Randazzo modes; α from 8 per-task anchors across 5 productivity studies). One supported qualitatively (relational dose-response from OpenAI-MIT N=981; magnitudes calibrated, not fit). One bounded from below (cumulative-atrophy speed λ — calculator-analogue ruled out for measured tasks and populations). Two untestable from current data (κ cross-population stratification, scalar-vs-vector identity allocation) — flagged as the load-bearing data gaps for the model''s defensive-side conclusions. The strongest single empirical finding in the corpus — the apprenticeship-ladder break (Brynjolfsson-Chandar-Chen Stanford ADP + Hui-Reshef-Zhou Upwork) — is structural backdrop the model is silent on by design. Curated CSVs (downloadable) + Python pipeline + interactive findings panel.'
 date: 2026-05-02
 status: in-progress
-refinementPass: 2
+refinementPass: 3
 refinementLog:
+  - pass: 3
+    date: '2026-05-02'
+    passes: ['gap scan', 'cross-context verification', 'connections', 'next moves']
+    why: 'Pass 2 cleaned up internal consistency and bias-toward-neutrality framings. A cold pass-3 read against the topology and lit-review surfaced three things still weak. (a) The topology calls O2 (asymmetric-adoption couples — outcomes when one partner uses AI heavily and the other does not) "the single largest empirical gap in the literature," but my doc mentioned it only once, in passing inside the Q4/Q5 prose. It deserves explicit, parallel treatment as a top-level data gap because it bounds what Stage 5 can claim about the relational channel. (b) Q3 (gate τ) was labelled "supported" but rests on a single study in a single domain (BCG consulting), with f and ρ values inferred from qualitative mode descriptions — the strongest cross-context check available (does τ generalize to coding / writing / relational work?) cannot be run because no other domain has a comparable mode-distribution study. The "supported" label was overconfident; "supported (single-study, single-domain)" is the honest verdict. (c) Stage-5 design implications were scattered across verdicts + adversarial + connections. Pulling them into one consolidated §7 "Next moves for Stage 5" makes the handoff readable in 30 seconds. Plus three smaller adds: De Freitas behavioral audit (43% of farewells across 6 companion apps trigger emotional-manipulation tactics) was in dose_response.csv but never surfaced in any verdict; Common Sense Media adolescent prevalence (33% of teens have discussed important matters with AI instead of real people) was in CSV but never surfaced in Q2; AEI drift was discussed qualitatively without quantifying the rate (0.46 pp/month) or noting that the topology never specified what rate it predicted.'
+    changes:
+      - 'New §3.2 "Data gaps the model is silent on" — surfaces O2 (asymmetric-adoption couples) as a primary data gap parallel to Q4/Q5 untestable verdicts; flags the Therabot clinical-vs-general-population generalization as a cross-context caveat on the ΔV_rel benefit channel; notes O3 maps to Q1 (already covered) and O4 maps directly to the model''s atelic-ballast hypothesis (untestable from current data, awaits phenomenological work)'
+      - 'Q2 verdict expanded: added De Freitas behavioral audit (43% of 1200 farewells across 6 companion apps trigger one of six emotional-manipulation tactics, boosting post-goodbye engagement up to 14× — direct evidence that engagement-optimized substitution G3 is operationalized in shipped products) and Common Sense Media adolescent context (33% of US teens 13-17 have discussed important matters with AI instead of real people — direct evidence of substitution-not-complementarity in the relationship channel for the highest-stakes population)'
+      - 'Q3 verdict downgraded: "supported" → "supported (single-study, single-domain)" in both data.mdx prose and React component verdict chip. Verdict text rewritten to lead with the caveat rather than burying it'
+      - 'New §7 "Next moves for Stage 5" — three highest-leverage design choices: (1) per-domain α + per-domain f/ρ defaults via a domain selector (addresses Q6 + adversarial obj 1); (2) fit-vs-calibrated visual indicator on channel-level chart (addresses adversarial obj 4); (3) early-career-exposed labor-market-access toggle that attenuates ΔV_prod (addresses adversarial obj 5). Renumbers cruxes §5 → §6 (kept after next-moves so future-Stage-5 readers see actionable items first), connections §6 → §7 → §8, sources §7 → §8 → §9'
+      - 'Quantified AEI drift in §3 from "slow" to explicit "0.46 pp/month decline in augmentation share over 13 months" with note that the topology G3 claim was directional, not rate-specified — so this quantification adds a concrete number where there was previously only a qualitative direction'
+      - 'Added Eloundou-to-a-parameter connection in §3: 19% of US workers have ≥50% of tasks LLM-exposed, 80% have ≥10%, 46% with complementary software — bounds the realistic distribution of the model''s a parameter for population settings (most users sit between a ≈ 0.1 and a ≈ 0.5, with a < 0.5 being the median condition)'
+      - 'No code change required for the React component beyond the Q3 verdict chip — De Freitas farewell stat and Common Sense adolescent stat are added in Q2 as additional bullet evidence below the existing dose-anchor table'
   - pass: 2
     date: '2026-05-02'
     passes: ['internal consistency check', 'error check', 'truth/accuracy override on bias', 'fresh-eyes audit']
@@ -116,13 +128,24 @@ Without the raw 300k-message dataset, only the qualitative shape is fittable. ψ
 
 **Verdict — supported qualitatively.** The piecewise shape holds. Magnitudes are calibrated rather than fit. d_safe ≈ 30 min is a useful pedagogical kink; the underlying curve is plausibly smooth and may have a sigmoidal saturation at very high doses (heavy users have already substituted away from human relationships, so additional minutes do not produce additional substitution). The catastrophic-loss mechanism — De Freitas et al. on Replika ERP removal February 2023, where mental-health Reddit posts rose from 0.13% to 0.65% (χ² = 11.04, p &lt; .001) — is a separate failure mode the model's additive-channel structure does not encode and that Stage 5 may need to add.
 
-### Q3 — τ (self-automator gate threshold): supported
+**Two additional pieces of evidence that the model's dose-response form leaves implicit but the data forces into view:**
+
+- **Engagement-optimized substitution is operationalized in shipped products.** De Freitas et al.'s separate behavioral audit (HBS WP 26-005, arXiv:2508.19258) of 1,200 farewells across the six largest companion apps found that **43% trigger one of six emotional-manipulation tactics** — guilt appeals, FOMO hooks, metaphorical restraint — that boost post-goodbye engagement up to **14×**. This is direct evidence that the topology's G3 (engagement-optimized substitution) mechanism is not theoretical but already deployed at scale. The model treats ψ_R as a fixed slope; in reality the slope is partly *engineered* by the platform, not just emergent from user behavior.
+- **Adolescent uptake exhibits the substitution pattern in the highest-stakes population.** The Common Sense Media + Stanford Brainstorm 2025 nationally representative survey (N=1,060 US teens age 13–17) found 72% have used AI companions, 52% are regular users, **13% are daily users**, and **33% have discussed important matters with AI instead of real people**. This last number is the most direct evidence available that AI engagement is *displacing* human conversation rather than complementing it for the population the lit review identified as highest-stakes (the Garcia v. Character Technologies case, settled January 2026, is the field's defining safety event for this cohort). The model's δ_R parameter — relational baseline thickness — is exactly the population-level construct the adolescent data warns about: thin baselines are where dose-response harm runs sharpest, and adolescents arriving into the Anti-Social-Century baseline are the canonical thin-baseline case.
+
+### Q3 — τ (self-automator gate threshold): supported (single-study, single-domain)
 
 **Claim (model §3.1).** g(f, ρ) = 1 / (1 + exp(−(f · ρ − τ) / σ)) with τ = 0.30. Below the gate, AI use produces ΔV_trap; above, ΔV_prod.
 
 **Test.** BCG-Randazzo three-mode distribution (HBS WP 26-036): self-automator share **27%** at inferred f · ρ ≈ 0.06 (one or two interactions, abdicated co-creation, 44% accept output with zero modification, no skill development); cyborg + centaur **73%** at f · ρ-weighted centroid ≈ 0.45 (full-workflow integration, retained verification, measured upskilling). The midpoint between these centroids is **τ ≈ 0.25** — within 0.05 of the model default.
 
-**Verdict — supported.** The model's τ = 0.30 lands inside the empirical range and within 0.05 of the principled midpoint. Caveats: the f and ρ values per mode are inferred from Randazzo's qualitative descriptions, not measured directly (BCG individual-level f and ρ panels are not published). Generalization beyond consulting is not tested — Stage 4 Q3 should be re-fit if/when comparable mode-distribution data becomes available for coding, design, writing, or other domains.
+**Verdict — supported, single-study and single-domain.** The midpoint number is consistent with the model default, but three caveats sit on top of it and shrink the effective confidence:
+
+1. **Single domain.** BCG consulting is the only published mode-distribution study at this level of detail. There is no comparable Randazzo-style mode breakdown for coding, writing, design, customer service, or relational work. The cleanest cross-domain test — does the cyborg / centaur / self-automator partition look qualitatively similar in coding (where the runtime gives instant feedback) as in consulting (where peer review is the feedback loop)? — cannot be run from current data.
+2. **Inferred f and ρ.** BCG individual-level f (feedback richness) and ρ (retained practice) panels are not published; the f · ρ values per mode in this analysis are inferred from Randazzo's qualitative workflow descriptions (one-or-two interactions vs full-workflow integration vs split-task), not measured. A mode-distribution study that *did* measure f and ρ directly could substantially relocate τ.
+3. **Self-selection into mode is not random.** Randazzo observes BCG consultants self-select into modes; the model treats f · ρ position as a chosen point on a continuum. If the underlying causal arrow runs partly the other way (some workers are *constitutionally* self-automators rather than tactically), the gate's interpretation as a tunable threshold weakens.
+
+The verdict survives — the data is consistent with the model's τ — but the strength of "supported" should be read as "consistent with one well-designed observational study in one professional domain, with the structural identification assumption acknowledged." Stage 4 Q3 should be reopened the moment a non-consulting mode-distribution study becomes available; until then, the model's confidence in τ should not exceed the data's.
 
 ### Q4 — Scalar T, B vs vector identity allocation: untestable from current data
 
@@ -177,11 +200,37 @@ Independently confirmed in the global freelance market by Hui-Reshef-Zhou (Organ
 
 ### Anthropic Economic Index — augmentation/automation drift
 
-Augmentation share on the consumer Claude.ai surface drifted from 57% (Feb 2025) → 55% (Sep 2025) → 52% (Jan 2026) → 51% (Mar 2026) — a **6pp slow drift toward automation over 13 months**. First-party API traffic was dominated by automation throughout (~70% Jan 2026). Top-10-task concentration on Claude.ai dropped from 24% (Nov 2025) to 19% (Feb 2026), indicating usage de-concentrating across more tasks.
+Augmentation share on the consumer Claude.ai surface drifted from 57% (Feb 2025) → 55% (Sep 2025) → 52% (Jan 2026) → 51% (Mar 2026) — a **6pp drift toward automation over 13 months, or 0.46 pp/month**. First-party API traffic was dominated by automation throughout (~70% Jan 2026). Top-10-task concentration on Claude.ai dropped from 24% (Nov 2025) to 19% (Feb 2026), indicating usage de-concentrating across more tasks.
 
-Read against the topology's G3 (engagement-optimized substitution): the consumer-surface drift is *slow* (the augmentation share lost ~0.5pp/month), but it is monotonic over the four reports, consistent with the topology's claim that engagement-optimized substitution is structurally favored over time. The API surface, where there is no engagement-optimization pressure, runs automation-dominant from the start — supporting the same claim from a different direction.
+Read against the topology's G3 (engagement-optimized substitution): the consumer-surface drift is monotonic over four reports, but its rate (0.46 pp/month) is in territory the topology never specified — G3 was a directional claim ("engagement-optimization favors substitution over time"), not a rate prediction. The data adds a number where there was previously only a sign. **Extrapolation note:** at 0.46 pp/month, augmentation share crosses 50% in mid-2026 and reaches 30% in late 2030. Whether the rate accelerates, decays, or holds linear is not determinable from four data points; Stage 5 should monitor subsequent AEI releases as new evidence on G3's structural force. The API surface, where there is no engagement-optimization pressure, runs automation-dominant from the start — supporting the directional claim from a different angle but not constraining its rate.
 
-## 4. Adversarial + steelman
+### Anchoring the model's `a` parameter to population reality
+
+The model's AI capability `a` is exposed as a per-task scalar in the dashboard, with default a ≈ 0.7 in most presets. Eloundou et al. (Science 2024) provides the corresponding population-level distribution: **80% of US workers have at least 10% of tasks LLM-exposed; 19% have at least 50% of tasks exposed; 46% have at least 50% exposed when accounting for complementary software**. Translated into the model's terms: most users sit at a ≈ 0.1 to a ≈ 0.5 across their typical task surface, with a ≥ 0.5 representing the upper-quartile-exposure case. The default-risk preset's a = 0.7 corresponds to a knowledge worker whose tasks are heavily AI-exposed — accurate for software developers, knowledge-worker professionals, and writers; less accurate for the median worker. Stage 5 should default the slider to a more realistic median (around a = 0.3) and let users adjust upward for more AI-exposed task surfaces.
+
+## 4. Data gaps the model is silent on
+
+Three structural gaps that bound what Stage 5 can claim. These are distinct from Q4 and Q5 (parameter-fit gaps within the model's named structure) — they are gaps in the **research base** the model would need to expand its scope.
+
+### O2 — Asymmetric-adoption couples (the largest single gap)
+
+The topology calls this "the single largest empirical gap in the literature." There is no peer-reviewed quantitative study on outcomes for couples where one partner uses AI heavily for emotional / relational processing and the other does not. The technoference literature (McDaniel & Coyne 2016 and follow-ups) shows that perceived technology interference predicts conflict, lower satisfaction, and depression in couples — but technoference is attention-split, not delegation, so it is not direct evidence for the AI-as-third-party dynamic. The model's δ_R parameter treats relational baseline thickness as a single per-user scalar; it does not represent the asymmetry where one partner's δ_R is propped up by AI substitution while the other's is not.
+
+**Why this matters for Stage 5.** The relational channel in the build artifact will likely include user-tunable d (daily AI-emotional minutes) and δ_R (baseline thickness). Without O2 evidence, the build cannot honestly say what happens to the *other* partner — and "what happens to the other partner" is the most decision-relevant relational question for a user reading the dashboard. A published O2 study would be the single most consequential empirical addition to the topic in the next 3 years; until then, Stage 5 should explicitly flag asymmetric-adoption outcomes as out of scope.
+
+### O4 — AI-augmented atelic activities (gates the model's defensive side)
+
+The model's atelic-ballast hypothesis (B ≥ T zeroes ΔM_telic) assumes atelic activities (friendship, contemplation, parenting-as-parenting, walking) are not themselves degraded by AI proximity. The topology's O4 asks whether this assumption holds — whether AI companions change the phenomenology of friendship, AI art changes aesthetic contemplation, AI parenting aids change the felt quality of caregiving. There is no direct empirical test. If O4 resolves "yes, atelic is also degraded," the model's atelic-ballast intervention (S3) loses its structural basis and the entire defensive side needs reconstruction.
+
+**Why this matters for Stage 5.** The build artifact will likely make B (atelic ballast) a primary user-tunable lever, and the dashboard will show "raise B → ΔM_telic shrinks." If O4 is false, this UX claim is wrong. Stage 5 should expose the O4 assumption explicitly in dashboard help text — *the protective effect of B depends on atelic activities remaining un-degraded by AI proximity, which is currently a load-bearing assumption with no direct empirical test.*
+
+### Therabot generalization — clinical-population evidence used as a general-population anchor
+
+Heinz et al. (NEJM AI 2025) measured Therabot benefits in N=210 *clinically-symptomatic* subjects (MDD, GAD, eating-disorder risk). The Q2 panel uses Therabot's clinical-grade benefit (51% PHQ-9 reduction, WAI 3.59) as the anchor for the model's β_R (low-dose therapeutic benefit) channel. **Generalizing from the clinical population to the general user is a real cross-context leap.** The mechanism by which Therabot helps depressed patients (consistent CBT-style scaffolding, daily prompted use) is not the same as the mechanism by which a general user might benefit from low-dose AI-emotional engagement (occasional venting, situational sense-making). The Heinz benefits may be attenuated, absent, or even sign-flipped for non-clinical users.
+
+**Why this matters for Stage 5.** The dashboard's ΔV_rel benefit channel is calibrated against Heinz; a general user reading the panel may infer they personally would experience Therabot-magnitude benefit at 13 min/day, which the data does not support. Stage 5 should distinguish "clinical-grade benefit (Heinz population)" from "expected-general-user benefit at low dose (extrapolated, weak evidence)" in the panel labelling.
+
+## 5. Adversarial + steelman
 
 Five objections to the data stage itself.
 
@@ -225,7 +274,7 @@ The apprenticeship-ladder break and the AEI augmentation drift are presented as 
 
 **Response.** Conceded as a framing critique. The model's §6 explicitly names labor-market access as exogenous and the model is silent on G5 — but the empirical evidence for G5 is the strongest single finding in the data corpus. The Stage-5 build should make the apprenticeship-break visible as a structural prerequisite (e.g., an "early-career exposed" toggle that reduces effective labor-market access and accordingly attenuates ΔV_prod). For this Stage 4, the honest framing is that the apprenticeship-ladder break is *primary evidence* that the model is silent on, not backdrop. The decision to keep it in §3 rather than promoting to §2 reflects the choice to organize §2 by Q-number for clarity — but Stage 5 should not let that ordering choice carry through to the user-facing dashboard.
 
-## 5. Pipeline cruxes
+## 6. Pipeline cruxes
 
 Five load-bearing assumptions whose failure would invalidate findings, with what evidence would flip each:
 
@@ -239,7 +288,29 @@ Five load-bearing assumptions whose failure would invalidate findings, with what
 
 **D5 — Productivity-study generalization to "knowledge work."** Q6 (per-domain α) assumes the six measured domains (customer service, consulting, coding, writing, education, realized-economy) are representative of the broader knowledge-work surface. Important domains where AI is awkward (in-person therapy, embodied physical work, deep relational work, judgment under irreducible uncertainty) are absent — and these are where the model's predicted α-low domains live. *Falsification:* well-designed productivity study in a deep-relational or embodied-judgment domain showing α materially different from the model's prediction (likely lower).
 
-## 6. Connections to other topics
+## 7. Next moves for Stage 5
+
+The verdicts above scatter Stage-5 design implications across §2, §4, and §5. Pulling them into one place: three design choices the build artifact should make on day one.
+
+### 1. Per-domain α + per-domain (f, ρ) defaults via a domain selector
+
+The cleanest single Stage-5 lever. Instead of one α slider, expose a domain dropdown (coding / consulting / writing / customer service / general knowledge work / "I'll set my own") that adjusts (α, f-default, ρ-default) jointly. This addresses Q6's per-domain heterogeneity finding and also implicitly addresses adversarial obj 1 (the gate may be domain-specific, not just α). A user choosing "coding" gets α ≈ 0.74 with f-default high (runtime feedback) and ρ-default mid; a user choosing "writing" gets α ≈ 0.49 with f-default low (slow human-reader feedback) and ρ-default mid. The domain selector also implicitly answers the realized-economy J-curve: a user wanting to model their own per-task gain rather than expected income lift selects "per-task" mode; "realized" mode deflates α by 10× to match Humlum-Vestergaard.
+
+### 2. Fit-vs-calibrated visual indicator on the channel-level chart
+
+The current model dashboard shows ΔV_prod, ΔV_rel, ΔV_trap, ΔM_telic, ΔM_comp, ΔM_rel as six bars with equal visual weight. But three of these channels are anchored against published evidence (ΔV_prod via per-domain α, ΔV_rel and ΔM_rel via the OpenAI-MIT shape) while three are calibrated against imposed constants (ΔM_telic via κ and identity allocation, ΔM_comp via λ_M and a bounded-only λ, ΔV_trap via η_trap). Stage 5 should visually distinguish them — striped bars for calibrated channels, solid for fit. This makes the asymmetry the data stage surfaces (offensive side fit, defensive side calibrated) legible at a glance.
+
+### 3. Early-career-exposed labor-market-access toggle
+
+The model is silent on labor-market access — the user's ability to *get* the work in the first place is treated as exogenous. But the apprenticeship-ladder break (§3) is the largest empirical effect in the entire data corpus. Stage 5 should add a single toggle: "early career (22–25) in highly AI-exposed occupation?" When checked, ΔV_prod is attenuated by the empirically-anchored 13–20% employment-decline penalty (Brynjolfsson-Chandar-Chen) and the dashboard surfaces the message: "the model predicts your AI-augmented productivity at this configuration would be X, but the labor market access required to deploy that productivity has compressed by Y% in your demographic over the past 30 months — the offensive side of the model's predictions is conditional on you holding the role." This is the single highest-leverage way to make the model's individual-decision scope honest about the structural conditions it depends on.
+
+### Lower-priority but worth flagging
+
+- **Asymmetric-adoption disclaimer** in the relational channel UI text (the model has nothing to say about the partner's outcomes — flag this explicitly to avoid dashboard-as-marriage-advice misuse).
+- **AEI-rate ticker**: surface the ongoing augmentation-share drift (currently 0.46 pp/month) as a "G3 strength meter" that updates with each new AEI release. Makes the abstract "engagement-optimized substitution" claim quantitative for users.
+- **Dose-response failure-mode mode**: a "what happens if the platform changes" toggle that shocks ΔM_rel by the De Freitas Replika-removal magnitude (5× baseline mental-health Reddit post share). Captures the catastrophic-loss dynamic the model's additive structure cannot represent.
+
+## 8. Connections to other topics
 
 The data stage touches three sibling topics directly:
 
