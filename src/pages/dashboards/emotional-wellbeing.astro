@@ -5,25 +5,27 @@ import EmotionalWellbeingDashboard from '../../components/dashboards/emotional-w
 
 <BaseLayout title="Emotional Well-being — Teddy Wright"
   description="Rate your emotional needs by priority and how met they currently are. Surface highest-leverage needs, domain gaps, and which sources (self / friends / romantic / activities / career / other) are over- or under-contributing.">
-  <section class="max-w-[960px] mx-auto px-8 pt-14 pb-24">
+  <section class="max-w-[1080px] mx-auto px-6 md:px-8 pt-12 pb-24">
     <a href="/dashboards" class="font-mono text-[11px] uppercase text-muted hover:text-accent no-underline" style="letter-spacing: 0.08em">← all dashboards</a>
 
-    <h1 class="font-display font-semibold text-[40px] leading-none m-0 mt-4 mb-3 text-ink"
-        style="letter-spacing: -0.03em">Emotional Well-being</h1>
-    <p class="font-serif text-[16px] text-ink-soft leading-[1.6] max-w-[640px] m-0 mb-3">
-      Rate your emotional needs by priority and how met they currently are.
-      The dashboard surfaces the highest-leverage needs to act on,
-      domain-level gaps, and which sources (self, friends, romantic, activities, career, other)
-      are over- or under-contributing relative to where you'd want them.
-    </p>
-    <p class="font-mono text-[11px] uppercase text-muted leading-[1.5] max-w-[640px] m-0 mb-10"
-       style="letter-spacing: 0.08em">
-      data lives in your browser only · export csv to keep it · import to restore
-    </p>
+    <header class="mt-4 mb-8 max-w-[640px]">
+      <h1 class="font-display font-semibold text-[40px] leading-none m-0 mb-3 text-ink"
+          style="letter-spacing: -0.03em">Emotional Well-being</h1>
+      <p class="font-serif text-[16px] text-ink-soft leading-[1.6] m-0 mb-3">
+        Rate your emotional needs by priority and how met they currently are.
+        The dashboard surfaces the highest-leverage needs to act on,
+        domain-level gaps, and which sources (self, friends, romantic, activities, career, other)
+        are over- or under-contributing relative to where you'd want them.
+      </p>
+      <p class="font-mono text-[11px] uppercase text-muted leading-[1.5] m-0"
+         style="letter-spacing: 0.08em">
+        data lives in your browser only · export csv to keep it · import to restore
+      </p>
+    </header>
 
     <EmotionalWellbeingDashboard client:only="react" />
 
-    <div class="mt-14 pt-6 border-t border-rule font-serif text-[14px] text-ink-soft leading-[1.65]">
+    <div class="mt-12 pt-6 border-t border-rule-soft font-serif text-[14px] text-ink-soft leading-[1.65] max-w-[720px]">
       <h2 class="font-display font-semibold text-[18px] text-ink m-0 mb-3" style="letter-spacing: -0.01em">How to use it</h2>
       <ol class="m-0 pl-5">
         <li class="mb-1">Skim the seeded needs. Add your own with <span class="font-mono text-[12px]">+ Add need</span>; remove any that don't apply via the row's expanded panel.</li>

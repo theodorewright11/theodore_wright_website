@@ -105,49 +105,93 @@ export default function EmotionalWellbeingDashboard() {
   const ratedNeeds = useMemo(() => rated(state.needs), [state.needs]);
   const ms = useMemo(() => metShare(state.needs), [state.needs]);
 
+  const insightsDisabled = ms.rated === 0;
+  const tabTitle = tab === 'needs' ? 'Needs' : 'Insights';
+  const tabSub = tab === 'needs'
+    ? 'Rate priority and how met each need is. Expand a row to allocate sources.'
+    : 'Derived views across your rated needs.';
+
   return (
     <div className="not-prose">
-      {/* Toolbar */}
-      <div className="flex flex-wrap items-center gap-2 mb-6 pb-4 border-b border-rule">
-        <TabButton label="Needs" active={tab === 'needs'} onClick={() => setTab('needs')} />
-        <TabButton label="Insights" active={tab === 'insights'} onClick={() => setTab('insights')} />
-        <div className="ml-auto flex items-center gap-2">
-          <span className="font-mono text-[10px] uppercase text-muted hidden sm:inline" style={{ letterSpacing: '0.08em' }}>
-            {ratedNeeds.length}/{state.needs.length} rated
-          </span>
-          <ToolbarButton onClick={onImportClick}>Import CSV</ToolbarButton>
-          <ToolbarButton onClick={exportCsv}>Export CSV</ToolbarButton>
-          <ToolbarButton onClick={resetSeed}>Reset</ToolbarButton>
-          <input ref={fileRef} type="file" accept=".csv,text/csv" onChange={onImportFile} className="hidden" />
+      <div className="bg-paper-edge border border-rule rounded-lg shadow-[0_1px_3px_rgba(26,22,20,0.04),0_4px_16px_-8px_rgba(26,22,20,0.06)] overflow-hidden">
+        <div className="grid md:grid-cols-[200px_1fr]">
+          {/* Sidebar (collapses to top bar on mobile) */}
+          <aside className="bg-ink/[0.025] md:border-r border-b md:border-b-0 border-rule flex md:flex-col">
+            <div className="hidden md:block px-4 pt-4 pb-3 border-b border-rule-soft">
+              <div className="font-mono text-[9px] uppercase text-muted mb-1" style={{ letterSpacing: '0.12em' }}>App</div>
+              <div className="font-display text-[15px] text-ink leading-tight" style={{ letterSpacing: '-0.01em' }}>
+                Emotional<br/>Well-being
+              </div>
+            </div>
+
+            <nav className="flex md:flex-col flex-1 md:flex-none p-2 gap-1 md:gap-0.5">
+              <SidebarTab label="Needs" count={state.needs.length}
+                          active={tab === 'needs'} onClick={() => setTab('needs')} />
+              <SidebarTab label="Insights" count={ms.rated}
+                          active={tab === 'insights'}
+                          disabled={insightsDisabled}
+                          disabledHint="rate at least one need first"
+                          onClick={() => !insightsDisabled && setTab('insights')} />
+            </nav>
+
+            <div className="hidden md:block mt-auto px-4 py-3 border-t border-rule-soft">
+              <SidebarStat label="met share"
+                           value={ms.rated > 0 ? `${(ms.score * 100).toFixed(0)}%` : '—'} />
+              <SidebarStat label="rated"
+                           value={`${ratedNeeds.length}/${state.needs.length}`} />
+              <div className="font-mono text-[9px] uppercase text-muted mt-3 pt-3 border-t border-rule-soft leading-relaxed" style={{ letterSpacing: '0.08em' }}>
+                local-only<br/>browser storage
+              </div>
+            </div>
+          </aside>
+
+          {/* Main content area */}
+          <div className="bg-paper min-w-0">
+            {/* Sticky toolbar */}
+            <div className="sticky top-0 z-10 bg-paper/95 backdrop-blur-sm border-b border-rule px-5 py-3 flex items-center gap-3">
+              <div className="min-w-0 flex-1">
+                <h2 className="font-display font-semibold text-[18px] text-ink m-0 leading-tight" style={{ letterSpacing: '-0.015em' }}>
+                  {tabTitle}
+                </h2>
+                <p className="font-serif text-[12px] text-muted m-0 truncate">{tabSub}</p>
+              </div>
+              <div className="flex items-center gap-1.5 flex-shrink-0">
+                <ToolbarButton onClick={onImportClick}>Import</ToolbarButton>
+                <ToolbarButton onClick={exportCsv}>Export</ToolbarButton>
+                <ToolbarButton onClick={resetSeed} muted>Reset</ToolbarButton>
+                <input ref={fileRef} type="file" accept=".csv,text/csv" onChange={onImportFile} className="hidden" />
+              </div>
+            </div>
+
+            <div className="px-5 py-5 md:px-6 md:py-6">
+              {tab === 'needs' && (
+                <NeedsTab
+                  state={state}
+                  grouped={grouped}
+                  filterDomain={filterDomain}
+                  setFilterDomain={setFilterDomain}
+                  expanded={expanded}
+                  setExpanded={setExpanded}
+                  updateNeed={updateNeed}
+                  updateSource={updateSource}
+                  removeNeed={removeNeed}
+                  addNeed={addNeed}
+                />
+              )}
+
+              {tab === 'insights' && (
+                <InsightsTab
+                  needs={state.needs}
+                  view={insightView}
+                  setView={setInsightView}
+                  metShareScore={ms.score}
+                  ratedCount={ms.rated}
+                />
+              )}
+            </div>
+          </div>
         </div>
       </div>
-
-      {tab === 'needs' && (
-        <NeedsTab
-          state={state}
-          grouped={grouped}
-          filterDomain={filterDomain}
-          setFilterDomain={setFilterDomain}
-          expanded={expanded}
-          setExpanded={setExpanded}
-          updateNeed={updateNeed}
-          updateSource={updateSource}
-          removeNeed={removeNeed}
-          addNeed={addNeed}
-          metShareScore={ms.score}
-          ratedCount={ms.rated}
-        />
-      )}
-
-      {tab === 'insights' && (
-        <InsightsTab
-          needs={state.needs}
-          view={insightView}
-          setView={setInsightView}
-          metShareScore={ms.score}
-          ratedCount={ms.rated}
-        />
-      )}
     </div>
   );
 }
@@ -165,11 +209,9 @@ function NeedsTab(props: {
   updateSource: (id: string, source: Source, patch: Partial<{ actual: number; ideal: number }>) => void;
   removeNeed: (id: string) => void;
   addNeed: () => void;
-  metShareScore: number;
-  ratedCount: number;
 }) {
   const { grouped, filterDomain, setFilterDomain, expanded, setExpanded,
-    updateNeed, updateSource, removeNeed, addNeed, metShareScore, ratedCount } = props;
+    updateNeed, updateSource, removeNeed, addNeed } = props;
 
   const toggle = (id: string) => {
     const next = new Set(expanded);
@@ -179,17 +221,8 @@ function NeedsTab(props: {
 
   return (
     <div>
-      {/* Headline strip */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">
-        <Card label="Met share" value={ratedCount > 0 ? `${(metShareScore * 100).toFixed(0)}%` : '—'}
-              hint="Priority-weighted % of how met your rated needs are." />
-        <Card label="Rated" value={`${ratedCount}`} hint="Needs with both priority and currently-met set." />
-        <Card label="Domains" value={`${[...grouped.values()].filter(arr => arr.length).length}`}
-              hint="Domains with at least one need." />
-      </div>
-
       {/* Domain filter */}
-      <div className="flex flex-wrap items-center gap-2 mb-5">
+      <div className="flex flex-wrap items-center gap-1.5 mb-5 pb-4 border-b border-rule-soft">
         <span className="font-mono text-[10px] uppercase text-muted mr-1" style={{ letterSpacing: '0.08em' }}>Domain</span>
         <FilterChip label="All" active={filterDomain === 'all'} onClick={() => setFilterDomain('all')} />
         {DOMAINS.map(d => (
@@ -201,16 +234,16 @@ function NeedsTab(props: {
       {[...grouped.entries()].map(([domain, needs]) => {
         if (!needs.length) return null;
         return (
-          <section key={domain} className="mb-8">
-            <div className="flex items-baseline justify-between mb-2 pb-2 border-b border-rule">
-              <h3 className="font-display font-semibold text-[16px] text-ink m-0" style={{ letterSpacing: '-0.01em' }}>
+          <section key={domain} className="mb-6 border border-rule-soft rounded-md overflow-hidden bg-paper-edge/20">
+            <header className="flex items-baseline justify-between px-3 py-2 bg-paper-edge/60 border-b border-rule-soft">
+              <h3 className="font-mono text-[10px] uppercase text-ink-soft m-0 tracking-wider" style={{ letterSpacing: '0.12em' }}>
                 {domain}
               </h3>
-              <span className="font-mono text-[10px] uppercase text-muted" style={{ letterSpacing: '0.08em' }}>
+              <span className="font-mono text-[10px] uppercase text-muted tabular-nums" style={{ letterSpacing: '0.08em' }}>
                 {needs.length}
               </span>
-            </div>
-            <ul className="m-0 p-0 list-none">
+            </header>
+            <ul className="m-0 p-0 list-none bg-paper">
               {needs.map(n => (
                 <NeedRow
                   key={n.id}
@@ -229,7 +262,7 @@ function NeedsTab(props: {
 
       <div className="mt-6">
         <button onClick={addNeed}
-                className="font-mono text-[11px] uppercase text-accent border border-accent rounded-sm px-3 py-1.5 hover:bg-accent hover:text-paper transition-colors"
+                className="font-mono text-[11px] uppercase text-accent bg-paper border border-accent rounded-sm px-3 py-2 hover:bg-accent hover:text-paper transition-colors shadow-[0_1px_0_rgba(26,22,20,0.04)]"
                 style={{ letterSpacing: '0.08em' }}>
           + Add need
         </button>
@@ -251,13 +284,13 @@ function NeedRow(props: {
   const isRated = need.priority > 0 && need.currentlyMet > 0;
 
   return (
-    <li className="border-b border-rule-soft py-3">
+    <li className="border-b border-rule-soft last:border-b-0 px-3 py-3 hover:bg-paper-edge/30 transition-colors">
       <div className="grid grid-cols-12 gap-3 items-center">
         <div className="col-span-12 md:col-span-5">
           <input
             value={need.name}
             onChange={e => onUpdate({ name: e.target.value })}
-            className="w-full bg-transparent font-serif text-[15px] text-ink leading-tight border-none p-0 focus:outline-none focus:bg-paper-edge/40 rounded-sm px-1 -ml-1"
+            className="w-full bg-transparent font-serif text-[15px] text-ink leading-tight border-none p-0 focus:outline-none focus:bg-paper-edge/60 rounded-sm px-1 -ml-1"
           />
           <div className="mt-1">
             <select
@@ -420,17 +453,20 @@ function InsightsTab({ needs, view, setView, metShareScore, ratedCount }: {
     );
   }
 
+  const top = rankedByLeverage(rated(needs))[0];
+
   return (
     <div>
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">
-        <Card label="Met share" value={`${(metShareScore * 100).toFixed(0)}%`}
-              hint="Priority-weighted % across rated needs." />
-        <Card label="Rated needs" value={`${ratedCount}`} />
-        <Card label="Top leverage" value={`${rankedByLeverage(needs)[0]?.name ?? '—'}`}
-              hint="Highest priority × unmet." />
-      </div>
+      {top && (
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
+          <Card label="Top leverage" value={top.name} hint={`P${top.priority} · M${top.currentlyMet} · score ${leverage(top)}`} />
+          <Card label="Met share" value={`${(metShareScore * 100).toFixed(0)}%`} hint="priority-weighted across rated" />
+          <Card label="Rated" value={`${ratedCount}`} hint="needs feeding the views below" />
+        </div>
+      )}
 
-      <div className="flex flex-wrap items-center gap-2 mb-6 pb-3 border-b border-rule-soft">
+      <div className="flex flex-wrap items-center gap-1.5 mb-6 pb-4 border-b border-rule-soft">
+        <span className="font-mono text-[10px] uppercase text-muted mr-1" style={{ letterSpacing: '0.08em' }}>View</span>
         <FilterChip label="Leverage" active={view === 'leverage'} onClick={() => setView('leverage')} />
         <FilterChip label="By domain" active={view === 'domain'} onClick={() => setView('domain')} />
         <FilterChip label="Sources" active={view === 'sources'} onClick={() => setView('sources')} />
@@ -595,27 +631,54 @@ function DistributionView({ needs }: { needs: Need[] }) {
 
 // ----------------------------------------------------------- Small UI bits
 
-function TabButton({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
+function SidebarTab({ label, count, active, onClick, disabled, disabledHint }: {
+  label: string;
+  count?: number;
+  active: boolean;
+  onClick: () => void;
+  disabled?: boolean;
+  disabledHint?: string;
+}) {
+  const base = 'group relative w-full flex items-baseline justify-between gap-2 px-3 py-2 rounded-sm font-mono text-[11px] uppercase transition-colors';
+  const state = disabled
+    ? 'text-muted/60 cursor-not-allowed'
+    : active
+      ? 'bg-paper text-accent shadow-[inset_2px_0_0_currentColor] md:shadow-[inset_2px_0_0_currentColor]'
+      : 'text-muted hover:bg-paper/70 hover:text-ink-soft';
   return (
     <button
       onClick={onClick}
-      className={`font-mono text-[11px] uppercase px-3 py-1.5 rounded-sm border transition-colors ${
-        active
-          ? 'bg-accent text-paper border-accent'
-          : 'text-muted border-rule hover:text-accent hover:border-accent'
-      }`}
+      disabled={disabled}
+      title={disabled ? disabledHint : undefined}
+      className={`${base} ${state}`}
       style={{ letterSpacing: '0.08em' }}
     >
-      {label}
+      <span>{label}</span>
+      {count !== undefined && (
+        <span className={`font-mono text-[10px] tabular-nums ${active ? 'text-accent/70' : 'text-muted/70'}`}>{count}</span>
+      )}
     </button>
   );
 }
 
-function ToolbarButton({ children, onClick }: { children: React.ReactNode; onClick: () => void }) {
+function SidebarStat({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex items-baseline justify-between gap-2 py-1">
+      <span className="font-mono text-[9px] uppercase text-muted" style={{ letterSpacing: '0.1em' }}>{label}</span>
+      <span className="font-mono text-[12px] tabular-nums text-ink">{value}</span>
+    </div>
+  );
+}
+
+function ToolbarButton({ children, onClick, muted }: { children: React.ReactNode; onClick: () => void; muted?: boolean }) {
   return (
     <button
       onClick={onClick}
-      className="font-mono text-[10px] uppercase text-muted border border-rule rounded-sm px-2 py-1 hover:text-accent hover:border-accent transition-colors"
+      className={`font-mono text-[10px] uppercase rounded-sm px-2.5 py-1.5 border transition-colors ${
+        muted
+          ? 'text-muted border-transparent hover:text-accent hover:border-rule'
+          : 'text-ink-soft border-rule hover:text-accent hover:border-accent bg-paper'
+      }`}
       style={{ letterSpacing: '0.08em' }}
     >
       {children}
@@ -627,10 +690,10 @@ function FilterChip({ label, active, onClick }: { label: string; active: boolean
   return (
     <button
       onClick={onClick}
-      className={`font-mono text-[10px] uppercase px-2 py-1 rounded-sm border transition-colors ${
+      className={`font-mono text-[10px] uppercase px-2.5 py-1 rounded-full border transition-colors ${
         active
-          ? 'border-accent text-accent'
-          : 'border-rule text-muted hover:border-accent-soft hover:text-ink-soft'
+          ? 'bg-accent border-accent text-paper'
+          : 'border-rule text-muted hover:border-accent-soft hover:text-ink-soft hover:bg-paper-edge/40'
       }`}
       style={{ letterSpacing: '0.08em' }}
     >
@@ -641,9 +704,9 @@ function FilterChip({ label, active, onClick }: { label: string; active: boolean
 
 function Card({ label, value, hint }: { label: string; value: string; hint?: string }) {
   return (
-    <div className="border border-rule rounded-sm p-3 bg-paper-edge/30">
-      <div className="font-mono text-[10px] uppercase text-muted mb-1" style={{ letterSpacing: '0.08em' }}>{label}</div>
-      <div className="font-display font-semibold text-[20px] text-ink leading-none mb-1" style={{ letterSpacing: '-0.01em' }}>{value}</div>
+    <div className="border border-rule-soft rounded-md p-3 bg-paper-edge/40 shadow-[0_1px_0_rgba(26,22,20,0.02)]">
+      <div className="font-mono text-[10px] uppercase text-muted mb-1.5" style={{ letterSpacing: '0.1em' }}>{label}</div>
+      <div className="font-display font-semibold text-[22px] text-ink leading-none mb-1.5" style={{ letterSpacing: '-0.015em' }}>{value}</div>
       {hint && <div className="font-mono text-[10px] text-muted leading-tight">{hint}</div>}
     </div>
   );
