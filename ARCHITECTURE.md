@@ -351,7 +351,7 @@ Headers are authoritative on import; column order doesn't matter. Quoted fields 
 
 Lives at [src/components/dashboards/emotional-wellbeing/](src/components/dashboards/emotional-wellbeing/). Mounted at `/dashboards/emotional-wellbeing`. v1 is public-demo only.
 
-**Files**: `EmotionalWellbeingDashboard.tsx` (entry; tab router, state, persistence, all sub-components inline), `types.ts` (Need / Domain / Source / DataState + label maps), `seed.ts` (35 starter needs across 8 domains, names + domains only, ratings unset), `storage.ts` (localStorage + CSV round-trip with field coercion), `compute.ts` (pure: `leverage`, `rankedByLeverage`, `domainRollups`, `sourceGaps`, `distribution`, `metShare`).
+**Files**: `EmotionalWellbeingDashboard.tsx` (entry; tab router, state, persistence, all sub-components inline), `types.ts` (Need / Domain / Source / DataState + label maps), `seed.ts` (25 starter needs across 8 domains, names + domains only, ratings unset; trimmed from an earlier 35 to remove near-synonyms and fill two gaps), `storage.ts` (localStorage + CSV round-trip with field coercion), `compute.ts` (pure: `leverage`, `rankedByLeverage`, `domainRollups`, `sourceGaps`, `distribution`, `metShare`).
 
 **Storage key**: `tw-emotional-wellbeing-v1` — a single JSON object `{ version: 1, needs: Need[] }`. Schema versioned via `version` for future migrations. On load, every persisted need is coerced through `coerceNeed` (clamps numeric ranges, validates domain enum, defaults missing source allocations to 0) so a stray hand-edit can't crash the UI.
 
@@ -383,7 +383,7 @@ Headers are authoritative on import; column order doesn't matter. Same quoting r
 
 - `npm run dev` — local at http://localhost:4321
 - `npm run build` — static output to `dist/`
-- Deploy target: TBD (Cloudflare Pages recommended for Access integration)
+- Deployed at **https://teddy-wright.com**. (Hosting platform recorded here when known — Cloudflare Pages is recommended if Cloudflare Access ever gets used to gate `/dashboards/*` private dashboards.)
 
 ## Known pitfalls
 

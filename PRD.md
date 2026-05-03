@@ -164,7 +164,7 @@ A needs-rating dashboard that surfaces the highest-leverage emotional needs to a
 - `currently_met` — 1–7 (1 = not at all, 7 = fully); 0 = unset.
 - *(optional)* per-source allocation: for each of `self / friends / romantic / activities / career / other`, an `actual %` and `ideal %` (0–100 each, step 5). Allocations don't need to sum to 100 — they're independent scalars; a small inline note flags "ideal should sum to ~100" when totals look off.
 
-**Default seed**: 35 universal needs across 8 domains (Purpose / Contribution, Relational / Social, Cognitive / Intellectual, Emotional, Creative, Physical, Spiritual / Existential, Autonomy / Agency), names + domains only, all ratings unset. Source is `src/components/dashboards/emotional-wellbeing/seed.ts`. Personal numbers are never committed to the repo.
+**Default seed**: 25 universal needs across 8 domains (Purpose / Contribution, Relational / Social, Cognitive / Intellectual, Emotional, Creative, Physical, Spiritual / Existential, Autonomy / Agency), names + domains only, all ratings unset. Trimmed from an earlier 35 to drop near-synonyms (e.g. "feeling understood" / "being known"; "freedom to choose" / "self-determination"; "awe" / "connection to something bigger") and to split the emotional cluster into steady-state ("loved & accepted") vs acute ("emotionally held in distress"). Two gap-fillers added: belonging / community and shared laughter & play. Source is `src/components/dashboards/emotional-wellbeing/seed.ts`. Personal numbers are never committed to the repo.
 
 **Computations** (`compute.ts`):
 
