@@ -14,12 +14,21 @@ import { useState } from 'react';
 
 // ---- Frozen data from findings.json -----------------------------------
 
-const Q1_CHANNELS = {
-  generation: 34.5,
-  verification: 48.3,
-  overhead: 17.2,
+// Pass 2: Q1 reframed around Mozannar 2024 published aggregates only.
+// The granular 10-state breakdown in pass 1 was partly extrapolated;
+// pass 2 uses only the 4 cells separately reported in Figure 5(b)
+// plus the 51.5% Copilot-specific aggregate.
+const Q1_PUBLISHED_CELLS = [
+  { name: 'Copilot-specific (verify + defer + wait + prompt + edit)', share: 51.5, sd: 19.3, color: '#8a4a2b' },
+  { name: 'Pure thinking/verifying suggestion', share: 22.4, sd: 12.97, color: '#c98a6e' },
+  { name: 'Writing new functionality', share: 14.05, sd: 8.36, color: '#1a1614' },
+  { name: 'Waiting for suggestion', share: 4.2, sd: 4.46, color: '#a89677' },
+];
+const Q1_FITTED = {
+  phi_cyborg: 1.59,           // verify (22.4) / write-new (14.05)
+  phi_default: 0.30,
+  epsilon_default: 0.15,
 };
-const Q1_FITTED = { epsilon_estimate: 0.172, epsilon_default: 0.15, phi_estimate: 1.40, phi_default: 0.30 };
 
 const Q2_CONDITIONS: { name: string; in_session: number; post_test: number; beta_implied: number; corner: string }[] = [
   { name: 'Control', in_session: 0, post_test: 0, beta_implied: 0.000, corner: '— (no AI)' },
@@ -58,11 +67,19 @@ const Q4_ANCHORS: {
   { study: 'METR real-repo',      c_h: 0.85, c_ai: 0.55, observed: -19, cleanly_misrouted: true },
 ];
 
-const Q5_SWINGS: { label: string; swing: number; condition_a: string; condition_b: string }[] = [
-  { label: 'Goh→Everett (medicine)', swing: 7.9, condition_a: 'naive centaur consult', condition_b: 'independent-then-synthesize' },
-  { label: 'Bastani unfettered→guardrailed', swing: 17, condition_a: 'GPT Base (full delegation)', condition_b: 'GPT Tutor (hint only)' },
-  { label: 'METR real-repo (workflow penalty)', swing: 19, condition_a: 'naive cyborg', condition_b: 'no AI control' },
-  { label: 'Single-agent → multi-agent (Anthropic)', swing: 90.2, condition_a: 'single-agent Opus', condition_b: 'orchestrator-worker' },
+// Pass 2: split into within-study (no across-study confounds) and
+// across-study (with confounds disclosed).
+const Q5_WITHIN_STUDY: { label: string; swing: number; design: string }[] = [
+  { label: 'Bastani unfettered→guardrailed', swing: 17, design: 'same RCT, same students, same model, same task set' },
+  { label: 'Single-agent → multi-agent (Anthropic)', swing: 90.2, design: 'same internal eval, same base model' },
+];
+const Q5_ACROSS_STUDY: { label: string; swing: number; design: string; confounds: string }[] = [
+  {
+    label: 'Goh 2024 → Everett 2025 (medicine)',
+    swing: 7.9,
+    design: 'across-study comparison; same broad domain',
+    confounds: 'different vignettes; different outcome metrics; different AI implementations (Goh: vanilla GPT-4; Everett: custom GPT system with engineered system prompt)',
+  },
 ];
 
 const Q6_CORNER_VARIANCE = [
@@ -292,62 +309,66 @@ function ProductivityPanel() {
 // ---- Q1 CUPS ---------------------------------------------------------
 
 function Q1Panel() {
-  const channels = [
-    { name: 'Generation', share: Q1_CHANNELS.generation, color: '#1a1614', desc: '(1−u) effort + writing after suggestion' },
-    { name: 'Verification', share: Q1_CHANNELS.verification, color: '#8a4a2b', desc: 'verifying + editing + debugging + skim (v·φ)' },
-    { name: 'Overhead', share: Q1_CHANNELS.overhead, color: '#c98a6e', desc: 'prompting + waiting + lookup + not_thinking (M + ε)' },
-  ];
+  // Pass 2: only published Mozannar Figure 5(b) cells with SD bars.
   const W = 440;
-  const H = 30;
-  let acc = 0;
+  const maxShare = 75; // cap above 51.5 + SD
+  const sx = (v: number) => (v / maxShare) * W;
   return (
     <div>
       <PanelHeader
         title="Q1. ε and φ from Mozannar 2024 CUPS telemetry"
-        claim="The model defaults are ε = 0.15 (residual attention at full delegation, the L1 substitution-myth invariant) and φ ≈ 0.30 (verification cost ratio). Aggregating the CUPS time-shares into the model's three channels gives empirical ε ≈ 0.17 and φ ≈ 1.40 (cyborg regime). Substitution-myth invariant is real and modestly under-calibrated; coding-regime φ is much higher than the lit-review prior."
-        verdict="supported_with_caveat"
+        claim="The model defaults are ε = 0.15 and φ ≈ 0.30. Mozannar 2024 publishes 51.5% (SD 19.3pp) of session time as Copilot-specific in the cyborg regime — strong qualitative confirmation of the L1 substitution-myth invariant. Cyborg-regime φ ≈ 22.4 / 14.05 ≈ 1.59, far higher than the model's default 0.30 — the headline Q1 finding. Pass-1 ε ≈ 0.17 was retracted as over-precise on partly-fabricated cells."
+        verdict="supported qualitatively (φ headline)"
         verdictKind="caveat"
       />
 
       <div className="border border-rule-soft rounded bg-paper p-4">
-        <div className="text-[10px] font-mono uppercase tracking-wider text-muted mb-2">
-          Mozannar CUPS — total session time decomposition (n=21 programmers, GitHub Copilot)
+        <div className="text-[10px] font-mono uppercase tracking-wider text-muted mb-3">
+          Mozannar 2024 Figure 5(b) — published cells only (n=21 programmers, GitHub Copilot)
         </div>
-        <svg viewBox={`0 0 ${W} ${H}`} width="100%" height={H}>
-          {channels.map(c => {
-            const w = (c.share / 100) * W;
-            const x = (acc / 100) * W;
-            acc += c.share;
+        <svg viewBox={`0 0 ${W} 200`} width="100%" height={220}>
+          {Q1_PUBLISHED_CELLS.map((c, i) => {
+            const y = 22 + i * 42;
+            const xBar = sx(c.share);
+            const xSdLow = sx(Math.max(0, c.share - c.sd));
+            const xSdHigh = sx(c.share + c.sd);
             return (
               <g key={c.name}>
-                <rect x={x} y={0} width={w} height={H} fill={c.color} opacity={0.85} />
-                <text x={x + w / 2} y={H / 2 + 4} fontSize={11} fontFamily="JetBrains Mono, monospace" fill="#f7f3ec" textAnchor="middle">
-                  {c.share.toFixed(1)}%
+                <text x={0} y={y - 4} fontSize={10} fontFamily="Source Serif 4, serif" fill="#1a1614">
+                  {c.name}
+                </text>
+                <rect x={0} y={y + 4} width={xBar} height={12} fill={c.color} opacity={0.85} rx={1} />
+                <line x1={xSdLow} y1={y + 10} x2={xSdHigh} y2={y + 10} stroke="#3a342c" strokeWidth={1} />
+                <line x1={xSdLow} y1={y + 6} x2={xSdLow} y2={y + 14} stroke="#3a342c" strokeWidth={1} />
+                <line x1={xSdHigh} y1={y + 6} x2={xSdHigh} y2={y + 14} stroke="#3a342c" strokeWidth={1} />
+                <text x={xBar + 6} y={y + 14} fontSize={11} fontFamily="JetBrains Mono, monospace" fill="#3a342c">
+                  {c.share}% <tspan fill="#7a7166" fontSize={9}>(SD {c.sd})</tspan>
                 </text>
               </g>
             );
           })}
-        </svg>
-        <div className="grid grid-cols-3 gap-2 mt-3 text-[11px]">
-          {channels.map(c => (
-            <div key={c.name}>
-              <span className="inline-block w-2 h-2 mr-1.5 align-middle" style={{ backgroundColor: c.color }} />
-              <span className="text-ink font-medium">{c.name}</span>
-              <div className="text-muted text-[10px] mt-0.5 leading-snug ml-3.5">{c.desc}</div>
-            </div>
+          {/* x-axis */}
+          <line x1={0} y1={193} x2={W} y2={193} stroke="#d9d0bf" strokeWidth={0.7} />
+          {[0, 25, 50, 75].map(v => (
+            <g key={v}>
+              <line x1={sx(v)} y1={193} x2={sx(v)} y2={196} stroke="#d9d0bf" strokeWidth={0.5} />
+              <text x={sx(v)} y={205} fontSize={9} fontFamily="JetBrains Mono, monospace" fill="#7a7166" textAnchor="middle">
+                {v}%
+              </text>
+            </g>
           ))}
-        </div>
+        </svg>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-5">
-        <NumberCard label="ε empirical" value={Q1_FITTED.epsilon_estimate.toFixed(2)} hint={`Default ${Q1_FITTED.epsilon_default.toFixed(2)}; modestly higher`} />
-        <NumberCard label="ε delta" value={`+${(Q1_FITTED.epsilon_estimate - Q1_FITTED.epsilon_default).toFixed(2)}`} hint="L1 invariant under-calibrated by ~15%" />
-        <NumberCard label="φ empirical (coding)" value={Q1_FITTED.phi_estimate.toFixed(2)} hint={`Default ${Q1_FITTED.phi_default.toFixed(2)}; cyborg regime is verification-heavy`} />
-        <NumberCard label="Verify share" value="48.3%" hint="Verification is the largest single channel — Karpathy G9 confirmed" />
+        <NumberCard label="Copilot-specific share" value="51.5%" hint="SD 19.3pp; L1 invariant strongly confirmed" />
+        <NumberCard label="Pure verify share" value="22.4%" hint="SD 12.97pp; the 'thinking/verifying' state" />
+        <NumberCard label="Cyborg φ estimate" value="1.59" hint={`Default ${Q1_FITTED.phi_default.toFixed(2)}; coding cyborg is verification-heavy`} />
+        <NumberCard label="Pass-1 retraction" value="ε ≈ 0.17" hint="Retracted — false precision on partly-fabricated breakdown" />
       </div>
 
       <p className="text-[11px] text-muted mt-4 leading-relaxed">
-        Mozannar's programmers spend more total session time verifying (48%) than generating (35%) — not because they verify each suggestion deeply, but because verification + editing + debugging compound across many short suggestions. Two implications: (1) ε is empirically larger than the model's default, supporting the substitution-myth invariant L1; (2) coding-regime φ is much higher than the model's lit-review prior of 0.30 — for coding specifically, the model should regime-switch toward higher φ. Stage-5 dashboards should let the user pick a regime (coding / writing / strategy) with regime-specific φ defaults.
+        Pass 2 reports only the 4 cells separately published in Mozannar 2024 Figure 5(b), with their reported standard deviations. The Q1 headline is the φ ≈ 1.59 cyborg-regime finding — coding cyborg work spends 1.6× as much time verifying as writing new code, far higher than the model's lit-review prior of 0.30. Implication: φ should be regime-dependent (cyborg-coding ~1.5; spec-driven structured-output ~0.3). Pass 1's ε ≈ 0.17 was computed off a 10-state breakdown where 7 of 10 cells were extrapolated, not published — that false precision is retracted.
       </p>
     </div>
   );
@@ -454,10 +475,10 @@ function Q3Panel() {
   return (
     <div>
       <PanelHeader
-        title="Q3. Mode distribution match against Randazzo BCG"
-        claim="The model's bilinearity result says per-task optima land at corners, never in the interior. Randazzo's 60/30/10 cyborg/centaur/self-automator distribution is therefore an aggregate-mixing pattern across heterogeneous-θ tasks. The synthetic θ-distribution recovers the 10% self-automator share, with the 60% cyborg empirically arising from a worker mixing (1, 0) and (0, 0) corners, and 30% centaur from mixing (1, 1) and (0, 0)."
-        verdict="supported_qualitatively"
-        verdictKind="caveat"
+        title="Q3. Mode-distribution structure (Randazzo)"
+        claim="The bilinearity result says per-task optima are corners, never interior. Randazzo classifies WORKERS into three behavioural modes (cyborg / centaur / self-automator) — not per-task corners. The empirical 60/30/10 distribution is consistent with TWO different underlying behaviours: (a) workers interleave corners across a day (model prediction), or (b) workers apply a flat interior (u, v) policy uniformly (the failure mode). Randazzo doesn't release per-task u-v telemetry, so the data is silent on which is happening."
+        verdict="structural prediction (not directly testable)"
+        verdictKind="framed"
       />
       <div className="grid md:grid-cols-2 gap-4">
         <div className="border border-rule-soft rounded bg-paper p-4">
@@ -468,13 +489,13 @@ function Q3Panel() {
         </div>
         <div className="border border-rule-soft rounded bg-paper p-4">
           <div className="text-[10px] font-mono uppercase tracking-wider text-muted mb-2">
-            Randazzo HBS WP 26-036 — empirical aggregate (n=244 BCG consultants)
+            Randazzo HBS WP 26-036 — empirical worker-level labels (n=244 BCG consultants)
           </div>
           {renderBars(Q3_CORNERS.empirical, '#c98a6e')}
         </div>
       </div>
       <p className="text-[11px] text-muted mt-4 leading-relaxed">
-        These are NOT directly comparable bars — left chart is per-task corners, right chart is aggregate worker-mode labels. The point of the comparison: the empirical 10% self-automator share falls inside the synthetic prediction range (51% per-task self-automator corner). The empirical 60% cyborg majority is structurally interior in (u, v) space and the bilinearity analysis says NO single sub-task should land there. Cyborg majority = naive flat-cyborg policy = the failure mode the model identifies.
+        These are NOT directly comparable bars — left chart is per-task corners under a synthetic BCG-like θ prior; right chart is aggregate worker-mode labels from Randazzo's coding. Pass 2 honest framing: the synthetic exercise demonstrates that corner-mixing CAN aggregate to a 60/30/10 behavioural pattern under reasonable θ priors. Whether BCG consultants actually interleave corners (model prediction) or apply a flat (u, v) policy (failure mode) requires per-task u-v telemetry that Randazzo does not release. Pass 1's interpretive moves (which simultaneously asserted both readings) have been retracted.
       </p>
     </div>
   );
@@ -503,10 +524,10 @@ function Q4Panel() {
   return (
     <div>
       <PanelHeader
-        title="Q4. Outside-frontier quality slope — model predicts y = −x at u=1"
-        claim="The model says quality drops by exactly u·(c_H − c_AI) when a worker mis-routes (uses AI when c_H > c_AI). On positive x (c_H > c_AI), the slope should be -1 if u=1, -0.67 if average u≈0.67. Fitted slope on cleanly mis-routed cases (Dell'Acqua outside, Otis low-baseline, METR real-repo) = 0.67. Match consistent with partial mis-routing in real subjects."
-        verdict="supported"
-        verdictKind="supported"
+        title="Q4. Outside-frontier quality magnitude (sanity check)"
+        claim="The model says quality drops by u·(c_H − c_AI) when a worker mis-routes. Across three cleanly mis-routed cases, observed drops are in the predicted ballpark — magnitude matches u·(c_H − c_AI) at u in roughly [0.5, 1.0]. Pass 2 disclosure: the (c_H, c_AI) values on the x-axis are inferred from the same outcome variable on the y-axis, so the regression is partly circular. With n=3 and circular x, there's neither degrees of freedom nor independent x — pass 1's 'fitted slope 0.67' was reported as if it were a slope estimate; pass 2 calls it a sanity check, not a slope test."
+        verdict="sanity check, consistent"
+        verdictKind="caveat"
       />
 
       <div className="border border-rule-soft rounded bg-paper p-4">
@@ -579,10 +600,14 @@ function Q4Panel() {
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-5">
         <NumberCard label="Predicted slope (u=1)" value="−1.00" hint="If subjects mis-routed completely" />
-        <NumberCard label="Fitted slope" value="−0.67" hint="Empirical; consistent with avg u ≈ 0.67" />
+        <NumberCard label="Descriptive slope" value="−0.67" hint="Not a real slope test — x inferred from y; n=3" />
         <NumberCard label="Mis-routed n" value="3" hint="Dell'Acqua outside / Otis low / METR" />
-        <NumberCard label="Linearity" value="confirmed" hint="Linearity in (c_H − c_AI) holds across all three" />
+        <NumberCard label="Linearity-as-shape" value="untested" hint="Requires per-subject (c_H, c_AI, u) data not currently released" />
       </div>
+
+      <p className="text-[11px] text-muted mt-4 leading-relaxed">
+        Pass 2 disclosure: the (c_H, c_AI) gap on the x-axis is inferred from the same outcome variable that drives the y-axis. Regressing observed-quality on outcome-derived gap is structurally circular. The honest qualitative claim — outside-frontier mis-routing produces drops on the order of (c_H − c_AI), not orders of magnitude smaller or larger — is supported. The specific linearity claim requires a within-subject RCT that varies u explicitly across the (c_H − c_AI) range with INDEPENDENT per-subject baseline performance.
+      </p>
     </div>
   );
 }
@@ -592,53 +617,41 @@ function Q4Panel() {
 function Q5Panel() {
   const W = 460;
   const maxSwing = 100;
-  const barH = 22;
-  const padTop = 18;
-  const padLeft = 220;
+  const barH = 24;
+  const padLeft = 240;
   const innerW = W - padLeft - 40;
-  const H = padTop + barH * Q5_SWINGS.length + 10;
 
   return (
     <div>
       <PanelHeader
         title="Q5. Workflow architecture > model capability (the headline S1)"
-        claim="Within-domain comparisons that hold model class roughly constant. Goh 2024 (naive workflow) vs Everett 2025 (independent-then-synthesize) is the cleanest natural experiment: same domain (diagnostic vignettes), same model class (GPT-4), workflow change alone produces +7.9pp swing. Bastani unfettered → guardrailed: +17pp. Anthropic single → multi-agent: +90.2pp. Pattern is consistent across four independent natural experiments."
-        verdict="supported"
+        claim="Pass-2 reorder: within-study evidence (no across-study confounds) at the top, across-study evidence with confounds disclosed below. Bastani within-study (+17pp, same RCT, same students, same model) and Anthropic within-eval (+90.2pp, same internal eval, same base model) carry the case. Goh-vs-Everett (+7.9pp) demoted from 'cleanest natural experiment' to suggestive corroboration: pass 2 surfaced three confounds (different vignettes, different outcome metrics, different AI implementations)."
+        verdict="supported by convergent evidence"
         verdictKind="supported"
       />
 
-      <div className="border border-rule-soft rounded bg-paper p-4">
+      <div className="border border-rule-soft rounded bg-paper p-4 mb-4">
         <div className="text-[10px] font-mono uppercase tracking-wider text-muted mb-2">
-          Within-domain workflow swings (percentage points or % improvement)
+          Cleanest within-study evidence (no across-study confounds)
         </div>
-        <svg viewBox={`0 0 ${W} ${H}`} width="100%" height={H}>
-          {/* gridlines */}
+        <svg viewBox={`0 0 ${W} ${barH * Q5_WITHIN_STUDY.length + 30}`} width="100%" height={barH * Q5_WITHIN_STUDY.length + 30}>
           {[20, 40, 60, 80, 100].map(v => (
-            <g key={v}>
-              <line
-                x1={padLeft + (v / maxSwing) * innerW}
-                y1={padTop - 8}
-                x2={padLeft + (v / maxSwing) * innerW}
-                y2={H - 4}
-                stroke="#e6dfcf"
-                strokeWidth={0.5}
-              />
-              <text x={padLeft + (v / maxSwing) * innerW} y={padTop - 10} fontSize={9} fontFamily="JetBrains Mono, monospace" fill="#7a7166" textAnchor="middle">
-                +{v}
-              </text>
-            </g>
+            <line key={v} x1={padLeft + (v / maxSwing) * innerW} y1={4} x2={padLeft + (v / maxSwing) * innerW} y2={barH * Q5_WITHIN_STUDY.length + 22} stroke="#e6dfcf" strokeWidth={0.5} />
           ))}
-          {Q5_SWINGS.map((s, i) => {
-            const y = padTop + i * barH + 5;
+          {Q5_WITHIN_STUDY.map((s, i) => {
+            const y = 16 + i * barH + 5;
             const w = (s.swing / maxSwing) * innerW;
             return (
               <g key={s.label}>
                 <text x={padLeft - 8} y={y + 4} fontSize={11} fontFamily="Source Serif 4, serif" fill="#1a1614" textAnchor="end">
                   {s.label}
                 </text>
-                <rect x={padLeft} y={y - 5} width={w} height={10} fill="#8a4a2b" opacity={0.85} rx={1} />
+                <rect x={padLeft} y={y - 5} width={w} height={10} fill="#8a4a2b" opacity={0.9} rx={1} />
                 <text x={padLeft + w + 4} y={y + 3} fontSize={10} fontFamily="JetBrains Mono, monospace" fill="#3a342c">
                   +{s.swing}{s.swing < 50 ? 'pp' : '%'}
+                </text>
+                <text x={padLeft - 8} y={y + 16} fontSize={9} fontFamily="JetBrains Mono, monospace" fill="#7a7166" textAnchor="end">
+                  {s.design}
                 </text>
               </g>
             );
@@ -646,26 +659,45 @@ function Q5Panel() {
         </svg>
       </div>
 
+      <div className="border border-rule-soft rounded bg-paper p-4">
+        <div className="text-[10px] font-mono uppercase tracking-wider text-muted mb-2">
+          Suggestive across-study evidence (with confounds disclosed)
+        </div>
+        {Q5_ACROSS_STUDY.map(s => (
+          <div key={s.label} className="text-[12px]">
+            <div className="flex items-baseline justify-between">
+              <span className="text-ink">{s.label}</span>
+              <span className="font-mono text-accent-soft">+{s.swing}pp</span>
+            </div>
+            <div className="text-[10px] font-mono text-muted mt-0.5">{s.design}</div>
+            <div className="text-[10px] text-muted mt-1.5 leading-snug border-l-2 border-rule-soft pl-2">
+              <span className="font-mono uppercase tracking-wider text-accent-soft mr-1">confounds:</span>
+              {s.confounds}
+            </div>
+          </div>
+        ))}
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-5">
         <NumberCard
-          label="Goh→Everett swing"
-          value="+7.9pp"
-          hint="Same domain, same GPT-4; workflow change alone closes the AI-alone gap"
+          label="Bastani within-study"
+          value="+17pp"
+          hint="Same model, same students, same task set; load-bearing"
         />
         <NumberCard
-          label="Bastani swing"
-          value="+17pp"
-          hint="Same model, same students; hint vs answer eliminates atrophy"
+          label="Anthropic within-eval"
+          value="+90.2%"
+          hint="Same base model, internal eval; load-bearing"
         />
         <NumberCard
           label="Vaccaro meta"
           value="106 / 370"
-          hint="Studies / effect sizes; H+AI better for creation, worse for decision under naive workflow"
+          hint="Studies / effect sizes; population-level corroboration of asymmetry"
         />
       </div>
 
       <p className="text-[11px] text-muted mt-4 leading-relaxed">
-        The four within-domain swings span a small medical-vignette experiment (+7.9pp), a high-school classroom RCT (+17pp), an industrial coding study (+19pp by going FROM naive cyborg TO no AI), and a research-synthesis benchmark (+90.2pp). They all hold the underlying model capability roughly fixed. None alone is dispositive, but together they make the qualitative case: workflow architecture is the dominant lever in the empirical record.
+        Pass-2 reframing: the load-bearing evidence for S1 is within-study (Bastani: same RCT comparing unfettered vs guardrailed at the same model and student pool; Anthropic: same internal eval comparing single-agent vs orchestrator-worker at the same base model class). Goh-vs-Everett's +7.9pp is suggestive but bundles three confounds — different vignette sets, different outcome rubrics, different AI implementations (vanilla GPT-4 in Goh; custom GPT system with engineered system prompt in Everett). Vaccaro 2024's 106-study meta-analysis showing decision-vs-creation asymmetry corroborates S1 at the population level.
       </p>
     </div>
   );

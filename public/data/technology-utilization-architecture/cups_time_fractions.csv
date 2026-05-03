@@ -1,11 +1,6 @@
-cups_state,description,time_share_pct,interaction_phase,maps_to_model_term,source_key
-thinking_new_code,"Programmer reasoning about what to write next (no AI involvement yet)",26.5,generation,(1-u)*1,mozannar_2024
-prompting,"Crafting/editing the prompt or context window so AI can help",6.0,generation,M,mozannar_2024
-not_thinking,"Pause / unfocused / context-switch",4.0,overhead,M,mozannar_2024
-waiting_for_suggestion,"Idle while Copilot computes the next suggestion",2.5,overhead,u*epsilon,mozannar_2024
-verifying_suggestion,"Reading and checking AI output before accepting",22.4,verification,v*phi,mozannar_2024
-editing_last_suggestion,"Modifying an accepted AI suggestion",11.9,verification,v*phi,mozannar_2024
-writing_new_code_after_suggestion,"Manual coding that follows AI hand-off",8.0,generation,(1-u)*1,mozannar_2024
-deferring_thought,"Skipping a sub-decision now intending to revisit (skim mode)",4.0,verification,v*phi (partial),mozannar_2024
-debugging,"Running tests / fixing errors after AI involvement",10.0,verification,v*phi,mozannar_2024
-looking_up_documentation,"External knowledge fetch outside the AI tool",4.7,generation,M,mozannar_2024
+cups_state,description,time_share_pct,time_share_sd,is_published,interaction_phase,maps_to_model_term,source_key,note
+thinking_verifying_suggestion,"Reading and checking AI output before accept/reject",22.4,12.97,published,verification,v*phi,mozannar_2024,"Mozannar 2024 Figure 5(b)"
+writing_new_functionality,"Manual coding (with or without AI present)",14.05,8.36,published,generation,(1-u)*1,mozannar_2024,"Mozannar 2024 Figure 5(b)"
+waiting_for_suggestion,"Idle while Copilot computes the next suggestion",4.2,4.46,published,overhead,u*epsilon,mozannar_2024,"Mozannar 2024 Figure 5(b)"
+copilot_specific_total,"Aggregate of all Copilot-related states (verify + defer + wait + prompt + edit)",51.5,19.3,published,ai_related,multiple,mozannar_2024,"Mozannar 2024 — headline aggregate. The complement is non-AI time."
+non_copilot_total,"Time not directly involving Copilot (residual; standard programming)",48.5,,extrapolated,non_ai,,mozannar_2024,"Computed as 100% - 51.5%; not separately reported"

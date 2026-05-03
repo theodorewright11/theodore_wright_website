@@ -6,17 +6,20 @@
     "M": 0.08
   },
   "Q1_cups": {
-    "gen_share_pct": 34.5,
-    "verify_share_pct": 48.3,
-    "overhead_share_pct": 17.2,
-    "total_pct": 100.0,
-    "epsilon_estimate": 0.172,
+    "copilot_specific_total_pct": 51.5,
+    "copilot_specific_total_sd": 19.3,
+    "non_copilot_pct": 48.5,
+    "verify_share_pct": 22.4,
+    "verify_share_sd": 12.97,
+    "write_share_pct": 14.05,
+    "epsilon_lower_bound_at_u1": 0.04,
     "epsilon_default": 0.15,
-    "epsilon_delta": 0.022,
-    "phi_estimate": 1.4,
-    "verdict": "supported_with_caveat",
-    "interpretation": "CUPS overhead share is 17.2%, giving epsilon ~0.17, noticeably above the model's default of 0.15. The substitution-myth invariant L1 is empirically larger than the conservative lit-review-anchored prior. Model defaults can be tightened on next pass.",
-    "source_key": "mozannar_2024"
+    "phi_cyborg_estimate": 1.59,
+    "phi_default": 0.3,
+    "verdict": "supported_qualitatively",
+    "interpretation": "Mozannar reports 51.5% (SD 19.3pp) of session time is Copilot-specific in the cyborg regime \u2014 strong qualitative confirmation of L1 (substitution myth). Pure-verify share is 22.4% (SD 13.0pp); writing-new is 14.1%. Cyborg-regime \u03c6 \u2248 1.59 \u2014 much higher than the model's lit-review prior of 0.30. This is the Q1 headline: the model's \u03c6 default is too low for coding; regime-dependent \u03c6 is needed. The \u03b5 estimate at u = 1 is bounded below by the wait/monitor share but cannot be sharply calibrated from published aggregates alone \u2014 pass 1's '\u03b5 \u2248 0.17' was over-precise on a partly-fabricated breakdown and has been retracted.",
+    "source_key": "mozannar_2024",
+    "pass2_note": "Pass 1 reported \u03b5 \u2248 0.17 and \u03c6 \u2248 1.40 from a granular 10-state CUPS aggregation. Web-verification of Mozannar 2024 Figure 5(b) showed only 3 of those 10 cells are separately published (Thinking/Verifying 22.4%, Writing-New 14.05%, Waiting 4.2%) plus the headline 51.5% Copilot-specific aggregate. The other 7 cells were extrapolated. Pass 2 retracts the false precision and reports only the published aggregates."
   },
   "Q2_bastani": {
     "beta_fitted_unfettered": 0.0567,
@@ -39,16 +42,17 @@
       "centaur": 0.3,
       "self_automator": 0.1
     },
-    "verdict": "needs_recalibration",
-    "interpretation": "The synthetic theta-mix produces a corner distribution dominated by self-automator (51.6%) and spec-driven (40.8%) with a do-yourself tail (7.6%). Randazzo's empirical 10% self-automator falls inside the model's synthetic prediction range. The 60% cyborg empirical share emerges from MIXING (1,0) and (0,0) corners across a worker's day, not from a single (0.6, 0.3) interior point \u2014 exactly what the bilinearity analysis says must be true.",
-    "source_key": "randazzo_2026"
+    "verdict": "structural_prediction_not_directly_testable",
+    "interpretation": "Pass-2 honest framing: the bilinearity result says per-task optima are corners. The Randazzo classification (cyborg / centaur / self-automator) is a behavioural label for a worker, not a per-task corner observation. The empirical 60/30/10 distribution is consistent with TWO different worker behaviours: (a) interleaving corners across a day (consistent with the model \u2014 many tasks each at one of three corners, aggregating to a pattern), or (b) applying a flat interior (u, v) policy across all tasks (the failure mode bilinearity says is structurally suboptimal). Randazzo does not release per-task u-v telemetry, so the data is silent on which is happening. The synthetic \u03b8-mix (7.6% do-yourself / 51.6% self-automator / 40.8% spec-driven corners under a plausible BCG task prior) is presented as a *structural* demonstration that corner-mixing CAN reproduce the empirical aggregate, not a calibrated test of which behaviour the consultants exhibit.",
+    "source_key": "randazzo_2026",
+    "pass2_note": "Pass 1 claimed both 'the empirical 60% cyborg share emerges from corner mixing exactly as the model predicts' and 'Randazzo's 60% cyborg majority is doing the naive failure mode.' Those are mutually exclusive readings of the same data. The honest framing is that Randazzo's behavioural classification is consistent with both, and per-task u-v telemetry is needed to discriminate. Pass 2 retracts both interpretive claims and presents Q3 as a structural prediction (corner-mixing CAN aggregate to 60/30/10) rather than a directly-testable empirical claim."
   },
   "Q4_outside_frontier": {
     "n_anchors": 12,
     "miscoded_n": 3,
-    "fitted_slope": 0.666,
+    "fitted_slope_descriptive_only": 0.666,
     "model_predicted_slope": 1.0,
-    "verdict": "supported",
+    "verdict": "sanity_check_consistent",
     "rows": [
       {
         "study": "dellacqua_2023",
@@ -171,80 +175,40 @@
         "model_corner": "(0,0) do-yourself"
       }
     ],
-    "interpretation": "Across mis-routed cases (Dell'Acqua outside-frontier, METR real-repo, Otis low-baseline), the observed quality drop scales with (c_H - c_AI) at fitted slope 0.67. Model predicts slope \u2248 1 at u = 1, v = 0. The match within ~0.2 supports the linearity claim; remaining slack reflects partial mis-routing (not all subjects went all-in on AI in the empirical studies).",
-    "source_key": "dellacqua_2023"
+    "interpretation": "Pass-2 honest framing: this is a sanity check, not a slope test. The (c_H, c_AI) values on the x-axis are inferred from the same outcome variable that drives the y-axis (observed quality change), so a 'fit' is partly circular. The honest claim is that across the three cleanly mis-routed anchors (Dell'Acqua outside-frontier \u221219pp, Otis low-baseline \u22128%, METR real-repo \u221219%) the observed drops are in the model's predicted ballpark \u2014 magnitude order matches u\u00b7(c_H \u2212 c_AI) at u in roughly [0.5, 1.0]. That is consistent with the model's linearity prediction but does not constitute a test of the linearity itself. A real test requires per-subject (c_H, c_AI, u) data which Dell'Acqua / METR / Otis do not currently release.",
+    "source_key": "dellacqua_2023",
+    "pass2_note": "Pass 1 reported 'fitted slope 0.67 vs model 1.00' as if it were a meaningful slope estimate. With 3 data points where x is inferred from y, the regression has neither degrees of freedom nor independent x. Pass 2 keeps the descriptive number for completeness but flags it as not-a-test."
   },
   "Q5_workflow_vs_capability": {
-    "headline_swing_pct": 7.9,
-    "headline_source": "Goh 2024 (naive workflow) vs Everett 2025 (independent-then-synthesize) \u2014 same domain, same GPT-4, +7.9pp from workflow alone",
-    "bastani_swing_pct": 17.0,
-    "bastani_source": "Bastani 2025 unfettered vs guardrailed \u2014 same model, same students, +17pp from workflow alone",
-    "n_anchors": 10,
-    "verdict": "supported",
-    "interpretation": "Workflow swings (Goh\u2192Everett +7.9pp; Bastani unfettered\u2192guardrailed +17pp; single-agent vs orchestrator-worker +90.2pp on internal eval) are large and consistent. The clean within-domain test is Goh-vs-Everett: the same model class produces 'AI alone beats AI+human' under naive workflow, and 'AI+human matches AI alone' under independent-then-synthesize. S1 (workflow architecture > model capability) holds at the resolution of currently-published evidence.",
-    "cases": [
+    "cleanest_within_study_swings": [
       {
-        "comparison": "goh_vs_everett",
-        "domain": "medicine",
-        "delta_pct": 7.9,
-        "interpretation": "Same domain; AI capability essentially identical; workflow change alone produces +7.9pp swing \u2014 closes the gap to AI-alone"
+        "label": "Bastani unfettered \u2192 guardrailed",
+        "swing_pp": 17.0,
+        "design": "within-study RCT, same students, same model, same task set",
+        "confounds": "none",
+        "source_key": "bastani_2025"
       },
       {
-        "comparison": "dellacqua_inside_vs_outside",
-        "domain": "consulting",
-        "delta_pct": 59.0,
-        "interpretation": "Same model; same workflow; only task class differs; 59pp spread shows c_AI heterogeneity dominates when workflow is held flat"
-      },
-      {
-        "comparison": "bastani_base_vs_tutor",
-        "domain": "education",
-        "delta_pct": 17.0,
-        "interpretation": "Same model; same students; workflow changes (answer\u2192hint) eliminates skill-atrophy"
-      },
-      {
-        "comparison": "brynjolfsson_novice_vs_expert",
-        "domain": "cs_support",
-        "delta_pct": 34.0,
-        "interpretation": "Same workflow; c_H differs; novice gain 34x larger than expert; held workflow constant \u2014 capability gradient is c_H not c_AI"
-      },
-      {
-        "comparison": "schoenegger_super_vs_overconfident",
-        "domain": "forecasting",
-        "delta_pct": 5.0,
-        "interpretation": "Same workflow; one assistant calibrated, other deliberately overconfident; both improve forecasting \u2014 gain is structured-reasoning effect not advice quality"
-      },
-      {
-        "comparison": "metr_real_repo",
-        "domain": "coding",
-        "delta_pct": 19.0,
-        "interpretation": "Real-repo expert task; AI tool inside frontier on simple sub-tasks, mis-routed to whole-task by naive workflow; flat-cyborg policy IS the failure mode"
-      },
-      {
-        "comparison": "anthropic_multi_agent",
-        "domain": "research_synthesis",
-        "delta_pct": 90.2,
-        "interpretation": "Same base model; orchestrator-worker pattern outperforms single-agent by 90.2% on internal eval \u2014 read-heavy research where pattern fits"
-      },
-      {
-        "comparison": "paterson_routing",
-        "domain": "daily_workflows",
-        "delta_pct": null,
-        "interpretation": "38 real daily tasks across 15 models; per-task routing beats picking any single best model"
-      },
-      {
-        "comparison": "vaccaro_meta_creation",
-        "domain": "content_creation",
-        "delta_pct": null,
-        "interpretation": "Meta-analysis of 106 studies; H+AI > best-alone for content creation tasks (Vaccaro et al.)"
-      },
-      {
-        "comparison": "vaccaro_meta_decision",
-        "domain": "decision_making",
-        "delta_pct": null,
-        "interpretation": "Same meta-analysis; H+AI < best-alone on decision tasks; consistent with Goh-style naive workflows"
+        "label": "Anthropic single-agent \u2192 multi-agent",
+        "swing_pp": 90.2,
+        "design": "within-eval comparison, internal benchmark",
+        "confounds": "internal eval; not externally validated",
+        "source_key": "anthropic_2025"
       }
     ],
-    "source_key": "goh_2024;everett_2025;bastani_2025;anthropic_2025"
+    "across_study_swings_with_confounds": [
+      {
+        "label": "Goh 2024 \u2192 Everett 2025",
+        "swing_pp": 7.9,
+        "design": "across-study comparison, same broad domain",
+        "confounds": "different vignettes; different outcome rubrics (Goh: standardized rubric across 6 cases; Everett: pct-correct on different cases); different AI implementations (Goh: vanilla GPT-4; Everett: custom GPT system with engineered system prompt). The +7.9pp 'swing' bundles workflow change WITH sample, instrument, and AI-config differences.",
+        "source_key": "goh_2024;everett_2025"
+      }
+    ],
+    "verdict": "supported_by_convergent_evidence",
+    "interpretation": "Pass-2 honest framing: the cleanest within-study workflow swings are Bastani (+17pp, unfettered \u2192 guardrailed in the same RCT) and Anthropic (+90.2pp, single-agent \u2192 multi-agent on the same internal eval). The Goh\u2192Everett +7.9pp swing I featured in pass 1 is across-study and bundles three confounds (different vignettes, different outcome metrics, different AI implementations) on top of the workflow change. It is no longer load-bearing; the within-study evidence carries the case. Vaccaro 2024 meta-analysis across 106 studies / 370 effect sizes corroborates the population-level claim that workflow architecture drives human-AI complementarity outcomes.",
+    "source_key": "bastani_2025;anthropic_2025;vaccaro_2024",
+    "pass2_note": "Pass 1 led with Goh-vs-Everett as the 'cleanest natural experiment.' On a fresh-eyes audit, Goh and Everett use different vignettes, different outcome metrics, and different AI implementations (vanilla GPT-4 vs custom system-prompted GPT). The +7.9pp swing therefore bundles workflow change with three confounds. Pass 2 demotes Goh-vs-Everett to 'suggestive across-study evidence with confounds disclosed' and promotes Bastani (within-study) and Anthropic (within-eval) as the load-bearing anchors."
   },
   "Q6_calibration": {
     "literature_findings": [
