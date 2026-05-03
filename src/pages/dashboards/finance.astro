@@ -1,0 +1,35 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import FinanceDashboard from '../../components/dashboards/finance/FinanceDashboard';
+---
+
+<BaseLayout
+  title="Finance — Dashboards"
+  description="A personal finance dashboard. Public demo: your data lives in your browser, with CSV import/export."
+>
+  <section class="max-w-[1080px] mx-auto px-8 pt-14 pb-24">
+    <div class="flex items-center justify-between gap-4 flex-wrap mb-3">
+      <a href="/dashboards"
+         class="font-mono text-[11px] uppercase text-muted no-underline hover:text-accent transition-colors"
+         style="letter-spacing: 0.08em">← Dashboards</a>
+      <span class="font-mono text-[10px] uppercase text-accent border border-accent rounded-sm px-2 py-px"
+            style="letter-spacing: 0.12em">Public demo · v1</span>
+    </div>
+
+    <h1 class="font-display font-semibold text-[42px] leading-[1.08] m-0 mb-3 text-ink"
+        style="letter-spacing: -0.025em; text-wrap: balance">Finance</h1>
+    <p class="font-serif text-[16px] text-ink-soft leading-[1.55] m-0 mb-3 max-w-[640px]"
+       style="text-wrap: pretty">
+      Log spending, set budgets, see where the money's actually going. The public demo stores everything
+      in your browser's <code class="font-mono text-[14px] bg-rule/30 px-1 py-px rounded-sm">localStorage</code> —
+      no account, no server. Export to CSV to keep a backup; import to seed historical data or move
+      between devices.
+    </p>
+    <p class="font-serif text-[13px] text-muted leading-[1.55] m-0 mb-10 max-w-[640px]"
+       style="text-wrap: pretty">
+      Private tier (synced to a personal Google Sheet, gated by Cloudflare Access) is planned but not in v1.
+    </p>
+
+    <FinanceDashboard client:only="react" />
+  </section>
+</BaseLayout>

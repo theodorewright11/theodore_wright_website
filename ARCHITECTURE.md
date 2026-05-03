@@ -32,6 +32,8 @@
 │   │   ├── RefinementLog.astro
 │   │   ├── models/                      ← React components for interactive models
 │   │   │   └── OptionValueDashboard.tsx
+│   │   ├── dashboards/                  ← React components for the /dashboards/<slug> apps
+│   │   │   └── finance/                 ← finance dashboard (entry, tabs, types, storage, compute, taxonomy)
 │   │   └── ai-research/                 ← React components for AI-research stage visualizations
 │   │       ├── PsychVariationGraph.tsx  ← topology graph (force-directed via d3-force) — pan + wheel-zoom + reset
 │   │       ├── PsychVariationModel.tsx  ← model dashboard (variance decomposition + multivariate sex-difference tabs)
@@ -68,7 +70,9 @@
 │   │   ├── updates/
 │   │   │   ├── index.astro
 │   │   │   └── [slug].astro
-│   │   ├── dashboards/index.astro
+│   │   ├── dashboards/
+│   │   │   ├── index.astro              ← roster (links to live dashboards by status)
+│   │   │   └── finance.astro            ← mounts FinanceDashboard with client:only="react"
 │   │   ├── bundle-mine.md.ts            ← /bundle-mine.md (writing + research + models + updates)
 │   │   ├── bundle-ai-research.md.ts     ← /bundle-ai-research.md (every AI-Research stage)
 │   │   ├── writing.md.ts                ← /writing.md (all blog as one md file)
@@ -85,6 +89,8 @@
 │   │       ├── [topic].md.ts            ← /ai-research/<topic>.md (whole topic in stage order)
 │   │       └── [topic]/[stage].md.ts    ← /ai-research/<topic>/<stage>.md (single stage)
 │   └── styles/global.css                ← font imports, design tokens, .essay-prose / .paper-prose
+├── scripts/
+│   └── finance_import_xlsx.py          ← one-shot: Finances Sheet.xlsx → CSVs the dashboard imports
 ├── astro.config.mjs
 ├── tailwind.config.mjs
 └── tsconfig.json
@@ -297,6 +303,82 @@ Two tiers per dashboard:
 
 Most dashboards should ship as public demos first; the private tier is added only when the dashboard accumulates real personal data worth restricting.
 
+### Dashboard component layout
+
+Each dashboard's React code lives under `src/components/dashboards/<slug>/`, with the entry component named after the dashboard (e.g. `FinanceDashboard.tsx`). The Astro page at `src/pages/dashboards/<slug>.astro` is a thin wrapper that mounts the entry component with `client:only="react"` (not `client:load` — these dashboards rely on `localStorage`, which doesn't exist during SSR/build).
+
+Internal directory convention for a dashboard:
+
+```
+src/components/dashboards/<slug>/
+├── <Slug>Dashboard.tsx     ← entry: tab router + state + persistence
+├── types.ts                ← shared TypeScript types for entities
+├── categories.ts           ← taxonomy / config (where applicable)
+├── storage.ts              ← localStorage read/write + CSV import/export
+├── compute.ts              ← pure functions (aggregations, variance, etc.)
+└── *Tab.tsx                ← one component per top-level tab
+```
+
+Compute-layer rules: every function is pure (data in, derived out, no side effects, no hidden date state — pass "today" explicitly). Division by zero returns `null`, never `Infinity`/`NaN`/sentinel strings; UI renders `null` as `—`. Money is rounded to two decimals at the render boundary only.
+
+Persistence rules: load from `localStorage` once on mount, persist on every state change after hydration. Re-fetch on `window` `focus` so a tab open in two windows stays in sync. Never write to `localStorage` during SSR (guard with `typeof window === 'undefined'`).
+
+### Finance dashboard specifics
+
+Lives at [src/components/dashboards/finance/](src/components/dashboards/finance/). Mounted at `/dashboards/finance`. v1 is public-demo only.
+
+**Storage key**: `tw-finance-v1` (a single JSON object containing transactions, budgets, incomes). Schema is versioned via the `version` field on the persisted object so future migrations have a hook.
+
+**CSV format** (one file per entity; each round-trips through Import/Export):
+
+| Entity | Headers (in order) |
+|---|---|
+| Transactions | `id,date,item,amount,account,category,notes,created_at,updated_at` |
+| Budgets | `category,monthly_amount,effective_from` |
+| Incomes | `id,source,monthly_amount,effective_from` |
+
+Headers are authoritative on import; column order doesn't matter. Quoted fields with embedded commas/newlines/quotes are supported (`""` escapes a quote inside a quoted field).
+
+**Budget versioning**: editing a category creates a new `Budget` row with today's date as `effective_from` rather than mutating the old row. `currentBudgets(budgets, ym)` picks the most-recent row per category whose `effective_from` is on or before the first day of the target month, so historical month views naturally use the budget that was in effect then. Same convention for `Income`.
+
+**Category taxonomy**: source of truth at [src/components/dashboards/finance/categories.ts](src/components/dashboards/finance/categories.ts). Three-level (Broad → Mid → Detailed). The detailed string is the persistent key stored on `Transaction.category`; it must round-trip via `isValidCategory`. Renaming a leaf strands existing transactions under "Uncategorized" (surfaced as a sienna-tinted bucket on the Dashboard tab).
+
+**Spreadsheet importer** at [scripts/finance_import_xlsx.py](scripts/finance_import_xlsx.py) converts the user's `Finances Sheet.xlsx` (the existing spreadsheet workflow) into `transactions.import.csv` + `budgets.import.csv` shaped for the dashboard's CSV importer. Account remap (`Debt` → `Debit`) and category remap (`ChatGPT` → `AI Subscription`, `OneDrive` → `One Drive`, `Car Maintenence` → `Car Maintenance`) live in dictionaries at the top of the script — extend them as the spreadsheet evolves. The script is one-shot; the dashboard does not depend on it at runtime.
+
+**Personal data hygiene**: never seed the public route with real financial data. `.gitignore` excludes `Finances Sheet*.xlsx`, `My Needs*.xlsx`, `*.private.csv`, and `finance-data-local/`. The user can keep their `.xlsx` in project root for context without risk of committing.
+
+### Emotional Well-being dashboard specifics
+
+Lives at [src/components/dashboards/emotional-wellbeing/](src/components/dashboards/emotional-wellbeing/). Mounted at `/dashboards/emotional-wellbeing`. v1 is public-demo only.
+
+**Files**: `EmotionalWellbeingDashboard.tsx` (entry; tab router, state, persistence, all sub-components inline), `types.ts` (Need / Domain / Source / DataState + label maps), `seed.ts` (35 starter needs across 8 domains, names + domains only, ratings unset), `storage.ts` (localStorage + CSV round-trip with field coercion), `compute.ts` (pure: `leverage`, `rankedByLeverage`, `domainRollups`, `sourceGaps`, `distribution`, `metShare`).
+
+**Storage key**: `tw-emotional-wellbeing-v1` — a single JSON object `{ version: 1, needs: Need[] }`. Schema versioned via `version` for future migrations. On load, every persisted need is coerced through `coerceNeed` (clamps numeric ranges, validates domain enum, defaults missing source allocations to 0) so a stray hand-edit can't crash the UI.
+
+**Data model** (`types.ts`):
+
+- `Need` = `{ id, name, domain, priority (0–5), currentlyMet (0–7), sources: Record<Source, { actual, ideal }> }`. `0` on either scale = unset; needs with both > 0 are "rated" and feed into the insights.
+- `Domain` is one of 8 fixed strings (Purpose / Contribution, Relational / Social, Cognitive / Intellectual, Emotional, Creative, Physical, Spiritual / Existential, Autonomy / Agency). Adding/renaming a domain means editing `DOMAINS` in `types.ts` — old persisted needs that reference a removed domain fall back to `'Emotional'` via `coerceNeed`.
+- `Source` is one of 6 fixed strings (`self / friends / romantic / activities / career / other`).
+- `SourceAlloc.actual` and `.ideal` are independent 0–100 scalars; they don't have to sum to anything (the UI just notes when ideal totals look off).
+
+**CSV format** (one file, one row per need; round-trips through Import/Export):
+
+| Headers (in order) |
+|---|
+| `id,name,domain,priority,currently_met,self_actual,self_ideal,friends_actual,friends_ideal,romantic_actual,romantic_ideal,activities_actual,activities_ideal,career_actual,career_ideal,other_actual,other_ideal` |
+
+Headers are authoritative on import; column order doesn't matter. Same quoting rules as the finance CSVs. Rows missing `id` or `name` are skipped silently; out-of-range numerics are clamped.
+
+**Compute layer** — every function in `compute.ts` is pure (no `Date.now`, no side effects). The four insights views read from the same source-of-truth `needs` array each render:
+
+- `leverage(n) = priority × (8 − currently_met)` → ranks Leverage view.
+- `domainRollups(needs)` → groups by `Need.domain`, returns avg priority/met, total leverage, and the top-leverage need's name per domain.
+- `sourceGaps(needs)` → for each source, sums `priority × actual` and `priority × ideal` across rated needs and returns the gap (`weightedIdeal − weightedActual`); positive = source under-contributing.
+- `metShare(needs)` → priority-weighted average of `currently_met / 7` over rated needs; the headline 0..1 score.
+
+**Personal data hygiene**: never seed the public route with the user's actual ratings. `.gitignore` already excludes `My Needs*.xlsx` (covered by the finance entry).
+
 ## Build / deploy
 
 - `npm run dev` — local at http://localhost:4321
@@ -310,3 +392,4 @@ Most dashboards should ship as public demos first; the private tier is added onl
 - MDX files importing React components require the `@astrojs/mdx` integration (configured)
 - Tailwind classes inside React `.tsx` need the file to be in the `content` glob in `tailwind.config.mjs` (already covered by `**/*.{...,tsx}`)
 - Equation rendering: not yet wired. Use code-style inline (`G - B + w(E - C)`) until KaTeX is added.
+- Dashboards backed by `localStorage` must mount with `client:only="react"`, not `client:load`. With `client:load` Astro pre-renders the component on the server, where `window.localStorage` is undefined; the dashboard would either crash or hydrate with a one-frame "empty data" flash before localStorage loads. `client:only` skips SSR entirely.

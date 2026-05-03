@@ -47,7 +47,16 @@ const groups = order
                 live ? '' : 'opacity-70',
               ]}>
                 <h3 class="font-display font-semibold text-[22px] m-0 mb-1.5 text-ink"
-                    style="letter-spacing: -0.015em">{d.title}</h3>
+                    style="letter-spacing: -0.015em">
+                  {live ? (
+                    <a href={`/dashboards/${d.slug}`}
+                       class="text-ink no-underline hover:text-accent transition-colors">
+                      {d.title}
+                    </a>
+                  ) : (
+                    d.title
+                  )}
+                </h3>
                 <p class="font-serif text-[15px] text-ink-soft leading-[1.55] m-0"
                    style="text-wrap: pretty">{d.desc}</p>
               </article>

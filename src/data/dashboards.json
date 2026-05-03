@@ -8,13 +8,13 @@
   {
     "slug": "finance",
     "title": "Finance",
-    "desc": "A personal finance dashboard.",
-    "status": "planned"
+    "desc": "Log spending, set budgets, see where the money's actually going. Public demo runs entirely in your browser with CSV import/export.",
+    "status": "in-progress"
   },
   {
     "slug": "emotional-wellbeing",
     "title": "Emotional Well-being",
-    "desc": "Helps you recognize and prioritize which emotional needs to take action on, based on what has the highest leverage.",
-    "status": "planned"
+    "desc": "Rate emotional needs by priority and how met they are. Surfaces highest-leverage needs, domain gaps, and which sources (self / friends / romantic / activities / career / other) are over- or under-contributing.",
+    "status": "in-progress"
   }
 ]
