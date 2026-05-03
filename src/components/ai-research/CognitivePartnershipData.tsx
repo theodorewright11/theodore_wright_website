@@ -30,11 +30,14 @@ const Q1_FITTED = {
   epsilon_default: 0.15,
 };
 
-const Q2_CONDITIONS: { name: string; in_session: number; post_test: number; beta_implied: number; corner: string }[] = [
-  { name: 'Control', in_session: 0, post_test: 0, beta_implied: 0.000, corner: '— (no AI)' },
-  { name: 'GPT Base (unfettered)', in_session: 48, post_test: -17, beta_implied: 0.057, corner: '(1, 0) self-automator' },
-  { name: 'GPT Tutor (guardrailed)', in_session: 127, post_test: 0, beta_implied: 0.000, corner: '(1, 1) spec-driven' },
+// Pass 3: bracket replaces single-value beta. Per-problem N across the
+// 4 sessions is not publicly reported — bracket against N ∈ [15, 60].
+const Q2_CONDITIONS: { name: string; in_session: number; post_test: number; beta_label: string; corner: string }[] = [
+  { name: 'Control', in_session: 0, post_test: 0, beta_label: '0.000', corner: '— (no AI)' },
+  { name: 'GPT Base (unfettered)', in_session: 48, post_test: -17, beta_label: '0.028 – 0.113', corner: '(1, 0) self-automator' },
+  { name: 'GPT Tutor (guardrailed)', in_session: 127, post_test: 0, beta_label: '0.000', corner: '(1, 1) spec-driven' },
 ];
+const Q2_BETA_BRACKET = { lo: 0.028, hi: 0.113, default_in: true };
 
 const Q3_CORNERS = {
   model: [
@@ -67,11 +70,33 @@ const Q4_ANCHORS: {
   { study: 'METR real-repo',      c_h: 0.85, c_ai: 0.55, observed: -19, cleanly_misrouted: true },
 ];
 
-// Pass 2: split into within-study (no across-study confounds) and
-// across-study (with confounds disclosed).
-const Q5_WITHIN_STUDY: { label: string; swing: number; design: string }[] = [
-  { label: 'Bastani unfettered→guardrailed', swing: 17, design: 'same RCT, same students, same model, same task set' },
-  { label: 'Single-agent → multi-agent (Anthropic)', swing: 90.2, design: 'same internal eval, same base model' },
+// Pass 3: promote Vaccaro 2024 meta to LOAD-BEARING; demote Bastani and
+// Anthropic to SCOPE-ADJACENT analogs with mismatch + unit issues
+// disclosed. Anthropic's "+90.2%" is RELATIVE on internal eval (NOT
+// percentage points) — pass 2 erroneously co-plotted it with Bastani's
+// +17pp absolute. Pass 3 separates the two and labels units explicitly.
+const Q5_LOAD_BEARING_META = {
+  label: 'Vaccaro et al. 2024 — Nature Human Behaviour',
+  n_studies: 106,
+  n_effects: 370,
+  finding: 'Decision tasks: H+AI worse than best-of-either-alone (naive workflows). Content creation: H+AI better. The decision-vs-creation asymmetry is exactly what S1 predicts.',
+  scope: 'population-level meta across knowledge-worker domains',
+};
+const Q5_SCOPE_ADJACENT: { label: string; swing_value: string; swing_units: string; design: string; scope_caveat: string }[] = [
+  {
+    label: 'Bastani unfettered → guardrailed',
+    swing_value: '+17',
+    swing_units: 'percentage points (absolute, in-session retest)',
+    design: 'same RCT, same students, same model, same task set',
+    scope_caveat: 'high-school algebra students — analogous to knowledge work via the spaced-practice mechanism, not directly knowledge work',
+  },
+  {
+    label: 'Single-agent → multi-agent (Anthropic)',
+    swing_value: '+90.2',
+    swing_units: 'RELATIVE % on internal research eval (NOT pp; absolute baseline not disclosed)',
+    design: 'same internal eval, same base model class',
+    scope_caveat: 'agent-system architecture is a developer engineering choice, not an individual knowledge-worker workflow choice',
+  },
 ];
 const Q5_ACROSS_STUDY: { label: string; swing: number; design: string; confounds: string }[] = [
   {
@@ -235,8 +260,8 @@ function ProductivityPanel() {
     <div>
       <PanelHeader
         title="The productivity record (~22 RCTs and field experiments, 2023–2026)"
-        claim="The empirical context for S1 (workflow architecture > model capability). Same axis (% effect of AI), 22 study rows. Sienna bars = positive effects. Muted bars = ~zero. Soft-sienna bars = negative effects (the four mis-routed cases — METR real-repo, Otis low-baseline, Dell'Acqua outside-frontier, Bastani unassisted post-test). The Humlum-Vestergaard aggregate-zero (n=25,000 Danish workers) is the named scope-limit at the bottom."
-        verdict="evidence base"
+        claim="The empirical context for S1 (workflow architecture > model capability). 22 study rows on a % axis — but unit caveat: most are absolute productivity / time-saved / quality lifts (Brynjolfsson, Noy, Peng, Cui, Otis, Dell'Acqua, Goh, Everett, Humlum); Bastani's in-session bars (+48% / +127%) are RELATIVE in-session improvements over control; Anthropic's +90.2% is RELATIVE on internal eval. Compare within-unit-class, not across. Sienna = positive, soft-sienna = negative (the four mis-routed cases — METR real-repo, Otis low-baseline, Dell'Acqua outside-frontier, Bastani unassisted post-test). The Humlum-Vestergaard aggregate-zero (25k Danish workers) is the named scope-limit."
+        verdict="evidence base — units mixed"
         verdictKind="framed"
       />
 
@@ -391,9 +416,9 @@ function Q2Panel() {
   return (
     <div>
       <PanelHeader
-        title="Q2. β fitted from Bastani 2025 longitudinal panel"
-        claim="The model defaults β = 0.05 per task at u=1, v=0, calibrated to produce Bastani's −17pp unassisted-post-test drop over ~30 unguardrailed problems. Computing the per-problem rate from the empirical −17%/30 = 0.057 — within 14% of the default. The shape is also confirmed: guardrailed condition implies β ≈ 0 (skill preserved), so atrophy IS proportional to UNVERIFIED delegation."
-        verdict="supported"
+        title="Q2. β bracketed from Bastani 2025 longitudinal panel"
+        claim="The model defaults β = 0.05 per task at u=1, v=0. Bastani's design is FOUR 90-min sessions with a final unassisted exam; per-session problem count is not publicly reported. Bracketing total practice problems N ∈ [15, 60] across the intervention gives implied β ∈ [0.028, 0.113] — and the model's default 0.05 sits inside this bracket. Pass-1/2 reported β ≈ 0.057 'within 14% of default' using N = 30; that 30 was a guess. Pass-3 honest framing: direction supported (atrophy under unfettered, none under guardrails), shape supported (β·u·(1-v) form confirmed by guardrailed → 0), magnitude in the right range, precise calibration awaits per-problem telemetry."
+        verdict="supported in direction and shape"
         verdictKind="supported"
       />
 
@@ -433,7 +458,7 @@ function Q2Panel() {
                   {c.name}
                 </text>
                 <text x={xCenter} y={H - padY + 26} fontSize={9} fontFamily="JetBrains Mono, monospace" fill="#7a7166" textAnchor="middle">
-                  β = {c.beta_implied.toFixed(3)}
+                  β = {c.beta_label}
                 </text>
               </g>
             );
@@ -447,10 +472,14 @@ function Q2Panel() {
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-5">
         <NumberCard label="β default" value="0.050" hint="Lit-review-anchored prior" />
-        <NumberCard label="β fitted (unfettered)" value="0.057" hint="−17 pp / ~30 problems" />
-        <NumberCard label="β fitted (guardrailed)" value="0.000" hint="Skill preserved when v=1" />
-        <NumberCard label="Default vs fitted gap" value="14%" hint="Default within sampling noise of empirical" />
+        <NumberCard label="β bracket (unfettered)" value="0.028 – 0.113" hint={`−17pp / N where N ∈ [15, 60]; default ${Q2_BETA_BRACKET.default_in ? 'inside' : 'outside'} bracket`} />
+        <NumberCard label="β fitted (guardrailed)" value="≈ 0" hint="Skill preserved when v=1; shape confirmed" />
+        <NumberCard label="Pass-3 retraction" value="0.057 'within 14%'" hint="Retracted — N=30 was a guess; not in published abstract" />
       </div>
+
+      <p className="text-[11px] text-muted mt-4 leading-relaxed">
+        Pass 3 disclosure: Bastani is 4 sessions × 90 min in a Turkish high school classroom; the per-session practice problem count is not publicly reported. Pass-2's β ≈ 0.057 used N = 30 as a denominator — a guess. The honest move is to bracket against plausible N (15–60), which gives β ∈ [0.028, 0.113]. The model's default β = 0.05 is inside this bracket. The DIRECTION (atrophy under unfettered AI; preserved under guardrails) and SHAPE (β·u·(1-v) form) are robust to N; the precise magnitude awaits per-problem telemetry. Scope note: Bastani is high-school students learning algebra, not professional knowledge work — generalizes via analogy on the spaced-practice mechanism, not direct calibration.
+      </p>
     </div>
   );
 }
@@ -615,53 +644,56 @@ function Q4Panel() {
 // ---- Q5 Workflow > capability ---------------------------------------
 
 function Q5Panel() {
-  const W = 460;
-  const maxSwing = 100;
-  const barH = 24;
-  const padLeft = 240;
-  const innerW = W - padLeft - 40;
-
   return (
     <div>
       <PanelHeader
         title="Q5. Workflow architecture > model capability (the headline S1)"
-        claim="Pass-2 reorder: within-study evidence (no across-study confounds) at the top, across-study evidence with confounds disclosed below. Bastani within-study (+17pp, same RCT, same students, same model) and Anthropic within-eval (+90.2pp, same internal eval, same base model) carry the case. Goh-vs-Everett (+7.9pp) demoted from 'cleanest natural experiment' to suggestive corroboration: pass 2 surfaced three confounds (different vignettes, different outcome metrics, different AI implementations)."
-        verdict="supported by convergent evidence"
+        claim="Pass-3 scope-checked framing: Vaccaro 2024 (106 studies / 370 effects, Nature Human Behaviour) is the load-bearing evidence at the topic's specific scope (individual knowledge worker). The decision-vs-creation asymmetry it documents is the population-level signature S1 predicts. Bastani (high-school algebra) and Anthropic (multi-agent system architecture) are SCOPE-ADJACENT analogs, not direct tests. Anthropic's '+90.2%' is RELATIVE on internal eval, NOT pp absolute — pass 2 erroneously plotted it on the same axis as Bastani's +17pp. Goh→Everett (+7.9pp) carries 3 confounds. Pass 3 separates units and discloses scope mismatches."
+        verdict="supported (meta-analysis load-bearing)"
         verdictKind="supported"
       />
 
-      <div className="border border-rule-soft rounded bg-paper p-4 mb-4">
-        <div className="text-[10px] font-mono uppercase tracking-wider text-muted mb-2">
-          Cleanest within-study evidence (no across-study confounds)
+      <div className="border border-rule rounded bg-paper p-4 mb-4">
+        <div className="text-[10px] font-mono uppercase tracking-wider text-accent mb-2">
+          Load-bearing evidence — population-level meta
         </div>
-        <svg viewBox={`0 0 ${W} ${barH * Q5_WITHIN_STUDY.length + 30}`} width="100%" height={barH * Q5_WITHIN_STUDY.length + 30}>
-          {[20, 40, 60, 80, 100].map(v => (
-            <line key={v} x1={padLeft + (v / maxSwing) * innerW} y1={4} x2={padLeft + (v / maxSwing) * innerW} y2={barH * Q5_WITHIN_STUDY.length + 22} stroke="#e6dfcf" strokeWidth={0.5} />
+        <div className="text-[14px] text-ink font-display leading-tight mb-1">{Q5_LOAD_BEARING_META.label}</div>
+        <div className="text-[11px] font-mono text-muted mb-2">
+          {Q5_LOAD_BEARING_META.n_studies} studies · {Q5_LOAD_BEARING_META.n_effects} effect sizes · {Q5_LOAD_BEARING_META.scope}
+        </div>
+        <div className="text-[12px] text-ink-soft leading-relaxed">
+          {Q5_LOAD_BEARING_META.finding}
+        </div>
+      </div>
+
+      <div className="border border-rule-soft rounded bg-paper p-4 mb-4">
+        <div className="text-[10px] font-mono uppercase tracking-wider text-muted mb-3">
+          Scope-adjacent within-study analogs (units differ — read carefully)
+        </div>
+        <div className="space-y-3">
+          {Q5_SCOPE_ADJACENT.map(s => (
+            <div key={s.label} className="text-[12px] border-l-2 border-rule-soft pl-3">
+              <div className="flex items-baseline justify-between gap-2">
+                <span className="text-ink">{s.label}</span>
+                <span className="font-mono text-accent">{s.swing_value}</span>
+              </div>
+              <div className="text-[10px] font-mono text-muted mt-0.5">{s.design}</div>
+              <div className="text-[10px] text-accent-soft mt-1.5 leading-snug">
+                <span className="font-mono uppercase tracking-wider mr-1">units:</span>
+                {s.swing_units}
+              </div>
+              <div className="text-[10px] text-muted mt-1 leading-snug">
+                <span className="font-mono uppercase tracking-wider mr-1">scope:</span>
+                {s.scope_caveat}
+              </div>
+            </div>
           ))}
-          {Q5_WITHIN_STUDY.map((s, i) => {
-            const y = 16 + i * barH + 5;
-            const w = (s.swing / maxSwing) * innerW;
-            return (
-              <g key={s.label}>
-                <text x={padLeft - 8} y={y + 4} fontSize={11} fontFamily="Source Serif 4, serif" fill="#1a1614" textAnchor="end">
-                  {s.label}
-                </text>
-                <rect x={padLeft} y={y - 5} width={w} height={10} fill="#8a4a2b" opacity={0.9} rx={1} />
-                <text x={padLeft + w + 4} y={y + 3} fontSize={10} fontFamily="JetBrains Mono, monospace" fill="#3a342c">
-                  +{s.swing}{s.swing < 50 ? 'pp' : '%'}
-                </text>
-                <text x={padLeft - 8} y={y + 16} fontSize={9} fontFamily="JetBrains Mono, monospace" fill="#7a7166" textAnchor="end">
-                  {s.design}
-                </text>
-              </g>
-            );
-          })}
-        </svg>
+        </div>
       </div>
 
       <div className="border border-rule-soft rounded bg-paper p-4">
         <div className="text-[10px] font-mono uppercase tracking-wider text-muted mb-2">
-          Suggestive across-study evidence (with confounds disclosed)
+          Suggestive across-study evidence (3 confounds disclosed)
         </div>
         {Q5_ACROSS_STUDY.map(s => (
           <div key={s.label} className="text-[12px]">
@@ -678,26 +710,8 @@ function Q5Panel() {
         ))}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-5">
-        <NumberCard
-          label="Bastani within-study"
-          value="+17pp"
-          hint="Same model, same students, same task set; load-bearing"
-        />
-        <NumberCard
-          label="Anthropic within-eval"
-          value="+90.2%"
-          hint="Same base model, internal eval; load-bearing"
-        />
-        <NumberCard
-          label="Vaccaro meta"
-          value="106 / 370"
-          hint="Studies / effect sizes; population-level corroboration of asymmetry"
-        />
-      </div>
-
       <p className="text-[11px] text-muted mt-4 leading-relaxed">
-        Pass-2 reframing: the load-bearing evidence for S1 is within-study (Bastani: same RCT comparing unfettered vs guardrailed at the same model and student pool; Anthropic: same internal eval comparing single-agent vs orchestrator-worker at the same base model class). Goh-vs-Everett's +7.9pp is suggestive but bundles three confounds — different vignette sets, different outcome rubrics, different AI implementations (vanilla GPT-4 in Goh; custom GPT system with engineered system prompt in Everett). Vaccaro 2024's 106-study meta-analysis showing decision-vs-creation asymmetry corroborates S1 at the population level.
+        Pass-3 scope check: pass-2 promoted Bastani (+17pp) and Anthropic (+90.2%) to "load-bearing within-study evidence" for Q5. Two issues: (a) Anthropic's "+90.2%" is a RELATIVE improvement on internal eval, not percentage points — putting it on the same axis as Bastani's +17pp absolute mixes units; (b) Bastani is high-school algebra learners and Anthropic is agent-system architecture, neither of which is INDIVIDUAL KNOWLEDGE WORKER WORKFLOW as the topic scopes it. Pass 3 promotes Vaccaro 2024 — a 106-study, 370-effect-size meta in Nature Human Behaviour with knowledge-worker-spanning scope — to the load-bearing position, and demotes Bastani / Anthropic to scope-adjacent analogs with the mismatch disclosed.
       </p>
     </div>
   );

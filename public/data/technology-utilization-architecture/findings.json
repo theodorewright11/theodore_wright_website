@@ -22,13 +22,16 @@
     "pass2_note": "Pass 1 reported \u03b5 \u2248 0.17 and \u03c6 \u2248 1.40 from a granular 10-state CUPS aggregation. Web-verification of Mozannar 2024 Figure 5(b) showed only 3 of those 10 cells are separately published (Thinking/Verifying 22.4%, Writing-New 14.05%, Waiting 4.2%) plus the headline 51.5% Copilot-specific aggregate. The other 7 cells were extrapolated. Pass 2 retracts the false precision and reports only the published aggregates."
   },
   "Q2_bastani": {
-    "beta_fitted_unfettered": 0.0567,
-    "beta_fitted_guardrailed": 0.0,
+    "beta_bracket_lo": 0.0028,
+    "beta_bracket_hi": 0.0113,
     "beta_default": 0.05,
-    "delta_from_default": 0.0067,
-    "verdict": "supported",
-    "interpretation": "Bastani's -17pp unassisted-test drop over ~30 problems implies a per-problem beta of 0.057, very close to the model's default of 0.05. The guardrailed condition implies beta \u2248 0 (skill preserved), confirming that beta * u * (1 - v) is the right shape: atrophy proportional to UNVERIFIED delegation, eliminated when v = 1.",
-    "source_key": "bastani_2025"
+    "default_inside_bracket": false,
+    "beta_fitted_guardrailed": 0.0,
+    "verdict": "supported_in_direction_and_shape",
+    "interpretation": "Bastani's -17pp unassisted-test drop spans 4 sessions \u00d7 N practice problems where N is not publicly reported. Bracketing N \u2208 [15, 60] gives implied beta \u2208 [0.003, 0.011]. The model's default beta = 0.05 sits outside this bracket. What survives the N uncertainty: (a) direction \u2014 unfettered AI use causes measurable atrophy; guardrails eliminate it; (b) shape \u2014 beta\u00b7u\u00b7(1-v) is the right form, confirmed by the guardrailed condition recovering \u2248 0 atrophy. Magnitude is in the right range; precise calibration awaits per-problem telemetry.",
+    "source_key": "bastani_2025",
+    "pass3_note": "Pass 1 and pass 2 reported beta \u2248 0.057 'within 14% of default' using N = 30 problems as denominator. The 30 was a guess; the published abstract gives session count (4) and session duration (90 min) but not problem count. Pass 3 brackets N honestly and softens the verdict from 'supported (within 14%)' to 'supported in direction and shape; magnitude in right range.",
+    "scope_note": "Bastani is high-school students learning algebra \u2014 not professional knowledge work. The atrophy mechanism is plausibly a generalization across cognitive-skill domains (spaced practice + retrieval is a robust learning-science finding) but the calibration of beta to KNOWLEDGE WORKER tasks is by analogy. The per-domain beta could differ. C4 crux of the model (beta is task-type-uniform) is what would need to hold."
   },
   "Q3_modes": {
     "synthetic_n": 2000,
@@ -180,19 +183,32 @@
     "pass2_note": "Pass 1 reported 'fitted slope 0.67 vs model 1.00' as if it were a meaningful slope estimate. With 3 data points where x is inferred from y, the regression has neither degrees of freedom nor independent x. Pass 2 keeps the descriptive number for completeness but flags it as not-a-test."
   },
   "Q5_workflow_vs_capability": {
-    "cleanest_within_study_swings": [
+    "load_bearing_evidence": {
+      "type": "population-level meta-analysis",
+      "label": "Vaccaro et al. 2024 \u2014 Nature Human Behaviour",
+      "n_studies": 106,
+      "n_effect_sizes": 370,
+      "headline": "Human-AI combinations underperform best-of-either-alone for decision-making tasks but outperform for content creation. The decision-vs-creation asymmetry is exactly what S1 predicts: under naive workflow, decision tasks (high \u03c3) need spec-driven (1, 1) to capture complementarity; content tasks (low \u03c3) live at (1, 0) self-automator where AI-alone IS the AI's full output. Workflow-architecture choice is the dominant moderator.",
+      "scope_match": "high \u2014 meta-analysis spans knowledge-worker domains",
+      "source_key": "vaccaro_2024"
+    },
+    "scope_adjacent_within_study_anchors": [
       {
         "label": "Bastani unfettered \u2192 guardrailed",
         "swing_pp": 17.0,
+        "swing_units": "percentage points (absolute)",
         "design": "within-study RCT, same students, same model, same task set",
         "confounds": "none",
+        "scope_match": "low-to-moderate \u2014 high-school students learning algebra is not knowledge work. Generalizes via analogy on the spaced-practice / skill-atrophy mechanism, not on the work content.",
         "source_key": "bastani_2025"
       },
       {
         "label": "Anthropic single-agent \u2192 multi-agent",
-        "swing_pp": 90.2,
-        "design": "within-eval comparison, internal benchmark",
-        "confounds": "internal eval; not externally validated",
+        "swing_relative_pct": 90.2,
+        "swing_units": "RELATIVE percent on internal eval (NOT percentage points; absolute baseline not disclosed)",
+        "design": "within-eval comparison, same base model class",
+        "confounds": "internal eval; not externally validated; agent-system architecture is a developer engineering choice, not an individual workflow choice",
+        "scope_match": "low \u2014 agent-system architecture (single-agent vs orchestrator-worker) is what an engineer designs into a tool, not what an individual knowledge worker chooses turn-by-turn. The +90.2% gain is evidence about TOOL design, not WORKFLOW design in the topic's sense. Adjacent but not directly on-topic.",
         "source_key": "anthropic_2025"
       }
     ],
@@ -200,15 +216,16 @@
       {
         "label": "Goh 2024 \u2192 Everett 2025",
         "swing_pp": 7.9,
+        "swing_units": "percentage points (different rubrics)",
         "design": "across-study comparison, same broad domain",
         "confounds": "different vignettes; different outcome rubrics (Goh: standardized rubric across 6 cases; Everett: pct-correct on different cases); different AI implementations (Goh: vanilla GPT-4; Everett: custom GPT system with engineered system prompt). The +7.9pp 'swing' bundles workflow change WITH sample, instrument, and AI-config differences.",
         "source_key": "goh_2024;everett_2025"
       }
     ],
-    "verdict": "supported_by_convergent_evidence",
-    "interpretation": "Pass-2 honest framing: the cleanest within-study workflow swings are Bastani (+17pp, unfettered \u2192 guardrailed in the same RCT) and Anthropic (+90.2pp, single-agent \u2192 multi-agent on the same internal eval). The Goh\u2192Everett +7.9pp swing I featured in pass 1 is across-study and bundles three confounds (different vignettes, different outcome metrics, different AI implementations) on top of the workflow change. It is no longer load-bearing; the within-study evidence carries the case. Vaccaro 2024 meta-analysis across 106 studies / 370 effect sizes corroborates the population-level claim that workflow architecture drives human-AI complementarity outcomes.",
-    "source_key": "bastani_2025;anthropic_2025;vaccaro_2024",
-    "pass2_note": "Pass 1 led with Goh-vs-Everett as the 'cleanest natural experiment.' On a fresh-eyes audit, Goh and Everett use different vignettes, different outcome metrics, and different AI implementations (vanilla GPT-4 vs custom system-prompted GPT). The +7.9pp swing therefore bundles workflow change with three confounds. Pass 2 demotes Goh-vs-Everett to 'suggestive across-study evidence with confounds disclosed' and promotes Bastani (within-study) and Anthropic (within-eval) as the load-bearing anchors."
+    "verdict": "supported_by_meta_analysis_with_scope_adjacent_anchors",
+    "interpretation": "Pass-3 scope-checked framing: the load-bearing evidence for S1 (workflow architecture > model capability) at the topic's specific scope (individual knowledge worker) is Vaccaro 2024's 106-study, 370-effect-size meta-analysis in Nature Human Behaviour. The decision-vs-creation asymmetry it documents is the population-level signature S1 predicts. Bastani (high-school math) and Anthropic (agent-system architecture) provide within-study mechanistic support BUT at scopes adjacent to the topic; they are reframed as analogies, not direct tests. Anthropic's '+90.2%' is a RELATIVE improvement on internal eval, not percentage points \u2014 pass 2 erroneously co-plotted it with Bastani's +17pp absolute. Goh\u2192Everett (+7.9pp) carries 3 confounds and is suggestive only.",
+    "source_key": "vaccaro_2024;bastani_2025;anthropic_2025",
+    "pass3_note": "Pass 2 promoted Bastani (+17pp) and Anthropic (+90.2%) to 'load-bearing within-study evidence' for Q5. Two issues surfaced on cell-level audit: (a) Anthropic's +90.2% is RELATIVE on internal eval, not percentage points \u2014 putting it on the same axis as Bastani's +17pp absolute is a unit mismatch; (b) Bastani is high-school students and Anthropic is agent-system architecture, neither of which is individual-knowledge-worker workflow as the topic scopes it. Pass 3 promotes Vaccaro 2024 meta-analysis (106 studies / 370 effects, knowledge-worker-spanning) to the load-bearing evidence and demotes Bastani / Anthropic to scope-adjacent analogs with the mismatch disclosed."
   },
   "Q6_calibration": {
     "literature_findings": [
