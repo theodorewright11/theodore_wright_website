@@ -13,6 +13,9 @@ type Props = {
   onDelete: (id: string) => void;
   onReplaceAll: (txs: Transaction[]) => void;
   onAppend: (txs: Transaction[]) => void;
+  /** Only set when Sheets is connected — surfaces a one-time seed action from
+   *  the legacy `Spending Log` tab in the same workbook. */
+  onSeedFromSpendingLog?: () => void;
 };
 
 type SortKey = 'date' | 'item' | 'category' | 'account' | 'amount';
@@ -20,7 +23,7 @@ type SortDir = 'asc' | 'desc';
 
 const PAGE_SIZE = 100;
 
-export default function TransactionsTab({ transactions, onAdd, onUpdate, onDelete, onReplaceAll, onAppend }: Props) {
+export default function TransactionsTab({ transactions, onAdd, onUpdate, onDelete, onReplaceAll, onAppend, onSeedFromSpendingLog }: Props) {
   const [editing, setEditing] = useState<Transaction | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [search, setSearch] = useState('');
@@ -95,40 +98,57 @@ export default function TransactionsTab({ transactions, onAdd, onUpdate, onDelet
   }
 
   return (
-    <div>
-      {/* Toolbar */}
-      <div className="flex items-center justify-between gap-3 mb-6 flex-wrap">
+    <div className="space-y-4">
+      {/* Toolbar — own bar */}
+      <div className="bg-paper border border-rule rounded-md px-3 py-2.5 flex items-center justify-between gap-3 flex-wrap shadow-[0_1px_2px_rgba(26,22,20,0.03)]">
         <div className="flex items-baseline gap-3">
-          <h2 className="font-display font-semibold text-[24px] text-ink m-0"
+          <h2 className="font-display font-semibold text-[20px] text-ink m-0"
               style={{ letterSpacing: '-0.02em' }}>Transactions</h2>
-          <span className="font-mono text-[11px] uppercase text-muted"
-                style={{ letterSpacing: '0.08em' }}>
-            {filtered.length} of {transactions.length} · {formatMoney(total)} total
+          <span className="font-mono text-[10px] uppercase text-muted"
+                style={{ letterSpacing: '0.12em' }}>
+            {filtered.length} of {transactions.length} · {formatMoney(total)}
           </span>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
           <input ref={fileInput} type="file" accept=".csv,text/csv" className="hidden"
                  onChange={() => { /* held until user picks mode */ }} />
           <button onClick={() => fileInput.current?.click()}
-                  className="font-mono text-[11px] uppercase text-muted hover:text-accent border border-rule hover:border-accent rounded-sm px-2 py-1.5 transition-colors"
+                  className="font-mono text-[10px] uppercase text-muted hover:text-accent border border-rule hover:border-accent rounded-sm px-2 py-1.5 transition-colors"
                   style={{ letterSpacing: '0.08em' }}>Pick CSV…</button>
           <button onClick={() => handleImportClick('append')}
-                  className="font-mono text-[11px] uppercase text-muted hover:text-accent transition-colors px-2 py-1.5"
+                  className="font-mono text-[10px] uppercase text-muted hover:text-accent transition-colors px-2 py-1.5"
                   style={{ letterSpacing: '0.08em' }}>Import (append)</button>
           <button onClick={() => handleImportClick('replace')}
-                  className="font-mono text-[11px] uppercase text-muted hover:text-accent transition-colors px-2 py-1.5"
+                  className="font-mono text-[10px] uppercase text-muted hover:text-accent transition-colors px-2 py-1.5"
                   style={{ letterSpacing: '0.08em' }}>Import (replace)</button>
           <button onClick={() => downloadFile('finance-transactions.csv', transactionsToCsv(transactions))}
-                  className="font-mono text-[11px] uppercase text-muted hover:text-accent border border-rule hover:border-accent rounded-sm px-2 py-1.5 transition-colors"
+                  className="font-mono text-[10px] uppercase text-muted hover:text-accent border border-rule hover:border-accent rounded-sm px-2 py-1.5 transition-colors"
                   style={{ letterSpacing: '0.08em' }}>Export CSV</button>
           <button onClick={() => { setEditing(null); setShowForm(true); }}
-                  className="font-mono text-[11px] uppercase text-accent border border-accent hover:bg-accent hover:text-paper rounded-sm px-3 py-1.5 transition-colors"
+                  className="font-mono text-[10px] uppercase text-accent border border-accent hover:bg-accent hover:text-paper rounded-sm px-3 py-1.5 transition-colors"
                   style={{ letterSpacing: '0.08em' }}>+ Add</button>
         </div>
       </div>
 
-      {/* Filters */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-5">
+      {/* Seed-from-Spending-Log callout — only when Sheets is connected and
+          the dashboard's transactions tab is empty. One-click historical import. */}
+      {onSeedFromSpendingLog && transactions.length === 0 && (
+        <div className="bg-accent/5 border border-accent rounded-md px-3 py-2.5 flex items-center justify-between gap-3 flex-wrap">
+          <span className="font-serif text-[13px] text-ink-soft">
+            First time? Import your historical transactions from the legacy{' '}
+            <code className="font-mono text-[12px] bg-paper border border-rule rounded-sm px-1 py-px">Spending Log</code>{' '}
+            tab in your workbook.
+          </span>
+          <button onClick={onSeedFromSpendingLog}
+                  className="font-mono text-[10px] uppercase text-accent border border-accent hover:bg-accent hover:text-paper rounded-sm px-3 py-1.5 transition-colors whitespace-nowrap"
+                  style={{ letterSpacing: '0.08em' }}>
+            Seed from Spending Log
+          </button>
+        </div>
+      )}
+
+      {/* Filters — paper panel */}
+      <div className="bg-paper border border-rule rounded-md p-3 grid grid-cols-2 md:grid-cols-5 gap-3 shadow-[0_1px_2px_rgba(26,22,20,0.03)]">
         <div>
           <label className="block font-mono text-[10px] uppercase text-muted mb-1"
                  style={{ letterSpacing: '0.12em' }}>Search</label>
@@ -168,9 +188,9 @@ export default function TransactionsTab({ transactions, onAdd, onUpdate, onDelet
         </div>
       </div>
 
-      {/* Table */}
-      <div className="border-t border-rule">
-        <div className="grid grid-cols-[110px_1fr_180px_70px_100px_60px] gap-3 px-2 py-2 border-b border-rule font-mono text-[10px] uppercase text-muted"
+      {/* Table — paper panel */}
+      <div className="bg-paper border border-rule rounded-md overflow-hidden shadow-[0_1px_2px_rgba(26,22,20,0.03)]">
+        <div className="grid grid-cols-[110px_1fr_180px_70px_100px_60px] gap-3 px-3 py-2 border-b border-rule bg-paper-edge/50 font-mono text-[10px] uppercase text-muted"
              style={{ letterSpacing: '0.12em' }}>
           <button onClick={() => setSort('date')} className="text-left hover:text-accent transition-colors">Date {sortKey==='date' ? (sortDir==='asc'?'▴':'▾') : ''}</button>
           <button onClick={() => setSort('item')} className="text-left hover:text-accent transition-colors">Item {sortKey==='item' ? (sortDir==='asc'?'▴':'▾') : ''}</button>
@@ -185,12 +205,14 @@ export default function TransactionsTab({ transactions, onAdd, onUpdate, onDelet
             <p className="m-0">{transactions.length === 0 ? 'No transactions yet. Click + Add to log one, or import a CSV.' : 'No transactions match these filters.'}</p>
           </div>
         ) : (
-          visible.map(t => {
+          visible.map((t, idx) => {
             const cat = lookupCategory(t.category);
             const validCat = isValidCategory(t.category);
             return (
               <div key={t.id}
-                   className="grid grid-cols-[110px_1fr_180px_70px_100px_60px] gap-3 px-2 py-2 border-b border-rule-soft items-baseline hover:bg-paper-edge/40 transition-colors">
+                   className={'grid grid-cols-[110px_1fr_180px_70px_100px_60px] gap-3 px-3 py-2 items-baseline transition-colors hover:bg-accent/[0.04] ' + (
+                     idx > 0 ? 'border-t border-rule-soft ' : ''
+                   ) + (idx % 2 === 1 ? 'bg-paper-edge/25' : '')}>
                 <span className="font-mono text-[12px] text-ink-soft tabular-nums">{t.date}</span>
                 <span className="font-serif text-[14px] text-ink truncate" title={t.item}>{t.item}</span>
                 <span className={'font-serif text-[13px] truncate ' + (validCat ? 'text-ink-soft' : 'text-accent')}
@@ -210,9 +232,9 @@ export default function TransactionsTab({ transactions, onAdd, onUpdate, onDelet
       </div>
 
       {sorted.length > visible.length && (
-        <div className="mt-4 text-center">
+        <div className="text-center">
           <button onClick={() => setPage(p => p + 1)}
-                  className="font-mono text-[11px] uppercase text-muted hover:text-accent border border-rule hover:border-accent rounded-sm px-3 py-1.5 transition-colors"
+                  className="font-mono text-[11px] uppercase text-muted hover:text-accent bg-paper border border-rule hover:border-accent rounded-sm px-3 py-1.5 transition-colors"
                   style={{ letterSpacing: '0.08em' }}>
             Load {Math.min(PAGE_SIZE, sorted.length - visible.length)} more
           </button>

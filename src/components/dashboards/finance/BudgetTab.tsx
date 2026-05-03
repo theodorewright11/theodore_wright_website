@@ -127,26 +127,29 @@ export default function BudgetTab({ budgets, incomes, onSaveBudgets, onSaveIncom
   const overspendingPlanned = draftTotal > draftIncomeTotal;
 
   return (
-    <div>
-      <div className="flex items-baseline justify-between gap-3 mb-2 flex-wrap">
-        <h2 className="font-display font-semibold text-[24px] text-ink m-0"
-            style={{ letterSpacing: '-0.02em' }}>Budget</h2>
+    <div className="space-y-5">
+      {/* Header bar */}
+      <div className="bg-paper border border-rule rounded-md px-3 py-2.5 flex items-baseline justify-between gap-3 flex-wrap shadow-[0_1px_2px_rgba(26,22,20,0.03)]">
+        <div>
+          <h2 className="font-display font-semibold text-[20px] text-ink m-0"
+              style={{ letterSpacing: '-0.02em' }}>Budget</h2>
+          <p className="font-serif text-[12px] text-muted m-0 mt-0.5">
+            Edits create a new versioned row dated today. Past months keep the budget in effect then.
+          </p>
+        </div>
         <div className="flex items-center gap-2 flex-wrap">
           <input ref={fileInput} type="file" accept=".csv,text/csv" className="hidden" onChange={importCsv} />
           <button onClick={() => fileInput.current?.click()}
-                  className="font-mono text-[11px] uppercase text-muted hover:text-accent border border-rule hover:border-accent rounded-sm px-2 py-1.5 transition-colors"
+                  className="font-mono text-[10px] uppercase text-muted hover:text-accent border border-rule hover:border-accent rounded-sm px-2 py-1.5 transition-colors"
                   style={{ letterSpacing: '0.08em' }}>Import CSV</button>
           <button onClick={() => downloadFile('finance-budgets.csv', budgetsToCsv(budgets))}
-                  className="font-mono text-[11px] uppercase text-muted hover:text-accent border border-rule hover:border-accent rounded-sm px-2 py-1.5 transition-colors"
+                  className="font-mono text-[10px] uppercase text-muted hover:text-accent border border-rule hover:border-accent rounded-sm px-2 py-1.5 transition-colors"
                   style={{ letterSpacing: '0.08em' }}>Export CSV</button>
         </div>
       </div>
-      <p className="font-serif text-[14px] text-muted m-0 mb-8">
-        Edits create a new versioned row dated today. Past months keep the budget that was in effect then.
-      </p>
 
       {overspendingPlanned && (
-        <div className="mb-6 px-3 py-2 border border-accent rounded-sm bg-accent/5">
+        <div className="px-3 py-2 border border-accent rounded-md bg-accent/5">
           <p className="font-mono text-[11px] uppercase text-accent m-0"
              style={{ letterSpacing: '0.08em' }}>
             Planned spend ({formatMoney(draftTotal)}) exceeds planned income ({formatMoney(draftIncomeTotal)}).
@@ -154,28 +157,28 @@ export default function BudgetTab({ budgets, incomes, onSaveBudgets, onSaveIncom
         </div>
       )}
 
-      {/* Budget editor */}
-      <div className="border-t border-rule mb-3">
-        {[...grouped.entries()].map(([broad, midMap]) => {
+      {/* Budget editor — paper panel */}
+      <div className="bg-paper border border-rule rounded-md overflow-hidden shadow-[0_1px_2px_rgba(26,22,20,0.03)]">
+        {[...grouped.entries()].map(([broad, midMap], i) => {
           const broadCats = [...midMap.values()].flat();
           const broadTotal = broadCats.reduce((s, c) => {
             const n = parseFloat(drafts.get(c.detailed) ?? '0');
             return s + (Number.isFinite(n) ? n : 0);
           }, 0);
           return (
-            <div key={broad} className="border-b border-rule">
-              <div className="flex items-baseline justify-between gap-3 px-2 py-2.5 bg-paper-edge/30">
-                <span className="font-display font-semibold text-[15px] text-ink"
+            <div key={broad} className={i > 0 ? 'border-t border-rule' : ''}>
+              <div className="flex items-baseline justify-between gap-3 px-3 py-2.5 bg-paper-edge/50 border-b border-rule">
+                <span className="font-display font-semibold text-[14px] text-ink"
                       style={{ letterSpacing: '-0.01em' }}>{broad}</span>
-                <span className="font-mono text-[12px] text-muted tabular-nums">{formatMoney(broadTotal)}</span>
+                <span className="font-mono text-[12px] text-ink-soft tabular-nums">{formatMoney(broadTotal)}</span>
               </div>
-              {[...midMap.entries()].map(([mid, cats]) => (
-                <div key={mid}>
-                  <div className="px-4 py-1.5 border-t border-rule-soft font-mono text-[10px] uppercase text-muted"
+              {[...midMap.entries()].map(([mid, cats], midIdx) => (
+                <div key={mid} className={midIdx > 0 ? 'border-t border-rule-soft' : ''}>
+                  <div className="px-4 py-1.5 font-mono text-[10px] uppercase text-muted bg-paper-edge/15"
                        style={{ letterSpacing: '0.12em' }}>{mid}</div>
-                  {cats.map(c => (
+                  {cats.map((c, catIdx) => (
                     <div key={c.detailed}
-                         className="grid grid-cols-[1fr_140px] gap-3 items-center px-6 py-1.5 border-t border-rule-soft">
+                         className={'grid grid-cols-[1fr_140px] gap-3 items-center px-6 py-1.5 ' + (catIdx > 0 ? 'border-t border-rule-soft ' : 'border-t border-rule-soft ') + (catIdx % 2 === 1 ? 'bg-paper-edge/15' : '')}>
                       <span className="font-serif text-[14px] text-ink">{c.detailed}</span>
                       <div className="flex items-center gap-1">
                         <span className="font-mono text-[12px] text-muted">$</span>
@@ -195,7 +198,7 @@ export default function BudgetTab({ budgets, incomes, onSaveBudgets, onSaveIncom
         })}
       </div>
 
-      <div className="flex items-center justify-between gap-3 mb-12 flex-wrap">
+      <div className="flex items-center justify-between gap-3 flex-wrap">
         <div className="font-mono text-[12px] text-muted">
           Total: <span className="text-ink tabular-nums">{formatMoney(draftTotal)}</span>
         </div>
@@ -210,15 +213,22 @@ export default function BudgetTab({ budgets, incomes, onSaveBudgets, onSaveIncom
       </div>
 
       {/* Income editor */}
-      <h2 className="font-display font-semibold text-[24px] text-ink m-0 mb-2"
-          style={{ letterSpacing: '-0.02em' }}>Income</h2>
-      <p className="font-serif text-[14px] text-muted m-0 mb-5">
-        Monthly income by source. Drives the Income card and net cash flow on the Dashboard.
-      </p>
+      <div className="bg-paper border border-rule rounded-md px-3 py-2.5 flex items-baseline justify-between gap-3 flex-wrap shadow-[0_1px_2px_rgba(26,22,20,0.03)] mt-8">
+        <div>
+          <h2 className="font-display font-semibold text-[20px] text-ink m-0"
+              style={{ letterSpacing: '-0.02em' }}>Income</h2>
+          <p className="font-serif text-[12px] text-muted m-0 mt-0.5">
+            Monthly income by source. Drives the Income card and net cash flow on the Dashboard.
+          </p>
+        </div>
+      </div>
 
-      <div className="border-t border-rule mb-3">
-        {incomeDrafts.map((inc, idx) => (
-          <div key={inc.id} className="grid grid-cols-[1fr_140px_60px] gap-3 items-center px-2 py-2 border-b border-rule-soft">
+      <div className="bg-paper border border-rule rounded-md overflow-hidden shadow-[0_1px_2px_rgba(26,22,20,0.03)]">
+        {incomeDrafts.length === 0 ? (
+          <div className="py-6 text-center font-serif italic text-muted text-[13px]">No income sources yet.</div>
+        ) : incomeDrafts.map((inc, idx) => (
+          <div key={inc.id}
+               className={'grid grid-cols-[1fr_140px_60px] gap-3 items-center px-3 py-2 ' + (idx > 0 ? 'border-t border-rule-soft ' : '') + (idx % 2 === 1 ? 'bg-paper-edge/25' : '')}>
             <input value={inc.source} onChange={e => {
               const v = e.target.value;
               setIncomeDrafts(prev => prev.map((p, i) => i === idx ? { ...p, source: v } : p));
@@ -243,7 +253,7 @@ export default function BudgetTab({ budgets, incomes, onSaveBudgets, onSaveIncom
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div className="flex items-center gap-3">
           <button onClick={() => setIncomeDrafts(prev => [...prev, { id: crypto.randomUUID(), source: '', monthly_amount: 0, effective_from: todayIso() }])}
-                  className="font-mono text-[11px] uppercase text-muted hover:text-accent border border-rule hover:border-accent rounded-sm px-3 py-1.5 transition-colors"
+                  className="font-mono text-[11px] uppercase text-muted hover:text-accent bg-paper border border-rule hover:border-accent rounded-sm px-3 py-1.5 transition-colors"
                   style={{ letterSpacing: '0.08em' }}>+ Add source</button>
           <span className="font-mono text-[12px] text-muted">
             Total: <span className="text-ink tabular-nums">{formatMoney(draftIncomeTotal)}</span>

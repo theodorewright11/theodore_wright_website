@@ -33,7 +33,9 @@
 │   │   ├── models/                      ← React components for interactive models
 │   │   │   └── OptionValueDashboard.tsx
 │   │   ├── dashboards/                  ← React components for the /dashboards/<slug> apps
-│   │   │   └── finance/                 ← finance dashboard (entry, tabs, types, storage, compute, taxonomy)
+│   │   │   └── finance/                 ← FinanceDashboard.tsx (root, queue), DashboardTab/TransactionsTab/BudgetTab/TransactionForm,
+│   │   │                                   types.ts, categories.ts, compute.ts, storage.ts (localStorage cache + CSV),
+│   │   │                                   sheets.ts (GIS + Sheets REST), spendingLogImporter.ts (one-shot legacy-tab seed), AuthBar.tsx
 │   │   └── ai-research/                 ← React components for AI-research stage visualizations
 │   │       ├── PsychVariationGraph.tsx  ← topology graph (force-directed via d3-force) — pan + wheel-zoom + reset
 │   │       ├── PsychVariationModel.tsx  ← model dashboard (variance decomposition + multivariate sex-difference tabs)
@@ -325,7 +327,7 @@ Persistence rules: load from `localStorage` once on mount, persist on every stat
 
 ### Finance dashboard specifics
 
-Lives at [src/components/dashboards/finance/](src/components/dashboards/finance/). Mounted at `/dashboards/finance`. v1 is public-demo only.
+Lives at [src/components/dashboards/finance/](src/components/dashboards/finance/). Mounted at `/dashboards/finance`. v1 is **private** (hidden from `/dashboards` roster via `private: true` in `dashboards.json`). Two persistence modes: local-only (no env vars set or signed out) and Sheets-synced (signed in to a Google account that owns the configured sheet).
 
 **Storage key**: `tw-finance-v1` (a single JSON object containing transactions, budgets, incomes). Schema is versioned via the `version` field on the persisted object so future migrations have a hook.
 
@@ -345,7 +347,32 @@ Headers are authoritative on import; column order doesn't matter. Quoted fields 
 
 **Spreadsheet importer** at [scripts/finance_import_xlsx.py](scripts/finance_import_xlsx.py) converts the user's `Finances Sheet.xlsx` (the existing spreadsheet workflow) into `transactions.import.csv` + `budgets.import.csv` shaped for the dashboard's CSV importer. Account remap (`Debt` → `Debit`) and category remap (`ChatGPT` → `AI Subscription`, `OneDrive` → `One Drive`, `Car Maintenence` → `Car Maintenance`) live in dictionaries at the top of the script — extend them as the spreadsheet evolves. The script is one-shot; the dashboard does not depend on it at runtime.
 
-**Personal data hygiene**: never seed the public route with real financial data. `.gitignore` excludes `Finances Sheet*.xlsx`, `My Needs*.xlsx`, `*.private.csv`, and `finance-data-local/`. The user can keep their `.xlsx` in project root for context without risk of committing.
+**Personal data hygiene**: never seed the public route with real financial data. `.gitignore` excludes `Finances Sheet*.xlsx`, `My Needs*.xlsx`, `*.private.csv`, and `finance-data-local/`. The user can keep their `.xlsx` in project root for context without risk of committing. `.env` (holding Sheets config) is also gitignored.
+
+**Google Sheets sync** (when signed in): see [src/components/dashboards/finance/sheets.ts](src/components/dashboards/finance/sheets.ts). Browser-side OAuth via Google Identity Services (script lazy-loaded on first sign-in attempt; no SDK dependency). Token in `sessionStorage` with a 60-second safety margin on expiry; scope is `https://www.googleapis.com/auth/spreadsheets email profile`. Sheets v4 REST endpoints called directly with `fetch` + `Authorization: Bearer <token>`. No service account, no Cloudflare Worker, no client secret in this repo.
+
+**Sheet schema**: three tabs in the workbook identified by `PUBLIC_FINANCE_SHEET_ID`, with header row in row 1:
+
+| Tab | Headers (canonical order) |
+|---|---|
+| `transactions` | `id,date,item,amount,account,category,notes,created_at,updated_at` |
+| `budgets` | `category,monthly_amount,effective_from` |
+| `incomes` | `id,source,monthly_amount,effective_from` |
+
+Reads are tolerant of column reorders (matched by header name via `rowsToObjects`). Writes use the canonical order — every write rewrites the header row too. Existing tabs (`Current Budget`, `Spending Log`, `Dashboard`) are not touched by the dashboard except for the one-shot read in `spendingLogImporter.ts` which reads the legacy `Spending Log` tab to seed historical transactions.
+
+**Write strategy**: per-entity `clear + write-all` on every mutation. Simpler than per-row diffs (no row-index tracking), resilient to manual sheet edits, and at <1000 rows the round-trip is well under 2s. A per-entity coalescing queue (`pending` + `inflight` refs in `FinanceDashboard.tsx`) collapses bursts of edits into a single write — pending payload is overwritten by the latest, in-flight writes don't block UI updates, and writes serialize per entity so out-of-order completion can't desync the sheet.
+
+**Lifecycle**: on mount, `localStorage` hydrates immediately for fast UI; if a stored token exists in `sessionStorage`, a full pull replaces in-memory state. On sign-in, same full pull. On every state mutation that originates in the dashboard, the affected entity gets queued for write. On `window.focus`, full re-pull (cross-tab edits, manual sheet edits). On `SheetsAuthError` (401/403), token cleared and user prompted to re-sign-in; in-memory state stays intact.
+
+**One-time historical seed**: when signed in and the `transactions` tab is empty, the Transactions tab surfaces a "Seed from Spending Log" callout. Calls `fetchSpendingLog` (mirrors the Python importer at [scripts/finance_import_xlsx.py](scripts/finance_import_xlsx.py) — keep them in sync if the legacy schema changes), confirms with the user (showing imported count, skipped count, and any unknown categories that'll show as "Uncategorized"), then writes the result to the new `transactions` tab.
+
+**Required env**:
+- `PUBLIC_GOOGLE_CLIENT_ID` — OAuth 2.0 Web Client ID from Google Cloud Console (Sheets API enabled; authorized JS origins must include `http://localhost:4321` for dev and `https://teddy-wright.com` for prod)
+- `PUBLIC_FINANCE_SHEET_ID` — the long ID from the sheet URL between `/d/` and `/edit`
+- The `PUBLIC_` prefix exposes them to the client bundle (Astro convention). The OAuth client *secret* is never used (browser-side flow doesn't need it) and must not be committed.
+
+**Auth UI**: [src/components/dashboards/finance/AuthBar.tsx](src/components/dashboards/finance/AuthBar.tsx) lives in the dashboard's app top-bar. Four states: `local only · sync not configured` (no env vars), `Sign in to sync` (configured, no token), signed-in row with sync indicator (synced / syncing / error / offline) + email + sign out + retry-on-error. The "Reset all data" button is hidden when signed in — sheet is the source of truth, so a local reset would just trigger a re-pull on next focus.
 
 ### Emotional Well-being dashboard specifics
 

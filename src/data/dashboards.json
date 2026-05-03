@@ -9,7 +9,8 @@
     "slug": "finance",
     "title": "Finance",
     "desc": "Log spending, set budgets, see where the money's actually going. Public demo runs entirely in your browser with CSV import/export.",
-    "status": "in-progress"
+    "status": "in-progress",
+    "private": true
   },
   {
     "slug": "emotional-wellbeing",

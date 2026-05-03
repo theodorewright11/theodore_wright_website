@@ -234,7 +234,7 @@ const researchStatusTone = (status: string): 'live' | 'planned' | 'soft' =>
       {/* Column 3 — Dashboards + Updates (matches nav order) */}
       <div>
         <SectionLabel label="Dashboards" href="/dashboards" />
-        {dashboards.map(d => {
+        {dashboards.filter((d: any) => !d.private).map(d => {
           const live = d.status !== 'planned';
           return (
             <article class="mb-3">

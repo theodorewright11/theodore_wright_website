@@ -4,7 +4,7 @@ import GroupHeader from '../../components/GroupHeader.astro';
 import dashboards from '../../data/dashboards.json';
 
 type Status = 'planned' | 'in-progress' | 'finished';
-type Dashboard = { slug: string; title: string; desc: string; status: Status };
+type Dashboard = { slug: string; title: string; desc: string; status: Status; private?: boolean };
 
 const order: Array<[Status, string]> = [
   ['in-progress', 'In Progress'],
@@ -12,11 +12,16 @@ const order: Array<[Status, string]> = [
   ['finished', 'Finished'],
 ];
 
+// `private: true` entries are hidden from the public roster — they exist as
+// reachable pages but aren't listed anywhere visible. Used for personal
+// dashboards Teddy uses but isn't ready to surface publicly yet.
+const visible = (dashboards as Dashboard[]).filter(d => !d.private);
+
 const groups = order
   .map(([k, l]) => ({
     k,
     l,
-    items: (dashboards as Dashboard[]).filter(d => d.status === k),
+    items: visible.filter(d => d.status === k),
   }))
   .filter(g => g.items.length > 0);
 ---
