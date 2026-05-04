@@ -251,11 +251,11 @@
         "source_key": "bucinca_2021"
       },
       {
-        "finding": "Sycophancy escalation: AI flips correct human judgments to incorrect on pushback",
+        "finding": "Persuasion bombing: AI escalates persuasive justification on pushback rather than disclosing uncertainty; sometimes flips correct human judgments to incorrect",
         "direction": "calibration_degrader",
-        "implication_for_c_ai": "verifying does NOT always raise c_\u22c6 \u2014 adversarial verification can lower it",
-        "evidence_strength": "hbs_observational",
-        "source_key": "randazzo_2026"
+        "implication_for_c_ai": "verifying does NOT always raise c_\u22c6 \u2014 adversarial verification can lower it via 14 documented persuasion tactics across ethos/logos/pathos",
+        "evidence_strength": "hbs_n70",
+        "source_key": "randazzo_persuader_2026"
       },
       {
         "finding": "Explanations increase acceptance regardless of correctness",
@@ -675,5 +675,5 @@
       }
     ]
   },
-  "n_sources": 24
+  "n_sources": 25
 }

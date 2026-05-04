@@ -121,35 +121,49 @@ const Q6_FINDINGS: { finding: string; source: string }[] = [
   { finding: 'Explanations increase acceptance regardless of correctness', source: 'Bansal 2021 CHI' },
 ];
 
+// Pass-5: every row carries a unit_class so readers can compare like-with-like.
+//   "rate"    — relative % change in flow rate (productivity, time, speed, revenue)
+//   "stock"   — relative % change in a stock-quality measure (test score, quality rating, Brier)
+//   "pp"      — absolute percentage-point swing on a probability/score scale
+//   "rel_eval"— relative % on an internal eval (Anthropic's odd-unit row)
+type UnitClass = 'rate' | 'stock' | 'pp' | 'rel_eval';
 const PRODUCTIVITY: {
   label: string;
   domain: string;
   effect_pct: number;
+  unit_class: UnitClass;
   is_neg?: boolean;
   outline?: 'novice' | 'expert' | 'mixed';
   source: string;
 }[] = [
-  { label: 'Brynjolfsson novice',  domain: 'cs_support',     effect_pct:  34, outline: 'novice', source: 'Brynjolfsson 2023' },
-  { label: 'Brynjolfsson avg',     domain: 'cs_support',     effect_pct:  14, outline: 'mixed',  source: 'Brynjolfsson 2023' },
-  { label: 'Brynjolfsson expert',  domain: 'cs_support',     effect_pct:   0, outline: 'expert', source: 'Brynjolfsson 2023' },
-  { label: 'Noy & Zhang quality',  domain: 'writing',        effect_pct:  18, source: 'Noy & Zhang 2023' },
-  { label: 'Peng coding speed',    domain: 'coding',         effect_pct:  56, source: 'Peng 2023' },
-  { label: 'Cui coding (3 expts)', domain: 'coding',         effect_pct:  26, source: 'Cui 2025 Mgmt Sci' },
-  { label: 'METR real-repo',       domain: 'coding',         effect_pct: -19, is_neg: true, outline: 'expert', source: 'Becker et al. 2025' },
-  { label: 'Otis high-baseline',   domain: 'entrepreneur',   effect_pct:  15, source: 'Otis 2024' },
-  { label: 'Otis low-baseline',    domain: 'entrepreneur',   effect_pct:  -8, is_neg: true, source: 'Otis 2024' },
-  { label: "Dell'Acqua inside",    domain: 'consulting',     effect_pct:  40, source: "Dell'Acqua 2023" },
-  { label: "Dell'Acqua outside",   domain: 'consulting',     effect_pct: -19, is_neg: true, source: "Dell'Acqua 2023" },
-  { label: 'Goh physician + GPT-4', domain: 'medicine',      effect_pct:   2, source: 'Goh 2024 JAMA NO' },
-  { label: 'Everett (AI-first)',    domain: 'medicine',      effect_pct:  9.9, source: 'Everett 2025' },
-  { label: 'Bastani unfettered',    domain: 'education',     effect_pct:  48, source: 'Bastani 2025 PNAS' },
-  { label: 'Bastani guardrailed',   domain: 'education',     effect_pct: 127, source: 'Bastani 2025 PNAS' },
-  { label: 'Bastani post-test base', domain: 'education',    effect_pct: -17, is_neg: true, source: 'Bastani 2025 PNAS' },
-  { label: 'Schoenegger (calibrated)', domain: 'forecasting', effect_pct: 23, source: 'Schoenegger 2024/25' },
-  { label: 'Schoenegger (overconfident)', domain: 'forecasting', effect_pct: 28, source: 'Schoenegger 2024/25' },
-  { label: 'Anthropic multi-agent', domain: 'research',     effect_pct: 90.2, source: 'Anthropic 2025' },
-  { label: 'Humlum-Vestergaard (aggregate)', domain: 'labor', effect_pct: 0, outline: 'mixed', source: 'Humlum 2025 NBER' },
+  { label: 'Brynjolfsson novice',  domain: 'cs_support',     effect_pct:  34, unit_class: 'rate', outline: 'novice', source: 'Brynjolfsson 2023' },
+  { label: 'Brynjolfsson avg',     domain: 'cs_support',     effect_pct:  14, unit_class: 'rate', outline: 'mixed',  source: 'Brynjolfsson 2023' },
+  { label: 'Brynjolfsson expert',  domain: 'cs_support',     effect_pct:   0, unit_class: 'rate', outline: 'expert', source: 'Brynjolfsson 2023' },
+  { label: 'Noy & Zhang quality',  domain: 'writing',        effect_pct:  18, unit_class: 'stock', source: 'Noy & Zhang 2023' },
+  { label: 'Peng coding speed',    domain: 'coding',         effect_pct:  56, unit_class: 'rate', source: 'Peng 2023' },
+  { label: 'Cui coding (3 expts)', domain: 'coding',         effect_pct:  26, unit_class: 'rate', source: 'Cui 2025 Mgmt Sci' },
+  { label: 'METR real-repo',       domain: 'coding',         effect_pct: -19, unit_class: 'rate', is_neg: true, outline: 'expert', source: 'Becker et al. 2025' },
+  { label: 'Otis high-baseline',   domain: 'entrepreneur',   effect_pct:  15, unit_class: 'rate', source: 'Otis 2024' },
+  { label: 'Otis low-baseline',    domain: 'entrepreneur',   effect_pct:  -8, unit_class: 'rate', is_neg: true, source: 'Otis 2024' },
+  { label: "Dell'Acqua inside",    domain: 'consulting',     effect_pct:  40, unit_class: 'stock', source: "Dell'Acqua 2023" },
+  { label: "Dell'Acqua outside",   domain: 'consulting',     effect_pct: -19, unit_class: 'pp', is_neg: true, source: "Dell'Acqua 2023" },
+  { label: 'Goh physician + GPT-4', domain: 'medicine',      effect_pct:   2, unit_class: 'pp', source: 'Goh 2024 JAMA NO' },
+  { label: 'Everett (AI-first)',    domain: 'medicine',      effect_pct:  9.9, unit_class: 'pp', source: 'Everett 2025' },
+  { label: 'Bastani unfettered',    domain: 'education',     effect_pct:  48, unit_class: 'stock', source: 'Bastani 2025 PNAS' },
+  { label: 'Bastani guardrailed',   domain: 'education',     effect_pct: 127, unit_class: 'stock', source: 'Bastani 2025 PNAS' },
+  { label: 'Bastani post-test base', domain: 'education',    effect_pct: -17, unit_class: 'pp', is_neg: true, source: 'Bastani 2025 PNAS' },
+  { label: 'Schoenegger (calibrated)', domain: 'forecasting', effect_pct: 23, unit_class: 'stock', source: 'Schoenegger 2024/25' },
+  { label: 'Schoenegger (overconfident)', domain: 'forecasting', effect_pct: 28, unit_class: 'stock', source: 'Schoenegger 2024/25' },
+  { label: 'Anthropic multi-agent', domain: 'research',     effect_pct: 90.2, unit_class: 'rel_eval', source: 'Anthropic 2025' },
+  { label: 'Humlum-Vestergaard (aggregate)', domain: 'labor', effect_pct: 0, unit_class: 'rate', outline: 'mixed', source: 'Humlum 2025 NBER' },
 ];
+
+const UNIT_CLASS_INFO: Record<UnitClass, { label: string; tag: string }> = {
+  rate: { label: 'flow-rate productivity', tag: '%/rate' },
+  stock: { label: 'stock-quality score lift', tag: '%/quality' },
+  pp: { label: 'percentage-point swing', tag: 'pp' },
+  rel_eval: { label: 'relative on internal eval', tag: 'rel %' },
+};
 
 // ---- Tabs --------------------------------------------------------------
 
@@ -260,7 +274,7 @@ function ProductivityPanel() {
     <div>
       <PanelHeader
         title="The productivity record (~22 RCTs and field experiments, 2023–2026)"
-        claim="The empirical context for S1 (workflow architecture > model capability). 22 study rows on a % axis. Most rows are relative % changes from a control baseline on a behavioural productivity outcome (issues per hour, tasks per week, completion time, quality scores) — directly comparable. The Goh, Everett, and Dell'Acqua-outside rows are percentage-point swings on rubric scores (also broadly comparable). Anthropic's +90.2% is the genuinely odd-unit row: relative % on an internal research eval, not a behavioural productivity measure. Sienna = positive; soft-sienna = negative (METR real-repo, Otis low-baseline, Dell'Acqua outside-frontier, Bastani unassisted post-test). Humlum-Vestergaard's aggregate zero (25k Danish workers) is the named individual-vs-organizational scope-limit."
+        claim="The empirical context for S1 (workflow architecture > model capability). 22 study rows. Pass-5 disclosure: rows mix four unit classes — flow-rate productivity (Brynjolfsson, Cui, Peng, Otis, METR, Humlum), stock-quality score lifts (Noy quality, Dell'Acqua inside, Bastani in-session, Schoenegger), absolute percentage-point swings (Goh, Everett, Dell'Acqua outside, Bastani post-test), and one relative-eval-score outlier (Anthropic +90.2%). Magnitudes within a class are directly comparable; magnitudes across classes are not (a +14% productivity gain and a +14pp test-score swing measure different things). The chart marks each row's unit class to make the comparison visible. Sienna = positive; soft-sienna = negative (METR, Otis low-baseline, Dell'Acqua outside, Bastani post-test). Humlum-Vestergaard's aggregate zero is the individual-vs-organizational scope-limit."
         verdict="evidence base"
         verdictKind="framed"
       />
@@ -287,6 +301,7 @@ function ProductivityPanel() {
             const isZero = Math.abs(d.effect_pct) < 0.5;
             const fill = isZero ? '#a89677' : isNeg ? '#c98a6e' : '#8a4a2b';
             const opacity = d.outline === 'expert' ? 0.55 : d.outline === 'novice' ? 1.0 : 0.85;
+            const tag = UNIT_CLASS_INFO[d.unit_class].tag;
             return (
               <g key={d.label}>
                 <text x={padLeft - 10} y={y + 4} fontSize={11} fontFamily="Source Serif 4, serif" fill="#1a1614" textAnchor="end">
@@ -311,16 +326,35 @@ function ProductivityPanel() {
                 >
                   {d.effect_pct > 0 ? '+' : ''}{d.effect_pct}%
                 </text>
+                <text
+                  x={padLeft - 10}
+                  y={y + 14}
+                  fontSize={8}
+                  fontFamily="JetBrains Mono, monospace"
+                  fill="#7a7166"
+                  textAnchor="end"
+                >
+                  {tag}
+                </text>
               </g>
             );
           })}
         </svg>
       </div>
 
+      <div className="flex flex-wrap gap-3 mt-2 text-[10px] font-mono text-muted">
+        <span className="text-ink">unit classes:</span>
+        {(Object.entries(UNIT_CLASS_INFO) as [UnitClass, { label: string; tag: string }][]).map(([k, v]) => (
+          <span key={k}>
+            <span className="text-accent-soft">{v.tag}</span> = {v.label}
+          </span>
+        ))}
+      </div>
+
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-5 text-[11px]">
         <NumberCard label="Studies cited" value="22" hint="Spans 2023–2026 RCTs and field experiments" />
-        <NumberCard label="Largest novice gain" value="+34%" hint="Brynjolfsson 2023 customer-support agent novices" />
-        <NumberCard label="Largest negative" value="−19%" hint="METR real-repo experts AND Dell'Acqua outside-frontier" />
+        <NumberCard label="Largest novice gain" value="+34%" hint="Brynjolfsson 2023 customer-support agent novices (rate)" />
+        <NumberCard label="Largest negative" value="−19%" hint="METR real-repo experts (rate) AND Dell'Acqua outside-frontier (pp)" />
         <NumberCard label="Aggregate zero" value="0% (CI ±1%)" hint="Humlum-Vestergaard 25k Danish workers; the scope-limit" />
       </div>
 
