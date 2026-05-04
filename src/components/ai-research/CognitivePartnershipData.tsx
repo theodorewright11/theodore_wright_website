@@ -260,8 +260,8 @@ function ProductivityPanel() {
     <div>
       <PanelHeader
         title="The productivity record (~22 RCTs and field experiments, 2023–2026)"
-        claim="The empirical context for S1 (workflow architecture > model capability). 22 study rows on a % axis — but unit caveat: most are absolute productivity / time-saved / quality lifts (Brynjolfsson, Noy, Peng, Cui, Otis, Dell'Acqua, Goh, Everett, Humlum); Bastani's in-session bars (+48% / +127%) are RELATIVE in-session improvements over control; Anthropic's +90.2% is RELATIVE on internal eval. Compare within-unit-class, not across. Sienna = positive, soft-sienna = negative (the four mis-routed cases — METR real-repo, Otis low-baseline, Dell'Acqua outside-frontier, Bastani unassisted post-test). The Humlum-Vestergaard aggregate-zero (25k Danish workers) is the named scope-limit."
-        verdict="evidence base — units mixed"
+        claim="The empirical context for S1 (workflow architecture > model capability). 22 study rows on a % axis. Most rows are relative % changes from a control baseline on a behavioural productivity outcome (issues per hour, tasks per week, completion time, quality scores) — directly comparable. The Goh, Everett, and Dell'Acqua-outside rows are percentage-point swings on rubric scores (also broadly comparable). Anthropic's +90.2% is the genuinely odd-unit row: relative % on an internal research eval, not a behavioural productivity measure. Sienna = positive; soft-sienna = negative (METR real-repo, Otis low-baseline, Dell'Acqua outside-frontier, Bastani unassisted post-test). Humlum-Vestergaard's aggregate zero (25k Danish workers) is the named individual-vs-organizational scope-limit."
+        verdict="evidence base"
         verdictKind="framed"
       />
 

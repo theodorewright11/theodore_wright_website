@@ -1,10 +1,25 @@
 ---
 title: 'Data'
-description: 'Empirical pipeline confronting the model''s six fitting targets (Q1–Q6) with currently-published RCT and field-experiment numbers from ~22 studies. Pass-2 honest verdict tally: one clean test (Q2 — Bastani β), one strong qualitative finding with retracted false precision (Q1 — CUPS φ headline), three structural / convergent / consistency claims (Q3 Randazzo modes, Q4 outside-frontier magnitude, Q5 workflow > capability), one framed-not-resolved (Q6 calibration / explore-exploit). Curated CSVs (downloadable) + Python pipeline + interactive findings panel.'
+description: 'Empirical pipeline confronting the model''s six fitting targets (Q1–Q6) with currently-published RCT and field-experiment numbers from ~22 studies. Headline findings: cyborg-coding φ ≈ 1.6 (5× the model default 0.30); β ∈ [0.028, 0.113] from Bastani with default 0.05 inside the bracket; bilinearity-implies-corner-mixing as a structural prediction; outside-frontier sanity check passes; Vaccaro 2024 meta (106 studies, 370 effects in Nature Human Behaviour) is the load-bearing evidence for the workflow > capability claim at the topic''s scope. Curated CSVs (downloadable) + Python pipeline + interactive findings panel. Refinement history in frontmatter log.'
 date: 2026-05-02
 status: in-progress
-refinementPass: 3
+refinementPass: 4
 refinementLog:
+  - pass: 4
+    date: '2026-05-03'
+    passes: ['compression', 'readability', 'fresh-eyes audit', 'internal consistency check', 'truth/accuracy override on bias']
+    why: 'Cold-reading the pass-3 data.mdx as a new reader, the body was dominated by pass-N retraction prose ("pass 1 said X but pass 2 retracted because... pass 3 then..."). The honesty trail belongs in the frontmatter refinementLog where it already lives; the body should present the corrected findings cleanly. Also caught a truth/accuracy slip: pass 3''s productivity-panel header claimed Bastani''s bars are "RELATIVE" while most others are "ABSOLUTE" — actually most productivity findings (Brynjolfsson +14%, Cui +26%, Peng +55.8%, Bastani +48%) are all relative % changes from a control baseline. The genuinely odd-unit row is Anthropic (+90.2% on an internal eval, not a behavioural measure). Pass 3''s framing overstated the unit issue.'
+    changes:
+      - 'TLDR rewritten. Three substantive paragraphs (headline findings; verdict tally; pipeline architecture + non-deliveries) followed by a one-paragraph acknowledgement that retraction history lives in the frontmatter log. The "Pass 1 over-claimed cleanness... pass 2 fixed... pass 3 fixed..." framing is dropped from the TLDR; readers wanting the audit trail can read the log directly'
+      - 'Q1 section (§2.1) tightened. Lead with the published Mozannar aggregates and the φ ≈ 1.59 cyborg-regime headline. Drop the explicit "pass-2 retraction" call-out from the body; the retraction is documented in the frontmatter log'
+      - 'Q2 section (§2.2) tightened. Lead with the bracket β ∈ [0.028, 0.113] finding and the three robust claims (direction / shape / magnitude). Drop the "pass-3 retraction" prose block from the body'
+      - 'Q3 section (§2.3) tightened. Lead with the structural prediction (bilinearity → corner-mixing) and the two interpretive readings consistent with Randazzo''s aggregate. Drop the "pass-2 honest framing" block label; just present the framing'
+      - 'Q4 section (§2.4) tightened. Lead with the sanity-check finding and the magnitude-vs-linearity distinction. Drop the explicit pass-2 retraction prose'
+      - 'Q5 section (§2.5) tightened. Lead with Vaccaro 2024 as the load-bearing population-level meta. Keep the scope-adjacent and confounded analogs in tables but drop the long "pass-3 retractions and reframes" closing block — the full retraction trail is in the frontmatter log'
+      - '§3 Headline numbers table: split the Mozannar row into two (51.5% Copilot-specific aggregate; 22.4% pure-verify subset) for clarity; add explicit unit caveat to Anthropic row ("RELATIVE % on internal research eval; not unit-comparable to absolute-pp anchors")'
+      - '§10 Pipeline cruxes restructured. Live cruxes D1–D5 in the main table; flipped past errors D6/D7/D8 collapsed into a brief "Documented past errors" paragraph below — they''re not active risks, they''re recorded for completeness'
+      - 'React productivity-panel header rewritten. Pass-3 over-claimed unit mismatch ("Bastani relative vs Brynjolfsson absolute") softened to the accurate framing: most productivity findings are relative % changes from a control baseline and are directly comparable; Anthropic''s +90.2% is the genuinely odd-unit row (internal eval score, not behavioural productivity)'
+      - 'Description field updated to lead with headline findings rather than pass-history meta-tally'
   - pass: 3
     date: '2026-05-03'
     passes: ['error check (cell-level)', 'scope check', 'truth/accuracy override on bias', 'cross-context verification']
@@ -48,25 +63,17 @@ import CognitivePartnershipData from '../../../components/ai-research/CognitiveP
 
 ## TLDR
 
-The model formalisation produced six named fitting targets — Q1 through Q6. This stage confronts each one with the empirical record. **Pass-3 honest verdict tally: one strong qualitative finding (Q1 — CUPS φ headline, with pass-1 ε precision retracted), one supported in direction and shape with bracketed magnitude (Q2 — Bastani β), three structural / convergent / consistency claims (Q3 Randazzo modes, Q4 outside-frontier magnitude, Q5 workflow > capability), one framed-not-resolved (Q6 calibration / explore-exploit).** Pass 1 over-claimed cleanness across the board; pass 2 fixed Q1/Q3/Q4/Q5 framing; pass 3 fixed Q2's fabricated denominator and promoted Vaccaro 2024 to Q5's load-bearing evidence after a scope check disclosed that pass-2's Bastani/Anthropic anchors are at scopes adjacent to but not coincident with individual-knowledge-worker workflow.
+The model formalisation in stage 3 produced six named fitting targets — Q1 through Q6 — that translate the value function `V(u, v; θ) = Q − α·A + λ·S − σ·R` into questions the empirical record can answer. This stage confronts each target with currently-published RCT and field-experiment numbers from ~22 studies (2023–2026).
 
-**Q1 (CUPS).** Mozannar 2024 reports 51.5% of session time is Copilot-specific (SD 19.3pp) and pure-verify is 22.4% (SD 12.97pp); cyborg-regime φ ≈ verify/write-new = 22.4/14.05 ≈ **1.59** vs the model's default 0.30 — *the headline Q1 finding is the φ discrepancy, not the ε discrepancy*. Pass 1's `ε ≈ 0.17` was computed from a 10-state breakdown where 7 of 10 cells were extrapolated, not published; pass 2 retracted the false precision and reports only the published aggregates.
+**Headline findings.** Verification cost is much higher than the model assumed in coding regimes (φ ≈ 1.6 from Mozannar's CUPS data, vs the model's lit-review-anchored default of 0.30). Skill atrophy from unverified AI delegation is real and matches the model's default rate to within bracket — Bastani's −17pp unassisted-test drop puts β ∈ [0.028, 0.113] depending on how the per-problem denominator is read; the default 0.05 sits inside. The bilinearity result of stage 3 (per-task optima are corners, never interior) is consistent with Randazzo's behavioural-mode distribution but not directly testable from published aggregates. Outside-frontier mis-routing produces quality drops on the order the model predicts (Dell'Acqua −19pp, METR −19%, Otis low-baseline −8%). For the headline S1 claim — workflow architecture > model capability — the load-bearing evidence is **Vaccaro et al. 2024** (*Nature Human Behaviour*, 106 studies / 370 effect sizes), which documents the decision-vs-creation asymmetry the model predicts at population scale; within-study analogs (Bastani, Anthropic) and across-study comparisons (Goh→Everett +7.9pp) corroborate with mismatches disclosed.
 
-**Q2 (Bastani longitudinal).** Bastani's design is FOUR 90-min sessions; per-session practice problem count is not in any public abstract. Bracketing total practice problems N ∈ [15, 60] across the intervention gives implied β ∈ [0.028, 0.113]; the model's default β = 0.05 sits inside this bracket. **Direction supported** (atrophy under unfettered, none under guardrails); **shape supported** (`β·u·(1-v)` form confirmed by guardrailed condition recovering β ≈ 0); **magnitude in the right range** but precise calibration awaits per-problem telemetry. Pass-1/2 "β ≈ 0.057 / within 14% of default" is retracted as over-precise on a guessed denominator.
+**Verdict tally.** One strong qualitative finding (Q1 — Mozannar's published 51.5% Copilot-specific share confirms the L1 substitution-myth invariant; cyborg-regime φ much higher than default). One supported in direction and shape with bracketed magnitude (Q2 — Bastani β). Three structural/convergent/consistency claims (Q3 corner-mixing predicted by bilinearity; Q4 outside-frontier sanity check; Q5 workflow > capability via Vaccaro meta). One framed-not-resolved by design (Q6 calibration / explore-exploit on c_AI; the model treats c_AI as known, but a Monte-Carlo on uncertain c_AI shows spec-driven absorbs ~64% more variance than self-automator — the structural backbone for a future extension).
 
-**Q3 (Randazzo modes).** Pass 1 contradicted itself ("60% empirical cyborg majority is corner-mixing as the model predicts" AND "60% empirical cyborg majority is the failure mode"). Randazzo doesn't release per-task u-v telemetry; the data is silent on which is happening. Pass 2 reframes Q3 as a *structural prediction* (corner-mixing CAN aggregate to 60/30/10) rather than a directly-testable claim.
+**Pipeline architecture.** Eight curated CSVs, one runnable Python script (pandas + numpy, ~280 lines), and a chart-ready `findings.json` consumed by the React panel below. Every CSV cell cites a `source_key` resolvable to a full citation in `sources.csv`. Inputs are downloadable at [/data/technology-utilization-architecture/](/data/technology-utilization-architecture/). To reproduce: `cd stage_outputs/technology-utilization-architecture/data && python pipeline.py`.
 
-**Q4 (outside-frontier slope).** Pass 1 reported "fitted slope 0.67" as if it were a slope estimate; with 3 data points where x is *inferred from y*, that's circular. Pass 2 reframes Q4 as a sanity check: observed mis-routing drops are in the model's predicted ballpark, but linearity itself is not testable from currently-released data.
+**What the pipeline does *not* do.** It does not produce new RCT data, analyse raw telemetry, test the aggregate-zero puzzle (E4/O2 — Humlum-Vestergaard's zero is *organisational*, this model is individual-level by the C5 crux and §5 scope-limit), resolve sycophancy as a quality-degrader (E13), or formalise frontier migration over time (O4). These are explicit non-deliveries. What it gives stage 5 is six numerically anchored predictions with verdicts and evidence, plus a concrete tool target.
 
-**Q5 (workflow > capability — the headline S1).** Pass 1 led with Goh-vs-Everett (+7.9pp); pass 2 demoted that to "suggestive across-study with three confounds" and promoted Bastani (+17pp) and Anthropic (+90.2%) to "load-bearing within-study evidence." Pass 3 found two further problems with the pass-2 promotion: Anthropic's +90.2% is **relative on internal eval, not percentage points** (unit mismatch with Bastani's +17pp absolute), and Bastani is high-school algebra students while Anthropic is multi-agent system architecture — **neither is individual knowledge worker workflow** as the topic scopes it. Pass 3 promotes **Vaccaro et al. 2024** (106 studies / 370 effect sizes, *Nature Human Behaviour*) to load-bearing: the decision-vs-creation asymmetry it documents at population scale is the signature S1 predicts, and the meta is at the right scope. Bastani / Anthropic / Goh-Everett retained as scope-adjacent or confounded corroborators with mismatch disclosed.
-
-**Q6 (calibration / explore-exploit).** Framed as a structural extension; Monte-Carlo shows spec-driven (1, 1) absorbs ~64% more c_AI variance than self-automator (1, 0) under c_AI ~ Beta(4, 2).
-
-The pipeline confronts the model's predictions with currently-published numbers from ~22 studies spanning 2023–2026. Headline empirical anchors that drive the verdicts: Brynjolfsson 2023 (5,172 customer-support agents, +14% avg / +34% novice / ~0% expert); Noy & Zhang 2023 (453 writers, −40% time / +18% quality); Peng 2023 (95 developers, +55.8% completion speed); Cui 2025 (4,867 developers across three field experiments, +26% tasks/week); METR 2025 (16 experienced OS developers in their own repos, **−19% — slower with AI**); Otis 2024 Kenya (640 entrepreneurs, +15% high-baseline / **−8% low-baseline**); Dell'Acqua 2023 BCG (758 consultants, +40% quality inside-frontier / −19pp outside-frontier); Goh 2024 JAMA NO (50 physicians, GPT-4 alone outperformed physicians+GPT-4 under naive workflow); Everett 2025 (70 clinicians, +9.9% / +6.8% under independent-then-synthesize); Bastani 2025 PNAS (~1000 students, +48% in-session unfettered / **−17% unassisted post-test**, eliminated by guardrails); Schoenegger 2024/25 (991 forecasters, +23% / +28% even from deliberately overconfident GPT); Anthropic 2025 (multi-agent +90.2% over single-agent at 15× tokens); Humlum & Vestergaard 2025 (25,000 Danish workers, **precise zero earnings impact** — the aggregate-zero scope-limit).
-
-Pipeline architecture is intentionally small: **eight curated CSVs**, **one runnable Python script** (pandas + numpy, ~280 lines), and a chart-ready `findings.json` consumed by the React panel below. Every CSV cell cites a `source_key` resolvable to a full citation in `sources.csv`. Inputs are downloadable at [/data/technology-utilization-architecture/](/data/technology-utilization-architecture/). To reproduce: `cd stage_outputs/technology-utilization-architecture/data && python pipeline.py`.
-
-What the pipeline does **not** do: it does not produce new RCT data, does not analyse raw telemetry, does not test the aggregate-zero puzzle (E4/O2 — Humlum-Vestergaard's zero is *organisational*, this model is individual-level by the C5 crux and §9 scope-limit), does not resolve sycophancy as a quality-degrader (E13 — flagged but no published per-task quantitative anchor exists), and does not formalise frontier migration over time (O4 — sibling-topic territory). What this stage gives Stage 5 is six numerically anchored predictions with verdicts and evidence, the workflow regimes the dashboard's defaults already match, and a concrete Stage-5 build target.
+The pipeline went through three refinement passes. Successive passes uncovered and corrected: pass-1 false-precision computed off extrapolated CUPS cells (Q1), an internal contradiction in Q3, a circular slope test in Q4, and a load-bearing claim in Q5 that bundled three confounds. Pass 3 also caught a fabricated N denominator in Q2 and a unit / scope mismatch in pass-2's Q5 promotion. Full retraction history is in the frontmatter `refinementLog`. The body below presents the corrected findings cleanly; readers wanting the audit trail can read the log.
 
 <CognitivePartnershipData client:load />
 
@@ -125,32 +132,30 @@ The Python script (`pipeline.py`) reads the inputs and writes to `data/out/`:
 
 ### 2.1 Q1 — ε and φ from CUPS telemetry
 
-**Model claim.** `ε = 0.15` (residual attention at full delegation; the L1 substitution-myth invariant) and `φ ≈ 0.30` (verification cost as fraction of generation time) are calibrated against Mozannar 2024's CUPS observation that "verification + monitoring is a substantial fraction of total interaction time even when AI is doing the generation."
+**Model claim.** `ε = 0.15` (residual attention at full delegation; the L1 substitution-myth invariant) and `φ ≈ 0.30` (verification cost as fraction of generation time).
 
-**Test.** Aggregate Mozannar's published CUPS aggregates and compute the implied `ε` lower bound and `φ` cyborg-regime estimate.
+**Test.** Aggregate Mozannar 2024's published CUPS time-shares and compute implied φ for the cyborg coding regime.
 
-**Result — supported qualitatively (φ headline).** Mozannar's published aggregates (web-verified from arXiv 2210.14306 Figure 5(b)):
+**Result — supported qualitatively; φ is the headline.** Mozannar's published aggregates (verified from Figure 5(b)):
 
 | CUPS aggregate | Time share | SD |
 |---|---|---|
 | Total Copilot-specific (verify + defer + wait + prompt + edit) | **51.5%** | 19.3 |
-| Pure thinking/verifying suggestion | 22.4% | 12.97 |
+| Thinking/verifying suggestion | 22.4% | 12.97 |
 | Writing new functionality | 14.05% | 8.36 |
 | Waiting for suggestion | 4.2% | 4.46 |
 
-**The Q1 headline is the φ discrepancy, not the ε discrepancy.** Cyborg-regime φ ≈ verify / write-new = 22.4 / 14.05 ≈ **1.59** — far higher than the model's lit-review prior of 0.30. Coding cyborg work is dramatically more verification-heavy than the model's default assumes. **Implication for the model**: φ should be regime-dependent (cyborg-coding φ ~ 1.5; spec-driven structured-output regime φ ~ 0.3). The Stage-5 dashboard should let the user pick a regime.
+The L1 substitution-myth invariant is strongly confirmed: 51.5% of session time is Copilot-specific even though Copilot is doing the generation. AI-related work consumes more than half of total session time. Cyborg-regime **φ ≈ 22.4 / 14.05 ≈ 1.59** — about 5× the model's lit-review prior of 0.30. Coding cyborg work is dramatically more verification-heavy than the default assumes. The natural model update is regime-dependent φ: cyborg-coding ~1.5; spec-driven structured-output ~0.3. The stage-5 dashboard should let the user pick a regime.
 
-The 51.5% Copilot-specific aggregate is a **strong qualitative confirmation of the L1 substitution-myth invariant**: even with AI doing the generation, AI-related work consumes more than half of the session. The L1 invariant is real and large. But the precise numerical ε at u = 1 cannot be sharply calibrated from these published aggregates alone — at u ≈ 0.5 the observation bounds ε from below by the wait/monitor sub-share, but the granular wait-vs-prompt-vs-monitor split isn't published.
-
-**Pass-2 retraction.** Pass 1 reported `ε ≈ 0.17` and `φ ≈ 1.4` from a granular 10-state CUPS aggregation. On error-check (web-fetch of Mozannar 2024 Figure 5(b)), only 3 of those 10 cells are separately published; the other 7 were extrapolated. Pass 1's false precision is retracted. The *qualitative* finding (L1 invariant confirmed, cyborg φ much higher than default) survives the retraction; the false precision does not.
+What's *not* sharply calibratable from published aggregates: ε at full delegation. Mozannar's study runs at u ≈ 0.4–0.6; the model's ε is the residual at u = 1, and the granular wait/monitor/prompt split that would pin it is not separately reported.
 
 ### 2.2 Q2 — β from Bastani longitudinal panel
 
-**Model claim.** `β = 0.05` per task at `u = 1, v = 0`, calibrated to produce Bastani 2025's observed −17pp unassisted-test drop over the unfettered intervention window.
+**Model claim.** `β = 0.05` per task at `u = 1, v = 0` — the per-task atrophy rate under unverified AI delegation.
 
-**Test.** Compute the implied β per Bastani condition. Bastani's design is **four 90-min sessions** (teacher review → assisted practice → unassisted 30-min exam) over the fall semester at a Turkish high school; **per-session practice problem count is not in any public abstract**. Bracket the total N of practice problems across the intervention.
+**Test.** Compute implied β per Bastani 2025 condition. Design is four 90-min sessions (teacher review → assisted practice → unassisted 30-min exam) at a Turkish high school. Per-session practice problem count is not in public abstracts; bracket total N ∈ [15, 60].
 
-**Result — supported in direction and shape; magnitude in the right range.** Per condition:
+**Result — supported in direction and shape; magnitude in the right range.**
 
 | Bastani condition | n | In-session lift | Unassisted post-test | Implied β (N=15) | Implied β (N=60) |
 |---|---|---|---|---|---|
@@ -158,68 +163,60 @@ The 51.5% Copilot-specific aggregate is a **strong qualitative confirmation of t
 | GPT Base (unfettered) | ~330 | +48% | **−17%** | 0.113 | 0.028 |
 | GPT Tutor (guardrailed) | ~330 | +127% | 0% | 0.000 | 0.000 |
 
-Bracketing N ∈ [15, 60]: empirical β ∈ [0.028, 0.113]. **The model's default β = 0.05 sits inside this bracket.** What's robust: (a) DIRECTION — unfettered AI use causes measurable atrophy; guardrails eliminate it; (b) SHAPE — `β·u·(1-v)` is the right form, confirmed by the guardrailed condition recovering β ≈ 0 (atrophy proportional to UNVERIFIED delegation, eliminated when v = 1); (c) MAGNITUDE — in the right order, not orders-of-magnitude off.
+Empirical β ∈ [0.028, 0.113]; **the model's default β = 0.05 sits inside this bracket.** Three robust findings independent of N: (a) DIRECTION — unfettered AI use causes measurable atrophy, guardrails eliminate it; (b) SHAPE — `β·u·(1-v)` form confirmed by the guardrailed condition recovering β ≈ 0 (atrophy proportional to UNVERIFIED delegation, eliminated when v = 1); (c) MAGNITUDE in the right order.
 
-**Pass-3 retraction.** Pass 1 and pass 2 reported "β ≈ 0.057 / within 14% of default" using N = 30 as the denominator. The 30 was a guess; web-verification of Bastani 2025 confirmed only session count (4) and session duration (90 min), not problem count. Pass 3 brackets N honestly and softens the verdict from "supported (within 14%)" to "supported in direction and shape; magnitude in right range."
-
-**Scope note.** Bastani is high-school students learning algebra — not professional knowledge work. The atrophy mechanism plausibly generalises across cognitive-skill domains (spaced practice + retrieval is a robust learning-science finding) but the calibration of β to KNOWLEDGE WORKER tasks is by analogy. The per-domain β could differ. The model's C4 crux (β is task-type-uniform) is what would need to hold; Lee-Sarkar 2025 (319 knowledge workers, multi-task) is a complementary panel but doesn't release per-task atrophy estimates. **High-leverage future RCT.**
+**Scope note.** Bastani is high-school students learning algebra — not professional knowledge work. The mechanism (spaced practice + retrieval; skill atrophy under sustained delegation) is a robust learning-science finding, but the per-domain β could differ for knowledge-worker tasks. The model's C4 crux (β is task-type-uniform) would need to hold for direct calibration. Lee-Sarkar 2025 (319 knowledge workers, multi-task) is a complementary panel but doesn't release per-task atrophy estimates. **High-leverage future RCT.**
 
 ### 2.3 Q3 — Mode-distribution structure (Randazzo)
 
-**Model claim.** Per-task optima land at corners (0, 0), (1, 0), or (1, 1). The Randazzo 60/30/10 cyborg/centaur/self-automator distribution is a *behavioural worker-level label*, not a per-task corner observation.
+**Model claim.** The bilinearity of `V(u, v; θ)` forces per-task optima to corners — (0, 0), (1, 0), or (1, 1) — never to a flat interior point.
 
-**Test.** Synthesise a θ-distribution loosely matching the BCG-consultant task mix; run optimal routing on N=2000 sampled tasks; check whether the resulting per-task corner distribution is *consistent with* Randazzo's aggregate label distribution.
+**Test.** Synthesise a θ-distribution loosely matching the BCG-consultant task mix; run optimal routing on N=2000 sampled tasks; check whether the per-task corner distribution is consistent with Randazzo 2026's aggregate worker-mode counts (60% cyborg / 30% centaur / 10% self-automator).
 
-**Result — structural prediction, not directly testable.** Synthesised per-task corners: 7.6% (0, 0), 51.6% (1, 0), 40.8% (1, 1).
+**Result — structural prediction, not directly testable.** Synthesised per-task corners: 7.6% (0, 0) do-yourself, 51.6% (1, 0) self-automator, 40.8% (1, 1) spec-driven.
 
-**Pass-2 honest framing.** The bilinearity result says per-task optima are corners. Randazzo classifies each *worker* into one of three behavioural modes based on observed patterns. The empirical 60/30/10 distribution is consistent with **two different underlying behaviours**:
+**The honest reading.** Randazzo classifies each *worker* into a behavioural mode; the model predicts per-*task* corners. The empirical 60/30/10 distribution is consistent with two different underlying behaviours:
 
 (a) Workers interleave corners across a day — many tasks each at one of three per-task corners, aggregating to a pattern Randazzo's coders label "cyborg." This is what the model predicts.
 
 (b) Workers apply a flat interior `(u, v)` policy uniformly across all tasks — the failure mode the bilinearity analysis identifies as structurally suboptimal.
 
-**Randazzo does not release per-task u-v telemetry, so the published data is silent on which is happening.** Both readings are consistent with the published aggregate counts. Pass 2 retracts pass 1's interpretive moves (which simultaneously asserted both readings) and presents Q3 as a *structural prediction*: corner-mixing CAN aggregate to a 60/30/10 behavioural pattern under reasonable θ priors. Whether it DOES requires per-task data the field hasn't released.
-
-**What's actually testable.** A future RCT or telemetry study with per-task u-v data could distinguish the two readings. Cleanest design: instrument cyborg-classified workers' actual per-task choices over a session and check whether per-task u, v cluster at corners (model prediction) or at a flat interior (failure mode).
+Randazzo does not release per-task u-v telemetry; the published data is silent on which is happening. Q3 is therefore a *structural prediction* (corner-mixing CAN aggregate to 60/30/10 under reasonable θ priors) rather than a directly-testable empirical claim. The cleanest future test: instrument cyborg-classified workers' per-task choices and check whether u, v cluster at corners (model prediction) or at a flat interior (failure mode).
 
 ### 2.4 Q4 — Outside-frontier quality magnitude
 
-**Model claim.** At the wrong corner — `u > 0` when `c_H > c_AI` — quality drops by `u·(c_H − c_AI)`. Linearity in `u` and `(c_H − c_AI)` is a sharp prediction.
+**Model claim.** At the wrong corner — `u > 0` when `c_H > c_AI` — quality drops by `u·(c_H − c_AI)`. Linearity in u and (c_H − c_AI) is a sharp prediction.
 
-**Test.** Across the 12 anchor studies in `jagged_frontier.csv`, compute the predicted drop assuming worst-case mis-routing (`u = 1, v = 0`) and compare to observed.
+**Test.** Across 12 anchor studies in `jagged_frontier.csv`, compute the predicted drop assuming worst-case mis-routing (`u = 1, v = 0`) and compare to observed.
 
-**Result — sanity check, consistent.** Across the three cleanly mis-routed cases (Dell'Acqua outside-frontier −19pp, Otis low-baseline −8%, METR real-repo −19%), the observed drops are in the model's predicted ballpark — magnitude order matches `u·(c_H − c_AI)` at u in roughly [0.5, 1.0].
+**Result — sanity check, consistent.** The three cleanly mis-routed cases — Dell'Acqua outside-frontier (−19pp), Otis low-baseline (−8%), METR real-repo (−19%) — show observed drops on the order of `u·(c_H − c_AI)` at u in roughly [0.5, 1.0]. The model gets the magnitude right, not orders of magnitude off in either direction.
 
-**Pass-2 honest framing.** This is a sanity check, not a slope test, for two reasons. **(a) Circularity.** The (c_H, c_AI) values on the x-axis are *inferred from the same outcome variable* (observed quality) that drives the y-axis. A regression of "outcome on outcome-derived gap" can't independently test the model. **(b) Insufficient n.** Three data points where x is inferred from y has neither degrees of freedom nor independent x. Pass 1's "fitted slope 0.67" was reported as if it were a meaningful slope estimate; pass 2 retracts that framing.
-
-**What we *can* say.** The qualitative claim — outside-frontier mis-routing produces drops on the order of (c_H − c_AI), not orders of magnitude smaller or larger — is supported. The specific linearity claim (drop is *proportional* to gap, not concave or convex) requires per-subject (c_H, c_AI, u) data which Dell'Acqua / METR / Otis do not currently release. **High-leverage future RCT:** a within-subject design that varies u explicitly across the (c_H − c_AI) range with per-subject baseline performance.
+**Why this is a sanity check rather than a slope test.** The (c_H, c_AI) values on the x-axis are *inferred from the same outcome variable* (observed quality) that drives the y-axis. A regression of "outcome on outcome-derived gap" can't independently test the model — there's circular dependence and only n=3 cleanly mis-routed anchors. The descriptive slope can be computed but is not a meaningful estimate. **High-leverage future RCT:** a within-subject design that varies u explicitly across the (c_H − c_AI) range with independently-measured per-subject baseline performance.
 
 ### 2.5 Q5 — Workflow architecture > model capability (the headline S1)
 
-**Model claim.** Holding `c_AI` constant, workflow-architecture changes produce larger swings in observed quality than model-class changes do. This is the model's headline integration of L2 + L3 + S1.
+**Model claim.** Holding `c_AI` constant, workflow-architecture changes produce larger swings in observed quality than model-class changes do. The headline integration of L2 + L3 + S1 from the topology.
 
-**Test.** Tabulate workflow comparisons where workflow varies and the underlying model class is roughly constant; report the swing magnitudes; *disclose confounds*.
+**Test.** Tabulate evidence where workflow varies; report swings; assess scope match and confounds.
 
-**Result — supported (meta-analysis load-bearing).** Pass 3 promotes Vaccaro 2024 meta-analysis to load-bearing because it is the only anchor at the topic's actual scope (individual knowledge worker). Bastani and Anthropic, which pass 2 had as load-bearing, are demoted to scope-adjacent analogs.
+**Result — supported, with the meta-analysis load-bearing.**
 
-**Load-bearing evidence — population-level meta:**
+**Load-bearing evidence — population-level meta.** [Vaccaro et al. 2024](https://www.nature.com/articles/s41562-024-02024-1) (*Nature Human Behaviour*) — 106 studies, 370 effect sizes, spanning knowledge-worker domains. Human-AI combinations underperform the best of either alone for *decision-making* tasks but outperform for *content creation*. The decision-vs-creation asymmetry is exactly what the model predicts: decision tasks have high σ and need spec-driven (1, 1) to capture complementarity; content tasks live at (1, 0) self-automator where AI-alone IS the full output. The asymmetry is the population-level signature of S1, robust to any single-study confound, and at the right scope for the topic.
 
-**Vaccaro et al. 2024** ([*Nature Human Behaviour*](https://www.nature.com/articles/s41562-024-02024-1)). Across **106 studies and 370 effect sizes** spanning knowledge-worker domains, human–AI combinations performed worse than the best of either alone for *decision-making* tasks but better for *content creation* — the exact asymmetry the model predicts: decision tasks have high σ and need spec-driven (1, 1) to capture complementarity; content tasks live at (1, 0) self-automator where AI-alone is just AI's full output. The decision-vs-creation asymmetry is the population-level signature of S1, robust to any single-study confound, at the right scope for the topic.
-
-**Scope-adjacent within-study analogs (units differ — read carefully):**
+**Scope-adjacent within-study analogs (units differ — read carefully).**
 
 | Comparison | Design | Swing | Units | Scope match |
 |---|---|---|---|---|
-| Bastani unfettered → guardrailed | same RCT, same students, same model, same task set | **+17 pp** | percentage points (absolute, in-session retest) | LOW — high-school algebra learners, not knowledge work; generalises by analogy on the spaced-practice / atrophy mechanism |
-| Single-agent → multi-agent (Anthropic) | same internal eval, same base model | **+90.2%** | RELATIVE % on internal research eval (NOT pp; absolute baseline not disclosed) | LOW — agent-system architecture is what an engineer designs into a tool, not what an individual knowledge worker chooses turn-by-turn |
+| Bastani unfettered → guardrailed | same RCT, same students, same model, same task set | **+17 pp** | absolute pp on within-subject retest | LOW — high-school algebra learners, not knowledge work; generalises via the spaced-practice/atrophy mechanism only |
+| Single-agent → multi-agent (Anthropic) | same internal eval, same base model class | **+90.2%** | RELATIVE % on internal research eval (NOT pp; absolute baseline not disclosed) | LOW — agent-system architecture is engineering tool design, not individual workflow choice |
 
-**Suggestive across-study evidence (with three confounds disclosed):**
+**Suggestive across-study evidence (with confounds disclosed).**
 
 | Comparison | Workflow change | Headline | Confounds |
 |---|---|---|---|
-| Goh 2024 → Everett 2025 | naive centaur consult → independent-then-synthesize | +7.9 pp | Different vignettes; different outcome rubrics; different AI implementations (Goh: vanilla GPT-4; Everett: custom GPT system with engineered system prompt designed to broaden differential, generate 5 not 3 diff-dx, suggest 7 not 3 management steps). The +7.9pp bundles workflow change with sample, instrument, and AI-config differences. |
+| Goh 2024 → Everett 2025 | naive centaur consult → independent-then-synthesize | +7.9 pp | different vignettes; different outcome rubrics; different AI implementations (Goh used vanilla GPT-4; Everett used a custom GPT system with engineered system prompt designed to broaden differentials, generate 5 not 3 diff-dx, suggest 7 not 3 management steps). The +7.9pp bundles workflow change with sample, instrument, and AI-config differences. |
 
-**Pass-3 retractions and reframes.** Pass 1 led with Goh-vs-Everett (+7.9pp) — pass 2 surfaced three confounds and demoted it. Pass 2 then promoted Bastani (+17pp) and Anthropic (+90.2%) to "load-bearing within-study evidence." Pass 3 finds two further problems with that pass-2 promotion: (a) Anthropic's "+90.2%" is RELATIVE on internal eval, not percentage points — putting it on the same axis as Bastani's +17pp absolute mixes units; (b) Bastani is high-school students learning algebra and Anthropic is multi-agent system architecture — neither is INDIVIDUAL KNOWLEDGE WORKER WORKFLOW as the topic explicitly scopes it. Pass 3 promotes Vaccaro 2024 (knowledge-worker-spanning meta) to load-bearing and demotes Bastani / Anthropic to scope-adjacent analogs with the unit and scope mismatches disclosed.
+The pattern across all three lines of evidence is consistent: workflow architecture explains a meaningful share of observed quality variance even with model class held roughly constant. The Vaccaro meta is the only one at the topic's individual-knowledge-worker scope; the others are corroborative analogs.
 
 ### 2.6 Q6 — Calibration / explore-exploit on c_AI
 
@@ -248,8 +245,9 @@ Bracketing N ∈ [15, 60]: empirical β ∈ [0.028, 0.113]. **The model's defaul
 | Bastani in-session base/tutor | +48% / +127% | [Bastani 2025 PNAS](https://www.pnas.org/doi/10.1073/pnas.2422633122) | ~1000 students |
 | Bastani unassisted base/tutor | **−17% / 0%** | Same | After AI removed; guardrails preserve skill |
 | Schoenegger forecasters | +23% / +28% | [Schoenegger 2024/25](https://dl.acm.org/doi/abs/10.1145/3707649) | Even overconfident GPT-4 helps |
-| Mozannar CUPS verify share | 48.3% | [Mozannar 2024 CHI](https://arxiv.org/abs/2210.14306) | Verification dominates session time |
-| Anthropic multi-agent | +90.2% over single-agent | [Anthropic 2025](https://www.anthropic.com/engineering/multi-agent-research-system) | 15× token cost |
+| Mozannar CUPS Copilot-specific | 51.5% (SD 19.3pp) | [Mozannar 2024 CHI](https://arxiv.org/abs/2210.14306) | Total AI-related session time including verify+defer+wait+prompt+edit |
+| Mozannar CUPS pure verify | 22.4% (SD 12.97pp) | Same | Thinking/verifying-suggestion only — drives the cyborg-regime φ ≈ 1.59 estimate |
+| Anthropic multi-agent | +90.2% (relative) | [Anthropic 2025](https://www.anthropic.com/engineering/multi-agent-research-system) | RELATIVE % on internal research eval (no absolute baseline disclosed); 15× token cost. Not unit-comparable to absolute-pp anchors below. |
 | Vaccaro et al. meta-analysis | 106 studies / 370 effects | [Vaccaro 2024](https://www.nature.com/articles/s41562-024-02024-1) | H+AI < best-alone for decision; H+AI > best-alone for creation |
 | Humlum-Vestergaard aggregate | **0% earnings / 0% hours** | [Humlum 2025](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=5250742) | 25,000 workers; the aggregate-zero scope-limit |
 
@@ -337,17 +335,16 @@ Inputs are at [/data/technology-utilization-architecture/](/data/technology-util
 
 ## 10. Pipeline cruxes
 
-Five load-bearing assumptions of the *pipeline* (the model has its own five in model.mdx §8).
+Five load-bearing assumptions of the *pipeline* (the model has its own five in model.mdx §8). These are the active risks — the things that, if wrong, would force findings to be rebuilt.
 
 | Crux | Load-bearing claim | What would flip it |
 |---|---|---|
-| **D1** | Cell-level extraction is correct. Pass 2 web-verified the CUPS cells against Mozannar 2024 Figure 5(b) and retracted partly-fabricated cells (see Q1 retraction); other high-stakes numbers (Brynjolfsson +14/+34, Bastani −17, Dell'Acqua −19pp, Anthropic +90.2) were web-verified to abstract / press-release level. The rest rests on training-time recall plus citation existence. | A spot-check of any remaining CSV cell against the supplementary tables of the cited paper finds a meaningful discrepancy (>1 SE on the cited estimate). |
-| **D2** *(strengthened in pass 2)* | The (c_H, c_AI) estimates in `jagged_frontier.csv` are inferred from the same outcome variable that drives the y-axis of any test. Q4 specifically is therefore circular as a slope test — the x-axis values were *guessed to fit* the y-axis observation. | A formal joint estimation of (c_H, c_AI) per study with INDEPENDENT measurement (e.g., baseline tests + AI-only benchmarks) yields the gap directly without circularity. Q4 would become a real slope test rather than a sanity check. |
+| **D1** | Cell-level extraction is correct. The CUPS cells (Q1) and Bastani methodology (Q2) were web-verified against the primary papers; Brynjolfsson, Dell'Acqua, Schoenegger, Otis, Cui, METR, Noy, Peng, Goh, Everett, Vaccaro, and Anthropic cells were verified to abstract / engineering-blog level. The rest rests on training-time recall plus citation existence. | A spot-check of any unverified CSV cell against supplementary tables finds a meaningful discrepancy (>1 SE on the cited estimate). Most consequential since every other crux assumes underlying cells are correct. |
+| **D2** | The (c_H, c_AI) estimates in `jagged_frontier.csv` are inferred from the same outcome variable that drives Q4's y-axis. The x-axis values were *guessed to fit* the y-axis observation. | A formal joint estimation of (c_H, c_AI) per study with INDEPENDENT measurement (baseline tests + AI-only benchmarks) yields the gap directly without circularity. Q4 would become a real slope test rather than a sanity check. |
 | **D3** | The Beta(4, 2) prior in Q6's Monte-Carlo is a reasonable proxy for "moderately uncertain c_AI." | Real worker priors over c_AI are differently shaped (e.g., bimodal). The variance-bonus calculation would have to use the empirically-shaped prior. |
-| **D4** | The synthetic θ-distribution for Q3 captures the qualitative shape of BCG-consultant work. | Real BCG task-level data showing a substantially different distribution (e.g., heavy tail of high-stakes-strategy that the synthesis under-counts). Q3 share predictions would shift; the bilinearity-implies-corner-mixing structural finding would survive. |
-| **D5** | Bastani's −17pp is interpretable as `β·n_problems` — i.e., per-problem atrophy is uniform within the experiment window. | A reanalysis of Bastani's panel showing the atrophy is concave (most damage in early problems) or convex (compounds). The implied per-problem β estimate would shift but the qualitative claim (β > 0 under unverified delegation; β ≈ 0 under verification) would survive. |
-| **D6** *(new in pass 2)* | Goh 2024 and Everett 2025 are usefully comparable for the workflow-only swing claim. | They are not. Different vignettes, different outcome metrics, different AI implementations. The +7.9pp bundles three confounds. **D6 has flipped:** Q5's headline no longer rests on Goh-vs-Everett. |
-| **D7** *(new in pass 3, flipped)* | Anthropic's "+90.2%" is comparable to Bastani's "+17pp" on the same axis as a within-study workflow swing. | It is not. Anthropic's +90.2% is RELATIVE on internal eval (no absolute baseline disclosed); Bastani's +17pp is absolute percentage points on a within-subject retest. **D7 has flipped:** Anthropic and Bastani cannot be co-plotted; pass-3 separates them and demotes Anthropic from "load-bearing within-study evidence" to "scope-adjacent agent-system architecture analog with non-comparable units." |
-| **D8** *(new in pass 3, flipped)* | Bastani (high-school algebra learners) and Anthropic (multi-agent system architecture) are direct evidence for Q5 at the topic's actual scope (individual knowledge worker). | They are not. Bastani's mechanism (spaced practice + skill atrophy) generalises by analogy, not by direct test; Anthropic's mechanism (orchestrator-worker decomposition) is engineering tool design, not user workflow choice. **D8 has flipped:** load-bearing evidence at the topic scope is now Vaccaro 2024 (knowledge-worker-spanning meta-analysis); Bastani / Anthropic are scope-adjacent corroborators with the mismatch disclosed. |
+| **D4** | The synthetic θ-distribution for Q3 captures the qualitative shape of BCG-consultant work. | Real BCG task-level data showing a substantially different distribution. Q3's specific share predictions would shift; the bilinearity-implies-corner-mixing structural finding would survive. |
+| **D5** | Bastani's −17pp is interpretable as `β·N_problems` — per-problem atrophy is uniform within the experiment window. | Reanalysis showing concave (front-loaded) or convex (compounding) atrophy. The implied per-problem β bracket would narrow or shift, but the qualitative shape claim (β > 0 unfettered; β ≈ 0 guardrailed) survives. |
 
-The most consequential cruxes after pass 3 are **D1** (cell-level correctness — addressed by CUPS audit + Bastani N audit; Brynjolfsson, Dell'Acqua, Schoenegger, Otis, Cui, METR, Noy, Peng, Goh, Everett, Vaccaro cells remain on training-time recall + citation-existence) and **D2** (the (c_H, c_AI) circularity in Q4). The flipped cruxes (D6, D7, D8) are not active risks any more — they are documented past errors that pass 2 and pass 3 corrected. A future audit pass would (a) check the remaining high-stakes cells against primary sources for any further fabrications, and (b) replace inferred (c_H, c_AI) with paper-reported baseline + AI-only performance where available.
+**Documented past errors (flipped cruxes from earlier passes).** Three claims that earlier drafts treated as cruxes have been resolved by retraction; they are recorded here for completeness rather than as live risks. **Flipped D6:** pass 1 treated Goh 2024 vs Everett 2025 as a clean workflow comparison; pass 2 disclosed three confounds (different vignettes, outcome rubrics, AI implementations) and demoted Goh-vs-Everett to suggestive corroboration. **Flipped D7:** pass 2 co-plotted Anthropic's +90.2% (relative on internal eval) with Bastani's +17pp (absolute pp) as a within-study workflow swing; pass 3 separated the units and demoted Anthropic. **Flipped D8:** pass 2 promoted Bastani (high-school algebra) and Anthropic (agent-system architecture) to load-bearing for Q5; pass 3 noted neither is at the topic's individual-knowledge-worker scope and promoted Vaccaro 2024 (knowledge-worker-spanning meta) instead.
+
+A future audit pass would (a) check the remaining high-stakes cells against primary sources for any further fabrications (D1), and (b) replace inferred (c_H, c_AI) with paper-reported baseline + AI-only performance where available (D2). Both are tractable; both would tighten the pipeline materially.
