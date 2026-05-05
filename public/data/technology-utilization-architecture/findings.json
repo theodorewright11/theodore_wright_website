@@ -22,15 +22,20 @@
     "pass2_note": "Pass 1 reported \u03b5 \u2248 0.17 and \u03c6 \u2248 1.40 from a granular 10-state CUPS aggregation. Web-verification of Mozannar 2024 Figure 5(b) showed only 3 of those 10 cells are separately published (Thinking/Verifying 22.4%, Writing-New 14.05%, Waiting 4.2%) plus the headline 51.5% Copilot-specific aggregate. The other 7 cells were extrapolated. Pass 2 retracts the false precision and reports only the published aggregates."
   },
   "Q2_bastani": {
-    "beta_bracket_lo": 0.0028,
-    "beta_bracket_hi": 0.0113,
+    "drop_fractional": 0.17,
+    "per_problem_bracket": [
+      0.0028,
+      0.0113
+    ],
+    "per_session_estimate": 0.0425,
     "beta_default": 0.05,
-    "default_inside_bracket": false,
+    "default_inside_per_problem_bracket": false,
+    "default_to_per_session_ratio": 1.18,
     "beta_fitted_guardrailed": 0.0,
-    "verdict": "supported_in_direction_and_shape",
-    "interpretation": "Bastani's -17pp unassisted-test drop spans 4 sessions \u00d7 N practice problems where N is not publicly reported. Bracketing N \u2208 [15, 60] gives implied beta \u2208 [0.003, 0.011]. The model's default beta = 0.05 sits outside this bracket. What survives the N uncertainty: (a) direction \u2014 unfettered AI use causes measurable atrophy; guardrails eliminate it; (b) shape \u2014 beta\u00b7u\u00b7(1-v) is the right form, confirmed by the guardrailed condition recovering \u2248 0 atrophy. Magnitude is in the right range; precise calibration awaits per-problem telemetry.",
+    "verdict": "direction_and_shape_supported_magnitude_unit_dependent",
+    "interpretation": "Bastani's -17pp unassisted-test drop has two empirical readings depending on the model's 'task' unit. Per-problem reading: -0.17 / N where N \u2208 [15, 60] practice problems \u2192 beta \u2208 [0.003, 0.011]. Per-session reading: -0.17 / 4 sessions = 0.0425. The model's default beta = 0.05 sits OUTSIDE the per-problem bracket (5-15x too high) but is approximately 1.18x the per-session estimate (close, slightly high). The interpretation depends on whether the model's 'task' unit corresponds to one (u, v) decision per problem (per-problem) or one decision per session/intervention (per-session). What survives EITHER reading: (a) direction \u2014 unfettered AI use causes measurable atrophy; guardrails eliminate it; (b) shape \u2014 beta\u00b7u\u00b7(1-v) form is confirmed by the guardrailed condition recovering \u2248 0 atrophy. What is unit-dependent: the magnitude calibration of beta. The honest read is that the model's beta is consistent with a per-session interpretation of 'task' but 5-15x too high for a per-problem interpretation.",
     "source_key": "bastani_2025",
-    "pass3_note": "Pass 1 and pass 2 reported beta \u2248 0.057 'within 14% of default' using N = 30 problems as denominator. The 30 was a guess; the published abstract gives session count (4) and session duration (90 min) but not problem count. Pass 3 brackets N honestly and softens the verdict from 'supported (within 14%)' to 'supported in direction and shape; magnitude in right range.",
+    "pass7_correction": "Pass 3-6 prose reported beta bracket [0.028, 0.113] which was a 10x transcription error from the pipeline's actual output of [0.003, 0.011] under per-problem interpretation. The pipeline was correct; the prose was wrong. Pass 7 corrects the prose, splits the bracket into per-problem vs per-session readings, and discloses that the model's default 0.05 is outside the per-problem bracket but consistent with per-session. The unit ambiguity is a definitional issue in model.mdx that should be resolved on the next model-stage refinement pass.",
     "scope_note": "Bastani is high-school students learning algebra \u2014 not professional knowledge work. The atrophy mechanism is plausibly a generalization across cognitive-skill domains (spaced practice + retrieval is a robust learning-science finding) but the calibration of beta to KNOWLEDGE WORKER tasks is by analogy. The per-domain beta could differ. C4 crux of the model (beta is task-type-uniform) is what would need to hold."
   },
   "Q3_modes": {

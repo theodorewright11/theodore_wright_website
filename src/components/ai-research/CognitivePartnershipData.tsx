@@ -30,14 +30,23 @@ const Q1_FITTED = {
   epsilon_default: 0.15,
 };
 
-// Pass 3: bracket replaces single-value beta. Per-problem N across the
-// 4 sessions is not publicly reported — bracket against N ∈ [15, 60].
+// Pass 7: passes 3-6 reported bracket [0.028, 0.113] which was a 10x
+// transcription error from the pipeline's actual computation. Pass 7
+// shows both per-problem and per-session readings, with the model's
+// "task" unit ambiguity disclosed.
 const Q2_CONDITIONS: { name: string; in_session: number; post_test: number; beta_label: string; corner: string }[] = [
   { name: 'Control', in_session: 0, post_test: 0, beta_label: '0.000', corner: '— (no AI)' },
-  { name: 'GPT Base (unfettered)', in_session: 48, post_test: -17, beta_label: '0.028 – 0.113', corner: '(1, 0) self-automator' },
+  { name: 'GPT Base (unfettered)', in_session: 48, post_test: -17, beta_label: '0.003–0.011 (per-problem) / 0.043 (per-session)', corner: '(1, 0) self-automator' },
   { name: 'GPT Tutor (guardrailed)', in_session: 127, post_test: 0, beta_label: '0.000', corner: '(1, 1) spec-driven' },
 ];
-const Q2_BETA_BRACKET = { lo: 0.028, hi: 0.113, default_in: true };
+const Q2_BETA = {
+  per_problem_lo: 0.003,
+  per_problem_hi: 0.011,
+  per_session: 0.043,
+  default: 0.05,
+  default_in_per_problem: false,
+  default_to_per_session_ratio: 1.18,
+};
 
 const Q3_CORNERS = {
   model: [
@@ -451,9 +460,9 @@ function Q2Panel() {
     <div>
       <PanelHeader
         title="Q2. β bracketed from Bastani 2025 longitudinal panel"
-        claim="The model defaults β = 0.05 per task at u=1, v=0. Bastani's design is FOUR 90-min sessions with a final unassisted exam; per-session problem count is not publicly reported. Bracketing total practice problems N ∈ [15, 60] across the intervention gives implied β ∈ [0.028, 0.113] — and the model's default 0.05 sits inside this bracket. Pass-1/2 reported β ≈ 0.057 'within 14% of default' using N = 30; that 30 was a guess. Pass-3 honest framing: direction supported (atrophy under unfettered, none under guardrails), shape supported (β·u·(1-v) form confirmed by guardrailed → 0), magnitude in the right range, precise calibration awaits per-problem telemetry."
-        verdict="supported in direction and shape"
-        verdictKind="supported"
+        claim="The model defaults β = 0.05 per task at u=1, v=0. Bastani's design is four 90-min sessions with a final unassisted exam. Two readings of 'task': per-problem (one (u, v) decision per practice problem; N ∈ [15, 60] not publicly stated) gives β ∈ [0.003, 0.011] — default 0.05 OUTSIDE by 5–15×. Per-session (one decision per session) gives β ≈ 0.043 — default 0.05 ~1.2× too high but in the neighborhood. Pass 7 correction: passes 3–6 reported bracket [0.028, 0.113] which was a 10× transcription error from the pipeline's actual computation; the pipeline was correct throughout. What's robust: direction (atrophy under unfettered; none under guardrails) and shape (β·u·(1-v) form confirmed by guardrailed → 0). Magnitude depends on the model's 'task' unit definition."
+        verdict="direction + shape supported; magnitude unit-dependent"
+        verdictKind="caveat"
       />
 
       <div className="border border-rule-soft rounded bg-paper p-4">
@@ -506,13 +515,13 @@ function Q2Panel() {
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-5">
         <NumberCard label="β default" value="0.050" hint="Lit-review-anchored prior" />
-        <NumberCard label="β bracket (unfettered)" value="0.028 – 0.113" hint={`−17pp / N where N ∈ [15, 60]; default ${Q2_BETA_BRACKET.default_in ? 'inside' : 'outside'} bracket`} />
-        <NumberCard label="β fitted (guardrailed)" value="≈ 0" hint="Skill preserved when v=1; shape confirmed" />
-        <NumberCard label="Pass-3 retraction" value="0.057 'within 14%'" hint="Retracted — N=30 was a guess; not in published abstract" />
+        <NumberCard label="β per-problem" value="0.003 – 0.011" hint={`−17pp / N where N ∈ [15, 60]; default ${Q2_BETA.default_in_per_problem ? 'inside' : 'OUTSIDE by 5–15×'}`} />
+        <NumberCard label="β per-session" value="0.043" hint={`−17pp / 4 sessions; default ${Q2_BETA.default_to_per_session_ratio}× this estimate`} />
+        <NumberCard label="Pass-7 correction" value="0.028 → 0.003" hint="Pass 3–6 bracket was 10× off due to transcription error; pipeline was correct" />
       </div>
 
       <p className="text-[11px] text-muted mt-4 leading-relaxed">
-        Pass 3 disclosure: Bastani is 4 sessions × 90 min in a Turkish high school classroom; the per-session practice problem count is not publicly reported. Pass-2's β ≈ 0.057 used N = 30 as a denominator — a guess. The honest move is to bracket against plausible N (15–60), which gives β ∈ [0.028, 0.113]. The model's default β = 0.05 is inside this bracket. The DIRECTION (atrophy under unfettered AI; preserved under guardrails) and SHAPE (β·u·(1-v) form) are robust to N; the precise magnitude awaits per-problem telemetry. Scope note: Bastani is high-school students learning algebra, not professional knowledge work — generalizes via analogy on the spaced-practice mechanism, not direct calibration.
+        Pass 7 disclosure: passes 3–6 reported a β bracket of [0.028, 0.113] with the default 0.05 "inside." The pipeline.py computation actually returned [0.003, 0.011] under per-problem interpretation — a 10× transcription error in the prose that propagated through four passes. The corrected bracket means the model's default 0.05 is OUTSIDE the per-problem reading by 5–15× (mis-calibrated by an order of magnitude). Under a per-session interpretation (β = 0.043), the default is ~1.2× too high but close. The model's "task" unit (per-problem vs per-session) is ambiguous in model.mdx; whichever the next model-stage refinement decides, the β default may need to fall to ~0.005 (per-problem) or stay near 0.05 (per-session). DIRECTION and SHAPE are robust to the unit choice; only MAGNITUDE depends on it. Scope note: Bastani is high-school students learning algebra, not professional knowledge work.
       </p>
     </div>
   );
