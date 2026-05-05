@@ -47,8 +47,8 @@
     },
     "empirical_aggregate_share": {
       "cyborg": 0.6,
-      "centaur": 0.3,
-      "self_automator": 0.1
+      "centaur": 0.14,
+      "self_automator": 0.27
     },
     "verdict": "structural_prediction_not_directly_testable",
     "interpretation": "Pass-2 honest framing: the bilinearity result says per-task optima are corners. The Randazzo classification (cyborg / centaur / self-automator) is a behavioural label for a worker, not a per-task corner observation. The empirical 60/30/10 distribution is consistent with TWO different worker behaviours: (a) interleaving corners across a day (consistent with the model \u2014 many tasks each at one of three corners, aggregating to a pattern), or (b) applying a flat interior (u, v) policy across all tasks (the failure mode bilinearity says is structurally suboptimal). Randazzo does not release per-task u-v telemetry, so the data is silent on which is happening. The synthetic \u03b8-mix (7.6% do-yourself / 51.6% self-automator / 40.8% spec-driven corners under a plausible BCG task prior) is presented as a *structural* demonstration that corner-mixing CAN reproduce the empirical aggregate, not a calibrated test of which behaviour the consultants exhibit.",

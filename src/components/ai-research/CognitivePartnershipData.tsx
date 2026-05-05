@@ -52,12 +52,16 @@ const Q3_CORNERS = {
   model: [
     { label: '(0, 0) do-yourself', share: 0.076 },
     { label: '(1, 0) self-automator', share: 0.516 },
-    { label: '(1, 1) spec-driven', share: 0.408 },
+    { label: '(1, 1) spec-driven', share: 0.407 },
   ],
+  // Pass-8 correction: web-verified the actual Randazzo HBS 26-036 distribution
+  // is 60% cyborg / 14% centaur / 27% self-automator on n≈244 BCG consultants.
+  // The "60/30/10" cited through pass 1-7 was a lit-review training-time recall
+  // error that propagated through topology, model, and 7 data-stage passes.
   empirical: [
     { label: 'cyborg', share: 0.60 },
-    { label: 'centaur', share: 0.30 },
-    { label: 'self-automator', share: 0.10 },
+    { label: 'centaur', share: 0.14 },
+    { label: 'self-automator', share: 0.27 },
   ],
 };
 
@@ -548,7 +552,7 @@ function Q3Panel() {
     <div>
       <PanelHeader
         title="Q3. Mode-distribution structure (Randazzo)"
-        claim="The bilinearity result says per-task optima are corners, never interior. Randazzo classifies WORKERS into three behavioural modes (cyborg / centaur / self-automator) — not per-task corners. The empirical 60/30/10 distribution is consistent with TWO different underlying behaviours: (a) workers interleave corners across a day (model prediction), or (b) workers apply a flat interior (u, v) policy uniformly (the failure mode). Randazzo doesn't release per-task u-v telemetry, so the data is silent on which is happening."
+        claim="The bilinearity result says per-task optima are corners, never interior. Randazzo classifies WORKERS into three behavioural modes (cyborg / centaur / self-automator) — not per-task corners. Pass-8 correction: actual empirical distribution is 60% cyborg / 14% centaur / 27% self-automator (web-verified from HBS d3 writeup). Passes 1–7 cited 60/30/10 from a lit-review training-time recall error. The corrected 27% self-automator share is still INSIDE the synthetic prediction range (the model predicts 51.6% per-task (1, 0) corners under reasonable θ priors). The empirical distribution is consistent with TWO different underlying behaviours: (a) workers interleave corners across a day (model prediction), or (b) workers apply a flat interior (u, v) policy uniformly (the failure mode). Randazzo doesn't release per-task u-v telemetry, so the data is silent on which is happening."
         verdict="structural prediction (not directly testable)"
         verdictKind="framed"
       />

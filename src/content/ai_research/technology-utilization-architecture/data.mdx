@@ -3,8 +3,20 @@ title: 'Data'
 description: 'Empirical pipeline confronting the model''s six fitting targets (Q1–Q6) with currently-published RCT and field-experiment numbers from ~22 studies. Headline findings: cyborg-coding φ ≈ 1.6 (5× the model default 0.30); β ∈ [0.028, 0.113] from Bastani with default 0.05 inside the bracket; bilinearity-implies-corner-mixing as a structural prediction; outside-frontier sanity check passes; Vaccaro 2024 meta (106 studies, 370 effects in Nature Human Behaviour) is the load-bearing evidence for the workflow > capability claim at the topic''s scope. Curated CSVs (downloadable) + Python pipeline + interactive findings panel. Refinement history in frontmatter log.'
 date: 2026-05-02
 status: in-progress
-refinementPass: 7
+refinementPass: 8
 refinementLog:
+  - pass: 8
+    date: '2026-05-04'
+    passes: ['error check (cell-level audit)', 'cross-context verification', 'truth/accuracy override on bias']
+    why: 'Pass 7 surfaced a methodological lesson: subsequent passes should default to executing pipeline.py and grepping the prose for any number that does not appear in the JSON output. Running that audit systematically on pass 8, all major numerical claims in the prose now match the pipeline (within reasonable rounding). But the audit also surfaced a category I had not fully addressed: numerical claims that came from primary-source recall rather than the pipeline. Spot-checking the highest-stakes such claim — Randazzo''s 60/30/10 cyborg/centaur/self-automator distribution — against the actual primary source (HBS d3 writeup of WP 26-036) revealed the actual distribution is **60% cyborg / 14% centaur / 27% self-automator**. The "60/30/10" cited through pass 1–7 came from a lit-review training-time recall error and propagated through topology, model, and 7 data-stage passes without audit. Self-automator share is ~3× larger than I claimed; centaur share is ~half of what I claimed.'
+    changes:
+      - 'mode_distribution.csv corrected: cyborg 60% (unchanged), centaur 30 → 14, self-automator 10 → 27. Source citation unchanged (randazzo_2026 / HBS WP 26-036) but the share values now match the actual paper'
+      - 'pipeline.py output (Q3_modes.empirical_aggregate_share) now reports {cyborg: 0.60, centaur: 0.14, self_automator: 0.27}. The structural prediction verdict still holds — the synthetic per-task corner distribution (51.6% (1, 0)) puts the empirical 27% self-automator share INSIDE the predicted range, just as the prior 10% was inside. The corner-mixing structural argument is robust to the empirical correction'
+      - 'data.mdx §2.3 Q3 prose updated: "60% cyborg / 30% centaur / 10% self-automator" → "60% cyborg / 14% centaur / 27% self-automator (web-verified from HBS d3 writeup)." The prior phrasing "the empirical 60/30/10 distribution" → "the empirical 60/14/27 distribution." Pass-8 retraction note added to §2.3'
+      - 'React Q3 panel data updated: empirical shares corrected to [0.60, 0.14, 0.27]. PanelHeader claim updated with explicit pass-8 correction note: "Passes 1–7 cited 60/30/10 from a lit-review training-time recall error. The corrected 27% self-automator share is still INSIDE the synthetic prediction range." Comment in code documents the cross-stage propagation source'
+      - 'Cross-stage error flag: this error originated in the lit-review stage''s "Empirical distribution across 244 BCG consultants: ~60% cyborg, ~30% centaur, ~10% self-automator" line. The lit-review stage of this topic should be amended on its next refinement to use the verified 60/14/27 numbers. Held as a note rather than executed (cross-stage refinement during a data-stage pass risks scope creep) — but logged here so it does not get lost'
+      - 'Methodological consequence: the pass-7 lesson ("execute pipeline.py and grep prose against JSON") is necessary but not sufficient. Pass 8 lesson: also web-spot-check the highest-stakes anchor numbers against primary sources. The 60/30/10 was in a CSV but never matched against the actual paper text; it survived seven passes as "true because cited everywhere internally." Future passes should verify the most-cited cross-stage anchor numbers against primary sources at least once'
+      - 'Verdict tally and headline findings unchanged in qualitative substance. The Q3 structural prediction (corner-mixing aggregates to a behavioural mode distribution) survives the empirical correction. The model''s self-automator (1, 0) corner share of 51.6% still encompasses the empirical 27% share; if anything the corrected 27% is more central inside the synthetic range than the prior 10%'
   - pass: 7
     date: '2026-05-04'
     passes: ['error check', 'truth/accuracy override on bias', 'cross-context verification']
@@ -208,17 +220,17 @@ What is robust independent of the unit choice: (a) DIRECTION — unfettered AI u
 
 **Model claim.** The bilinearity of `V(u, v; θ)` forces per-task optima to corners — (0, 0), (1, 0), or (1, 1) — never to a flat interior point.
 
-**Test.** Synthesise a θ-distribution loosely matching the BCG-consultant task mix; run optimal routing on N=2000 sampled tasks; check whether the per-task corner distribution is consistent with Randazzo 2026's aggregate worker-mode counts (60% cyborg / 30% centaur / 10% self-automator).
+**Test.** Synthesise a θ-distribution loosely matching the BCG-consultant task mix; run optimal routing on N=2000 sampled tasks; check whether the per-task corner distribution is consistent with Randazzo 2026's aggregate worker-mode counts (60% cyborg / 14% centaur / 27% self-automator on n≈244 BCG consultants).
 
-**Result — structural prediction, not directly testable.** Synthesised per-task corners: 7.6% (0, 0) do-yourself, 51.6% (1, 0) self-automator, 40.8% (1, 1) spec-driven.
+**Result — structural prediction, not directly testable.** Synthesised per-task corners: 7.6% (0, 0) do-yourself, 51.6% (1, 0) self-automator, 40.7% (1, 1) spec-driven.
 
-**The honest reading.** Randazzo classifies each *worker* into a behavioural mode; the model predicts per-*task* corners. The empirical 60/30/10 distribution is consistent with two different underlying behaviours:
+**The honest reading.** Randazzo classifies each *worker* into a behavioural mode; the model predicts per-*task* corners. The empirical 60/14/27 distribution is consistent with two different underlying behaviours:
 
 (a) Workers interleave corners across a day — many tasks each at one of three per-task corners, aggregating to a pattern Randazzo's coders label "cyborg." This is what the model predicts.
 
 (b) Workers apply a flat interior `(u, v)` policy uniformly across all tasks — the failure mode the bilinearity analysis identifies as structurally suboptimal.
 
-Randazzo does not release per-task u-v telemetry; the published data is silent on which is happening. Q3 is therefore a *structural prediction* (corner-mixing CAN aggregate to 60/30/10 under reasonable θ priors) rather than a directly-testable empirical claim. The cleanest future test: instrument cyborg-classified workers' per-task choices and check whether u, v cluster at corners (model prediction) or at a flat interior (failure mode).
+Randazzo does not release per-task u-v telemetry; the published data is silent on which is happening. Q3 is therefore a *structural prediction* (corner-mixing CAN aggregate to a 60/14/27 behavioural pattern under reasonable θ priors) rather than a directly-testable empirical claim. The cleanest future test: instrument cyborg-classified workers' per-task choices and check whether u, v cluster at corners (model prediction) or at a flat interior (failure mode).
 
 ### 2.4 Q4 — Outside-frontier quality magnitude
 
