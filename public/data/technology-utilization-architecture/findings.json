@@ -332,7 +332,7 @@
         "n": "5172",
         "task_type": "well-bounded",
         "outcome_metric": "issues_resolved_per_hour",
-        "headline_pct": 14.0,
+        "headline_pct": 15.0,
         "novice_pct": 34.0,
         "expert_pct": 0.0,
         "quality_pct": null,
@@ -340,7 +340,7 @@
         "bound_pct_ci_lo": null,
         "bound_pct_ci_hi": null,
         "workflow_mode": "centaur_consult",
-        "context_note": "AI suggested responses; agents could accept/edit/ignore"
+        "context_note": "AI suggested responses; agents could accept/edit/ignore. Pass-9 correction: QJE-published number is +15% on average (NBER WP-style citations sometimes round to +14%)."
       },
       {
         "study_key": "noy_zhang_2023",

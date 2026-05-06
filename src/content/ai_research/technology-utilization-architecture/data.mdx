@@ -3,8 +3,18 @@ title: 'Data'
 description: 'Empirical pipeline confronting the model''s six fitting targets (Q1–Q6) with currently-published RCT and field-experiment numbers from ~22 studies. Headline findings: cyborg-coding φ ≈ 1.6 (5× the model default 0.30); β ∈ [0.028, 0.113] from Bastani with default 0.05 inside the bracket; bilinearity-implies-corner-mixing as a structural prediction; outside-frontier sanity check passes; Vaccaro 2024 meta (106 studies, 370 effects in Nature Human Behaviour) is the load-bearing evidence for the workflow > capability claim at the topic''s scope. Curated CSVs (downloadable) + Python pipeline + interactive findings panel. Refinement history in frontmatter log.'
 date: 2026-05-02
 status: in-progress
-refinementPass: 8
+refinementPass: 9
 refinementLog:
+  - pass: 9
+    date: '2026-05-05'
+    passes: ['error check (continued cross-stage anchor audit)', 'truth/accuracy override on bias']
+    why: 'Pass 8 caught a primary-source recall error (Randazzo 60/30/10 → 60/14/27) that survived seven passes as "true because cited everywhere internally." Pass 8''s methodological lesson said: web-spot-check the highest-stakes cross-stage anchor numbers against primary sources at least once. Pass 9 extended that audit to three more high-citation anchors (Brynjolfsson, Dell''Acqua, Cui) plus re-verified Vaccaro. Result: one small error found (Brynjolfsson average gain is +15% in the QJE-published version, not +14% as I had — likely a citation drift from NBER WP summaries). Other anchors verified within rounding tolerance.'
+    changes:
+      - 'productivity_rcts.csv: Brynjolfsson average productivity row corrected from +14% to +15% (the QJE-published number). Sample size 5,172 confirmed correct. Source citation refined from "Brynjolfsson 2023" (NBER WP year) to "Brynjolfsson, Li, Raymond 2025 QJE" with a note that NBER-WP-style summaries sometimes round to 14%'
+      - 'data.mdx §3 Headline numbers row updated: "+14% avg / +34% novice" → "+15% avg / +34% novice"; citation link refined to QJE-published article'
+      - 'React component PRODUCTIVITY array: Brynjolfsson avg row updated 14 → 15; source label refined to "Brynjolfsson 2025 QJE"'
+      - 'Other audited anchors (verified within rounding): Brynjolfsson sample 5,172 ✓; Brynjolfsson novice +34% ✓; Cui +26.08% (I have +26 — rounded but accurate); Cui sample 4,867 ✓; Dell''Acqua +40% inside / -19pp outside ✓; Vaccaro 106 studies / 370 effect sizes ✓ (verified twice: pass 1 web-fetch and pass 5 cross-check; pass 9 re-confirmed)'
+      - 'Pass-9 closing note added to PRD log: marginal value of further audit-only refinement passes is now low. Pattern across 9 passes shows pass 1 (first draft), pass 2-3 (major fixes), pass 4 (compression), pass 5-6 (minor structural fixes), pass 7-8 (substantive errors caught — 10× transcription, 60/30/10 recall), pass 9 (small 1pp accuracy fix). Each pass after pass 4 has been finding genuine but increasingly smaller errors. Recommend transitioning to stage 5 next; further data-stage audits would be best done as a concentrated audit pass when stage 5 (build) starts using these numbers, rather than spread across more isolated refinement passes'
   - pass: 8
     date: '2026-05-04'
     passes: ['error check (cell-level audit)', 'cross-context verification', 'truth/accuracy override on bias']
@@ -282,7 +292,7 @@ The pattern across all three lines of evidence is consistent: workflow architect
 | Statistic | Value | Source | Interpretation |
 |---|---|---|---|
 | Productivity-record N studies | 22 | This pipeline | 2023–2026 RCTs and field experiments |
-| Customer-support productivity | +14% avg / +34% novice | [Brynjolfsson 2023](https://academic.oup.com/qje/article/140/2/889/7990658) | Skill-leveling pattern; novice gain >> expert |
+| Customer-support productivity | +15% avg / +34% novice | [Brynjolfsson, Li, Raymond 2025 QJE](https://academic.oup.com/qje/article/140/2/889/7990658) | Skill-leveling pattern; novice gain >> expert |
 | Writing time saved | −40% / +18% quality | [Noy & Zhang 2023](https://www.science.org/doi/10.1126/science.adh2586) | 453 writers; clean within-subject |
 | Coding completion speed | +55.8% | [Peng 2023](https://arxiv.org/abs/2302.06590) | 95 developers; HTTP-server task |
 | Three-experiment coding meta | +26% tasks/week | [Cui 2025](https://pubsonline.informs.org/doi/10.1287/mnsc.2025.00535) | 4,867 developers across MSFT/Accenture/F100 |

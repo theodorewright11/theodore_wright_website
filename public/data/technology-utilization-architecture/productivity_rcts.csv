@@ -1,5 +1,5 @@
 study_key,domain,n,task_type,outcome_metric,headline_pct,novice_pct,expert_pct,quality_pct,time_pct,bound_pct_ci_lo,bound_pct_ci_hi,workflow_mode,context_note
-brynjolfsson_2023,customer_support,5172,well-bounded,issues_resolved_per_hour,14,34,0,,,,,centaur_consult,"AI suggested responses; agents could accept/edit/ignore"
+brynjolfsson_2023,customer_support,5172,well-bounded,issues_resolved_per_hour,15,34,0,,,,,centaur_consult,"AI suggested responses; agents could accept/edit/ignore. Pass-9 correction: QJE-published number is +15% on average (NBER WP-style citations sometimes round to +14%)."
 noy_zhang_2023,writing,453,well-bounded,quality+time,,,,18,-40,,,centaur,"40% time reduction AND 18% quality lift; clean within-subject"
 peng_2023,coding,95,well-bounded,task_completion_speed,55.8,,,,-55.8,,,cyborg,"HTTP-server task; Copilot autocomplete; less-experienced devs gained more"
 cui_2025,coding,4867,well-bounded,tasks_per_week,26,,,,,,,cyborg,"Three field experiments (Microsoft, Accenture, F100); avg across N=4867"

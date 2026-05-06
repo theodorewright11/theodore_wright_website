@@ -150,7 +150,7 @@ const PRODUCTIVITY: {
   source: string;
 }[] = [
   { label: 'Brynjolfsson novice',  domain: 'cs_support',     effect_pct:  34, unit_class: 'rate', outline: 'novice', source: 'Brynjolfsson 2023' },
-  { label: 'Brynjolfsson avg',     domain: 'cs_support',     effect_pct:  14, unit_class: 'rate', outline: 'mixed',  source: 'Brynjolfsson 2023' },
+  { label: 'Brynjolfsson avg',     domain: 'cs_support',     effect_pct:  15, unit_class: 'rate', outline: 'mixed',  source: 'Brynjolfsson 2025 QJE' },
   { label: 'Brynjolfsson expert',  domain: 'cs_support',     effect_pct:   0, unit_class: 'rate', outline: 'expert', source: 'Brynjolfsson 2023' },
   { label: 'Noy & Zhang quality',  domain: 'writing',        effect_pct:  18, unit_class: 'stock', source: 'Noy & Zhang 2023' },
   { label: 'Peng coding speed',    domain: 'coding',         effect_pct:  56, unit_class: 'rate', source: 'Peng 2023' },
