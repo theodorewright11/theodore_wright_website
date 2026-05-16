@@ -33,9 +33,11 @@
 │   │   ├── models/                      ← React components for interactive models
 │   │   │   └── OptionValueDashboard.tsx
 │   │   ├── dashboards/                  ← React components for the /dashboards/<slug> apps
-│   │   │   └── finance/                 ← FinanceDashboard.tsx (root, queue), DashboardTab/TransactionsTab/BudgetTab/TransactionForm,
-│   │   │                                   types.ts, categories.ts, compute.ts, storage.ts (localStorage cache + CSV),
-│   │   │                                   sheets.ts (GIS + Sheets REST), spendingLogImporter.ts (one-shot legacy-tab seed), AuthBar.tsx
+│   │   │   ├── finance/                 ← FinanceDashboard.tsx (root, queue), DashboardTab/TransactionsTab/BudgetTab/TransactionForm,
+│   │   │   │                               types.ts, categories.ts, compute.ts, storage.ts (localStorage cache + CSV),
+│   │   │   │                               sheets.ts (GIS + Sheets REST), spendingLogImporter.ts (one-shot legacy-tab seed), AuthBar.tsx
+│   │   │   └── time-tracker/            ← TimeTrackerDashboard.tsx (root, queue), Clock/Pomodoro/Log tabs, AuthBar.tsx,
+│   │   │                                   types.ts, compute.ts (pure), storage.ts (localStorage cache + CSV), sheets.ts (GIS + Sheets REST + ensureTabs)
 │   │   └── ai-research/                 ← React components for AI-research stage visualizations
 │   │       ├── PsychVariationGraph.tsx  ← topology graph (force-directed via d3-force) — pan + wheel-zoom + reset
 │   │       ├── PsychVariationModel.tsx  ← model dashboard (variance decomposition + multivariate sex-difference tabs)
@@ -74,7 +76,9 @@
 │   │   │   └── [slug].astro
 │   │   ├── dashboards/
 │   │   │   ├── index.astro              ← roster (links to live dashboards by status)
-│   │   │   └── finance.astro            ← mounts FinanceDashboard with client:only="react"
+│   │   │   ├── finance.astro            ← mounts FinanceDashboard with client:only="react"
+│   │   │   ├── emotional-wellbeing.astro
+│   │   │   └── time-tracker.astro       ← mounts TimeTrackerDashboard with client:only="react"
 │   │   ├── bundle-mine.md.ts            ← /bundle-mine.md (writing + research + models + updates)
 │   │   ├── bundle-ai-research.md.ts     ← /bundle-ai-research.md (every AI-Research stage)
 │   │   ├── writing.md.ts                ← /writing.md (all blog as one md file)
@@ -405,6 +409,41 @@ Headers are authoritative on import; column order doesn't matter. Same quoting r
 - `metShare(needs)` → priority-weighted average of `currently_met / 7` over rated needs; the headline 0..1 score.
 
 **Personal data hygiene**: never seed the public route with the user's actual ratings. `.gitignore` already excludes `My Needs*.xlsx` (covered by the finance entry).
+
+### Time-tracker dashboard specifics
+
+Lives at [src/components/dashboards/time-tracker/](src/components/dashboards/time-tracker/). Mounted at `/dashboards/time-tracker`. v1 is **private** (`private: true` in `dashboards.json`, hidden from the roster). Three UI tabs: **Clock**, **Pomodoro**, **Log**.
+
+**Files**: `TimeTrackerDashboard.tsx` (entry — tab router, state, 4-entity sync queue, the shared 1-second clock), `ClockTab.tsx` / `PomodoroTab.tsx` / `LogTab.tsx`, `types.ts`, `compute.ts` (pure derivations + formatters), `storage.ts` (localStorage + session-log CSV export), `sheets.ts` (GIS OAuth + Sheets REST + `ensureTabs`), `AuthBar.tsx`.
+
+**Data model** (`types.ts`):
+
+- `Session` = `{ id, category, clock_in, clock_out (null = active), breaks: Break[], notes?, created_at, updated_at }`. All datetimes are ISO strings.
+- `Break` = `{ start, end (null = on break now) }`. A break is a "pseudo clock-out" (meal/errand) that pauses worked time without ending the session. **Net** worked time = gross (clock-out − clock-in) − Σ break durations.
+- `Pomodoro` = `{ id, completed_at, length_min, reward_minutes, credited }`. One row per completed interval. `credited` is true only when the user was clocked in **and not on break** at completion — only credited intervals add reward minutes.
+- `RewardSpend` = `{ id, started_at, ended_at, minutes }`. One row per play→stop run of the reward countdown.
+- The **reward bank** is fully derived (never stored as a running total): `Σ credited reward_minutes − Σ spend minutes`, floored at 0.
+
+**Storage**: three localStorage keys. `tw-timetracker-v1` is the synced data cache (`{ version, sessions, categories, pomodoros, rewardSpends }`). `tw-timetracker-settings-v1` holds Pomodoro preferences (interval length, reward-min per interval) and `tw-timetracker-timers-v1` holds live-timer state (`pomodoroEndsAt` / `pomodoroRemainingSec` / `rewardPlayStartedAt`, epoch ms so a refresh resumes mid-interval). **Settings and timers are device-local and never synced** — a running countdown belongs to one device.
+
+**Sheets sync**: same browser-side GIS OAuth pattern as the finance dashboard (token in `sessionStorage`, scope `spreadsheets email profile`, per-entity `clear + write-all` with a latest-wins coalescing queue, full pull on sign-in and `window.focus`). Four tabs, headers in row 1:
+
+| Tab | Headers (canonical order) |
+|---|---|
+| `sessions` | `id,category,clock_in,clock_out,breaks_json,notes,created_at,updated_at` |
+| `categories` | `name` |
+| `pomodoros` | `id,completed_at,length_min,reward_minutes,credited` |
+| `reward_spends` | `id,started_at,ended_at,minutes` |
+
+`breaks_json` is the JSON-encoded `Break[]` for a session — breaks are a small 1-to-many list always loaded and edited with their parent session, so a dedicated sub-tab would be overkill. This is the one deliberate departure from finance's flat-columns-only convention. `ensureTabs()` creates any missing tabs on a fresh spreadsheet, so first-time setup only needs an empty sheet (no manual tab creation). Reads tolerate column reorders; writes rewrite the header row.
+
+**Required env**: `PUBLIC_GOOGLE_CLIENT_ID` (the same OAuth client the finance dashboard uses — Sheets API enabled, authorized origins cover localhost + prod) and `PUBLIC_TIMETRACKER_SHEET_ID` (a separate private spreadsheet's ID). If either is unset the dashboard runs local-only (localStorage, no sync).
+
+**Pomodoro ↔ clock-in link**: the timer is independent (its own tab, runs anytime), but reward minutes only accrue when clocked in "for real". `compute.isClockedInReal` (active session && not on break) is evaluated at the instant an interval completes and stored as `Pomodoro.credited`. A non-credited interval still counts toward the tick total but grants 0 reward minutes. Interval completion fires a browser notification (permission requested on first Start) plus a two-tone WebAudio chime — both only while the tab is open.
+
+**Compute layer** (`compute.ts`) is pure: `now` (epoch ms) is always passed in, never read from `Date` inside. The dashboard runs one shared 1-second interval and threads `now` to every tab so all live timers read a consistent instant.
+
+**Personal data hygiene**: the time-tracker has no public route, so there is no synthetic seed to protect. Default categories (`OAIP`, `SPUR`) seed an empty `categories` tab on first sync.
 
 ## Build / deploy
 

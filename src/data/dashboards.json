@@ -17,5 +17,12 @@
     "title": "Emotional Well-being",
     "desc": "Rate emotional needs by priority and how met they are. Surfaces highest-leverage needs, domain gaps, and which sources (self / friends / romantic / activities / career / other) are over- or under-contributing.",
     "status": "in-progress"
+  },
+  {
+    "slug": "time-tracker",
+    "title": "Time Tracker",
+    "desc": "Clock in/out by category with breaks that pause worked time, a Pomodoro timer, and a reward-minutes bank. Syncs to a private Google Sheet.",
+    "status": "in-progress",
+    "private": true
   }
 ]

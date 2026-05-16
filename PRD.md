@@ -112,7 +112,7 @@ Each dashboard ships in two tiers:
 
 **Private tier** exists only for dashboards where Teddy's actual data is the point (life metrics, ongoing trackers). Cloudflare Access in front, build-time data fetch from a private source.
 
-Initial dashboard candidates: decision-helper, finance, emotional-wellbeing.
+Dashboards: decision-helper (planned), finance, emotional-wellbeing, time-tracker.
 
 ### Per-dashboard product specs
 
@@ -186,6 +186,35 @@ A needs-rating dashboard that surfaces the highest-leverage emotional needs to a
 **Public-data conventions**: never seed the public demo with personal ratings. The source-of-truth `.xlsx` (`My Needs.xlsx`) stays gitignored.
 
 **Future (v2)**: private tier behind Cloudflare Access pre-seeded with Teddy's actual ratings (build-time fetch from a private source); free-text `actual_detail` / `ideal_detail` fields per source (the spreadsheet has these — short prose explaining where each contribution comes from); longitudinal snapshots (track ratings over time, surface deltas); domain-level reweighting in `metShare` (currently flat across needs).
+
+#### Time Tracker
+
+**Status**: v1 shipped, **private** (`private: true` in `src/data/dashboards.json`, hidden from the roster and home page). The page renders at `/dashboards/time-tracker` for direct navigation. No public demo planned — this is a personal tool.
+
+A personal time tracker for research work (OAIP, SPUR, and any user-made categories). Single user (Teddy). Answers: *how much real time did I put into each thing over any date range, and how is my focus work going?*
+
+**Pages** — internal tabs in a single React component at `/dashboards/time-tracker`:
+
+- **Clock** — clock in/out against a category. While clocked in: live worked-time readout, "Take a break" (a pseudo clock-out for meals/errands that pauses worked time without ending the session), and clock out. Manage the category list (add / remove) here.
+- **Pomodoro** — a focus-interval countdown (default 25 min, adjustable) with browser-notification + WebAudio chime on completion, a tick counter (today + all-time), and a reward-minutes bank. Each interval completed *while clocked in for real* grants an adjustable number of reward minutes; reward minutes accrue to a bank with a play/stop countdown that spends them.
+- **Log** — session history over a chosen date range with total worked time, average per day, per-category breakdown, and add / edit / delete of sessions (for backfill and fixing forgotten clock-outs). CSV export of the full session log.
+
+**Data model**:
+
+- `Session` — `id` (UUID), `category`, `clock_in` (ISO), `clock_out` (ISO, null while active), `breaks` (`Break[]`), `notes?`, `created_at`, `updated_at`. Net worked time = (clock-out − clock-in) − Σ break durations.
+- `Break` — `start`, `end` (null = currently on break). A pseudo clock-out; excluded from net time.
+- `Pomodoro` — `id`, `completed_at`, `length_min`, `reward_minutes`, `credited`. One row per completed interval; `credited` true only if clocked in (not on break) at completion.
+- `RewardSpend` — `id`, `started_at`, `ended_at`, `minutes`. One row per play→stop of the reward countdown. The reward bank is derived (`Σ credited reward − Σ spent`), never stored as a running total.
+
+**Pomodoro ↔ clock-in link**: the timer is independent (runs anytime) but reward minutes only accrue when clocked in for real (active session, not on break) — evaluated at interval completion and frozen onto `Pomodoro.credited`. Non-credited intervals still count toward the tick total.
+
+**Data persistence**: two-mode, same pattern as Finance.
+
+- **Local-only** (no Sheets config in `.env`, or not signed in): `localStorage` key `tw-timetracker-v1`. Session-log CSV export for backup; "Reset all data" appears only in this mode.
+- **Sheets-synced** (signed in): a dedicated private Google Sheet (ID in `PUBLIC_TIMETRACKER_SHEET_ID`) with four tabs — `sessions`, `categories`, `pomodoros`, `reward_spends`. Missing tabs are auto-created on first sync. Same GIS browser-side OAuth, per-entity clear+write queue, focus re-pull, and 401 handling as Finance.
+- Pomodoro preferences and live-timer state are device-local (`tw-timetracker-settings-v1`, `tw-timetracker-timers-v1`) and never synced.
+
+**Required env (when using Sheets sync)**: `PUBLIC_GOOGLE_CLIENT_ID` (the same OAuth client as Finance) and `PUBLIC_TIMETRACKER_SHEET_ID` (a separate spreadsheet).
 
 ## Papers and PDFs
 
@@ -266,6 +295,7 @@ Word documents (.docx) should be converted to PDF before upload (Word: File → 
 - **2026-04-28**: Home and About merged into a single `/` page; `/about` redirects to `/`.
 - **2026-04-28**: Research page reorganized — grouped by status. `published` displayed as "Finished" (not "Published") because the user finds "Finished" more accurate for the kind of work logged here.
 - **2026-04-28**: `Featured` eyebrow label removed from `/models` index — the flag still controls sort order but is not visually surfaced.
+- **2026-05-16**: Time Tracker dashboard (v1) shipped — private, at `/dashboards/time-tracker`. Three tabs: Clock (clock in/out by category with breaks that pause worked time), Pomodoro (adjustable focus interval with notification + chime, tick counter, reward-minutes bank gated on being clocked in for real), Log (date-range session history with totals/averages/per-category breakdown, add/edit/delete, CSV export). Google Sheets sync via four tabs (`sessions`, `categories`, `pomodoros`, `reward_spends`), auto-created on first sync; same GIS browser-side OAuth pattern as Finance. New env var `PUBLIC_TIMETRACKER_SHEET_ID`.
 - **2026-04-28**: `/updates` added — weekly/daily/monthly notes, content collection `updates`.
 - **2026-04-28**: `/dashboards` added as a top-level tab (currently a "Planned" list; first dashboard not yet built).
 - **2026-04-28**: Stage_outputs file naming standardized — `stage_outputs/<topic>/<stage>.md` with kebab-case topic slugs and exact stage names (`lit-review`, `topology`, `model`, `data`, `build`). The `human-psych-variation` lit review was migrated from a flat versioned filename into this convention. Topic registry added above so future topics drop in cleanly.
