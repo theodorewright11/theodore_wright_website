@@ -59,11 +59,13 @@ export const EMPTY_STATE: DataState = {
 export type Settings = {
   intervalMin: number;        // Pomodoro work interval
   rewardPerInterval: number;  // reward minutes earned per credited interval
+  autoStart: boolean;         // start the next interval automatically on completion
 };
 
 export const DEFAULT_SETTINGS: Settings = {
   intervalMin: 25,
   rewardPerInterval: 5,
+  autoStart: true,
 };
 
 // Live timer state (device-local, not synced — a running countdown belongs to

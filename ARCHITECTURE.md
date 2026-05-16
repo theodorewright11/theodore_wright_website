@@ -414,7 +414,7 @@ Headers are authoritative on import; column order doesn't matter. Same quoting r
 
 Lives at [src/components/dashboards/time-tracker/](src/components/dashboards/time-tracker/). Mounted at `/dashboards/time-tracker`. v1 is **private** (`private: true` in `dashboards.json`, hidden from the roster). Three UI tabs: **Clock**, **Pomodoro**, **Log**.
 
-**Files**: `TimeTrackerDashboard.tsx` (entry — tab router, state, 4-entity sync queue, the shared 1-second clock), `ClockTab.tsx` / `PomodoroTab.tsx` / `LogTab.tsx`, `types.ts`, `compute.ts` (pure derivations + formatters), `storage.ts` (localStorage + session-log CSV export), `sheets.ts` (GIS OAuth + Sheets REST + `ensureTabs`), `AuthBar.tsx`.
+**Files**: `TimeTrackerDashboard.tsx` (entry — tab router, state, 4-entity sync queue, the shared 1-second clock), `ClockTab.tsx` / `PomodoroTab.tsx` / `LogTab.tsx`, `WeekStrip.tsx` (always-visible week total pinned under the tab bar), `types.ts`, `compute.ts` (pure derivations + formatters), `storage.ts` (localStorage + session-log CSV export), `sheets.ts` (GIS OAuth + Sheets REST + `ensureTabs`), `AuthBar.tsx`.
 
 **Data model** (`types.ts`):
 

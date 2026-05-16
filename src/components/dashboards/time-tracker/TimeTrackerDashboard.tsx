@@ -23,6 +23,7 @@ import { activeSession, isOnBreak, isClockedInReal } from './compute';
 import ClockTab from './ClockTab';
 import PomodoroTab from './PomodoroTab';
 import LogTab from './LogTab';
+import WeekStrip from './WeekStrip';
 import AuthBar from './AuthBar';
 
 type Tab = 'clock' | 'pomodoro' | 'log';
@@ -328,6 +329,8 @@ export default function TimeTrackerDashboard() {
           )}
         </div>
       </div>
+
+      <WeekStrip sessions={state.sessions} categories={state.categories} now={now} />
 
       <div className="p-5 sm:p-6">
         {tab === 'clock' && (

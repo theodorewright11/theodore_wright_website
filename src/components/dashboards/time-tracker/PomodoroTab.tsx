@@ -81,7 +81,13 @@ export default function PomodoroTab({
         });
       }
       chime();
-      onChangeTimers({ ...timers, pomodoroEndsAt: null, pomodoroRemainingSec: null });
+      // Auto-start chains the next interval from the completion instant;
+      // using `now` (not endsAt) avoids a burst if the tab was asleep.
+      onChangeTimers({
+        ...timers,
+        pomodoroEndsAt: settings.autoStart ? now + settings.intervalMin * 60_000 : null,
+        pomodoroRemainingSec: null,
+      });
     }
   }, [now, running, timers, clockedInReal, settings, onCompleteInterval, onChangeTimers]);
 
@@ -142,7 +148,12 @@ export default function PomodoroTab({
             : <button className={btnAccent} onClick={start}>{paused ? 'Resume' : 'Start'}</button>}
           <button className={btnMuted} onClick={reset} disabled={!running && !paused}>Reset</button>
         </div>
-        <p className={'font-serif text-[12px] m-0 mt-4 ' + (clockedInReal ? 'text-accent' : 'text-muted')}>
+        <label className="flex items-center justify-center gap-2 mt-4 font-serif text-[12px] text-ink-soft">
+          <input type="checkbox" checked={settings.autoStart}
+                 onChange={e => onChangeSettings({ ...settings, autoStart: e.target.checked })} />
+          Auto-start the next interval
+        </label>
+        <p className={'font-serif text-[12px] m-0 mt-2 ' + (clockedInReal ? 'text-accent' : 'text-muted')}>
           {clockedInReal
             ? 'Clocked in — finished intervals earn reward minutes.'
             : 'Not clocked in — intervals count, but earn no reward minutes.'}
