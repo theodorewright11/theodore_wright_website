@@ -23,6 +23,8 @@ const btnAccent = 'font-mono text-[11px] uppercase tracking-[0.1em] border borde
 const field = 'font-serif text-[14px] bg-paper border border-rule rounded-sm px-2.5 py-2 ' +
   'text-ink focus:border-accent outline-none';
 
+const DAY = 86_400_000;
+
 type EditState =
   | { mode: 'new' }
   | { mode: 'edit'; session: Session }
@@ -31,9 +33,26 @@ type EditState =
 export default function LogTab({
   sessions, categories, now, onUpdateSession, onDeleteSession, onAddSession,
 }: Props) {
-  const [from, setFrom] = useState(() => dayKey(now - 6 * 86_400_000));
+  const [from, setFrom] = useState(() => dayKey(now - 6 * DAY));
   const [to, setTo] = useState(() => todayKey(now));
   const [edit, setEdit] = useState<EditState>(null);
+
+  // Date-range presets. Each resolves against `now` (and `sessions` for "all").
+  const presets = useMemo(() => {
+    const d = new Date(now);
+    const monthStart = new Date(d.getFullYear(), d.getMonth(), 1).getTime();
+    const earliest = sessions.length
+      ? Math.min(...sessions.map(s => Date.parse(s.clock_in)))
+      : now;
+    return [
+      { label: 'Today',     from: todayKey(now),                  to: todayKey(now) },
+      { label: 'This week', from: dayKey(now - d.getDay() * DAY), to: todayKey(now) },
+      { label: 'Last 7d',   from: dayKey(now - 6 * DAY),          to: todayKey(now) },
+      { label: 'This month',from: dayKey(monthStart),             to: todayKey(now) },
+      { label: 'Last 30d',  from: dayKey(now - 29 * DAY),         to: todayKey(now) },
+      { label: 'All time',  from: dayKey(earliest),               to: todayKey(now) },
+    ];
+  }, [now, sessions]);
 
   const stats = useMemo(() => rangeStats(sessions, from, to, now), [sessions, from, to, now]);
 
@@ -44,9 +63,27 @@ export default function LogTab({
   }, [sessions, from, to]);
 
   const maxCat = stats.byCategory[0]?.netMs ?? 0;
+  const maxDay = Math.max(1, ...stats.perDay.map(d => d.netMs));
 
   return (
     <div className="space-y-7">
+      {/* Preset buttons */}
+      <div className="flex flex-wrap gap-1.5">
+        {presets.map(p => {
+          const active = p.from === from && p.to === to;
+          return (
+            <button key={p.label}
+                    onClick={() => { setFrom(p.from); setTo(p.to); }}
+                    className={'font-mono text-[10px] uppercase tracking-[0.1em] rounded-sm px-2.5 py-1.5 ' +
+                      'transition-colors border ' + (active
+                        ? 'border-accent text-accent bg-accent/5'
+                        : 'border-rule text-muted hover:border-accent hover:text-accent')}>
+              {p.label}
+            </button>
+          );
+        })}
+      </div>
+
       {/* Range picker */}
       <div className="flex items-end gap-3 flex-wrap">
         <label className="block">
@@ -71,24 +108,75 @@ export default function LogTab({
       </div>
 
       {/* Summary */}
-      <div className="rounded-lg border border-rule bg-paper p-5">
-        <div className="grid grid-cols-3 gap-4 mb-4">
+      <div className="rounded-lg border border-rule bg-paper p-5 space-y-4">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           <Stat label="Total worked" value={fmtHM(stats.totalNetMs)} />
           <Stat label="Avg / day"
                 value={stats.avgPerDayMs === null ? '—' : fmtHM(stats.avgPerDayMs)} />
+          <Stat label="Avg / working day"
+                value={stats.avgPerWorkingDayMs === null ? '—' : fmtHM(stats.avgPerWorkingDayMs)}
+                sub={`worked ${stats.workingDays} of ${stats.days} days`} />
           <Stat label="Sessions" value={String(stats.sessionCount)} />
         </div>
+
+        {/* Session length + breaks */}
+        <div className="flex flex-wrap gap-x-8 gap-y-2 pt-3 border-t border-rule-soft">
+          <Inline label="Longest" value={stats.longestMs === null ? '—' : fmtHM(stats.longestMs)} />
+          <Inline label="Median"  value={stats.medianMs === null ? '—' : fmtHM(stats.medianMs)} />
+          <Inline label="Shortest" value={stats.shortestMs === null ? '—' : fmtHM(stats.shortestMs)} />
+          <Inline label="Breaks"
+                  value={stats.totalBreakMs === 0
+                    ? 'none'
+                    : `${fmtHM(stats.totalBreakMs)}` +
+                      (stats.breakSharePct === null ? '' : ` · ${stats.breakSharePct.toFixed(0)}% of clocked time`)} />
+        </div>
+
+        {/* Per-day mini chart */}
+        {stats.perDay.length > 0 && (
+          <div className="pt-3 border-t border-rule-soft">
+            <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-muted m-0 mb-2">
+              Worked per day
+            </p>
+            <div className="flex items-end gap-px h-16">
+              {stats.perDay.map(d => (
+                <span key={d.dayKey}
+                      title={`${fmtDateShort(d.dayKey + 'T12:00:00')} · ${fmtHM(d.netMs)}`}
+                      className="flex-1 min-w-[2px] bg-accent/70 rounded-t-sm"
+                      style={{ height: `${Math.max(d.netMs > 0 ? 3 : 0, (d.netMs / maxDay) * 100)}%` }} />
+              ))}
+            </div>
+            <div className="flex justify-between mt-1">
+              <span className="font-mono text-[9px] text-muted">
+                {fmtDateShort(stats.perDay[0].dayKey + 'T12:00:00')}
+              </span>
+              <span className="font-mono text-[9px] text-muted">
+                {fmtDateShort(stats.perDay[stats.perDay.length - 1].dayKey + 'T12:00:00')}
+              </span>
+            </div>
+          </div>
+        )}
+
+        {/* Category breakdown */}
         {stats.byCategory.length > 0 && (
-          <div className="space-y-1.5 pt-3 border-t border-rule-soft">
+          <div className="pt-3 border-t border-rule-soft space-y-2.5">
+            <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-muted m-0">
+              By category
+            </p>
             {stats.byCategory.map(c => (
-              <div key={c.category} className="flex items-center gap-3">
-                <span className="font-mono text-[11px] text-ink-soft w-28 shrink-0 truncate"
-                      title={c.category}>{c.category}</span>
-                <span className="h-2 bg-accent/70 rounded-sm"
-                      style={{ width: `${maxCat > 0 ? Math.max(2, (c.netMs / maxCat) * 100) : 2}%` }} />
-                <span className="font-mono text-[11px] text-muted ml-auto tabular-nums">
-                  {fmtHM(c.netMs)}
-                </span>
+              <div key={c.category}>
+                <div className="flex items-center gap-3">
+                  <span className="font-mono text-[11px] text-ink-soft w-28 shrink-0 truncate"
+                        title={c.category}>{c.category}</span>
+                  <span className="h-2 bg-accent/70 rounded-sm"
+                        style={{ width: `${maxCat > 0 ? Math.max(2, (c.netMs / maxCat) * 100) : 2}%` }} />
+                  <span className="font-mono text-[11px] text-ink ml-auto tabular-nums">
+                    {fmtHM(c.netMs)}
+                  </span>
+                </div>
+                <p className="font-mono text-[10px] text-muted m-0 mt-0.5 ml-[124px]">
+                  {c.sessionCount} session{c.sessionCount === 1 ? '' : 's'} ·{' '}
+                  {c.sharePct.toFixed(0)}% · avg {fmtHM(c.avgSessionMs)}
+                </p>
               </div>
             ))}
           </div>
@@ -162,12 +250,22 @@ export default function LogTab({
   );
 }
 
-function Stat({ label, value }: { label: string; value: string }) {
+function Stat({ label, value, sub }: { label: string; value: string; sub?: string }) {
   return (
     <div>
       <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-muted m-0">{label}</p>
       <p className="font-display text-[26px] leading-tight text-ink m-0 tabular-nums">{value}</p>
+      {sub && <p className="font-mono text-[10px] text-muted m-0 mt-0.5">{sub}</p>}
     </div>
+  );
+}
+
+function Inline({ label, value }: { label: string; value: string }) {
+  return (
+    <span className="inline-flex items-baseline gap-1.5">
+      <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-muted">{label}</span>
+      <span className="font-serif text-[14px] text-ink tabular-nums">{value}</span>
+    </span>
   );
 }
 

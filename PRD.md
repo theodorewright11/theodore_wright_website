@@ -197,7 +197,7 @@ A personal time tracker for research work (OAIP, SPUR, and any user-made categor
 
 - **Clock** — clock in/out against a category. While clocked in: live worked-time readout, "Take a break" (a pseudo clock-out for meals/errands that pauses worked time without ending the session), and clock out. Manage the category list (add / remove) here.
 - **Pomodoro** — a focus-interval countdown (default 25 min, adjustable) with browser-notification + WebAudio chime on completion, a tick counter (today + all-time), and a reward-minutes bank. Each interval completed *while clocked in for real* grants an adjustable number of reward minutes; reward minutes accrue to a bank with a play/stop countdown that spends them.
-- **Log** — session history over a chosen date range with total worked time, average per day, per-category breakdown, and add / edit / delete of sessions (for backfill and fixing forgotten clock-outs). CSV export of the full session log.
+- **Log** — session history over a chosen date range (custom From/To plus presets: Today, This week, Last 7d, This month, Last 30d, All time). Metrics: total worked, avg per calendar day, avg per working day (+ "worked N of M days"), session count, longest/median/shortest session, total break time and break share of clocked time, a worked-per-day mini bar chart, and a per-category breakdown (time, session count, % of total, avg session length). Add / edit / delete of sessions (for backfill and fixing forgotten clock-outs). CSV export of the full session log.
 
 **Data model**:
 

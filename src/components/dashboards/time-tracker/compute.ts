@@ -74,14 +74,51 @@ export function dayCount(fromKey: string, toKey: string): number {
   return Math.round((to - from) / MS_PER_DAY) + 1;
 }
 
+// Inclusive list of every YYYY-MM-DD between two keys (ascending).
+export function daysBetween(fromKey: string, toKey: string): string[] {
+  const [fy, fm, fd] = fromKey.split('-').map(Number);
+  const [ty, tm, td] = toKey.split('-').map(Number);
+  if (!fy || !ty) return [];
+  let cur = Date.UTC(fy, fm - 1, fd);
+  const end = Date.UTC(ty, tm - 1, td);
+  const out: string[] = [];
+  while (cur <= end && out.length < 4000) {
+    const d = new Date(cur);
+    const mm = String(d.getUTCMonth() + 1).padStart(2, '0');
+    const dd = String(d.getUTCDate()).padStart(2, '0');
+    out.push(`${d.getUTCFullYear()}-${mm}-${dd}`);
+    cur += MS_PER_DAY;
+  }
+  return out;
+}
+
 // --- Range statistics -----------------------------------------------------
+
+export type CategoryStat = {
+  category: string;
+  netMs: number;
+  sessionCount: number;
+  sharePct: number;       // % of totalNetMs
+  avgSessionMs: number;   // netMs / sessionCount
+};
+
+export type DayBucket = { dayKey: string; netMs: number };
 
 export type RangeStats = {
   totalNetMs: number;
-  byCategory: { category: string; netMs: number }[];   // sorted, descending
+  totalGrossMs: number;
+  totalBreakMs: number;
+  breakSharePct: number | null;       // break / gross; null when no clocked time
+  byCategory: CategoryStat[];         // sorted by netMs, descending
   sessionCount: number;
-  days: number;
-  avgPerDayMs: number | null;     // totalNet / days; null when days === 0
+  days: number;                       // calendar days in range
+  workingDays: number;                // distinct local days with >= 1 session
+  avgPerDayMs: number | null;         // totalNet / calendar days
+  avgPerWorkingDayMs: number | null;  // totalNet / working days
+  longestMs: number | null;
+  shortestMs: number | null;
+  medianMs: number | null;            // median session net duration
+  perDay: DayBucket[];                // one bucket per calendar day in range
 };
 
 // Sessions are bucketed by the local calendar day of their clock-in.
@@ -95,23 +132,58 @@ export function rangeStats(
     const k = dayKey(ms(s.clock_in));
     return k >= fromKey && k <= toKey;
   });
-  let totalNetMs = 0;
-  const cat = new Map<string, number>();
+  let totalNetMs = 0, totalGrossMs = 0, totalBreakMs = 0;
+  const cat = new Map<string, { net: number; count: number }>();
+  const dayNet = new Map<string, number>();
+  const nets: number[] = [];
   for (const s of inRange) {
     const net = sessionNetMs(s, now);
     totalNetMs += net;
-    cat.set(s.category, (cat.get(s.category) ?? 0) + net);
+    totalGrossMs += sessionGrossMs(s, now);
+    totalBreakMs += sessionBreakMs(s, now);
+    nets.push(net);
+    const c = cat.get(s.category) ?? { net: 0, count: 0 };
+    c.net += net; c.count += 1;
+    cat.set(s.category, c);
+    const dk = dayKey(ms(s.clock_in));
+    dayNet.set(dk, (dayNet.get(dk) ?? 0) + net);
   }
-  const byCategory = [...cat.entries()]
-    .map(([category, netMs]) => ({ category, netMs }))
+  const byCategory: CategoryStat[] = [...cat.entries()]
+    .map(([category, v]) => ({
+      category,
+      netMs: v.net,
+      sessionCount: v.count,
+      sharePct: totalNetMs > 0 ? (v.net / totalNetMs) * 100 : 0,
+      avgSessionMs: v.count > 0 ? v.net / v.count : 0,
+    }))
     .sort((a, b) => b.netMs - a.netMs);
+
   const days = dayCount(fromKey, toKey);
+  const workingDays = dayNet.size;
+  const sorted = [...nets].sort((a, b) => a - b);
+  const median = sorted.length === 0
+    ? null
+    : sorted.length % 2 === 1
+      ? sorted[(sorted.length - 1) / 2]
+      : (sorted[sorted.length / 2 - 1] + sorted[sorted.length / 2]) / 2;
+  const perDay: DayBucket[] = daysBetween(fromKey, toKey)
+    .map(dk => ({ dayKey: dk, netMs: dayNet.get(dk) ?? 0 }));
+
   return {
     totalNetMs,
+    totalGrossMs,
+    totalBreakMs,
+    breakSharePct: totalGrossMs > 0 ? (totalBreakMs / totalGrossMs) * 100 : null,
     byCategory,
     sessionCount: inRange.length,
     days,
+    workingDays,
     avgPerDayMs: days > 0 ? totalNetMs / days : null,
+    avgPerWorkingDayMs: workingDays > 0 ? totalNetMs / workingDays : null,
+    longestMs: sorted.length ? sorted[sorted.length - 1] : null,
+    shortestMs: sorted.length ? sorted[0] : null,
+    medianMs: median,
+    perDay,
   };
 }
 
