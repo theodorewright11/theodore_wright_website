@@ -198,6 +198,27 @@ export default function TimeTrackerDashboard() {
     push('sessions', next);
   };
 
+  // Pomodoro coupling for settings.autoRunWhenClockedIn: the focus timer
+  // tracks the clocked-in-for-real state. Functional updaters so concurrent
+  // session mutations can't read a stale `timers`.
+  const pomodoroStart = () => setTimers(t => {
+    if (t.pomodoroEndsAt !== null) return t;   // already running — leave it
+    const remainingMs = t.pomodoroRemainingSec !== null
+      ? t.pomodoroRemainingSec * 1000
+      : settings.intervalMin * 60_000;
+    return { ...t, pomodoroEndsAt: Date.now() + remainingMs, pomodoroRemainingSec: null };
+  });
+  const pomodoroPause = () => setTimers(t =>
+    t.pomodoroEndsAt === null ? t
+      : { ...t, pomodoroEndsAt: null,
+          pomodoroRemainingSec: Math.max(0, Math.round((t.pomodoroEndsAt - Date.now()) / 1000)) });
+  const pomodoroResume = () => setTimers(t =>
+    (t.pomodoroEndsAt !== null || t.pomodoroRemainingSec === null) ? t
+      : { ...t, pomodoroEndsAt: Date.now() + t.pomodoroRemainingSec * 1000, pomodoroRemainingSec: null });
+  const pomodoroReset = () => setTimers(t =>
+    (t.pomodoroEndsAt === null && t.pomodoroRemainingSec === null) ? t
+      : { ...t, pomodoroEndsAt: null, pomodoroRemainingSec: null });
+
   const onClockIn = (category: string) => {
     if (activeSession(state.sessions)) return;   // already clocked in
     const ts = iso();
@@ -205,6 +226,7 @@ export default function TimeTrackerDashboard() {
       id: crypto.randomUUID(), category, clock_in: ts, clock_out: null,
       breaks: [], created_at: ts, updated_at: ts,
     }]);
+    if (settings.autoRunWhenClockedIn) pomodoroStart();
   };
 
   const onClockOut = () => {
@@ -216,6 +238,7 @@ export default function TimeTrackerDashboard() {
       i === a.breaks.length - 1 && b.end === null ? { ...b, end: ts } : b);
     setSessions(state.sessions.map(s =>
       s.id === a.id ? { ...s, clock_out: ts, breaks, updated_at: ts } : s));
+    if (settings.autoRunWhenClockedIn) pomodoroReset();
   };
 
   const onStartBreak = () => {
@@ -224,6 +247,7 @@ export default function TimeTrackerDashboard() {
     const ts = iso();
     setSessions(state.sessions.map(s =>
       s.id === a.id ? { ...s, breaks: [...s.breaks, { start: ts, end: null }], updated_at: ts } : s));
+    if (settings.autoRunWhenClockedIn) pomodoroPause();
   };
 
   const onEndBreak = () => {
@@ -235,6 +259,7 @@ export default function TimeTrackerDashboard() {
         ? { ...s, breaks: s.breaks.map((b, i) =>
             i === s.breaks.length - 1 ? { ...b, end: ts } : b), updated_at: ts }
         : s));
+    if (settings.autoRunWhenClockedIn) pomodoroResume();
   };
 
   const onUpdateSession = (u: Session) =>

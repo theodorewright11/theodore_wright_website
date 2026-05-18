@@ -55,6 +55,8 @@ export function loadSettings(): Settings {
       rewardPerInterval: Number.isFinite(rewardPerInterval) && rewardPerInterval >= 0
         ? rewardPerInterval : DEFAULT_SETTINGS.rewardPerInterval,
       autoStart: typeof p?.autoStart === 'boolean' ? p.autoStart : DEFAULT_SETTINGS.autoStart,
+      autoRunWhenClockedIn: typeof p?.autoRunWhenClockedIn === 'boolean'
+        ? p.autoRunWhenClockedIn : DEFAULT_SETTINGS.autoRunWhenClockedIn,
     };
   } catch {
     return DEFAULT_SETTINGS;

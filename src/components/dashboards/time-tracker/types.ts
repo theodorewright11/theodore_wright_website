@@ -57,15 +57,17 @@ export const EMPTY_STATE: DataState = {
 
 // Device-local preferences (not synced — they're per-device choices).
 export type Settings = {
-  intervalMin: number;        // Pomodoro work interval
-  rewardPerInterval: number;  // reward minutes earned per credited interval
-  autoStart: boolean;         // start the next interval automatically on completion
+  intervalMin: number;             // Pomodoro work interval
+  rewardPerInterval: number;       // reward minutes earned per credited interval
+  autoStart: boolean;              // start the next interval automatically on completion
+  autoRunWhenClockedIn: boolean;   // run the timer in lockstep with being clocked in
 };
 
 export const DEFAULT_SETTINGS: Settings = {
   intervalMin: 25,
   rewardPerInterval: 5,
   autoStart: true,
+  autoRunWhenClockedIn: false,
 };
 
 // Live timer state (device-local, not synced — a running countdown belongs to

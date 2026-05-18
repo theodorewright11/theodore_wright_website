@@ -193,6 +193,14 @@ export function ticksOn(pomodoros: Pomodoro[], dateKey: string): number {
   return pomodoros.filter(p => dayKey(ms(p.completed_at)) === dateKey).length;
 }
 
+// Count of completed intervals whose local day falls within [fromKey, toKey].
+export function ticksBetween(pomodoros: Pomodoro[], fromKey: string, toKey: string): number {
+  return pomodoros.filter(p => {
+    const k = dayKey(ms(p.completed_at));
+    return k >= fromKey && k <= toKey;
+  }).length;
+}
+
 // Reward bank, in minutes (fractional): credited interval rewards earned
 // minus reward minutes already spent. Never negative.
 export function rewardBankMin(pomodoros: Pomodoro[], spends: RewardSpend[]): number {
