@@ -146,9 +146,8 @@ export default function PomodoroTab({
   const [adjMin, setAdjMin] = useState('');
   const nowIso = () => new Date(now).toISOString();
   const adjustReward = (sign: 1 | -1) => {
-    const n = Math.abs(Math.round(Number(adjMin)));
-    if (!n) return;
-    onRewardSpend(nowIso(), nowIso(), sign * n);  // sign -1 adds, +1 subtracts
+    const n = Math.abs(Math.round(Number(adjMin))) || 1;  // empty box → 1
+    onRewardSpend(nowIso(), nowIso(), sign * n);           // sign -1 adds, +1 subtracts
     setAdjMin('');
   };
   const resetReward = () => {
@@ -274,12 +273,12 @@ export default function PomodoroTab({
           <input
             type="number" min={1} value={adjMin} disabled={playing}
             onChange={e => setAdjMin(e.target.value)}
-            placeholder="min"
+            placeholder="1"
             className="w-20 font-serif text-[14px] bg-paper border border-rule rounded-sm
                        px-2.5 py-1.5 text-ink focus:border-accent outline-none disabled:opacity-40" />
-          <button className={btnSmall} disabled={playing || !adjMin}
+          <button className={btnSmall} disabled={playing}
                   onClick={() => adjustReward(-1)}>+ Add</button>
-          <button className={btnSmall} disabled={playing || !adjMin}
+          <button className={btnSmall} disabled={playing}
                   onClick={() => adjustReward(1)}>− Subtract</button>
           <button className={btnSmall} disabled={playing || bankMin <= 0}
                   onClick={resetReward}>Reset to 0</button>
