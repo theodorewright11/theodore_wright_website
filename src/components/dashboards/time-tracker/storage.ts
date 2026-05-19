@@ -22,7 +22,15 @@ export function loadState(): DataState {
     if (p?.version !== 1) return EMPTY_STATE;
     return {
       version: 1,
-      sessions: Array.isArray(p.sessions) ? p.sessions : [],
+      // Coerce sessions defensively — older cached rows predate the rating
+      // fields, so default them rather than letting `undefined` leak through.
+      sessions: (Array.isArray(p.sessions) ? p.sessions : []).map((s: any): Session => ({
+        ...s,
+        breaks: Array.isArray(s?.breaks) ? s.breaks : [],
+        mood: Number.isFinite(s?.mood) ? s.mood : 0,
+        productivity: Number.isFinite(s?.productivity) ? s.productivity : 0,
+        enjoyment: Number.isFinite(s?.enjoyment) ? s.enjoyment : 0,
+      })),
       categories: Array.isArray(p.categories) ? p.categories : [],
       pomodoros: Array.isArray(p.pomodoros) ? p.pomodoros : [],
       rewardSpends: Array.isArray(p.rewardSpends) ? p.rewardSpends : [],
@@ -99,6 +107,7 @@ function csvEscape(v: unknown): string {
 
 const SESSION_CSV_HEADERS = [
   'id', 'category', 'clock_in', 'clock_out', 'break_count', 'breaks_json', 'notes',
+  'mood', 'productivity', 'enjoyment',
 ];
 
 export function sessionsToCsv(sessions: Session[]): string {
@@ -106,6 +115,7 @@ export function sessionsToCsv(sessions: Session[]): string {
   const body = sessions.map(s => [
     s.id, s.category, s.clock_in, s.clock_out ?? '',
     s.breaks.length, JSON.stringify(s.breaks), s.notes ?? '',
+    s.mood ?? 0, s.productivity ?? 0, s.enjoyment ?? 0,
   ].map(csvEscape).join(',')).join('\n');
   return body ? head + '\n' + body + '\n' : head + '\n';
 }

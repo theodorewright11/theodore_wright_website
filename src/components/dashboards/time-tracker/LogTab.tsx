@@ -5,6 +5,8 @@ import {
   fmtHM, fmtTimeOfDay, fmtDateShort, isoToLocalInput, localInputToIso,
 } from './compute';
 import { sessionsToCsv, downloadFile } from './storage';
+import RatingRow from './RatingRow';
+import { NOTES_PLACEHOLDER } from './ClockTab';
 
 type Props = {
   sessions: Session[];
@@ -227,6 +229,12 @@ export default function LogTab({
                 <span className="font-display text-[15px] text-ink tabular-nums w-16 shrink-0">
                   {fmtHM(sessionNetMs(s, now))}
                 </span>
+                {(s.mood || s.productivity || s.enjoyment) > 0 && (
+                  <span className="font-mono text-[10px] text-muted shrink-0 tabular-nums"
+                        title="Mood / Productivity / Enjoyment">
+                    M{s.mood || '–'} P{s.productivity || '–'} E{s.enjoyment || '–'}
+                  </span>
+                )}
                 {s.notes && (
                   <span className="font-serif text-[12px] text-muted italic truncate max-w-[200px]"
                         title={s.notes}>{s.notes}</span>
@@ -287,6 +295,9 @@ function SessionForm({
   const [clockOut, setClockOut] = useState(
     session?.clock_out ? isoToLocalInput(session.clock_out) : '');
   const [notes, setNotes] = useState(session?.notes ?? '');
+  const [mood, setMood] = useState(session?.mood ?? 0);
+  const [productivity, setProductivity] = useState(session?.productivity ?? 0);
+  const [enjoyment, setEnjoyment] = useState(session?.enjoyment ?? 0);
   const [clearBreaks, setClearBreaks] = useState(false);
   const [err, setErr] = useState('');
 
@@ -308,6 +319,9 @@ function SessionForm({
       clock_out: outIso,
       breaks,
       notes: notes.trim() || undefined,
+      mood,
+      productivity,
+      enjoyment,
       created_at: session?.created_at ?? nowIso,
       updated_at: nowIso,
     });
@@ -330,11 +344,6 @@ function SessionForm({
           </select>
         </label>
         <label className="block">
-          <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-muted">Notes</span>
-          <input value={notes} onChange={e => setNotes(e.target.value)}
-                 className={'mt-1 block w-full ' + field} />
-        </label>
-        <label className="block">
           <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-muted">Clock in</span>
           <input type="datetime-local" value={clockIn} onChange={e => setClockIn(e.target.value)}
                  className={'mt-1 block w-full ' + field} />
@@ -346,6 +355,17 @@ function SessionForm({
           <input type="datetime-local" value={clockOut} onChange={e => setClockOut(e.target.value)}
                  className={'mt-1 block w-full ' + field} />
         </label>
+      </div>
+      <label className="block">
+        <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-muted">Notes</span>
+        <textarea value={notes} onChange={e => setNotes(e.target.value)}
+                  rows={3} placeholder={NOTES_PLACEHOLDER}
+                  className={'mt-1 block w-full resize-y ' + field} />
+      </label>
+      <div className="space-y-2.5 pt-1">
+        <RatingRow label="Mood" value={mood} onChange={setMood} />
+        <RatingRow label="Productivity" value={productivity} onChange={setProductivity} />
+        <RatingRow label="Enjoyment" value={enjoyment} onChange={setEnjoyment} />
       </div>
       {session && session.breaks.length > 0 && (
         <label className="flex items-center gap-2 font-serif text-[13px] text-ink-soft">

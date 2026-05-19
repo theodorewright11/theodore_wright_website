@@ -25,7 +25,8 @@ export const SHEET_TABS = {
 // session — breaks are a small 1-to-many list always loaded with their
 // session, so a sub-tab would be overkill.
 export const HEADERS = {
-  sessions: ['id', 'category', 'clock_in', 'clock_out', 'breaks_json', 'notes', 'created_at', 'updated_at'] as const,
+  sessions: ['id', 'category', 'clock_in', 'clock_out', 'breaks_json', 'notes',
+             'mood', 'productivity', 'enjoyment', 'created_at', 'updated_at'] as const,
   categories: ['name'] as const,
   pomodoros: ['id', 'completed_at', 'length_min', 'reward_minutes', 'credited'] as const,
   rewardSpends: ['id', 'started_at', 'ended_at', 'minutes'] as const,
@@ -241,6 +242,12 @@ function parseBreaks(json: string): Break[] {
   }
 }
 
+// Parse a stored rating: a 1–5 integer, or 0 (unrated) for anything else.
+function parseRating(v: string): number {
+  const n = parseInt(v, 10);
+  return Number.isFinite(n) && n >= 1 && n <= 5 ? n : 0;
+}
+
 export async function readSessions(token: string, sheetId: string): Promise<Session[]> {
   const rows = await readRange(token, sheetId, `${SHEET_TABS.sessions}!A1:ZZ100000`);
   const objs = rowsToObjects(rows, HEADERS.sessions);
@@ -254,6 +261,9 @@ export async function readSessions(token: string, sheetId: string): Promise<Sess
       clock_out: r.clock_out || null,
       breaks: parseBreaks(r.breaks_json),
       notes: r.notes || undefined,
+      mood: parseRating(r.mood),
+      productivity: parseRating(r.productivity),
+      enjoyment: parseRating(r.enjoyment),
       created_at: r.created_at || new Date().toISOString(),
       updated_at: r.updated_at || new Date().toISOString(),
     });
@@ -264,7 +274,9 @@ export async function readSessions(token: string, sheetId: string): Promise<Sess
 export async function writeSessions(token: string, sheetId: string, sessions: Session[]): Promise<void> {
   const rows = sessions.map(s => [
     s.id, s.category, s.clock_in, s.clock_out ?? '',
-    JSON.stringify(s.breaks ?? []), s.notes ?? '', s.created_at, s.updated_at,
+    JSON.stringify(s.breaks ?? []), s.notes ?? '',
+    s.mood ?? 0, s.productivity ?? 0, s.enjoyment ?? 0,
+    s.created_at, s.updated_at,
   ]);
   await replaceTab(token, sheetId, SHEET_TABS.sessions, HEADERS.sessions, rows);
 }

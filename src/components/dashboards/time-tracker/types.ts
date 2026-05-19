@@ -14,9 +14,15 @@ export type Session = {
   clock_out: string | null;  // null = still clocked in
   breaks: Break[];           // pseudo clock-outs (meals etc.); excluded from net time
   notes?: string;
+  // Self-report ratings, prompted (skippably) at clock-out. 0 = unrated, else 1–5.
+  mood: number;
+  productivity: number;
+  enjoyment: number;
   created_at: string;
   updated_at: string;
 };
+
+export const RATING_KEYS = ['mood', 'productivity', 'enjoyment'] as const;
 
 // A completed Pomodoro interval. `credited` is true when the user was clocked
 // in "for real" (active session, not on break) at the moment it finished —

@@ -224,7 +224,8 @@ export default function TimeTrackerDashboard() {
     const ts = iso();
     setSessions([...state.sessions, {
       id: crypto.randomUUID(), category, clock_in: ts, clock_out: null,
-      breaks: [], created_at: ts, updated_at: ts,
+      breaks: [], mood: 0, productivity: 0, enjoyment: 0,
+      created_at: ts, updated_at: ts,
     }]);
     if (settings.autoRunWhenClockedIn) pomodoroStart();
   };
@@ -363,6 +364,7 @@ export default function TimeTrackerDashboard() {
             sessions={state.sessions} categories={state.categories} now={now}
             onClockIn={onClockIn} onClockOut={onClockOut}
             onStartBreak={onStartBreak} onEndBreak={onEndBreak}
+            onUpdateSession={onUpdateSession}
             onAddCategory={onAddCategory} onRemoveCategory={onRemoveCategory}
           />
         )}

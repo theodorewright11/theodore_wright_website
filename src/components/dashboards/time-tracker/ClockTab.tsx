@@ -4,6 +4,11 @@ import {
   activeSession, isOnBreak, sessionNetMs, sessionGrossMs, sessionBreakMs, breakMs,
   fmtClock, fmtHM, fmtTimeOfDay,
 } from './compute';
+import RatingRow from './RatingRow';
+
+export const NOTES_PLACEHOLDER =
+  "What you did — e.g. “drafted intro, read 2 papers”. Note anything that " +
+  "shaped the session: sleep, caffeine, interruptions, location, mood going in.";
 
 type Props = {
   sessions: Session[];
@@ -13,6 +18,7 @@ type Props = {
   onClockOut: () => void;
   onStartBreak: () => void;
   onEndBreak: () => void;
+  onUpdateSession: (s: Session) => void;
   onAddCategory: (name: string) => void;
   onRemoveCategory: (name: string) => void;
 };
@@ -25,13 +31,19 @@ const btnMuted = 'font-mono text-[12px] uppercase tracking-[0.1em] border border
 
 export default function ClockTab({
   sessions, categories, now,
-  onClockIn, onClockOut, onStartBreak, onEndBreak, onAddCategory, onRemoveCategory,
+  onClockIn, onClockOut, onStartBreak, onEndBreak, onUpdateSession,
+  onAddCategory, onRemoveCategory,
 }: Props) {
   const active = activeSession(sessions);
   const [pick, setPick] = useState('');
   const [newCat, setNewCat] = useState('');
+  // After clock-out, prompt to rate the session that just ended.
+  const [ratingId, setRatingId] = useState<string | null>(null);
 
   const selected = pick || categories[0] || '';
+  const ratingSession = ratingId
+    ? sessions.find(s => s.id === ratingId && s.clock_out !== null) ?? null
+    : null;
 
   // --- Clocked in -----------------------------------------------------------
   if (active) {
@@ -86,7 +98,10 @@ export default function ClockTab({
             ) : (
               <button className={btnMuted} onClick={onStartBreak}>Take a break</button>
             )}
-            <button className={btnAccent} onClick={onClockOut}>Clock out</button>
+            <button className={btnAccent}
+                    onClick={() => { setRatingId(active.id); onClockOut(); }}>
+              Clock out
+            </button>
           </div>
         </div>
 
@@ -101,6 +116,15 @@ export default function ClockTab({
   // --- Clocked out ----------------------------------------------------------
   return (
     <div className="space-y-7">
+      {ratingSession && (
+        <ClockOutRating
+          key={ratingSession.id}
+          session={ratingSession}
+          onSave={s => { onUpdateSession(s); setRatingId(null); }}
+          onSkip={() => setRatingId(null)}
+        />
+      )}
+
       <div className="rounded-lg border border-rule bg-paper p-6">
         <p className="font-mono text-[11px] uppercase tracking-[0.12em] text-muted m-0 mb-3">
           Not clocked in
@@ -166,6 +190,59 @@ export default function ClockTab({
                        text-ink focus:border-accent outline-none w-[200px]" />
           <button type="submit" className={btnMuted}>Add</button>
         </form>
+      </div>
+    </div>
+  );
+}
+
+// Shown right after clock-out: rate the session that just ended. Skippable —
+// a missed rating just leaves the three values at 0 (unrated).
+function ClockOutRating({ session, onSave, onSkip }: {
+  session: Session;
+  onSave: (s: Session) => void;
+  onSkip: () => void;
+}) {
+  const [mood, setMood] = useState(session.mood);
+  const [productivity, setProductivity] = useState(session.productivity);
+  const [enjoyment, setEnjoyment] = useState(session.enjoyment);
+  const [notes, setNotes] = useState(session.notes ?? '');
+
+  return (
+    <div className="rounded-lg border border-accent/40 bg-paper p-6 space-y-4">
+      <div>
+        <p className="font-mono text-[11px] uppercase tracking-[0.12em] text-accent m-0">
+          Rate that session
+        </p>
+        <p className="font-serif text-[13px] text-muted m-0 mt-0.5">
+          {session.category} · {fmtHM(sessionNetMs(session, Date.parse(session.clock_out!)))} worked
+        </p>
+      </div>
+      <div className="space-y-2.5">
+        <RatingRow label="Mood" value={mood} onChange={setMood} />
+        <RatingRow label="Productivity" value={productivity} onChange={setProductivity} />
+        <RatingRow label="Enjoyment" value={enjoyment} onChange={setEnjoyment} />
+      </div>
+      <label className="block">
+        <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-muted">Notes</span>
+        <textarea
+          value={notes}
+          onChange={e => setNotes(e.target.value)}
+          rows={3}
+          placeholder={NOTES_PLACEHOLDER}
+          className="mt-1 block w-full font-serif text-[14px] bg-paper border border-rule
+                     rounded-sm px-3 py-2 text-ink focus:border-accent outline-none resize-y" />
+      </label>
+      <div className="flex gap-2">
+        <button
+          className={btnAccent}
+          onClick={() => onSave({
+            ...session, mood, productivity, enjoyment,
+            notes: notes.trim() || undefined,
+            updated_at: new Date().toISOString(),
+          })}>
+          Save
+        </button>
+        <button className={btnMuted} onClick={onSkip}>Skip</button>
       </div>
     </div>
   );
