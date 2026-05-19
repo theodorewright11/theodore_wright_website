@@ -32,6 +32,13 @@ export type Session = {
 
 export const RATING_KEYS = ['mood', 'productivity', 'enjoyment'] as const;
 
+// Endpoint anchors for the 1–5 rating scales, keyed by the RatingRow label.
+export const RATING_ANCHORS: Record<string, { low: string; high: string }> = {
+  Mood: { low: 'rough', high: 'great' },
+  Productivity: { low: 'distracted', high: 'locked in' },
+  Enjoyment: { low: 'disliked it', high: 'loved it' },
+};
+
 // Fixed activity taxonomy — kept stable on purpose so cross-tabs stay
 // comparable over time. Edit this list to change the options.
 export const ACTIVITY_TYPES = [
