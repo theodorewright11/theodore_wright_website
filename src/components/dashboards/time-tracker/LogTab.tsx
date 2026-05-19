@@ -302,6 +302,7 @@ function SessionForm({
   const [activity1, setActivity1] = useState(session?.activity1 ?? '');
   const [activity2, setActivity2] = useState(session?.activity2 ?? '');
   const [activity1Pct, setActivity1Pct] = useState(session?.activity1Pct ?? 100);
+  const [activity2Pct, setActivity2Pct] = useState(session?.activity2Pct ?? 50);
   const [clearBreaks, setClearBreaks] = useState(false);
   const [err, setErr] = useState('');
 
@@ -329,6 +330,7 @@ function SessionForm({
       activity1,
       activity2,
       activity1Pct,
+      activity2Pct,
       created_at: session?.created_at ?? nowIso,
       updated_at: nowIso,
     });
@@ -375,8 +377,11 @@ function SessionForm({
         <RatingRow label="Enjoyment" value={enjoyment} onChange={setEnjoyment} />
       </div>
       <ActivityPicker
-        activity1={activity1} activity2={activity2} activity1Pct={activity1Pct}
-        onChange={(a1, a2, pct) => { setActivity1(a1); setActivity2(a2); setActivity1Pct(pct); }}
+        activity1={activity1} activity2={activity2}
+        activity1Pct={activity1Pct} activity2Pct={activity2Pct}
+        onChange={(a1, a2, p1, p2) => {
+          setActivity1(a1); setActivity2(a2); setActivity1Pct(p1); setActivity2Pct(p2);
+        }}
       />
       {session && session.breaks.length > 0 && (
         <label className="flex items-center gap-2 font-serif text-[13px] text-ink-soft">

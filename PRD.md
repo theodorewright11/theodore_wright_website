@@ -203,7 +203,7 @@ A **week strip** is pinned under the tab bar on every tab: this week's net worke
 
 **Data model**:
 
-- `Session` — `id` (UUID), `category`, `clock_in` (ISO), `clock_out` (ISO, null while active), `breaks` (`Break[]`), `notes?`, `mood` / `productivity` / `enjoyment` (self-report ratings, 0 = unrated else 1–5), `activity1` / `activity2` / `activity1Pct` (up to two activity types from a fixed taxonomy with a coupled split — what kind of work the session was; `category` = which project, activity = which mode of work, orthogonal axes), `created_at`, `updated_at`. Net worked time = (clock-out − clock-in) − Σ break durations.
+- `Session` — `id` (UUID), `category`, `clock_in` (ISO), `clock_out` (ISO, null while active), `breaks` (`Break[]`), `notes?`, `mood` / `productivity` / `enjoyment` (self-report ratings, 0 = unrated else 1–5), `activity1` / `activity2` / `activity1Pct` / `activity2Pct` (the top one or two activity types from a fixed taxonomy, each with its own independent 0–100 share of the session — shares need not sum to 100; what kind of work the session was; `category` = which project, activity = which mode of work, orthogonal axes), `created_at`, `updated_at`. Net worked time = (clock-out − clock-in) − Σ break durations.
 - `Break` — `start`, `end` (null = currently on break). A pseudo clock-out; excluded from net time.
 - `Pomodoro` — `id`, `completed_at`, `length_min`, `reward_minutes`, `credited`. One row per completed interval; `credited` true only if clocked in (not on break) at completion.
 - `RewardSpend` — `id`, `started_at`, `ended_at`, `minutes`. One row per play→stop of the reward countdown. The reward bank is derived (`Σ credited reward − Σ spent`), never stored as a running total.

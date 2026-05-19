@@ -18,12 +18,14 @@ export type Session = {
   mood: number;
   productivity: number;
   enjoyment: number;
-  // What kind of work the session was: up to two activity types. activity1Pct
-  // is the primary's share (0–100); the secondary gets the remainder. Empty
-  // strings = unset.
+  // What kind of work the session was: the top one or two activity types.
+  // activity1Pct / activity2Pct are each activity's own share of the whole
+  // session (0–100) — independent, so they need not sum to 100 (the rest is
+  // other untracked work). Empty strings = unset.
   activity1: string;
   activity2: string;
   activity1Pct: number;
+  activity2Pct: number;
   created_at: string;
   updated_at: string;
 };
@@ -35,6 +37,17 @@ export const RATING_KEYS = ['mood', 'productivity', 'enjoyment'] as const;
 export const ACTIVITY_TYPES = [
   'Coding', 'Writing', 'Reading', 'Thinking', 'Meetings', 'Admin', 'Learning', 'Other',
 ] as const;
+
+export const ACTIVITY_DEFINITIONS: Record<string, string> = {
+  Coding: 'Writing, debugging, or refactoring code.',
+  Writing: 'Prose work — drafting or editing papers, posts, notes.',
+  Reading: 'Reading papers, articles, or docs to take information in.',
+  Thinking: 'Planning, problem-solving, or designing — working it out in your head or on paper.',
+  Meetings: 'Calls, meetings, syncs — working with other people.',
+  Admin: 'Email, scheduling, logistics, and other busywork.',
+  Learning: 'Courses, tutorials, deliberately building a skill.',
+  Other: "Anything that doesn't fit the buckets above.",
+};
 
 // A completed Pomodoro interval. `credited` is true when the user was clocked
 // in "for real" (active session, not on break) at the moment it finished —

@@ -33,6 +33,7 @@ export function loadState(): DataState {
         activity1: typeof s?.activity1 === 'string' ? s.activity1 : '',
         activity2: typeof s?.activity2 === 'string' ? s.activity2 : '',
         activity1Pct: Number.isFinite(s?.activity1Pct) ? s.activity1Pct : 100,
+        activity2Pct: Number.isFinite(s?.activity2Pct) ? s.activity2Pct : 50,
       })),
       categories: Array.isArray(p.categories) ? p.categories : [],
       pomodoros: Array.isArray(p.pomodoros) ? p.pomodoros : [],
@@ -110,7 +111,8 @@ function csvEscape(v: unknown): string {
 
 const SESSION_CSV_HEADERS = [
   'id', 'category', 'clock_in', 'clock_out', 'break_count', 'breaks_json', 'notes',
-  'mood', 'productivity', 'enjoyment', 'activity1', 'activity2', 'activity1_pct',
+  'mood', 'productivity', 'enjoyment',
+  'activity1', 'activity2', 'activity1_pct', 'activity2_pct',
 ];
 
 export function sessionsToCsv(sessions: Session[]): string {
@@ -119,7 +121,7 @@ export function sessionsToCsv(sessions: Session[]): string {
     s.id, s.category, s.clock_in, s.clock_out ?? '',
     s.breaks.length, JSON.stringify(s.breaks), s.notes ?? '',
     s.mood ?? 0, s.productivity ?? 0, s.enjoyment ?? 0,
-    s.activity1 ?? '', s.activity2 ?? '', s.activity1Pct ?? 100,
+    s.activity1 ?? '', s.activity2 ?? '', s.activity1Pct ?? 100, s.activity2Pct ?? 50,
   ].map(csvEscape).join(',')).join('\n');
   return body ? head + '\n' + body + '\n' : head + '\n';
 }

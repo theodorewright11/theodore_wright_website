@@ -27,7 +27,8 @@ export const SHEET_TABS = {
 export const HEADERS = {
   sessions: ['id', 'category', 'clock_in', 'clock_out', 'breaks_json', 'notes',
              'mood', 'productivity', 'enjoyment',
-             'activity1', 'activity2', 'activity1_pct', 'created_at', 'updated_at'] as const,
+             'activity1', 'activity2', 'activity1_pct', 'activity2_pct',
+             'created_at', 'updated_at'] as const,
   categories: ['name'] as const,
   pomodoros: ['id', 'completed_at', 'length_min', 'reward_minutes', 'credited'] as const,
   rewardSpends: ['id', 'started_at', 'ended_at', 'minutes'] as const,
@@ -274,6 +275,7 @@ export async function readSessions(token: string, sheetId: string): Promise<Sess
       activity1: r.activity1 || '',
       activity2: r.activity2 || '',
       activity1Pct: parsePct(r.activity1_pct),
+      activity2Pct: parsePct(r.activity2_pct),
       created_at: r.created_at || new Date().toISOString(),
       updated_at: r.updated_at || new Date().toISOString(),
     });
@@ -286,7 +288,7 @@ export async function writeSessions(token: string, sheetId: string, sessions: Se
     s.id, s.category, s.clock_in, s.clock_out ?? '',
     JSON.stringify(s.breaks ?? []), s.notes ?? '',
     s.mood ?? 0, s.productivity ?? 0, s.enjoyment ?? 0,
-    s.activity1 ?? '', s.activity2 ?? '', s.activity1Pct ?? 100,
+    s.activity1 ?? '', s.activity2 ?? '', s.activity1Pct ?? 100, s.activity2Pct ?? 50,
     s.created_at, s.updated_at,
   ]);
   await replaceTab(token, sheetId, SHEET_TABS.sessions, HEADERS.sessions, rows);
