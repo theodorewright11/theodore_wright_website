@@ -414,11 +414,11 @@ Headers are authoritative on import; column order doesn't matter. Same quoting r
 
 Lives at [src/components/dashboards/time-tracker/](src/components/dashboards/time-tracker/). Mounted at `/dashboards/time-tracker`. v1 is **private** (`private: true` in `dashboards.json`, hidden from the roster). Three UI tabs: **Clock**, **Pomodoro**, **Log**.
 
-**Files**: `TimeTrackerDashboard.tsx` (entry — tab router, state, 4-entity sync queue, the shared 1-second clock), `ClockTab.tsx` / `PomodoroTab.tsx` / `LogTab.tsx`, `WeekStrip.tsx` (always-visible week total pinned under the tab bar), `RatingRow.tsx` (shared 1–5 rating scale), `types.ts`, `compute.ts` (pure derivations + formatters), `storage.ts` (localStorage + session-log CSV export), `sheets.ts` (GIS OAuth + Sheets REST + `ensureTabs`), `AuthBar.tsx`.
+**Files**: `TimeTrackerDashboard.tsx` (entry — tab router, state, 4-entity sync queue, the shared 1-second clock), `ClockTab.tsx` / `PomodoroTab.tsx` / `LogTab.tsx`, `WeekStrip.tsx` (always-visible week total pinned under the tab bar), `RatingRow.tsx` (shared 1–5 rating scale), `ActivityPicker.tsx` (shared activity-type picker with split sliders), `types.ts`, `compute.ts` (pure derivations + formatters), `storage.ts` (localStorage + session-log CSV export), `sheets.ts` (GIS OAuth + Sheets REST + `ensureTabs`), `AuthBar.tsx`.
 
 **Data model** (`types.ts`):
 
-- `Session` = `{ id, category, clock_in, clock_out (null = active), breaks: Break[], notes?, mood, productivity, enjoyment, created_at, updated_at }`. All datetimes are ISO strings. `mood`/`productivity`/`enjoyment` are self-report ratings (0 = unrated, else 1–5), prompted at clock-out by a skippable panel in `ClockTab` and editable in the Log form; both UIs use the shared `RatingRow` component. Reads/`loadState` default missing rating fields to 0 so rows that predate the feature stay valid.
+- `Session` = `{ id, category, clock_in, clock_out (null = active), breaks: Break[], notes?, mood, productivity, enjoyment, activity1, activity2, activity1Pct, created_at, updated_at }`. All datetimes are ISO strings. `mood`/`productivity`/`enjoyment` are self-report ratings (0 = unrated, else 1–5), prompted at clock-out by a skippable panel in `ClockTab` and editable in the Log form; both UIs use the shared `RatingRow` component. `activity1`/`activity2` are up to two values from the fixed `ACTIVITY_TYPES` taxonomy (in `types.ts`) and `activity1Pct` is the primary's share 0–100 (secondary gets the remainder) — picked via the shared `ActivityPicker` (two coupled split sliders). Activity is orthogonal to `category`: category = which project, activity = which mode of work. Reads/`loadState` default missing rating/activity fields (0, `''`, 100) so rows that predate these features stay valid.
 - `Break` = `{ start, end (null = on break now) }`. A break is a "pseudo clock-out" (meal/errand) that pauses worked time without ending the session. **Net** worked time = gross (clock-out − clock-in) − Σ break durations.
 - `Pomodoro` = `{ id, completed_at, length_min, reward_minutes, credited }`. One row per completed interval. `credited` is true only when the user was clocked in **and not on break** at completion — only credited intervals add reward minutes.
 - `RewardSpend` = `{ id, started_at, ended_at, minutes }`. One row per play→stop run of the reward countdown.
@@ -430,7 +430,7 @@ Lives at [src/components/dashboards/time-tracker/](src/components/dashboards/tim
 
 | Tab | Headers (canonical order) |
 |---|---|
-| `sessions` | `id,category,clock_in,clock_out,breaks_json,notes,mood,productivity,enjoyment,created_at,updated_at` |
+| `sessions` | `id,category,clock_in,clock_out,breaks_json,notes,mood,productivity,enjoyment,activity1,activity2,activity1_pct,created_at,updated_at` |
 | `categories` | `name` |
 | `pomodoros` | `id,completed_at,length_min,reward_minutes,credited` |
 | `reward_spends` | `id,started_at,ended_at,minutes` |

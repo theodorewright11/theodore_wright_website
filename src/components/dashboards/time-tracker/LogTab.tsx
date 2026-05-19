@@ -6,6 +6,7 @@ import {
 } from './compute';
 import { sessionsToCsv, downloadFile } from './storage';
 import RatingRow from './RatingRow';
+import ActivityPicker from './ActivityPicker';
 import { NOTES_PLACEHOLDER } from './ClockTab';
 
 type Props = {
@@ -298,6 +299,9 @@ function SessionForm({
   const [mood, setMood] = useState(session?.mood ?? 0);
   const [productivity, setProductivity] = useState(session?.productivity ?? 0);
   const [enjoyment, setEnjoyment] = useState(session?.enjoyment ?? 0);
+  const [activity1, setActivity1] = useState(session?.activity1 ?? '');
+  const [activity2, setActivity2] = useState(session?.activity2 ?? '');
+  const [activity1Pct, setActivity1Pct] = useState(session?.activity1Pct ?? 100);
   const [clearBreaks, setClearBreaks] = useState(false);
   const [err, setErr] = useState('');
 
@@ -322,6 +326,9 @@ function SessionForm({
       mood,
       productivity,
       enjoyment,
+      activity1,
+      activity2,
+      activity1Pct,
       created_at: session?.created_at ?? nowIso,
       updated_at: nowIso,
     });
@@ -367,6 +374,10 @@ function SessionForm({
         <RatingRow label="Productivity" value={productivity} onChange={setProductivity} />
         <RatingRow label="Enjoyment" value={enjoyment} onChange={setEnjoyment} />
       </div>
+      <ActivityPicker
+        activity1={activity1} activity2={activity2} activity1Pct={activity1Pct}
+        onChange={(a1, a2, pct) => { setActivity1(a1); setActivity2(a2); setActivity1Pct(pct); }}
+      />
       {session && session.breaks.length > 0 && (
         <label className="flex items-center gap-2 font-serif text-[13px] text-ink-soft">
           <input type="checkbox" checked={clearBreaks}

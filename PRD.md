@@ -195,7 +195,7 @@ A personal time tracker for research work (OAIP, SPUR, and any user-made categor
 
 **Pages** — internal tabs in a single React component at `/dashboards/time-tracker`:
 
-- **Clock** — clock in/out against a category. While clocked in: live worked-time readout, "Take a break" (a pseudo clock-out for meals/errands that pauses worked time without ending the session), and clock out. Clocking out opens a skippable panel to rate the session just ended — mood, productivity, enjoyment (each 1–5) — plus a notes field. Manage the category list (add / remove) here.
+- **Clock** — clock in/out against a category. While clocked in: live worked-time readout, "Take a break" (a pseudo clock-out for meals/errands that pauses worked time without ending the session), and clock out. Clocking out opens a skippable panel to rate the session just ended — mood, productivity, enjoyment (each 1–5) — plus a notes field and an activity picker (what kind of work it was). Manage the category list (add / remove) here.
 - **Pomodoro** — a focus-interval countdown (default 25 min, adjustable) with browser-notification + WebAudio chime on completion, a tick counter (today / this week / all-time), and a reward-minutes bank. Each interval completed *while clocked in for real* grants an adjustable number of reward minutes; reward minutes accrue to a bank with a play/stop countdown that spends them. The bank can also be manually adjusted (add / subtract minutes, reset to zero) — there is no automatic daily/weekly reset. Two toggles: auto-start the next interval on completion (default on), and auto-run the timer in lockstep with being clocked in — clocking in starts it, clocking out resets it, a break pauses it, ending the break resumes it (default off). Starting a reward-minutes countdown pauses the focus timer.
 
 A **week strip** is pinned under the tab bar on every tab: this week's net worked time (Sunday-start), filterable to a single category or all.
@@ -203,7 +203,7 @@ A **week strip** is pinned under the tab bar on every tab: this week's net worke
 
 **Data model**:
 
-- `Session` — `id` (UUID), `category`, `clock_in` (ISO), `clock_out` (ISO, null while active), `breaks` (`Break[]`), `notes?`, `mood` / `productivity` / `enjoyment` (self-report ratings, 0 = unrated else 1–5), `created_at`, `updated_at`. Net worked time = (clock-out − clock-in) − Σ break durations.
+- `Session` — `id` (UUID), `category`, `clock_in` (ISO), `clock_out` (ISO, null while active), `breaks` (`Break[]`), `notes?`, `mood` / `productivity` / `enjoyment` (self-report ratings, 0 = unrated else 1–5), `activity1` / `activity2` / `activity1Pct` (up to two activity types from a fixed taxonomy with a coupled split — what kind of work the session was; `category` = which project, activity = which mode of work, orthogonal axes), `created_at`, `updated_at`. Net worked time = (clock-out − clock-in) − Σ break durations.
 - `Break` — `start`, `end` (null = currently on break). A pseudo clock-out; excluded from net time.
 - `Pomodoro` — `id`, `completed_at`, `length_min`, `reward_minutes`, `credited`. One row per completed interval; `credited` true only if clocked in (not on break) at completion.
 - `RewardSpend` — `id`, `started_at`, `ended_at`, `minutes`. One row per play→stop of the reward countdown. The reward bank is derived (`Σ credited reward − Σ spent`), never stored as a running total.

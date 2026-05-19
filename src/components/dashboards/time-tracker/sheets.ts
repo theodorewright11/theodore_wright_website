@@ -26,7 +26,8 @@ export const SHEET_TABS = {
 // session, so a sub-tab would be overkill.
 export const HEADERS = {
   sessions: ['id', 'category', 'clock_in', 'clock_out', 'breaks_json', 'notes',
-             'mood', 'productivity', 'enjoyment', 'created_at', 'updated_at'] as const,
+             'mood', 'productivity', 'enjoyment',
+             'activity1', 'activity2', 'activity1_pct', 'created_at', 'updated_at'] as const,
   categories: ['name'] as const,
   pomodoros: ['id', 'completed_at', 'length_min', 'reward_minutes', 'credited'] as const,
   rewardSpends: ['id', 'started_at', 'ended_at', 'minutes'] as const,
@@ -248,6 +249,12 @@ function parseRating(v: string): number {
   return Number.isFinite(n) && n >= 1 && n <= 5 ? n : 0;
 }
 
+// Parse a 0–100 percentage, defaulting to 100.
+function parsePct(v: string): number {
+  const n = parseInt(v, 10);
+  return Number.isFinite(n) && n >= 0 && n <= 100 ? n : 100;
+}
+
 export async function readSessions(token: string, sheetId: string): Promise<Session[]> {
   const rows = await readRange(token, sheetId, `${SHEET_TABS.sessions}!A1:ZZ100000`);
   const objs = rowsToObjects(rows, HEADERS.sessions);
@@ -264,6 +271,9 @@ export async function readSessions(token: string, sheetId: string): Promise<Sess
       mood: parseRating(r.mood),
       productivity: parseRating(r.productivity),
       enjoyment: parseRating(r.enjoyment),
+      activity1: r.activity1 || '',
+      activity2: r.activity2 || '',
+      activity1Pct: parsePct(r.activity1_pct),
       created_at: r.created_at || new Date().toISOString(),
       updated_at: r.updated_at || new Date().toISOString(),
     });
@@ -276,6 +286,7 @@ export async function writeSessions(token: string, sheetId: string, sessions: Se
     s.id, s.category, s.clock_in, s.clock_out ?? '',
     JSON.stringify(s.breaks ?? []), s.notes ?? '',
     s.mood ?? 0, s.productivity ?? 0, s.enjoyment ?? 0,
+    s.activity1 ?? '', s.activity2 ?? '', s.activity1Pct ?? 100,
     s.created_at, s.updated_at,
   ]);
   await replaceTab(token, sheetId, SHEET_TABS.sessions, HEADERS.sessions, rows);

@@ -225,6 +225,7 @@ export default function TimeTrackerDashboard() {
     setSessions([...state.sessions, {
       id: crypto.randomUUID(), category, clock_in: ts, clock_out: null,
       breaks: [], mood: 0, productivity: 0, enjoyment: 0,
+      activity1: '', activity2: '', activity1Pct: 100,
       created_at: ts, updated_at: ts,
     }]);
     if (settings.autoRunWhenClockedIn) pomodoroStart();

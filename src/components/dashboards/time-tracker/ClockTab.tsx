@@ -5,6 +5,7 @@ import {
   fmtClock, fmtHM, fmtTimeOfDay,
 } from './compute';
 import RatingRow from './RatingRow';
+import ActivityPicker from './ActivityPicker';
 
 export const NOTES_PLACEHOLDER =
   "What you did — e.g. “drafted intro, read 2 papers”. Note anything that " +
@@ -206,6 +207,9 @@ function ClockOutRating({ session, onSave, onSkip }: {
   const [productivity, setProductivity] = useState(session.productivity);
   const [enjoyment, setEnjoyment] = useState(session.enjoyment);
   const [notes, setNotes] = useState(session.notes ?? '');
+  const [activity1, setActivity1] = useState(session.activity1);
+  const [activity2, setActivity2] = useState(session.activity2);
+  const [activity1Pct, setActivity1Pct] = useState(session.activity1Pct);
 
   return (
     <div className="rounded-lg border border-accent/40 bg-paper p-6 space-y-4">
@@ -222,6 +226,10 @@ function ClockOutRating({ session, onSave, onSkip }: {
         <RatingRow label="Productivity" value={productivity} onChange={setProductivity} />
         <RatingRow label="Enjoyment" value={enjoyment} onChange={setEnjoyment} />
       </div>
+      <ActivityPicker
+        activity1={activity1} activity2={activity2} activity1Pct={activity1Pct}
+        onChange={(a1, a2, pct) => { setActivity1(a1); setActivity2(a2); setActivity1Pct(pct); }}
+      />
       <label className="block">
         <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-muted">Notes</span>
         <textarea
@@ -237,6 +245,7 @@ function ClockOutRating({ session, onSave, onSkip }: {
           className={btnAccent}
           onClick={() => onSave({
             ...session, mood, productivity, enjoyment,
+            activity1, activity2, activity1Pct,
             notes: notes.trim() || undefined,
             updated_at: new Date().toISOString(),
           })}>

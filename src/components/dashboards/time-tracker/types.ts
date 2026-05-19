@@ -18,11 +18,23 @@ export type Session = {
   mood: number;
   productivity: number;
   enjoyment: number;
+  // What kind of work the session was: up to two activity types. activity1Pct
+  // is the primary's share (0–100); the secondary gets the remainder. Empty
+  // strings = unset.
+  activity1: string;
+  activity2: string;
+  activity1Pct: number;
   created_at: string;
   updated_at: string;
 };
 
 export const RATING_KEYS = ['mood', 'productivity', 'enjoyment'] as const;
+
+// Fixed activity taxonomy — kept stable on purpose so cross-tabs stay
+// comparable over time. Edit this list to change the options.
+export const ACTIVITY_TYPES = [
+  'Coding', 'Writing', 'Reading', 'Thinking', 'Meetings', 'Admin', 'Learning', 'Other',
+] as const;
 
 // A completed Pomodoro interval. `credited` is true when the user was clocked
 // in "for real" (active session, not on break) at the moment it finished —
