@@ -136,6 +136,12 @@ export default function ClockTab({
           session={ratingSession}
           onSave={s => { onUpdateSession(s); setRatingId(null); }}
           onSkip={() => setRatingId(null)}
+          onDiscard={() => {
+            if (window.confirm("Discard this session? It won't be saved.")) {
+              onDeleteSession(ratingSession.id);
+              setRatingId(null);
+            }
+          }}
         />
       )}
 
@@ -211,10 +217,11 @@ export default function ClockTab({
 
 // Shown right after clock-out: rate the session that just ended. Skippable —
 // a missed rating just leaves the three values at 0 (unrated).
-function ClockOutRating({ session, onSave, onSkip }: {
+function ClockOutRating({ session, onSave, onSkip, onDiscard }: {
   session: Session;
   onSave: (s: Session) => void;
   onSkip: () => void;
+  onDiscard: () => void;
 }) {
   const [mood, setMood] = useState(session.mood);
   const [productivity, setProductivity] = useState(session.productivity);
@@ -257,7 +264,7 @@ function ClockOutRating({ session, onSave, onSkip }: {
           className="mt-1 block w-full font-serif text-[14px] bg-paper border border-rule
                      rounded-sm px-3 py-2 text-ink focus:border-accent outline-none resize-y" />
       </label>
-      <div className="flex gap-2">
+      <div className="flex gap-2 items-center flex-wrap">
         <button
           className={btnAccent}
           onClick={() => onSave({
@@ -269,6 +276,12 @@ function ClockOutRating({ session, onSave, onSkip }: {
           Save
         </button>
         <button className={btnMuted} onClick={onSkip}>Skip</button>
+        <button
+          className="font-mono text-[10px] uppercase tracking-[0.1em] text-muted
+                     hover:text-accent transition-colors ml-auto"
+          onClick={onDiscard}>
+          discard this session
+        </button>
       </div>
     </div>
   );
