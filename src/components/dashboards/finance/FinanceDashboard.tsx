@@ -116,6 +116,12 @@ export default function FinanceDashboard() {
 
   const pull = useCallback(async () => {
     if (!token || !config) return;
+    // Skip while a write is queued or in flight — local state is the source
+    // of truth during a mutation, so a focus-triggered re-pull would race.
+    const busy =
+      inflight.current.transactions || inflight.current.budgets || inflight.current.incomes ||
+      pending.current.transactions !== null || pending.current.budgets !== null || pending.current.incomes !== null;
+    if (busy) return;
     setSync('syncing');
     try {
       const [txs, bs, is] = await Promise.all([

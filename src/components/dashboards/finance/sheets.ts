@@ -165,8 +165,10 @@ export async function readRange(token: string, sheetId: string, range: string): 
   return r.values ?? [];
 }
 
-// Write all rows starting at A1, after clearing the tab. Header row is the
-// canonical headers; data rows are passed in canonical column order.
+// Write all rows starting at A1; clear any rows past the new data. Order is
+// write-then-clear (not clear-then-write) so the sheet is never momentarily
+// empty during a transition — a concurrent pull (e.g. on window focus during
+// a delete) would otherwise read zero rows and wipe local state.
 export async function replaceTab(
   token: string,
   sheetId: string,
@@ -174,14 +176,15 @@ export async function replaceTab(
   headers: readonly string[],
   rows: (string | number)[][],
 ): Promise<void> {
-  const clearRange = `${tab}!A1:ZZ100000`;
-  await api(token, sheetsUrl(sheetId, `/values/${encodeURIComponent(clearRange)}:clear`), { method: 'POST', body: '{}' });
   const values = [headers as readonly string[], ...rows];
   await api(
     token,
     sheetsUrl(sheetId, `/values/${encodeURIComponent(`${tab}!A1`)}?valueInputOption=RAW`),
     { method: 'PUT', body: JSON.stringify({ range: `${tab}!A1`, majorDimension: 'ROWS', values }) },
   );
+  const clearStart = values.length + 1;   // 1-indexed row after the last written row
+  const clearRange = `${tab}!A${clearStart}:ZZ100000`;
+  await api(token, sheetsUrl(sheetId, `/values/${encodeURIComponent(clearRange)}:clear`), { method: 'POST', body: '{}' });
 }
 
 // Map a 2D rows-from-sheet (first row = headers) into objects keyed by header
