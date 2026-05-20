@@ -23,7 +23,7 @@ export default function RatingRow({ label, value, onChange }: {
               onClick={() => onChange(value === n ? 0 : n)}
               aria-label={`${label} ${n}`}
               className={'w-8 h-8 rounded-sm font-mono text-[12px] border transition-colors ' +
-                (value >= n
+                (value === n
                   ? 'border-accent bg-accent text-paper'
                   : 'border-rule text-muted hover:border-accent hover:text-accent')}>
               {n}
