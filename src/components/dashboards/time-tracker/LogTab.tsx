@@ -291,10 +291,15 @@ function SessionForm({
   onSave: (s: Session) => void;
 }) {
   const [category, setCategory] = useState(session?.category ?? categories[0] ?? '');
-  const [clockIn, setClockIn] = useState(
-    isoToLocalInput(session?.clock_in ?? new Date(now).toISOString()));
-  const [clockOut, setClockOut] = useState(
-    session?.clock_out ? isoToLocalInput(session.clock_out) : '');
+  // Split clock-in/out into date + 24h time inputs — the native datetime-local
+  // picker is clunky, and a separate date + `<input type="time" lang="en-GB">`
+  // both reads cleaner and forces 24h.
+  const initIn = isoToLocalInput(session?.clock_in ?? new Date(now).toISOString());
+  const initOut = session?.clock_out ? isoToLocalInput(session.clock_out) : '';
+  const [inDate, setInDate] = useState(initIn.split('T')[0] ?? '');
+  const [inTime, setInTime] = useState(initIn.split('T')[1] ?? '');
+  const [outDate, setOutDate] = useState(initOut.split('T')[0] ?? '');
+  const [outTime, setOutTime] = useState(initOut.split('T')[1] ?? '');
   const [notes, setNotes] = useState(session?.notes ?? '');
   const [mood, setMood] = useState(session?.mood ?? 0);
   const [productivity, setProductivity] = useState(session?.productivity ?? 0);
@@ -309,10 +314,13 @@ function SessionForm({
   const breaks = clearBreaks ? [] : (session?.breaks ?? []);
 
   const submit = () => {
-    const inIso = localInputToIso(clockIn);
-    const outIso = clockOut ? localInputToIso(clockOut) : null;
+    const inIso = (inDate && inTime) ? localInputToIso(`${inDate}T${inTime}`) : '';
+    const outIso = (outDate && outTime) ? localInputToIso(`${outDate}T${outTime}`) : null;
     if (!category) { setErr('Pick a category.'); return; }
-    if (!inIso) { setErr('Clock-in time is required.'); return; }
+    if (!inIso) { setErr('Clock-in date and time are required.'); return; }
+    if ((outDate && !outTime) || (!outDate && outTime)) {
+      setErr('Clock-out needs both date and time (or leave both blank for active).'); return;
+    }
     if (outIso && Date.parse(outIso) <= Date.parse(inIso)) {
       setErr('Clock-out must be after clock-in.'); return;
     }
@@ -352,18 +360,28 @@ function SessionForm({
             {categories.map(c => <option key={c} value={c}>{c}</option>)}
           </select>
         </label>
-        <label className="block">
+        <div className="block">
           <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-muted">Clock in</span>
-          <input type="datetime-local" value={clockIn} onChange={e => setClockIn(e.target.value)}
-                 className={'mt-1 block w-full ' + field} />
-        </label>
-        <label className="block">
+          <div className="mt-1 flex gap-2">
+            <input type="date" value={inDate} onChange={e => setInDate(e.target.value)}
+                   className={'flex-1 min-w-0 ' + field} />
+            <input type="time" lang="en-GB" step={60} value={inTime}
+                   onChange={e => setInTime(e.target.value)}
+                   className={'w-28 ' + field} />
+          </div>
+        </div>
+        <div className="block">
           <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-muted">
             Clock out <span className="normal-case tracking-normal">(blank = still active)</span>
           </span>
-          <input type="datetime-local" value={clockOut} onChange={e => setClockOut(e.target.value)}
-                 className={'mt-1 block w-full ' + field} />
-        </label>
+          <div className="mt-1 flex gap-2">
+            <input type="date" value={outDate} onChange={e => setOutDate(e.target.value)}
+                   className={'flex-1 min-w-0 ' + field} />
+            <input type="time" lang="en-GB" step={60} value={outTime}
+                   onChange={e => setOutTime(e.target.value)}
+                   className={'w-28 ' + field} />
+          </div>
+        </div>
       </div>
       <label className="block">
         <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-muted">Notes</span>
