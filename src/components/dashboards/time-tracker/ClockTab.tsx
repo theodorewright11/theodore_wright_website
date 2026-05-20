@@ -20,6 +20,7 @@ type Props = {
   onStartBreak: () => void;
   onEndBreak: () => void;
   onUpdateSession: (s: Session) => void;
+  onDeleteSession: (id: string) => void;
   onAddCategory: (name: string) => void;
   onRemoveCategory: (name: string) => void;
 };
@@ -32,7 +33,7 @@ const btnMuted = 'font-mono text-[12px] uppercase tracking-[0.1em] border border
 
 export default function ClockTab({
   sessions, categories, now,
-  onClockIn, onClockOut, onStartBreak, onEndBreak, onUpdateSession,
+  onClockIn, onClockOut, onStartBreak, onEndBreak, onUpdateSession, onDeleteSession,
   onAddCategory, onRemoveCategory,
 }: Props) {
   const active = activeSession(sessions);
@@ -104,11 +105,23 @@ export default function ClockTab({
               Clock out
             </button>
           </div>
+
+          <button
+            className="font-mono text-[10px] uppercase tracking-[0.1em] text-muted
+                       hover:text-accent transition-colors mt-4"
+            onClick={() => {
+              if (window.confirm("Discard this session? It won't be saved.")) {
+                onDeleteSession(active.id);
+              }
+            }}>
+            discard this session
+          </button>
         </div>
 
         <p className="font-serif text-[13px] text-muted m-0">
           A break is a pseudo clock-out — for a meal or an errand. It pauses worked time
-          without ending the session.
+          without ending the session. Discard removes the session entirely (use it if you
+          clocked in by mistake).
         </p>
       </div>
     );

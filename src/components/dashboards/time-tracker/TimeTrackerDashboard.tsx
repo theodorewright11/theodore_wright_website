@@ -370,7 +370,7 @@ export default function TimeTrackerDashboard() {
             sessions={state.sessions} categories={state.categories} now={now}
             onClockIn={onClockIn} onClockOut={onClockOut}
             onStartBreak={onStartBreak} onEndBreak={onEndBreak}
-            onUpdateSession={onUpdateSession}
+            onUpdateSession={onUpdateSession} onDeleteSession={onDeleteSession}
             onAddCategory={onAddCategory} onRemoveCategory={onRemoveCategory}
           />
         )}
