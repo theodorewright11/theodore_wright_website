@@ -7,6 +7,7 @@ import {
 import { sessionsToCsv, downloadFile } from './storage';
 import RatingRow from './RatingRow';
 import ActivityPicker from './ActivityPicker';
+import TimeStepper from './TimeStepper';
 import { NOTES_PLACEHOLDER } from './ClockTab';
 
 type Props = {
@@ -479,14 +480,10 @@ function SessionForm({
         </label>
         <div className="block">
           <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-muted">Clock in</span>
-          <div className="mt-1 flex gap-2">
+          <div className="mt-1 flex gap-2 flex-wrap items-center">
             <input type="date" value={inDate} onChange={e => setInDate(e.target.value)}
-                   className={'flex-1 min-w-0 ' + field} />
-            <input type="text" inputMode="numeric" value={inTime}
-                   onChange={e => setInTime(e.target.value)}
-                   onBlur={e => { const n = normalizeHHMM(e.target.value); if (n) setInTime(n); }}
-                   placeholder="HH:MM" maxLength={5}
-                   className={'w-20 text-center tabular-nums ' + field} />
+                   className={'flex-1 min-w-[140px] ' + field} />
+            <TimeStepper value={inTime} onChange={setInTime} />
             <button type="button" className={btnTiny}
                     onClick={() => {
                       const [d, t] = isoToLocalInput(new Date().toISOString()).split('T');
@@ -498,14 +495,10 @@ function SessionForm({
           <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-muted">
             Clock out <span className="normal-case tracking-normal">(blank = still active)</span>
           </span>
-          <div className="mt-1 flex gap-2">
+          <div className="mt-1 flex gap-2 flex-wrap items-center">
             <input type="date" value={outDate} onChange={e => setOutDate(e.target.value)}
-                   className={'flex-1 min-w-0 ' + field} />
-            <input type="text" inputMode="numeric" value={outTime}
-                   onChange={e => setOutTime(e.target.value)}
-                   onBlur={e => { const n = normalizeHHMM(e.target.value); if (n) setOutTime(n); }}
-                   placeholder="HH:MM" maxLength={5}
-                   className={'w-20 text-center tabular-nums ' + field} />
+                   className={'flex-1 min-w-[140px] ' + field} />
+            <TimeStepper value={outTime} onChange={setOutTime} />
             <button type="button" className={btnTiny}
                     onClick={() => {
                       const [d, t] = isoToLocalInput(new Date().toISOString()).split('T');
