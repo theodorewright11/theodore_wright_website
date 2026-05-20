@@ -345,12 +345,6 @@ export default function LogTab({
                 <span className="font-display text-[15px] text-ink tabular-nums w-16 shrink-0">
                   {fmtHM(sessionNetMs(s, now))}
                 </span>
-                {(s.mood || s.productivity || s.enjoyment) > 0 && (
-                  <span className="font-mono text-[10px] text-muted shrink-0 tabular-nums"
-                        title="Mood / Productivity / Enjoyment">
-                    M{s.mood || '–'} P{s.productivity || '–'} E{s.enjoyment || '–'}
-                  </span>
-                )}
                 {s.notes && (
                   <span className="font-serif text-[12px] text-muted italic truncate max-w-[200px]"
                         title={s.notes}>{s.notes}</span>
