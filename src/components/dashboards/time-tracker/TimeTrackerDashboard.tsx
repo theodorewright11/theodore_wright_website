@@ -132,6 +132,11 @@ export default function TimeTrackerDashboard() {
   // --- Pull -----------------------------------------------------------------
   const pull = useCallback(async () => {
     if (!token || !config) return;
+    // Don't pull while a write is in flight or queued — local state is the
+    // source of truth during a mutation, and a mid-transition read would
+    // either see stale data or (with the old replaceTab) an empty sheet.
+    const busy = ENTITIES.some(e => inflight.current[e] || pending.current[e] !== null);
+    if (busy) return;
     setSync('syncing');
     try {
       await ensureTabs(token.access_token, config.sheetId);

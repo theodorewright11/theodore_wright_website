@@ -182,14 +182,20 @@ async function replaceTab(
   headers: readonly string[],
   rows: (string | number)[][],
 ): Promise<void> {
-  const clearRange = `${tab}!A1:ZZ100000`;
-  await api(token, sheetsUrl(sheetId, `/values/${encodeURIComponent(clearRange)}:clear`), { method: 'POST', body: '{}' });
   const values = [headers as readonly string[], ...rows];
+  // Write first. With clear-then-write the sheet was briefly empty between
+  // the two calls — a concurrent pull (e.g. on window focus while the
+  // delete-confirm dialog closed) saw zero rows and wiped local state.
+  // Write-then-clear keeps the new data live for the whole transition; the
+  // clear only removes leftover rows past the new data (handles shrinks).
   await api(
     token,
     sheetsUrl(sheetId, `/values/${encodeURIComponent(`${tab}!A1`)}?valueInputOption=RAW`),
     { method: 'PUT', body: JSON.stringify({ range: `${tab}!A1`, majorDimension: 'ROWS', values }) },
   );
+  const clearStart = values.length + 1;     // 1-indexed row after the last written row
+  const clearRange = `${tab}!A${clearStart}:ZZ100000`;
+  await api(token, sheetsUrl(sheetId, `/values/${encodeURIComponent(clearRange)}:clear`), { method: 'POST', body: '{}' });
 }
 
 function rowsToObjects<K extends string>(
