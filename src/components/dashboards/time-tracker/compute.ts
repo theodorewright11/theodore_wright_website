@@ -100,9 +100,17 @@ export type CategoryStat = {
   sessionCount: number;
   sharePct: number;       // % of totalNetMs
   avgSessionMs: number;   // netMs / sessionCount
+  avgPerDayMs: number;    // netMs / calendar days in range
 };
 
-export type DayBucket = { dayKey: string; netMs: number };
+// One day's worked time, plus a per-category breakdown for stacked charts.
+// `byCategory` lists only categories with > 0 time on this day, in the same
+// order as the top-level `byCategory` (largest-total first).
+export type DayBucket = {
+  dayKey: string;
+  netMs: number;
+  byCategory: { category: string; netMs: number }[];
+};
 
 export type RangeStats = {
   totalNetMs: number;
@@ -135,6 +143,7 @@ export function rangeStats(
   let totalNetMs = 0, totalGrossMs = 0, totalBreakMs = 0;
   const cat = new Map<string, { net: number; count: number }>();
   const dayNet = new Map<string, number>();
+  const dayCatNet = new Map<string, number>();   // key = "dayKey|category"
   const nets: number[] = [];
   for (const s of inRange) {
     const net = sessionNetMs(s, now);
@@ -147,7 +156,10 @@ export function rangeStats(
     cat.set(s.category, c);
     const dk = dayKey(ms(s.clock_in));
     dayNet.set(dk, (dayNet.get(dk) ?? 0) + net);
+    const ck = `${dk}|${s.category}`;
+    dayCatNet.set(ck, (dayCatNet.get(ck) ?? 0) + net);
   }
+  const days = dayCount(fromKey, toKey);
   const byCategory: CategoryStat[] = [...cat.entries()]
     .map(([category, v]) => ({
       category,
@@ -155,10 +167,10 @@ export function rangeStats(
       sessionCount: v.count,
       sharePct: totalNetMs > 0 ? (v.net / totalNetMs) * 100 : 0,
       avgSessionMs: v.count > 0 ? v.net / v.count : 0,
+      avgPerDayMs: days > 0 ? v.net / days : 0,
     }))
     .sort((a, b) => b.netMs - a.netMs);
 
-  const days = dayCount(fromKey, toKey);
   const workingDays = dayNet.size;
   const sorted = [...nets].sort((a, b) => a - b);
   const median = sorted.length === 0
@@ -166,8 +178,14 @@ export function rangeStats(
     : sorted.length % 2 === 1
       ? sorted[(sorted.length - 1) / 2]
       : (sorted[sorted.length / 2 - 1] + sorted[sorted.length / 2]) / 2;
-  const perDay: DayBucket[] = daysBetween(fromKey, toKey)
-    .map(dk => ({ dayKey: dk, netMs: dayNet.get(dk) ?? 0 }));
+  const perDay: DayBucket[] = daysBetween(fromKey, toKey).map(dk => {
+    const cats: { category: string; netMs: number }[] = [];
+    for (const c of byCategory) {
+      const m = dayCatNet.get(`${dk}|${c.category}`) ?? 0;
+      if (m > 0) cats.push({ category: c.category, netMs: m });
+    }
+    return { dayKey: dk, netMs: dayNet.get(dk) ?? 0, byCategory: cats };
+  });
 
   return {
     totalNetMs,

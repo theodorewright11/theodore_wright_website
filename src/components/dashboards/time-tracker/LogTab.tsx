@@ -25,8 +25,61 @@ const btnAccent = 'font-mono text-[11px] uppercase tracking-[0.1em] border borde
   'disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-accent';
 const field = 'font-serif text-[14px] bg-paper border border-rule rounded-sm px-2.5 py-2 ' +
   'text-ink focus:border-accent outline-none';
+const btnTiny = 'font-mono text-[10px] uppercase tracking-[0.1em] border border-rule text-ink-soft ' +
+  'hover:border-accent hover:text-accent rounded-sm px-2 py-1.5 transition-colors whitespace-nowrap';
 
 const DAY = 86_400_000;
+
+// Warm palette for the per-day stacked chart and category legend. Indexed by
+// the sorted byCategory position; cycles if there are more categories than
+// colors. On-brand with the V4 paper aesthetic (sienna + warm tans).
+const CATEGORY_PALETTE = [
+  '#8a4a2b', '#c98a6e', '#a87045', '#d4a373',
+  '#6b4423', '#b07757', '#94714e', '#7a7166',
+];
+
+// Pick a nice axis maximum (in hours) and tick values for a chart whose
+// largest bar is `maxMs` milliseconds. Aims for 4–6 ticks at round steps.
+function niceTicks(maxMs: number): { ticks: number[]; max: number } {
+  const hours = maxMs / 3_600_000;
+  if (hours <= 0) return { ticks: [0, 0.5, 1], max: 1 };
+  const steps = [0.25, 0.5, 1, 2, 4, 6, 8, 12];
+  let step = steps[steps.length - 1];
+  for (const s of steps) { if (hours / s <= 5) { step = s; break; } }
+  const max = Math.ceil(hours / step) * step;
+  const ticks: number[] = [];
+  for (let v = 0; v <= max + 1e-9; v += step) ticks.push(Math.round(v * 100) / 100);
+  return { ticks, max };
+}
+
+function tickLabel(h: number): string {
+  if (h === 0) return '0';
+  return Number.isInteger(h) ? `${h}h` : `${h}h`;
+}
+
+// Accept "14:30", "1430", "9:5", "9", etc. Returns canonical "HH:MM" with
+// zero padding, or '' if not a valid 0–23 / 0–59 pair. Used by the form's
+// time inputs (a plain text field, no native picker).
+function normalizeHHMM(s: string): string {
+  const cleaned = s.replace(/[^\d:]/g, '');
+  let hPart: string, mPart: string;
+  if (cleaned.includes(':')) {
+    const [a, b] = cleaned.split(':');
+    hPart = a; mPart = b ?? '';
+  } else if (cleaned.length === 4) {
+    hPart = cleaned.slice(0, 2); mPart = cleaned.slice(2);
+  } else if (cleaned.length === 3) {
+    hPart = cleaned.slice(0, 1); mPart = cleaned.slice(1);
+  } else if (cleaned.length > 0 && cleaned.length <= 2) {
+    hPart = cleaned; mPart = '';
+  } else {
+    return '';
+  }
+  const hh = parseInt(hPart || '0', 10);
+  const mm = mPart === '' ? 0 : parseInt(mPart, 10);
+  if (!Number.isFinite(hh) || !Number.isFinite(mm) || hh < 0 || hh > 23 || mm < 0 || mm > 59) return '';
+  return `${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}`;
+}
 
 type EditState =
   | { mode: 'new' }
@@ -67,6 +120,16 @@ export default function LogTab({
 
   const maxCat = stats.byCategory[0]?.netMs ?? 0;
   const maxDay = Math.max(1, ...stats.perDay.map(d => d.netMs));
+
+  // Stable color per category — shared by the chart segments, the chart
+  // legend, and the by-category breakdown bars.
+  const catIndex = useMemo(() => {
+    const m = new Map<string, number>();
+    stats.byCategory.forEach((c, i) => m.set(c.category, i % CATEGORY_PALETTE.length));
+    return m;
+  }, [stats.byCategory]);
+  const catColor = (c: string) => CATEGORY_PALETTE[catIndex.get(c) ?? 0];
+  const chartScale = niceTicks(maxDay);
 
   return (
     <div className="space-y-7">
@@ -115,7 +178,8 @@ export default function LogTab({
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           <Stat label="Total worked" value={fmtHM(stats.totalNetMs)} />
           <Stat label="Avg / day"
-                value={stats.avgPerDayMs === null ? '—' : fmtHM(stats.avgPerDayMs)} />
+                value={stats.avgPerDayMs === null ? '—' : fmtHM(stats.avgPerDayMs)}
+                sub="total ÷ days in range" />
           <Stat label="Avg / working day"
                 value={stats.avgPerWorkingDayMs === null ? '—' : fmtHM(stats.avgPerWorkingDayMs)}
                 sub={`worked ${stats.workingDays} of ${stats.days} days`} />
@@ -134,21 +198,68 @@ export default function LogTab({
                       (stats.breakSharePct === null ? '' : ` · ${stats.breakSharePct.toFixed(0)}% of clocked time`)} />
         </div>
 
-        {/* Per-day mini chart */}
+        {/* Per-day stacked chart */}
         {stats.perDay.length > 0 && (
           <div className="pt-3 border-t border-rule-soft">
-            <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-muted m-0 mb-2">
-              Worked per day
-            </p>
-            <div className="flex items-end gap-px h-16">
-              {stats.perDay.map(d => (
-                <span key={d.dayKey}
-                      title={`${fmtDateShort(d.dayKey + 'T12:00:00')} · ${fmtHM(d.netMs)}`}
-                      className="flex-1 min-w-[2px] bg-accent/70 rounded-t-sm"
-                      style={{ height: `${Math.max(d.netMs > 0 ? 3 : 0, (d.netMs / maxDay) * 100)}%` }} />
-              ))}
+            <div className="flex items-center justify-between flex-wrap gap-3 mb-2">
+              <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-muted m-0">
+                Worked per day
+              </p>
+              {stats.byCategory.length > 0 && (
+                <div className="flex flex-wrap gap-x-3 gap-y-1">
+                  {stats.byCategory.map(c => (
+                    <span key={c.category}
+                          className="flex items-center gap-1.5 font-mono text-[10px] text-muted">
+                      <span className="inline-block w-2.5 h-2.5 rounded-sm"
+                            style={{ background: catColor(c.category) }} />
+                      {c.category}
+                    </span>
+                  ))}
+                </div>
+              )}
             </div>
-            <div className="flex justify-between mt-1">
+
+            <div className="flex">
+              {/* Y-axis labels (largest at top) */}
+              <div className="w-9 flex flex-col-reverse justify-between items-end pr-1.5 h-32 pb-px">
+                {chartScale.ticks.map(t => (
+                  <span key={t} className="font-mono text-[9px] text-muted leading-none">
+                    {tickLabel(t)}
+                  </span>
+                ))}
+              </div>
+
+              {/* Plot area: grid lines + stacked bars */}
+              <div className="flex-1 relative h-32 border-l border-rule">
+                {/* Horizontal grid lines, evenly spaced */}
+                <div className="absolute inset-0 flex flex-col-reverse justify-between
+                                pointer-events-none">
+                  {chartScale.ticks.map((t, i) => (
+                    <div key={t} className={i === 0 ? 'h-0' : 'border-t border-rule-soft h-0'} />
+                  ))}
+                </div>
+
+                {/* Bars */}
+                <div className="absolute inset-0 flex items-end gap-px">
+                  {stats.perDay.map(d => (
+                    <div key={d.dayKey}
+                         className="flex-1 min-w-[2px] h-full flex flex-col-reverse"
+                         title={`${fmtDateShort(d.dayKey + 'T12:00:00')} · ${fmtHM(d.netMs)}`}>
+                      {d.byCategory.map(c => (
+                        <div key={c.category}
+                             style={{
+                               height: `${(c.netMs / (chartScale.max * 3_600_000)) * 100}%`,
+                               background: catColor(c.category),
+                             }}
+                             title={`${fmtDateShort(d.dayKey + 'T12:00:00')} · ${c.category} · ${fmtHM(c.netMs)}`} />
+                      ))}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="flex justify-between mt-1 pl-9">
               <span className="font-mono text-[9px] text-muted">
                 {fmtDateShort(stats.perDay[0].dayKey + 'T12:00:00')}
               </span>
@@ -170,15 +281,18 @@ export default function LogTab({
                 <div className="flex items-center gap-3">
                   <span className="font-mono text-[11px] text-ink-soft w-28 shrink-0 truncate"
                         title={c.category}>{c.category}</span>
-                  <span className="h-2 bg-accent/70 rounded-sm"
-                        style={{ width: `${maxCat > 0 ? Math.max(2, (c.netMs / maxCat) * 100) : 2}%` }} />
+                  <span className="h-2 rounded-sm"
+                        style={{
+                          width: `${maxCat > 0 ? Math.max(2, (c.netMs / maxCat) * 100) : 2}%`,
+                          background: catColor(c.category),
+                        }} />
                   <span className="font-mono text-[11px] text-ink ml-auto tabular-nums">
                     {fmtHM(c.netMs)}
                   </span>
                 </div>
                 <p className="font-mono text-[10px] text-muted m-0 mt-0.5 ml-[124px]">
                   {c.sessionCount} session{c.sessionCount === 1 ? '' : 's'} ·{' '}
-                  {c.sharePct.toFixed(0)}% · avg {fmtHM(c.avgSessionMs)}
+                  {c.sharePct.toFixed(0)}% · avg/day {fmtHM(c.avgPerDayMs)}
                 </p>
               </div>
             ))}
@@ -314,11 +428,14 @@ function SessionForm({
   const breaks = clearBreaks ? [] : (session?.breaks ?? []);
 
   const submit = () => {
-    const inIso = (inDate && inTime) ? localInputToIso(`${inDate}T${inTime}`) : '';
-    const outIso = (outDate && outTime) ? localInputToIso(`${outDate}T${outTime}`) : null;
+    const niT = normalizeHHMM(inTime);
+    const noT = normalizeHHMM(outTime);
+    const inIso = (inDate && niT) ? localInputToIso(`${inDate}T${niT}`) : '';
+    const outIso = (outDate && noT) ? localInputToIso(`${outDate}T${noT}`) : null;
     if (!category) { setErr('Pick a category.'); return; }
-    if (!inIso) { setErr('Clock-in date and time are required.'); return; }
-    if ((outDate && !outTime) || (!outDate && outTime)) {
+    if (!inIso) { setErr('Clock-in needs a valid date and time (HH:MM).'); return; }
+    const outHalfFilled = (outDate && !noT) || (!outDate && (outTime || noT));
+    if (outHalfFilled) {
       setErr('Clock-out needs both date and time (or leave both blank for active).'); return;
     }
     if (outIso && Date.parse(outIso) <= Date.parse(inIso)) {
@@ -365,9 +482,16 @@ function SessionForm({
           <div className="mt-1 flex gap-2">
             <input type="date" value={inDate} onChange={e => setInDate(e.target.value)}
                    className={'flex-1 min-w-0 ' + field} />
-            <input type="time" lang="en-GB" step={60} value={inTime}
+            <input type="text" inputMode="numeric" value={inTime}
                    onChange={e => setInTime(e.target.value)}
-                   className={'w-28 ' + field} />
+                   onBlur={e => { const n = normalizeHHMM(e.target.value); if (n) setInTime(n); }}
+                   placeholder="HH:MM" maxLength={5}
+                   className={'w-20 text-center tabular-nums ' + field} />
+            <button type="button" className={btnTiny}
+                    onClick={() => {
+                      const [d, t] = isoToLocalInput(new Date().toISOString()).split('T');
+                      setInDate(d); setInTime(t);
+                    }}>Now</button>
           </div>
         </div>
         <div className="block">
@@ -377,9 +501,16 @@ function SessionForm({
           <div className="mt-1 flex gap-2">
             <input type="date" value={outDate} onChange={e => setOutDate(e.target.value)}
                    className={'flex-1 min-w-0 ' + field} />
-            <input type="time" lang="en-GB" step={60} value={outTime}
+            <input type="text" inputMode="numeric" value={outTime}
                    onChange={e => setOutTime(e.target.value)}
-                   className={'w-28 ' + field} />
+                   onBlur={e => { const n = normalizeHHMM(e.target.value); if (n) setOutTime(n); }}
+                   placeholder="HH:MM" maxLength={5}
+                   className={'w-20 text-center tabular-nums ' + field} />
+            <button type="button" className={btnTiny}
+                    onClick={() => {
+                      const [d, t] = isoToLocalInput(new Date().toISOString()).split('T');
+                      setOutDate(d); setOutTime(t);
+                    }}>Now</button>
           </div>
         </div>
       </div>
