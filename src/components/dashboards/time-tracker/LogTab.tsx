@@ -31,12 +31,20 @@ const btnTiny = 'font-mono text-[10px] uppercase tracking-[0.1em] border border-
 
 const DAY = 86_400_000;
 
-// Warm palette for the per-day stacked chart and category legend. Indexed by
-// the sorted byCategory position; cycles if there are more categories than
-// colors. On-brand with the V4 paper aesthetic (sienna + warm tans).
+// Palette for the per-day stacked chart, category legend, and category bars.
+// Indexed by the sorted byCategory position; cycles if there are more
+// categories than colors. Muted earth tones with varied hues so adjacent
+// categories are readable as distinct, while staying coherent with the
+// V4 paper aesthetic (no neon).
 const CATEGORY_PALETTE = [
-  '#8a4a2b', '#c98a6e', '#a87045', '#d4a373',
-  '#6b4423', '#b07757', '#94714e', '#7a7166',
+  '#8a4a2b', // sienna (brand accent)
+  '#2f6e75', // teal
+  '#c08a1f', // mustard
+  '#6b7d3f', // olive
+  '#6e3a52', // plum
+  '#4a5878', // slate blue
+  '#a8552c', // rust
+  '#4a4035', // dark cocoa
 ];
 
 // Pick a nice axis maximum (in hours) and tick values for a chart whose
