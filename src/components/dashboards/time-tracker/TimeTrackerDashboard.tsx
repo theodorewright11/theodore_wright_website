@@ -37,6 +37,46 @@ export type SyncState = 'idle' | 'syncing' | 'error' | 'offline';
 type Entity = 'sessions' | 'categories' | 'pomodoros' | 'rewardSpends';
 const ENTITIES: Entity[] = ['sessions', 'categories', 'pomodoros', 'rewardSpends'];
 
+// --- Offline-edit merge ---------------------------------------------------
+// On the first pull after sign-in, local state may hold edits made while
+// signed out (writes were no-ops then). Union them with the sheet instead of
+// letting the sheet overwrite them, then re-upload the merged superset.
+
+function mergeById<T>(local: T[], remote: T[], id: (x: T) => string, pick?: (r: T, l: T) => T): T[] {
+  const map = new Map<string, T>();
+  for (const r of remote) map.set(id(r), r);
+  for (const l of local) {
+    const k = id(l);
+    const ex = map.get(k);
+    if (!ex) map.set(k, l);
+    else if (pick) map.set(k, pick(ex, l));
+  }
+  return [...map.values()];
+}
+
+function mergeState(local: DataState, remote: DataState): DataState {
+  return {
+    version: 1,
+    // Same id in both: keep whichever session was edited more recently.
+    sessions: mergeById(local.sessions, remote.sessions, s => s.id,
+      (r, l) => Date.parse(l.updated_at) >= Date.parse(r.updated_at) ? l : r),
+    // Pomodoros / reward spends are append-only and immutable — union by id.
+    pomodoros: mergeById(local.pomodoros, remote.pomodoros, p => p.id),
+    rewardSpends: mergeById(local.rewardSpends, remote.rewardSpends, r => r.id),
+    categories: Array.from(new Set([...remote.categories, ...local.categories])),
+  };
+}
+
+// Whether the merge added/changed anything vs the sheet — skip re-upload if not.
+function mergeChanged(merged: DataState, remote: DataState): boolean {
+  if (merged.sessions.length !== remote.sessions.length) return true;
+  if (merged.pomodoros.length !== remote.pomodoros.length) return true;
+  if (merged.rewardSpends.length !== remote.rewardSpends.length) return true;
+  if (merged.categories.length !== remote.categories.length) return true;
+  const r = new Map(remote.sessions.map(s => [s.id, s.updated_at]));
+  return merged.sessions.some(s => r.get(s.id) !== s.updated_at);
+}
+
 export default function TimeTrackerDashboard() {
   const config = useMemo(() => readConfig(), []);
 
@@ -51,6 +91,12 @@ export default function TimeTrackerDashboard() {
   const [sync, setSync] = useState<SyncState>('idle');
   const [lastError, setLastError] = useState<string | undefined>(undefined);
 
+  // Mirror of `state` for use inside pull() without re-creating the callback.
+  const stateRef = useRef(state);
+  useEffect(() => { stateRef.current = state; }, [state]);
+  // True for the first pull after a token is acquired — merge local edits in.
+  const mergePending = useRef(false);
+
   // --- Hydration ------------------------------------------------------------
   useEffect(() => {
     const loaded = loadState();
@@ -59,7 +105,7 @@ export default function TimeTrackerDashboard() {
     setTimers(loadTimers());
     setHydrated(true);
     const stored = loadStoredToken();
-    if (stored) setToken(stored);
+    if (stored) { mergePending.current = true; setToken(stored); }
   }, []);
 
   // localStorage is the offline cache; the sheet is the source of truth when
@@ -146,12 +192,35 @@ export default function TimeTrackerDashboard() {
         readPomodoros(token.access_token, config.sheetId),
         readRewardSpends(token.access_token, config.sheetId),
       ]);
-      if (categories.length === 0) {
-        setState({ version: 1, sessions, categories: DEFAULT_CATEGORIES, pomodoros, rewardSpends });
-        pending.current.categories = DEFAULT_CATEGORIES;
-        drainQueue('categories');
+      const remote: DataState = { version: 1, sessions, categories, pomodoros, rewardSpends };
+
+      // First pull after sign-in: union in any edits made while signed out,
+      // then push the merged result up so the sheet catches up. Later pulls
+      // (window focus) replace, since local is already in sync by then.
+      let next = remote;
+      let uploadEntities: Entity[] = [];
+      if (mergePending.current) {
+        mergePending.current = false;
+        const merged = mergeState(stateRef.current, remote);
+        if (mergeChanged(merged, remote)) {
+          next = merged;
+          uploadEntities = ['sessions', 'categories', 'pomodoros', 'rewardSpends'];
+        }
+      }
+
+      if (next.categories.length === 0) {
+        next = { ...next, categories: DEFAULT_CATEGORIES };
+        if (!uploadEntities.includes('categories')) uploadEntities.push('categories');
+      }
+
+      setState(next);
+      if (uploadEntities.length > 0) {
+        if (uploadEntities.includes('sessions')) pending.current.sessions = next.sessions;
+        if (uploadEntities.includes('pomodoros')) pending.current.pomodoros = next.pomodoros;
+        if (uploadEntities.includes('rewardSpends')) pending.current.rewardSpends = next.rewardSpends;
+        if (uploadEntities.includes('categories')) pending.current.categories = next.categories;
+        uploadEntities.forEach(drainQueue);
       } else {
-        setState({ version: 1, sessions, categories, pomodoros, rewardSpends });
         setSync('idle');
       }
       setLastError(undefined);
@@ -177,6 +246,7 @@ export default function TimeTrackerDashboard() {
     try {
       setSync('syncing');
       const t = await gisSignIn({ clientId: config.clientId, prompt: 'consent' });
+      mergePending.current = true;   // fold any signed-out edits into the sheet
       setToken(t);
     } catch (e) {
       handleSyncError(e);
