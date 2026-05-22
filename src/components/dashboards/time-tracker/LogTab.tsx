@@ -67,10 +67,14 @@ function tickLabel(h: number): string {
   return Number.isInteger(h) ? `${h}h` : `${h}h`;
 }
 
-// Local weekday initial + day-of-month for a YYYY-MM-DD key (x-axis labels).
-function weekdayLetter(key: string): string {
+// Local label parts for a YYYY-MM-DD key (x-axis labels).
+function weekdayAbbr(key: string): string {
   const [y, m, d] = key.split('-').map(Number);
-  return ['S', 'M', 'T', 'W', 'T', 'F', 'S'][new Date(y, m - 1, d).getDay()];
+  return new Date(y, m - 1, d).toLocaleDateString([], { weekday: 'short' });
+}
+function monthAbbr(key: string): string {
+  const [y, m, d] = key.split('-').map(Number);
+  return new Date(y, m - 1, d).toLocaleDateString([], { month: 'short' });
 }
 function dayOfMonth(key: string): number {
   return Number(key.split('-')[2]);
@@ -170,6 +174,7 @@ export default function LogTab({
   const catColor = (c: string) => CATEGORY_PALETTE[catIndex.get(c) ?? 0];
   const chartScale = niceTicks(maxDay);
   const showAllDates = stats.perDay.length <= 31;   // per-bar x labels for ≤ a month
+  const denseDates = stats.perDay.length > 14;      // sideways labels once crowded
 
   return (
     <div className="space-y-7">
@@ -327,18 +332,7 @@ export default function LogTab({
             </div>
 
             {/* X-axis: every day for ≤ a month, otherwise just the endpoints */}
-            {showAllDates ? (
-              <div className="flex pl-9 mt-1 gap-px">
-                {stats.perDay.map(d => (
-                  <div key={d.dayKey} className="flex-1 min-w-[2px] text-center leading-none">
-                    <div className="font-mono text-[8px] text-muted">{weekdayLetter(d.dayKey)}</div>
-                    <div className="font-mono text-[9px] text-ink-soft tabular-nums mt-0.5">
-                      {dayOfMonth(d.dayKey)}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
+            {!showAllDates ? (
               <div className="flex justify-between mt-1 pl-9">
                 <span className="font-mono text-[9px] text-muted">
                   {fmtDateShort(stats.perDay[0].dayKey + 'T12:00:00')}
@@ -346,6 +340,40 @@ export default function LogTab({
                 <span className="font-mono text-[9px] text-muted">
                   {fmtDateShort(stats.perDay[stats.perDay.length - 1].dayKey + 'T12:00:00')}
                 </span>
+              </div>
+            ) : denseDates ? (
+              // Sideways labels once bars get too narrow for stacked text.
+              <div className="flex pl-9 mt-1 gap-px" style={{ height: 62 }}>
+                {stats.perDay.map((d, i, arr) => {
+                  const showMonth = i === 0 || d.dayKey.slice(0, 7) !== arr[i - 1].dayKey.slice(0, 7);
+                  const label = showMonth
+                    ? `${weekdayAbbr(d.dayKey)} ${monthAbbr(d.dayKey)} ${dayOfMonth(d.dayKey)}`
+                    : `${weekdayAbbr(d.dayKey)} ${dayOfMonth(d.dayKey)}`;
+                  return (
+                    <div key={d.dayKey} className="flex-1 min-w-0 flex justify-center">
+                      <span className={'font-mono text-[9px] whitespace-nowrap leading-none ' +
+                                       (showMonth ? 'text-ink-soft' : 'text-muted')}
+                            style={{ writingMode: 'vertical-rl' }}>
+                        {label}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              // Roomy: stacked weekday over month/day.
+              <div className="flex pl-9 mt-1 gap-px">
+                {stats.perDay.map((d, i, arr) => {
+                  const showMonth = i === 0 || d.dayKey.slice(0, 7) !== arr[i - 1].dayKey.slice(0, 7);
+                  return (
+                    <div key={d.dayKey} className="flex-1 min-w-0 text-center leading-none">
+                      <div className="font-mono text-[9px] text-muted truncate">{weekdayAbbr(d.dayKey)}</div>
+                      <div className="font-mono text-[9px] text-ink-soft tabular-nums mt-0.5 truncate">
+                        {showMonth ? `${monthAbbr(d.dayKey)} ${dayOfMonth(d.dayKey)}` : dayOfMonth(d.dayKey)}
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             )}
           </div>
