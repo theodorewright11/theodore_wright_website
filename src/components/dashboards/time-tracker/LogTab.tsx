@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import type { Session } from './types';
+import type { DayBucket } from './compute';
 import {
   rangeStats, sessionNetMs, sessionBreakMs, dayKey, todayKey,
   fmtHM, fmtTimeOfDay, fmtDateShort, isoToLocalInput, localInputToIso,
@@ -66,6 +67,22 @@ function tickLabel(h: number): string {
   return Number.isInteger(h) ? `${h}h` : `${h}h`;
 }
 
+// Local weekday initial + day-of-month for a YYYY-MM-DD key (x-axis labels).
+function weekdayLetter(key: string): string {
+  const [y, m, d] = key.split('-').map(Number);
+  return ['S', 'M', 'T', 'W', 'T', 'F', 'S'][new Date(y, m - 1, d).getDay()];
+}
+function dayOfMonth(key: string): number {
+  return Number(key.split('-')[2]);
+}
+// Compact hours for the per-bar data label: "2.5", "2", "0.8" (unit on y-axis).
+function compactHours(ms: number): string {
+  const h = ms / 3_600_000;
+  if (h <= 0) return '';
+  const r = Math.round(h * 10) / 10;
+  return Number.isInteger(r) ? String(r) : r.toFixed(1);
+}
+
 // Accept "14:30", "1430", "9:5", "9", etc. Returns canonical "HH:MM" with
 // zero padding, or '' if not a valid 0–23 / 0–59 pair. Used by the form's
 // time inputs (a plain text field, no native picker).
@@ -101,6 +118,8 @@ export default function LogTab({
   const [from, setFrom] = useState(() => dayKey(now - 6 * DAY));
   const [to, setTo] = useState(() => todayKey(now));
   const [edit, setEdit] = useState<EditState>(null);
+  const [catFilter, setCatFilter] = useState('all');
+  const [hoverDay, setHoverDay] = useState<number | null>(null);
 
   // Date-range presets. Each resolves against `now` (and `sessions` for "all").
   const presets = useMemo(() => {
@@ -119,13 +138,24 @@ export default function LogTab({
     ];
   }, [now, sessions]);
 
-  const stats = useMemo(() => rangeStats(sessions, from, to, now), [sessions, from, to, now]);
+  // Category filter applies to the stats, chart, and session list (but not
+  // to the preset ranges or the CSV export, which stay whole).
+  const filtered = useMemo(
+    () => (catFilter === 'all' ? sessions : sessions.filter(s => s.category === catFilter)),
+    [sessions, catFilter]);
+  const filterCategories = useMemo(() => {
+    const set = new Set<string>(categories);
+    sessions.forEach(s => set.add(s.category));
+    return [...set];
+  }, [categories, sessions]);
+
+  const stats = useMemo(() => rangeStats(filtered, from, to, now), [filtered, from, to, now]);
 
   const rowsInRange = useMemo(() => {
-    return sessions
+    return filtered
       .filter(s => { const k = dayKey(Date.parse(s.clock_in)); return k >= from && k <= to; })
       .sort((a, b) => Date.parse(b.clock_in) - Date.parse(a.clock_in));
-  }, [sessions, from, to]);
+  }, [filtered, from, to]);
 
   const maxCat = stats.byCategory[0]?.netMs ?? 0;
   const maxDay = Math.max(1, ...stats.perDay.map(d => d.netMs));
@@ -139,6 +169,7 @@ export default function LogTab({
   }, [stats.byCategory]);
   const catColor = (c: string) => CATEGORY_PALETTE[catIndex.get(c) ?? 0];
   const chartScale = niceTicks(maxDay);
+  const showAllDates = stats.perDay.length <= 31;   // per-bar x labels for ≤ a month
 
   return (
     <div className="space-y-7">
@@ -172,6 +203,14 @@ export default function LogTab({
           <input type="date" value={to} min={from} max={todayKey(now)}
                  onChange={e => setTo(e.target.value)}
                  className={'mt-1 block ' + field} />
+        </label>
+        <label className="block">
+          <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-muted">Category</span>
+          <select value={catFilter} onChange={e => setCatFilter(e.target.value)}
+                  className={'mt-1 block ' + field}>
+            <option value="all">All</option>
+            {filterCategories.map(c => <option key={c} value={c}>{c}</option>)}
+          </select>
         </label>
         <div className="flex gap-2 ml-auto">
           <button className={btnMuted} onClick={() => setEdit({ mode: 'new' })}>+ Add session</button>
@@ -238,7 +277,7 @@ export default function LogTab({
                 ))}
               </div>
 
-              {/* Plot area: grid lines + stacked bars */}
+              {/* Plot area: grid lines + stacked bars + data labels + hover tooltip */}
               <div className="flex-1 relative h-32 border-l border-rule">
                 {/* Horizontal grid lines, evenly spaced */}
                 <div className="absolute inset-0 flex flex-col-reverse justify-between
@@ -250,32 +289,65 @@ export default function LogTab({
 
                 {/* Bars */}
                 <div className="absolute inset-0 flex items-end gap-px">
-                  {stats.perDay.map(d => (
-                    <div key={d.dayKey}
-                         className="flex-1 min-w-[2px] h-full flex flex-col-reverse"
-                         title={`${fmtDateShort(d.dayKey + 'T12:00:00')} · ${fmtHM(d.netMs)}`}>
-                      {d.byCategory.map(c => (
-                        <div key={c.category}
-                             style={{
-                               height: `${(c.netMs / (chartScale.max * 3_600_000)) * 100}%`,
-                               background: catColor(c.category),
-                             }}
-                             title={`${fmtDateShort(d.dayKey + 'T12:00:00')} · ${c.category} · ${fmtHM(c.netMs)}`} />
-                      ))}
-                    </div>
-                  ))}
+                  {stats.perDay.map((d, i) => {
+                    const totalPct = (d.netMs / (chartScale.max * 3_600_000)) * 100;
+                    return (
+                      <div key={d.dayKey}
+                           className="flex-1 min-w-[2px] h-full relative"
+                           onMouseEnter={() => setHoverDay(i)}
+                           onMouseLeave={() => setHoverDay(h => (h === i ? null : h))}>
+                        <div className="absolute inset-x-0 inset-y-0 flex flex-col-reverse">
+                          {d.byCategory.map(c => (
+                            <div key={c.category}
+                                 style={{ height: `${(c.netMs / (chartScale.max * 3_600_000)) * 100}%`,
+                                          background: catColor(c.category) }} />
+                          ))}
+                        </div>
+                        {showAllDates && d.netMs > 0 && (
+                          <span className="absolute inset-x-0 text-center font-mono text-[8px]
+                                           text-ink-soft leading-none tabular-nums pointer-events-none"
+                                style={{ bottom: `${totalPct}%`, transform: 'translateY(-3px)' }}>
+                            {compactHours(d.netMs)}
+                          </span>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
+
+                {/* Site-styled hover tooltip (replaces the native title) */}
+                {hoverDay !== null && stats.perDay[hoverDay] && (
+                  <div className="absolute z-10 pointer-events-none"
+                       style={{ left: `${((hoverDay + 0.5) / stats.perDay.length) * 100}%`,
+                                bottom: '100%', transform: 'translateX(-50%)', marginBottom: 6 }}>
+                    <ChartTooltip d={stats.perDay[hoverDay]} catColor={catColor} />
+                  </div>
+                )}
               </div>
             </div>
 
-            <div className="flex justify-between mt-1 pl-9">
-              <span className="font-mono text-[9px] text-muted">
-                {fmtDateShort(stats.perDay[0].dayKey + 'T12:00:00')}
-              </span>
-              <span className="font-mono text-[9px] text-muted">
-                {fmtDateShort(stats.perDay[stats.perDay.length - 1].dayKey + 'T12:00:00')}
-              </span>
-            </div>
+            {/* X-axis: every day for ≤ a month, otherwise just the endpoints */}
+            {showAllDates ? (
+              <div className="flex pl-9 mt-1 gap-px">
+                {stats.perDay.map(d => (
+                  <div key={d.dayKey} className="flex-1 min-w-[2px] text-center leading-none">
+                    <div className="font-mono text-[8px] text-muted">{weekdayLetter(d.dayKey)}</div>
+                    <div className="font-mono text-[9px] text-ink-soft tabular-nums mt-0.5">
+                      {dayOfMonth(d.dayKey)}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="flex justify-between mt-1 pl-9">
+                <span className="font-mono text-[9px] text-muted">
+                  {fmtDateShort(stats.perDay[0].dayKey + 'T12:00:00')}
+                </span>
+                <span className="font-mono text-[9px] text-muted">
+                  {fmtDateShort(stats.perDay[stats.perDay.length - 1].dayKey + 'T12:00:00')}
+                </span>
+              </div>
+            )}
           </div>
         )}
 
@@ -370,6 +442,36 @@ export default function LogTab({
               </div>
             );
           })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ChartTooltip({ d, catColor }: { d: DayBucket; catColor: (c: string) => string }) {
+  const label = new Date(d.dayKey + 'T12:00:00')
+    .toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' });
+  return (
+    <div className="bg-paper border border-rule rounded-sm px-2.5 py-2 whitespace-nowrap"
+         style={{ boxShadow: '0 2px 10px rgba(26,22,20,0.14)' }}>
+      <p className="font-mono text-[10px] uppercase tracking-[0.1em] text-ink m-0 mb-1">{label}</p>
+      {d.byCategory.length === 0 ? (
+        <p className="font-serif text-[11px] text-muted italic m-0">no work logged</p>
+      ) : (
+        d.byCategory.map(c => (
+          <div key={c.category} className="flex items-center justify-between gap-4">
+            <span className="flex items-center gap-1.5 font-mono text-[10px] text-ink-soft">
+              <span className="inline-block w-2 h-2 rounded-sm" style={{ background: catColor(c.category) }} />
+              {c.category}
+            </span>
+            <span className="font-mono text-[10px] text-muted tabular-nums">{fmtHM(c.netMs)}</span>
+          </div>
+        ))
+      )}
+      {d.netMs > 0 && (
+        <div className="flex items-center justify-between gap-4 border-t border-rule-soft mt-1 pt-1">
+          <span className="font-mono text-[10px] text-ink">total</span>
+          <span className="font-mono text-[10px] text-ink tabular-nums">{fmtHM(d.netMs)}</span>
         </div>
       )}
     </div>
