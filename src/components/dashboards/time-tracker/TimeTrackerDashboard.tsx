@@ -20,6 +20,7 @@ import {
   SheetsAuthError,
 } from './sheets';
 import { activeSession, isOnBreak, isClockedInReal } from './compute';
+import { notifyIntervalComplete } from './notify';
 import ClockTab from './ClockTab';
 import PomodoroTab from './PomodoroTab';
 import LogTab from './LogTab';
@@ -378,6 +379,27 @@ export default function TimeTrackerDashboard() {
     });
   }, [push]);
 
+  // Pomodoro interval completion — watched at the dashboard level (not in
+  // PomodoroTab) so the notification, chime, reward credit, and auto-start
+  // fire on any tab, even when the Pomodoro tab isn't open. Guarded by the
+  // endsAt value so each interval fires exactly once.
+  const pomodoroFiredFor = useRef<number | null>(null);
+  useEffect(() => {
+    const endsAt = timers.pomodoroEndsAt;
+    if (endsAt === null) return;
+    if (now >= endsAt && pomodoroFiredFor.current !== endsAt) {
+      pomodoroFiredFor.current = endsAt;
+      const credited = isClockedInReal(state.sessions);
+      onCompleteInterval(credited, credited ? settings.rewardPerInterval : 0, settings.intervalMin);
+      notifyIntervalComplete(credited, settings.rewardPerInterval);
+      setTimers(t => ({
+        ...t,
+        pomodoroEndsAt: settings.autoStart ? now + settings.intervalMin * 60_000 : null,
+        pomodoroRemainingSec: null,
+      }));
+    }
+  }, [now, timers.pomodoroEndsAt, state.sessions, settings, onCompleteInterval]);
+
   const resetAll = () => {
     if (!window.confirm('Erase all local time-tracking data? This cannot be undone.')) return;
     clearState();
@@ -451,7 +473,6 @@ export default function TimeTrackerDashboard() {
             timers={timers} onChangeTimers={setTimers}
             pomodoros={state.pomodoros} rewardSpends={state.rewardSpends}
             clockedInReal={isClockedInReal(state.sessions)}
-            onCompleteInterval={onCompleteInterval}
             onRewardSpend={onRewardSpend}
           />
         )}

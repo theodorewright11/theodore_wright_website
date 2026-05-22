@@ -1,6 +1,7 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { Settings, Timers, Pomodoro, RewardSpend } from './types';
 import { fmtClock, rewardBankMin, ticksOn, ticksBetween, todayKey, dayKey } from './compute';
+import { chime } from './notify';
 
 type Props = {
   now: number;
@@ -11,36 +12,8 @@ type Props = {
   pomodoros: Pomodoro[];
   rewardSpends: RewardSpend[];
   clockedInReal: boolean;
-  onCompleteInterval: (credited: boolean, rewardMin: number, lengthMin: number) => void;
   onRewardSpend: (startedAt: string, endedAt: string, minutes: number) => void;
 };
-
-// Two-tone chime via WebAudio — no asset file. The AudioContext is created
-// lazily on the first user gesture (Start), so the browser allows playback.
-let audioCtx: AudioContext | null = null;
-function chime() {
-  try {
-    const Ctor = window.AudioContext || (window as any).webkitAudioContext;
-    audioCtx = audioCtx || new Ctor();
-    const ctx = audioCtx;
-    if (ctx.state === 'suspended') ctx.resume();
-    const t0 = ctx.currentTime;
-    const tone = (freq: number, start: number) => {
-      const o = ctx.createOscillator();
-      const g = ctx.createGain();
-      o.connect(g); g.connect(ctx.destination);
-      o.type = 'sine';
-      o.frequency.value = freq;
-      g.gain.setValueAtTime(0.0001, t0 + start);
-      g.gain.exponentialRampToValueAtTime(0.3, t0 + start + 0.02);
-      g.gain.exponentialRampToValueAtTime(0.0001, t0 + start + 0.55);
-      o.start(t0 + start);
-      o.stop(t0 + start + 0.6);
-    };
-    tone(880, 0);
-    tone(1175, 0.28);
-  } catch { /* audio unavailable — notification still fires */ }
-}
 
 const btnAccent = 'font-mono text-[12px] uppercase tracking-[0.1em] border border-accent text-accent ' +
   'hover:bg-accent hover:text-paper rounded-sm px-4 py-2.5 transition-colors disabled:opacity-40 ' +
@@ -54,7 +27,7 @@ const btnSmall = 'font-mono text-[10px] uppercase tracking-[0.1em] border border
 
 export default function PomodoroTab({
   now, settings, onChangeSettings, timers, onChangeTimers,
-  pomodoros, rewardSpends, clockedInReal, onCompleteInterval, onRewardSpend,
+  pomodoros, rewardSpends, clockedInReal, onRewardSpend,
 }: Props) {
   const intervalMs = settings.intervalMin * 60_000;
 
@@ -67,46 +40,21 @@ export default function PomodoroTab({
       ? timers.pomodoroRemainingSec! * 1000
       : intervalMs;
 
-  // Completion: fire exactly once per interval (guarded by the endsAt value).
-  const firedFor = useRef<number | null>(null);
-  useEffect(() => {
-    if (!running || timers.pomodoroEndsAt === null) return;
-    const endsAt = timers.pomodoroEndsAt;
-    if (now >= endsAt && firedFor.current !== endsAt) {
-      firedFor.current = endsAt;
-      const credited = clockedInReal;
-      onCompleteInterval(credited, credited ? settings.rewardPerInterval : 0, settings.intervalMin);
-      if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
-        new Notification('Pomodoro complete', {
-          body: credited
-            ? `+${settings.rewardPerInterval} reward minutes earned.`
-            : `Interval done. (Not clocked in — no reward minutes.)`,
-        });
-      }
-      chime();
-      // Auto-start chains the next interval from the completion instant;
-      // using `now` (not endsAt) avoids a burst if the tab was asleep.
-      onChangeTimers({
-        ...timers,
-        pomodoroEndsAt: settings.autoStart ? now + settings.intervalMin * 60_000 : null,
-        pomodoroRemainingSec: null,
-      });
-    }
-  }, [now, running, timers, clockedInReal, settings, onCompleteInterval, onChangeTimers]);
+  // Interval completion (notification + chime + reward credit + auto-start)
+  // is detected by the dashboard, which stays mounted on every tab — so it
+  // fires even when this tab isn't open. See TimeTrackerDashboard.
 
   const start = () => {
     if (typeof Notification !== 'undefined' && Notification.permission === 'default') {
       Notification.requestPermission().catch(() => {});
     }
     chime(); // unlocks AudioContext on this user gesture, then stays silent-capable
-    firedFor.current = null;
     onChangeTimers({ ...timers, pomodoroEndsAt: now + remainingMs, pomodoroRemainingSec: null });
   };
   const pause = () => {
     onChangeTimers({ ...timers, pomodoroEndsAt: null, pomodoroRemainingSec: Math.round(remainingMs / 1000) });
   };
   const reset = () => {
-    firedFor.current = null;
     onChangeTimers({ ...timers, pomodoroEndsAt: null, pomodoroRemainingSec: null });
   };
 
