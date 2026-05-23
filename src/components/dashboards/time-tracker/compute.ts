@@ -92,6 +92,44 @@ export function daysBetween(fromKey: string, toKey: string): string[] {
   return out;
 }
 
+// Split a session's net time across the local calendar days it spans, so a
+// cross-midnight clock-in (e.g. Friday 11pm → Saturday 2am) contributes to
+// both days proportionally. Returns a map of dayKey → ms of net time.
+// "Net" = gross overlap with the day, minus any break overlap with the day.
+function startOfLocalDay(epoch: number): number {
+  const d = new Date(epoch);
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+}
+function startOfNextLocalDay(epoch: number): number {
+  const d = new Date(epoch);
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1).getTime();
+}
+
+export function sessionDayContributions(s: Session, now: number): Map<string, number> {
+  const out = new Map<string, number>();
+  const inStart = ms(s.clock_in);
+  const inEnd = s.clock_out ? ms(s.clock_out) : now;
+  if (inEnd <= inStart) return out;
+  let cursor = startOfLocalDay(inStart);
+  // Guard against pathological dates; ~3 years of daily iterations max.
+  for (let iters = 0; cursor < inEnd && iters < 1200; iters++) {
+    const dayStart = cursor;
+    const dayEnd = startOfNextLocalDay(cursor);
+    const grossOverlap = Math.max(0, Math.min(inEnd, dayEnd) - Math.max(inStart, dayStart));
+    let breakOverlap = 0;
+    for (const b of s.breaks) {
+      const bStart = ms(b.start);
+      const bEnd = b.end ? ms(b.end) : now;
+      if (bEnd <= bStart) continue;
+      breakOverlap += Math.max(0, Math.min(bEnd, dayEnd) - Math.max(bStart, dayStart));
+    }
+    const net = Math.max(0, grossOverlap - breakOverlap);
+    if (net > 0) out.set(dayKey(dayStart), net);
+    cursor = dayEnd;
+  }
+  return out;
+}
+
 // --- Range statistics -----------------------------------------------------
 
 export type CategoryStat = {
@@ -129,7 +167,11 @@ export type RangeStats = {
   perDay: DayBucket[];                // one bucket per calendar day in range
 };
 
-// Sessions are bucketed by the local calendar day of their clock-in.
+// Sessions whose clock-in *or any spanned day* falls within the range count.
+// Per-day totals (chart + workingDays) split a cross-midnight session across
+// the days it actually covers — so a Friday 11pm → Saturday 2am clock-in
+// puts an hour on Friday and two on Saturday rather than dumping it all on
+// the clock-in day.
 export function rangeStats(
   sessions: Session[],
   fromKey: string,
@@ -137,8 +179,9 @@ export function rangeStats(
   now: number,
 ): RangeStats {
   const inRange = sessions.filter(s => {
-    const k = dayKey(ms(s.clock_in));
-    return k >= fromKey && k <= toKey;
+    const inDay = dayKey(ms(s.clock_in));
+    const outDay = dayKey(s.clock_out ? ms(s.clock_out) : now);
+    return outDay >= fromKey && inDay <= toKey;
   });
   let totalNetMs = 0, totalGrossMs = 0, totalBreakMs = 0;
   const cat = new Map<string, { net: number; count: number }>();
@@ -154,10 +197,13 @@ export function rangeStats(
     const c = cat.get(s.category) ?? { net: 0, count: 0 };
     c.net += net; c.count += 1;
     cat.set(s.category, c);
-    const dk = dayKey(ms(s.clock_in));
-    dayNet.set(dk, (dayNet.get(dk) ?? 0) + net);
-    const ck = `${dk}|${s.category}`;
-    dayCatNet.set(ck, (dayCatNet.get(ck) ?? 0) + net);
+    // Per-day buckets split across local midnights; clipped to the visible range.
+    for (const [dk, msInDay] of sessionDayContributions(s, now)) {
+      if (dk < fromKey || dk > toKey) continue;
+      dayNet.set(dk, (dayNet.get(dk) ?? 0) + msInDay);
+      const ck = `${dk}|${s.category}`;
+      dayCatNet.set(ck, (dayCatNet.get(ck) ?? 0) + msInDay);
+    }
   }
   const days = dayCount(fromKey, toKey);
   const byCategory: CategoryStat[] = [...cat.entries()]
