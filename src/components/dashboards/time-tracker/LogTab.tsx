@@ -9,7 +9,8 @@ import { sessionsToCsv, downloadFile } from './storage';
 import RatingRow from './RatingRow';
 import ActivityPicker from './ActivityPicker';
 import TimeStepper from './TimeStepper';
-import { NOTES_PLACEHOLDER } from './ClockTab';
+import { NOTES_PLACEHOLDER, SegmentList } from './ClockTab';
+import type { Break, Lap } from './types';
 
 type Props = {
   sessions: Session[];
@@ -545,10 +546,10 @@ function SessionForm({
   const [activity2, setActivity2] = useState(session?.activity2 ?? '');
   const [activity1Pct, setActivity1Pct] = useState(session?.activity1Pct ?? 100);
   const [activity2Pct, setActivity2Pct] = useState(session?.activity2Pct ?? 50);
-  const [clearBreaks, setClearBreaks] = useState(false);
+  // Editable breaks + laps in form-local state; saved together via onSave.
+  const [breaks, setBreaks] = useState<Break[]>(session?.breaks ?? []);
+  const [laps, setLaps] = useState<Lap[]>(session?.laps ?? []);
   const [err, setErr] = useState('');
-
-  const breaks = clearBreaks ? [] : (session?.breaks ?? []);
 
   const submit = () => {
     const niT = normalizeHHMM(inTime);
@@ -571,6 +572,7 @@ function SessionForm({
       clock_in: inIso,
       clock_out: outIso,
       breaks,
+      laps,
       notes: notes.trim() || undefined,
       mood,
       productivity,
@@ -647,12 +649,25 @@ function SessionForm({
           setActivity1(a1); setActivity2(a2); setActivity1Pct(p1); setActivity2Pct(p2);
         }}
       />
-      {session && session.breaks.length > 0 && (
-        <label className="flex items-center gap-2 font-serif text-[13px] text-ink-soft">
-          <input type="checkbox" checked={clearBreaks}
-                 onChange={e => setClearBreaks(e.target.checked)} />
-          Clear {session.breaks.length} break{session.breaks.length === 1 ? '' : 's'} on this session
-        </label>
+      {laps.length > 0 && (
+        <SegmentList
+          title={`Laps (${laps.length})`}
+          items={laps.map(l => ({ id: l.id, start: l.start, end: l.end as string | null, notes: l.notes ?? '' }))}
+          now={now}
+          onChangeNotes={(id, notesV) =>
+            setLaps(prev => prev.map(l => l.id === id ? { ...l, notes: notesV || undefined } : l))}
+          onDelete={id => setLaps(prev => prev.filter(l => l.id !== id))}
+        />
+      )}
+      {breaks.length > 0 && (
+        <SegmentList
+          title={`Breaks (${breaks.length})`}
+          items={breaks.map(b => ({ id: b.id, start: b.start, end: b.end, notes: b.notes ?? '' }))}
+          now={now}
+          onChangeNotes={(id, notesV) =>
+            setBreaks(prev => prev.map(b => b.id === id ? { ...b, notes: notesV || undefined } : b))}
+          onDelete={id => setBreaks(prev => prev.filter(b => b.id !== id))}
+        />
       )}
       {err && <p className="font-serif text-[13px] text-accent m-0">{err}</p>}
       <div className="flex gap-2">

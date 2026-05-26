@@ -3,8 +3,21 @@
 // "still open right now".
 
 export type Break = {
+  id: string;
   start: string;        // ISO datetime
   end: string | null;   // null = currently on this break
+  notes?: string;
+};
+
+// A stopwatch-style lap: a marked segment within a clock-in session, from
+// the previous lap's end (or the clock-in time, for the first lap) to the
+// moment the Lap button was pressed. Optional notes for what was done in
+// that segment. Doesn't affect net worked time — it's just a marker.
+export type Lap = {
+  id: string;
+  start: string;
+  end: string;
+  notes?: string;
 };
 
 export type Session = {
@@ -13,6 +26,7 @@ export type Session = {
   clock_in: string;          // ISO datetime
   clock_out: string | null;  // null = still clocked in
   breaks: Break[];           // pseudo clock-outs (meals etc.); excluded from net time
+  laps: Lap[];               // marker segments within the session; don't affect net time
   notes?: string;
   // Self-report ratings, prompted (skippably) at clock-out. 0 = unrated, else 1–5.
   mood: number;

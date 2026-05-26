@@ -26,7 +26,18 @@ export function loadState(): DataState {
       // fields, so default them rather than letting `undefined` leak through.
       sessions: (Array.isArray(p.sessions) ? p.sessions : []).map((s: any): Session => ({
         ...s,
-        breaks: Array.isArray(s?.breaks) ? s.breaks : [],
+        breaks: (Array.isArray(s?.breaks) ? s.breaks : []).map((b: any) => ({
+          id: typeof b?.id === 'string' && b.id ? b.id : crypto.randomUUID(),
+          start: b?.start,
+          end: typeof b?.end === 'string' ? b.end : null,
+          notes: typeof b?.notes === 'string' && b.notes ? b.notes : undefined,
+        })),
+        laps: (Array.isArray(s?.laps) ? s.laps : []).map((l: any) => ({
+          id: typeof l?.id === 'string' && l.id ? l.id : crypto.randomUUID(),
+          start: l?.start,
+          end: l?.end,
+          notes: typeof l?.notes === 'string' && l.notes ? l.notes : undefined,
+        })),
         mood: Number.isFinite(s?.mood) ? s.mood : 0,
         productivity: Number.isFinite(s?.productivity) ? s.productivity : 0,
         enjoyment: Number.isFinite(s?.enjoyment) ? s.enjoyment : 0,
@@ -110,8 +121,9 @@ function csvEscape(v: unknown): string {
 }
 
 const SESSION_CSV_HEADERS = [
-  'id', 'category', 'clock_in', 'clock_out', 'break_count', 'breaks_json', 'notes',
-  'mood', 'productivity', 'enjoyment',
+  'id', 'category', 'clock_in', 'clock_out',
+  'break_count', 'breaks_json', 'lap_count', 'laps_json',
+  'notes', 'mood', 'productivity', 'enjoyment',
   'activity1', 'activity2', 'activity1_pct', 'activity2_pct',
 ];
 
@@ -119,8 +131,8 @@ export function sessionsToCsv(sessions: Session[]): string {
   const head = SESSION_CSV_HEADERS.join(',');
   const body = sessions.map(s => [
     s.id, s.category, s.clock_in, s.clock_out ?? '',
-    s.breaks.length, JSON.stringify(s.breaks), s.notes ?? '',
-    s.mood ?? 0, s.productivity ?? 0, s.enjoyment ?? 0,
+    s.breaks.length, JSON.stringify(s.breaks), s.laps.length, JSON.stringify(s.laps),
+    s.notes ?? '', s.mood ?? 0, s.productivity ?? 0, s.enjoyment ?? 0,
     s.activity1 ?? '', s.activity2 ?? '', s.activity1Pct ?? 100, s.activity2Pct ?? 50,
   ].map(csvEscape).join(',')).join('\n');
   return body ? head + '\n' + body + '\n' : head + '\n';

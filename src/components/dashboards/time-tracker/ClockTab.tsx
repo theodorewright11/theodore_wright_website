@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { Session } from './types';
+import type { Session, Lap, Break } from './types';
 import {
   activeSession, isOnBreak, sessionNetMs, sessionGrossMs, sessionBreakMs, breakMs,
   fmtClock, fmtHM, fmtTimeOfDay,
@@ -19,6 +19,11 @@ type Props = {
   onClockOut: () => void;
   onStartBreak: () => void;
   onEndBreak: () => void;
+  onAddLap: () => void;
+  onUpdateLap: (sessionId: string, lapId: string, patch: Partial<Lap>) => void;
+  onDeleteLap: (sessionId: string, lapId: string) => void;
+  onUpdateBreak: (sessionId: string, breakId: string, patch: Partial<Break>) => void;
+  onDeleteBreak: (sessionId: string, breakId: string) => void;
   onUpdateSession: (s: Session) => void;
   onDeleteSession: (id: string) => void;
   onAddCategory: (name: string) => void;
@@ -33,7 +38,9 @@ const btnMuted = 'font-mono text-[12px] uppercase tracking-[0.1em] border border
 
 export default function ClockTab({
   sessions, categories, now,
-  onClockIn, onClockOut, onStartBreak, onEndBreak, onUpdateSession, onDeleteSession,
+  onClockIn, onClockOut, onStartBreak, onEndBreak,
+  onAddLap, onUpdateLap, onDeleteLap, onUpdateBreak, onDeleteBreak,
+  onUpdateSession, onDeleteSession,
   onAddCategory, onRemoveCategory,
 }: Props) {
   const active = activeSession(sessions);
@@ -98,7 +105,10 @@ export default function ClockTab({
             {onBreak ? (
               <button className={btnAccent} onClick={onEndBreak}>End break</button>
             ) : (
-              <button className={btnMuted} onClick={onStartBreak}>Take a break</button>
+              <>
+                <button className={btnMuted} onClick={onStartBreak}>Take a break</button>
+                <button className={btnMuted} onClick={onAddLap}>Lap</button>
+              </>
             )}
             <button className={btnAccent}
                     onClick={() => { setRatingId(active.id); onClockOut(); }}>
@@ -119,10 +129,39 @@ export default function ClockTab({
         </div>
 
         <p className="font-serif text-[13px] text-muted m-0">
-          A break is a pseudo clock-out — for a meal or an errand. It pauses worked time
-          without ending the session. Discard removes the session entirely (use it if you
-          clocked in by mistake).
+          Take a break is a pseudo clock-out — for a meal or an errand. It pauses worked
+          time without ending the session. Lap marks the end of one segment within the
+          session for tracking what you did; it doesn't change the time accounting. Discard
+          removes the session entirely (use it if you clocked in by mistake).
         </p>
+
+        {active.laps.length > 0 && (
+          <SegmentList
+            title={`Laps (${active.laps.length})`}
+            items={active.laps.map(l => ({
+              id: l.id, start: l.start, end: l.end as string | null, notes: l.notes ?? '',
+            }))}
+            now={now}
+            onChangeNotes={(id, notes) => onUpdateLap(active.id, id, { notes: notes || undefined })}
+            onDelete={id => onDeleteLap(active.id, id)}
+          />
+        )}
+
+        {active.breaks.length > 0 && (
+          <SegmentList
+            title={`Breaks (${active.breaks.length})`}
+            items={active.breaks.map(b => ({
+              id: b.id, start: b.start, end: b.end, notes: b.notes ?? '',
+            }))}
+            now={now}
+            onChangeNotes={(id, notes) => onUpdateBreak(active.id, id, { notes: notes || undefined })}
+            onDelete={id => {
+              if (window.confirm('Delete this break? Its time will become worked time again.')) {
+                onDeleteBreak(active.id, id);
+              }
+            }}
+          />
+        )}
       </div>
     );
   }
@@ -282,6 +321,59 @@ function ClockOutRating({ session, onSave, onSkip, onDiscard }: {
           onClick={onDiscard}>
           discard this session
         </button>
+      </div>
+    </div>
+  );
+}
+
+// Compact list of laps or breaks: duration, time range, inline notes input,
+// delete button. Items with `end: null` (an active break) render as "ongoing"
+// and hide the delete control. Notes save on every keystroke via the lifted
+// onChangeNotes — the sheet sync queue coalesces bursts into one write.
+export function SegmentList({ title, items, now, onChangeNotes, onDelete }: {
+  title: string;
+  items: { id: string; start: string; end: string | null; notes: string }[];
+  now: number;
+  onChangeNotes: (id: string, notes: string) => void;
+  onDelete: (id: string) => void;
+}) {
+  return (
+    <div className="rounded-lg border border-rule bg-paper p-5">
+      <p className="font-mono text-[11px] uppercase tracking-[0.12em] text-muted m-0 mb-2">
+        {title}
+      </p>
+      <div>
+        {items.map((it, i) => {
+          const startMs = Date.parse(it.start);
+          const endMs = it.end ? Date.parse(it.end) : now;
+          const durMs = Math.max(0, endMs - startMs);
+          const ongoing = it.end === null;
+          return (
+            <div key={it.id}
+                 className="flex items-center gap-3 py-2 flex-wrap border-b border-rule-soft last:border-b-0">
+              <span className="font-mono text-[10px] text-muted w-6 shrink-0">#{i + 1}</span>
+              <span className="font-mono text-[11px] text-ink-soft tabular-nums w-14 shrink-0">
+                {fmtHM(durMs)}
+              </span>
+              <span className="font-mono text-[10px] text-muted w-32 shrink-0">
+                {fmtTimeOfDay(it.start)} – {ongoing
+                  ? <em className="not-italic text-accent">ongoing</em>
+                  : fmtTimeOfDay(it.end!)}
+              </span>
+              <input type="text" placeholder="notes" value={it.notes}
+                     onChange={e => onChangeNotes(it.id, e.target.value)}
+                     className="flex-1 min-w-[140px] font-serif text-[13px] bg-paper-edge/40
+                                border border-transparent hover:border-rule focus:border-accent
+                                outline-none rounded-sm px-2 py-1" />
+              {!ongoing && (
+                <button onClick={() => onDelete(it.id)}
+                        className="font-mono text-[16px] leading-none text-muted
+                                   hover:text-accent transition-colors px-1.5"
+                        title="Delete">×</button>
+              )}
+            </div>
+          );
+        })}
       </div>
     </div>
   );

@@ -7,7 +7,7 @@
 // creates any missing tabs on a fresh sheet, so first-time setup only needs an
 // empty spreadsheet, not hand-made tabs.
 
-import type { Session, Pomodoro, RewardSpend, Break } from './types';
+import type { Session, Pomodoro, RewardSpend, Break, Lap } from './types';
 
 const GIS_SRC = 'https://accounts.google.com/gsi/client';
 const SCOPE = 'https://www.googleapis.com/auth/spreadsheets email profile';
@@ -25,7 +25,7 @@ export const SHEET_TABS = {
 // session — breaks are a small 1-to-many list always loaded with their
 // session, so a sub-tab would be overkill.
 export const HEADERS = {
-  sessions: ['id', 'category', 'clock_in', 'clock_out', 'breaks_json', 'notes',
+  sessions: ['id', 'category', 'clock_in', 'clock_out', 'breaks_json', 'laps_json', 'notes',
              'mood', 'productivity', 'enjoyment',
              'activity1', 'activity2', 'activity1_pct', 'activity2_pct',
              'created_at', 'updated_at'] as const,
@@ -244,7 +244,31 @@ function parseBreaks(json: string): Break[] {
     if (!Array.isArray(arr)) return [];
     return arr
       .filter(b => b && typeof b.start === 'string')
-      .map(b => ({ start: b.start, end: typeof b.end === 'string' ? b.end : null }));
+      .map(b => ({
+        // Backfill an id for legacy break rows that predate the field.
+        id: typeof b.id === 'string' && b.id ? b.id : crypto.randomUUID(),
+        start: b.start,
+        end: typeof b.end === 'string' ? b.end : null,
+        notes: typeof b.notes === 'string' && b.notes ? b.notes : undefined,
+      }));
+  } catch {
+    return [];
+  }
+}
+
+function parseLaps(json: string): Lap[] {
+  if (!json.trim()) return [];
+  try {
+    const arr = JSON.parse(json);
+    if (!Array.isArray(arr)) return [];
+    return arr
+      .filter(l => l && typeof l.start === 'string' && typeof l.end === 'string')
+      .map(l => ({
+        id: typeof l.id === 'string' && l.id ? l.id : crypto.randomUUID(),
+        start: l.start,
+        end: l.end,
+        notes: typeof l.notes === 'string' && l.notes ? l.notes : undefined,
+      }));
   } catch {
     return [];
   }
@@ -274,6 +298,7 @@ export async function readSessions(token: string, sheetId: string): Promise<Sess
       clock_in: r.clock_in,
       clock_out: r.clock_out || null,
       breaks: parseBreaks(r.breaks_json),
+      laps: parseLaps(r.laps_json),
       notes: r.notes || undefined,
       mood: parseRating(r.mood),
       productivity: parseRating(r.productivity),
@@ -292,7 +317,7 @@ export async function readSessions(token: string, sheetId: string): Promise<Sess
 export async function writeSessions(token: string, sheetId: string, sessions: Session[]): Promise<void> {
   const rows = sessions.map(s => [
     s.id, s.category, s.clock_in, s.clock_out ?? '',
-    JSON.stringify(s.breaks ?? []), s.notes ?? '',
+    JSON.stringify(s.breaks ?? []), JSON.stringify(s.laps ?? []), s.notes ?? '',
     s.mood ?? 0, s.productivity ?? 0, s.enjoyment ?? 0,
     s.activity1 ?? '', s.activity2 ?? '', s.activity1Pct ?? 100, s.activity2Pct ?? 50,
     s.created_at, s.updated_at,

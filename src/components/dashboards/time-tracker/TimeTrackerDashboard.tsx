@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   EMPTY_STATE, DEFAULT_CATEGORIES, DEFAULT_SETTINGS, EMPTY_TIMERS,
   type DataState, type Settings, type Timers,
-  type Session, type Pomodoro, type RewardSpend,
+  type Session, type Pomodoro, type RewardSpend, type Lap, type Break,
 } from './types';
 import {
   loadState, saveState, clearState,
@@ -318,7 +318,7 @@ export default function TimeTrackerDashboard() {
     const ts = iso();
     setSessions([...state.sessions, {
       id: crypto.randomUUID(), category, clock_in: ts, clock_out: null,
-      breaks: [], mood: 0, productivity: 0, enjoyment: 0,
+      breaks: [], laps: [], mood: 0, productivity: 0, enjoyment: 0,
       activity1: '', activity2: '', activity1Pct: 100, activity2Pct: 50,
       created_at: ts, updated_at: ts,
     }]);
@@ -341,9 +341,46 @@ export default function TimeTrackerDashboard() {
     const a = activeSession(state.sessions);
     if (!a || isOnBreak(a)) return;
     const ts = iso();
+    const newBreak: Break = { id: crypto.randomUUID(), start: ts, end: null };
     setSessions(state.sessions.map(s =>
-      s.id === a.id ? { ...s, breaks: [...s.breaks, { start: ts, end: null }], updated_at: ts } : s));
+      s.id === a.id ? { ...s, breaks: [...s.breaks, newBreak], updated_at: ts } : s));
     if (settings.autoRunWhenClockedIn) pomodoroPause();
+  };
+
+  // Stopwatch lap on the active session: end of segment = now, start =
+  // previous lap's end (or the clock_in time for the first lap).
+  const onAddLap = () => {
+    const a = activeSession(state.sessions);
+    if (!a || isOnBreak(a)) return;
+    const ts = iso();
+    const lastEnd = a.laps.length > 0 ? a.laps[a.laps.length - 1].end : a.clock_in;
+    const newLap: Lap = { id: crypto.randomUUID(), start: lastEnd, end: ts };
+    setSessions(state.sessions.map(s =>
+      s.id === a.id ? { ...s, laps: [...s.laps, newLap], updated_at: ts } : s));
+  };
+
+  const onUpdateLap = (sessionId: string, lapId: string, patch: Partial<Lap>) => {
+    setSessions(state.sessions.map(s => s.id !== sessionId ? s : {
+      ...s, laps: s.laps.map(l => l.id === lapId ? { ...l, ...patch } : l),
+      updated_at: iso(),
+    }));
+  };
+  const onDeleteLap = (sessionId: string, lapId: string) => {
+    setSessions(state.sessions.map(s => s.id !== sessionId ? s : {
+      ...s, laps: s.laps.filter(l => l.id !== lapId), updated_at: iso(),
+    }));
+  };
+
+  const onUpdateBreak = (sessionId: string, breakId: string, patch: Partial<Break>) => {
+    setSessions(state.sessions.map(s => s.id !== sessionId ? s : {
+      ...s, breaks: s.breaks.map(b => b.id === breakId ? { ...b, ...patch } : b),
+      updated_at: iso(),
+    }));
+  };
+  const onDeleteBreak = (sessionId: string, breakId: string) => {
+    setSessions(state.sessions.map(s => s.id !== sessionId ? s : {
+      ...s, breaks: s.breaks.filter(b => b.id !== breakId), updated_at: iso(),
+    }));
   };
 
   const onEndBreak = () => {
@@ -480,6 +517,9 @@ export default function TimeTrackerDashboard() {
             sessions={state.sessions} categories={state.categories} now={now}
             onClockIn={onClockIn} onClockOut={onClockOut}
             onStartBreak={onStartBreak} onEndBreak={onEndBreak}
+            onAddLap={onAddLap}
+            onUpdateLap={onUpdateLap} onDeleteLap={onDeleteLap}
+            onUpdateBreak={onUpdateBreak} onDeleteBreak={onDeleteBreak}
             onUpdateSession={onUpdateSession} onDeleteSession={onDeleteSession}
             onAddCategory={onAddCategory} onRemoveCategory={onRemoveCategory}
           />
