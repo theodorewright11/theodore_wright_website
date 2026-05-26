@@ -1,0 +1,71 @@
+---
+title: 'Build'
+description: 'A reader''s tool for the AI transition. Pick a life-situation (early-career exposed, mid-career default, self-automator, asymmetric exploiter, displaced expert, heavy companion user) and see the six-channel decomposition in plain language, the structural flags, named risks, and top moves. Plus the six channels demystified, the four motivated-reasoning traps, a ten-year trajectory under three atrophy regimes, the five robust moves, and an eight-bullet take-away. Translates the model formalization and data pipeline into something a non-specialist can use for actual decisions about career, education, relationships, and life architecture.'
+date: 2026-05-26
+status: complete
+refinementPass: 1
+refinementLog:
+  - pass: 1
+    date: '2026-05-26'
+    passes: ['decomposition', 'translation', 'integration']
+    why: 'First draft of the build artifact. The model stage (AITransitionModel) and the data stage (AITransitionData) already serve the technical reader. Neither does what the topic prompt asked for: a structural analysis useful for someone making real decisions about career, education, relationships, and life architecture, with the technical jargon stripped out. This build is that translation layer.'
+    changes:
+      - 'Built AITransitionExplorer.tsx with six views (profiles default + channels + traps + trajectory + moves + take-away).'
+      - 'Profile lookup covers six recognisable life-situations (early-career exposed, mid-career default, self-automator, asymmetric exploiter, displaced expert, heavy companion user). Each computes the six-channel decomposition from the model''s compute() with the same constants as AITransitionModel, then shows structural flags (gate open, ballast covers telic, dose under safe), named risks, top moves, primary sources, and a scope caveat where load-bearing (early-career profile explicitly flags labor-market access as outside the model''s scope).'
+      - 'Channels view: each of the six channels in plain language — what it is, when it helps, when it hurts, what controls it, common misreading, honest reading. Mirrors the topology distortion-vector framing but applied per channel rather than across positions.'
+      - 'Four-traps view: D1 fast-AGI fatalism, D2 slow-camp dismissal, D3 productivity-only optimization, D4 material-blind class bias. Per trap: position, cites correctly, ignores, integrated reading.'
+      - 'Trajectory view: ten-year arc under three λ regimes (calculator-analogue λ = 0, model default λ = 0.06, heavy atrophy λ = 0.15) for any selected profile. Hand-rolled SVG charts for ρ(t) and ΔNet(t); held-fixed-parameter caveat surfaced.'
+      - 'Moves view: S2 diversification, S3 ballast, S4 in-person relationships, S5 dose-limit, S6 effortful practice. Each: what, why, channels affected, best for, doesn''t fix. Explicit footer that S7 (career bet) is NOT in the list because its payoff is timeline-conditional unlike S2–S6.'
+      - 'Take-away: eight bullets calibrated to what the pipeline converges on, footer linking back to topology / model / data / writeup.'
+      - 'All math uses the same constants as AITransitionModel.tsx (ALPHA=0.40, ETA_TRAP=0.30, TAU=0.30, SIGMA=0.06, LAMBDA_M=0.30, D_SAFE=30, PSI_R=0.003, BETA_R=0.001). The six channels compute live from compute(I) rather than being hardcoded.'
+      - 'Updated PRD topic registry from "data (pass 4)" to "writeup (pass 1)"; marked navigating-ai-world as finished now that every stage has status: complete.'
+      - 'Did not duplicate the model dashboard or data findings panel — those remain the technical layer; this build is the lay translation layer. A reader can move into the model dashboard if they want to see what happens when the ten model parameters move continuously.'
+---
+
+import AITransitionExplorer from '../../../components/ai-research/AITransitionExplorer';
+
+## TLDR
+
+The [model stage](/ai-research/navigating-ai-world/model) produced a ten-parameter generating function and a six-channel decomposition of net life-outcome change under the AI transition. The [data stage](/ai-research/navigating-ai-world/data) confronted the model with currently-published evidence and verdicted each of the six fitting targets. Both are useful for someone who already speaks the vocabulary — neither delivers what the topic prompt actually asked for: useful for someone making real decisions about career, education, relationships, and life architecture in a world where AI capability is accelerating.
+
+This build is that translation layer. It picks six recognisable life-situations — early-career and highly AI-exposed, mid-career knowledge worker on the default risk path, the Randazzo self-automator, the asymmetric exploiter, the displaced expert, the heavy companion-app user — and for each shows the six-channel decomposition in plain language, the structural flags the model raises, the named risks specific to that situation, and the top moves. Plus four secondary views: the six channels demystified (what each is, when it helps, when it hurts, the common public-discourse misreading), the four motivated-reasoning traps the discourse keeps falling into (fast-AGI fatalism, slow-camp dismissal, productivity-only optimisation, material-blind class bias), a ten-year trajectory under three atrophy regimes that makes the model's biggest unknown visible, and a Five Moves view with explicit "what this doesn't fix" annotations.
+
+If you want to engage with the math, the [model](/ai-research/navigating-ai-world/model) has the parametric dashboard and the [data](/ai-research/navigating-ai-world/data) has the prediction-by-prediction empirical tests. The [topology](/ai-research/navigating-ai-world/topology) has the structural argument. This page is for the reader who wants to come away knowing where they sit, what is at risk, and what to actually do about it.
+
+<AITransitionExplorer client:load />
+
+## How to use this
+
+The default view is **Your situation** — pick one of the six profiles. The closest match is usually obvious in fifteen seconds. Read the one-liner, look at the six-channel bar chart, check which structural flags are active (gate open, ballast covers telic, dose under safe), then read the risks and moves panels. Most readers should start with **Mid-career default** because it is the one nearly everyone passes through, then look at **Self-automator** as the cautionary tale and **Asymmetric exploiter** as the positive case to calibrate the parameter space.
+
+After the profiles, the recommended secondary order is:
+
+1. **The trajectory** — what changes over ten years under three atrophy regimes. This is what makes the model's biggest unknown (the cumulative-atrophy speed λ) tangible without requiring you to read the model stage.
+2. **The four traps** — most useful for navigating media coverage of the topic. Each motivated reading cites real evidence; each ignores real evidence; the integrated reading at the bottom of each card is the closest the artifact comes to a normative claim.
+3. **The six channels** — for the reader who wants to know what each piece of the decomposition actually represents. Useful if a particular ΔV or ΔM channel looked surprising on a profile.
+4. **What to do** — the five robust moves with channel-by-channel annotations. The "doesn't fix" line on each is at least as important as the "why it works" line.
+5. **Take away** — eight bullets to walk away with.
+
+## What this is
+
+A reader's tool that uses the model from Stage 3 to produce specific structural readings for specific life-situations. The numbers are not predictions; they are comparative-statics outputs of the generating function under named parameter configurations. A profile with ΔNet = +0.20 is structurally better-positioned than one with ΔNet = −0.30 under the model's assumptions, not literally "20% more life-outcome."
+
+The six channels are the substantive structure; ΔV and ΔM are an organising convention to group channels by typical sign. The bridge through ρ (retained effortful practice) is the model's single most consequential mechanism — it couples three channels at once, which is why "maintain effortful practice" looks like a workplace-productivity tip but does meaning-architecture work.
+
+## What this is not
+
+It is not a forecast. Timelines on AI capability are uncertain, the cumulative-atrophy speed is the model's single largest unknown, and per-domain α (the productivity scale) varies fourfold across measured studies. The model is a frame the reader fills in with their own situation, not a prediction of their actual outcome.
+
+It is not a personal-data tool. There is no slider that takes your demographics and returns a number; the model dashboard at [/ai-research/navigating-ai-world/model](/ai-research/navigating-ai-world/model) is the closest thing the site has to that, and it explicitly displays ΔNet as ordinal rather than metric.
+
+It is not advice for the bottom of the labor market. The model's individual-decision framing implicitly assumes a material floor — when income is precarious or dependents foreclose long horizons, the trade-off between ΔM_telic and ΔV_prod is a choice you have only when survival is not in question. The [topology stage's L2 guardrail](/ai-research/navigating-ai-world/topology) names this directly; the explorer surfaces it in the Four Traps view (D4) but cannot solve it. The early-career profile flags labor-market access as outside the model's scope because the Brynjolfsson-Chandar-Chen entry-level disruption is the dominant practical concern for that cohort.
+
+It is not the [writeup](/ai-research/navigating-ai-world/writeup). The writeup is the long-form synthesis of the whole pipeline written for an educated lay reader; the explorer is the interactive tool. Both are useful; they answer different questions.
+
+## Connection to the rest of the pipeline
+
+The six-channel numbers per profile are computed live from the same `compute()` function the model dashboard uses (same constants: ALPHA = 0.40, TAU = 0.30, SIGMA = 0.06, LAMBDA_M = 0.30, D_SAFE = 30, PSI_R = 0.003, BETA_R = 0.001). The trajectory view applies the same ρ(t) = ρ₀ · exp(−λ · u · t) form the model stage's trajectory tab uses. The four-traps view materializes the [topology stage's D1–D4 distortion vectors](/ai-research/navigating-ai-world/topology) into reader-facing cards. The moves view operationalises the topology's strategic recommendations S2–S6 with channel-by-channel annotations of which model terms each move addresses.
+
+The empirical anchors for each profile are sourced from the [data stage's curated CSVs](https://teddy-wright.com/data/navigating-ai-world/) — productivity studies for the asymmetric-exploiter and displaced-expert profiles, BCG mode distribution for the self-automator, entry-level disruption for the early-career profile, OpenAI-MIT dose-response for the heavy companion user.
+
+A future stretch would promote this to `/dashboards/ai-transition` as a public dashboard with user-input parameters that compute the channels live for any configuration the visitor enters. That is one of the planned dashboard slots in the site PRD but is out of scope for the first build.
