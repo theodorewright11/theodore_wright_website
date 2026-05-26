@@ -36,8 +36,11 @@
 │   │   │   ├── finance/                 ← FinanceDashboard.tsx (root, queue), DashboardTab/TransactionsTab/BudgetTab/TransactionForm,
 │   │   │   │                               types.ts, categories.ts, compute.ts, storage.ts (localStorage cache + CSV),
 │   │   │   │                               sheets.ts (GIS + Sheets REST), spendingLogImporter.ts (one-shot legacy-tab seed), AuthBar.tsx
-│   │   │   └── time-tracker/            ← TimeTrackerDashboard.tsx (root, queue), Clock/Pomodoro/Log tabs, AuthBar.tsx,
-│   │   │                                   types.ts, compute.ts (pure), storage.ts (localStorage cache + CSV), sheets.ts (GIS + Sheets REST + ensureTabs)
+│   │   │   ├── time-tracker/            ← TimeTrackerDashboard.tsx (root, queue), Clock/Pomodoro/Log tabs, AuthBar.tsx,
+│   │   │   │                               types.ts, compute.ts (pure), storage.ts (localStorage cache + CSV), sheets.ts (GIS + Sheets REST + ensureTabs)
+│   │   │   └── qualitative-coding/      ← QualitativeCodingDashboard.tsx (root), CodeTree.tsx, DocumentViewer.tsx,
+│   │   │                                   MetadataSchemaEditor.tsx, types.ts, compute.ts (pure: tree + segments + color),
+│   │   │                                   storage.ts (localStorage + JSON download/import), exporters.ts (JSON + per-doc/project Markdown)
 │   │   └── ai-research/                 ← React components for AI-research stage visualizations
 │   │       ├── PsychVariationGraph.tsx  ← topology graph (force-directed via d3-force) — pan + wheel-zoom + reset
 │   │       ├── PsychVariationModel.tsx  ← model dashboard (variance decomposition + multivariate sex-difference tabs)
@@ -78,7 +81,8 @@
 │   │   │   ├── index.astro              ← roster (links to live dashboards by status)
 │   │   │   ├── finance.astro            ← mounts FinanceDashboard with client:only="react"
 │   │   │   ├── emotional-wellbeing.astro
-│   │   │   └── time-tracker.astro       ← mounts TimeTrackerDashboard with client:only="react"
+│   │   │   ├── time-tracker.astro       ← mounts TimeTrackerDashboard with client:only="react"
+│   │   │   └── qualitative-coding.astro ← bypasses BaseLayout: own minimal HTML + white bg + Inter font + client:only QualitativeCodingDashboard
 │   │   ├── bundle-mine.md.ts            ← /bundle-mine.md (writing + research + models + updates)
 │   │   ├── bundle-ai-research.md.ts     ← /bundle-ai-research.md (every AI-Research stage)
 │   │   ├── writing.md.ts                ← /writing.md (all blog as one md file)
@@ -448,6 +452,38 @@ Lives at [src/components/dashboards/time-tracker/](src/components/dashboards/tim
 **Compute layer** (`compute.ts`) is pure: `now` (epoch ms) is always passed in, never read from `Date` inside. The dashboard runs one shared 1-second interval and threads `now` to every tab so all live timers read a consistent instant.
 
 **Personal data hygiene**: the time-tracker has no public route, so there is no synthetic seed to protect. Default categories (`OAIP`, `SPUR`) seed an empty `categories` tab on first sync.
+
+### Qualitative Coding dashboard specifics
+
+Lives at [src/components/dashboards/qualitative-coding/](src/components/dashboards/qualitative-coding/). Mounted at `/dashboards/qualitative-coding`. v1 is **private** (`private: true` in `dashboards.json`, hidden from the roster).
+
+**Layout deviation**: this is the one dashboard whose page does *not* use `BaseLayout`. [src/pages/dashboards/qualitative-coding.astro](src/pages/dashboards/qualitative-coding.astro) declares its own minimal `<html>/<body>` with a white background, loads `global.css` for Tailwind, pulls in Inter from Google Fonts, and mounts the dashboard at full viewport (`100vh × 100vw`). The site Nav/Footer are deliberately absent — this is a text-annotation tool that needs maximum vertical space and a UI language distinct from the editorial paper aesthetic. The "← Dashboards" affordance is rendered inside the dashboard's own TopBar.
+
+**Files**:
+
+- `QualitativeCodingDashboard.tsx` — root component. Owns `AppState` (in localStorage), the active project / document / code selection, all CRUD handlers, the schema-editor modal, the export menu, and the JSON import file input. Composes `TopBar` + `Sidebar` + `DocumentViewer` (or `EmptyDocPane`) + `MetadataSchemaEditor`. The `NoProjects` empty state replaces the entire UI before the first project is created.
+- `CodeTree.tsx` — recursive renderer of the code tree. Per-row inline rename (double-click), color swatch (click to open a 12-color palette popover, "inherit" clears to null), "+" to add a child, "×" to delete (cascades to descendants + dependent annotations after a `confirm`). Top-level "+ new" adds a root code.
+- `DocumentViewer.tsx` — the meat. Title input + per-schema-field metadata inputs at the top. A two-state mode toggle (`Read & code` vs `Edit text`): edit mode is a plain `<textarea>`; read mode renders text as segments produced by `segmentText` from `compute.ts`. Selection is captured on `mouseUp`/`keyUp` using `document.createRange()` + `Range#toString().length` to map DOM selection back to character offsets in the original text (works across the span-segmented DOM because `Range#toString()` concatenates text-node content). When the selection is non-empty inside the container, a `SelectionPopover` (a `forwardRef` component) opens anchored to the selection's bounding rect; it searches the flattened code tree and commits the annotation on click or Enter. Below the text, `AnnotationsPanel` lists every annotation for the doc with a click-to-focus interaction (focused → its segment gets a thicker underline; opens an editable note textarea).
+- `MetadataSchemaEditor.tsx` — modal for editing the per-project metadata schema. Add/rename/delete fields, change type (`text` / `number` / `date` / `enum`), edit comma-separated options for enums. Field `key` is derived from the label (slugified) once and never changes after creation.
+- `types.ts` — `SchemaVersion`, `MetadataField`, `Document`, `Code`, `Annotation`, `Project`, `AppState` plus the 12-color `PALETTE` constant.
+- `storage.ts` — `loadState` / `saveState` with a single localStorage key, `coerceProject` for tolerant JSON import, `cryptoRandomId`, `newProject`, `downloadJSON` / `downloadText` (Blob → anchor click → revoke), `readFileAsText`.
+- `compute.ts` — pure: `buildCodeTree` (parentId map → recursive nodes), `flattenTree`, `codePath` / `codePathString` (root → leaf), `descendantIds` (transitive closure, for cascade delete / filter), `resolveColor` (walk up to find inherited color), `nextPaletteColor` (next unused palette color for new top-level codes), `segmentText` (split text at annotation boundaries → text segments each tagged with the covering annotations), `annotationsForDoc`, `codeCounts` / `deepCodeCounts`, `findDoc`. `segmentText` is the key piece — every rendering decision in `DocumentViewer` reads off its output.
+- `exporters.ts` — pure builders for the three export shapes (`exportProjectJSON`, `exportProjectMarkdown`, `exportDocumentMarkdown`). Markdown table escapes pipes in span text and code paths.
+
+**Storage**: one localStorage key, `tw-qual-coding-v1`. Schema `{ version: 1, projects: Project[], activeProjectId: string | null }`. On import, the entire incoming project is reassigned a fresh `id` to avoid colliding with an existing project of the same id. All mutations go through `updateActiveProject(p => ...)` which immutably replaces the active project in `state.projects` and stamps `updated_at`.
+
+**Selection-offset technique**: the document is rendered as a sequence of `<span>` text nodes (annotated segments) inside a single container `<div>`. The container has no other non-text descendants. To map a `Selection`'s `startContainer/startOffset` (a text node inside one of those spans) back to a character offset in `Document.text`:
+
+```ts
+const range = document.createRange();
+range.selectNodeContents(container);
+range.setEnd(node, offset);
+const charOffset = range.toString().length;
+```
+
+This works because `Range#toString()` returns the concatenated text content of everything in the range. No tree walker, no manual offset accumulation, no `<br>` / non-text-node edge cases (the container holds only text-bearing spans).
+
+**Future**: Google Drive sync (one JSON file per project, browser-side OAuth using Drive REST + the same GIS pattern Finance/Time Tracker use for Sheets). Until then, the dashboard is local-only — Export JSON is the only way to back up.
 
 ## Build / deploy
 

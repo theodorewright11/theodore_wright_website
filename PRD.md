@@ -112,7 +112,7 @@ Each dashboard ships in two tiers:
 
 **Private tier** exists only for dashboards where Teddy's actual data is the point (life metrics, ongoing trackers). Cloudflare Access in front, build-time data fetch from a private source.
 
-Dashboards: decision-helper (planned), finance, emotional-wellbeing, time-tracker.
+Dashboards: decision-helper (planned), finance, emotional-wellbeing, time-tracker, qualitative-coding.
 
 ### Per-dashboard product specs
 
@@ -217,6 +217,40 @@ A **week strip** is pinned under the tab bar on every tab: this week's net worke
 - Pomodoro preferences and live-timer state are device-local (`tw-timetracker-settings-v1`, `tw-timetracker-timers-v1`) and never synced.
 
 **Required env (when using Sheets sync)**: `PUBLIC_GOOGLE_CLIENT_ID` (the same OAuth client as Finance) and `PUBLIC_TIMETRACKER_SHEET_ID` (a separate spreadsheet).
+
+#### Qualitative Coding
+
+**Status**: v1 shipped, **private** (`private: true` in `src/data/dashboards.json`, hidden from the roster and home page). The page renders at `/dashboards/qualitative-coding` for direct navigation. This dashboard deliberately uses a different UI language than the rest of the site — white background, Inter sans-serif, app-style three-pane layout — and bypasses `BaseLayout` (no site Nav/Footer). The goal is a clean tool-style interface tuned for text annotation work, not editorial reading.
+
+A personal qualitative-coding tool: organize text documents into a project, build a nested code tree, tag spans of text with codes, and export the result as JSON or Markdown for AI-comparison work in VS Code. Single user. Answers: *given a set of text documents and a code tree, what spans am I tagging with what codes — and how does that compare to what an AI assigns to the same text?*
+
+**Pages** — single React component at `/dashboards/qualitative-coding` with three regions:
+
+- **Sidebar (left, 280px)** — Documents list (selectable, deletable, "+ new" button) and the nested Code tree (expand/collapse, color swatches with a 12-color palette, inline rename via double-click, "+" to add child, click row to filter the document view to annotations under that code). A footer line shows project counts (docs / codes / annotations).
+- **TopBar** — project picker (switch/create/delete/import JSON), inline-rename project name, "Metadata schema" button (opens a modal to define per-document fields like Date, Gender, Source, etc.), "Export" dropdown with three options (Project JSON / Project Markdown / Current doc Markdown).
+- **Main pane** — the active document. Editable title at the top, then a row of metadata inputs (one per schema field). A `Read & code` ↔ `Edit text` toggle below: edit mode shows a raw textarea; read mode renders text with annotations highlighted (background tint = top annotation's color; underline = same color) and lets the user select text to open a floating popover that picks a code (search the tree, click or press Enter to commit). Below the text, an annotations list shows every annotation in the doc with code path, char range, the span text, an optional note (expand on focus), and a delete button.
+
+**Data model**:
+
+- `Project` — `{ id, name, description?, metadataSchema: MetadataField[], documents: Document[], codes: Code[], annotations: Annotation[], created_at, updated_at, version: 1 }`. The whole project is the storage unit; multiple projects can coexist in localStorage.
+- `MetadataField` — `{ key (slug), label, type: 'text' | 'number' | 'date' | 'enum', options? }`. Schema is per-project; renaming a label doesn't change the key. Deleting a field leaves existing values on documents in their JSON until cleared.
+- `Document` — `{ id, title, text (plain text / markdown), metadata: Record<key, value>, created_at, updated_at }`. v1 supports plain-text/Markdown only — no PDF, no audio.
+- `Code` — `{ id, name, parentId (null = root), color (null = inherit from ancestor), description?, created_at }`. The tree is reconstructed from `parentId` relations. Deleting a code cascades to descendants and removes all annotations using any of them.
+- `Annotation` — `{ id, docId, start, end, codeId, note?, created_at }`. `start`/`end` are character offsets into `document.text`. One annotation = one (span, code) pair; overlapping spans and multiple codes on the same span are achieved by creating multiple annotation records.
+
+**Persistence**: browser `localStorage` under key `tw-qual-coding-v1`. A single JSON object `{ version: 1, projects: Project[], activeProjectId }`. Versioned via `version` for future migrations. On every state change the whole blob is rewritten. No sync (Google Drive sync is planned for v2 — see below).
+
+**Export formats** (downloads, no sync target):
+
+- `<project>.json` — canonical full-project dump. Round-trips through Import JSON (a new project ID is assigned on import so duplicates don't collide).
+- `<project>.md` — Project Markdown. Project name + flat code-tree listing + every document in turn with metadata, full text, and an annotations table (`# | chars | span | code | note`).
+- `<doc>.coded.md` — single-document Markdown, same shape as one section of the project Markdown. The intended hand-off to Claude in VS Code: paste this into a conversation, ask Claude to code the same text using the same tree, diff.
+
+**Editing safety**: when the user switches from `Edit text` back to `Read & code` and the text has shrunk, annotations whose `start` is past the new length are deleted; annotations whose `end` overruns are clamped. Annotations whose offsets are still inside the new text but no longer cover the original span are left alone (the user can manually re-check / delete).
+
+**Future (v2)**: Google Drive sync (one JSON file per project, browser-side OAuth using the Drive Files API — same GIS pattern as Finance/Time Tracker but Drive REST instead of Sheets). Inline `[span]{code}` rendering in the per-document Markdown export. PDF import (PDF.js text extraction). Multi-code-per-span shorthand in the popover (assign multiple codes at once).
+
+**Public-data conventions**: no public demo. The dashboard runs entirely in browser localStorage, so no data is sent anywhere by the app itself. Coded interview transcripts and other source documents should never be committed to the repo; this is enforced by convention (no scripts that read project state from disk).
 
 ## Papers and PDFs
 

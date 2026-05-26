@@ -24,5 +24,12 @@
     "desc": "Clock in/out by category with breaks that pause worked time, a Pomodoro timer, and a reward-minutes bank. Syncs to a private Google Sheet.",
     "status": "in-progress",
     "private": true
+  },
+  {
+    "slug": "qualitative-coding",
+    "title": "Qualitative Coding",
+    "desc": "Code text documents with a nested code tree and per-document metadata. Exports canonical JSON and Markdown-with-inline-codes for AI-comparison work.",
+    "status": "in-progress",
+    "private": true
   }
 ]

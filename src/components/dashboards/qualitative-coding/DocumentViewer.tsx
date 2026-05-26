@@ -1,0 +1,575 @@
+import { forwardRef, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  annotationsForDoc,
+  codePathString,
+  flattenTree,
+  buildCodeTree,
+  resolveColor,
+  segmentText,
+} from './compute';
+import type { Annotation, Code, Document, MetadataField } from './types';
+
+type Props = {
+  doc: Document;
+  codes: Code[];
+  annotations: Annotation[];
+  metadataSchema: MetadataField[];
+  selectedCodeId: string | null;
+  onUpdateDoc: (patch: Partial<Document>) => void;
+  onAddAnnotation: (start: number, end: number, codeId: string, note?: string) => void;
+  onDeleteAnnotation: (id: string) => void;
+  onUpdateAnnotation: (id: string, patch: Partial<Annotation>) => void;
+};
+
+type PendingSelection = {
+  start: number;
+  end: number;
+  rect: { top: number; left: number; right: number; bottom: number };
+};
+
+export default function DocumentViewer({
+  doc,
+  codes,
+  annotations,
+  metadataSchema,
+  selectedCodeId,
+  onUpdateDoc,
+  onAddAnnotation,
+  onDeleteAnnotation,
+  onUpdateAnnotation,
+}: Props) {
+  const [mode, setMode] = useState<'view' | 'edit'>(doc.text ? 'view' : 'edit');
+  const [draftText, setDraftText] = useState(doc.text);
+  const [pending, setPending] = useState<PendingSelection | null>(null);
+  const [focusedAnnotationId, setFocusedAnnotationId] = useState<string | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const popoverRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    setDraftText(doc.text);
+    setMode(doc.text ? 'view' : 'edit');
+    setPending(null);
+    setFocusedAnnotationId(null);
+  }, [doc.id]);
+
+  const docAnnotations = useMemo(
+    () => annotationsForDoc(annotations, doc.id),
+    [annotations, doc.id],
+  );
+
+  const segments = useMemo(
+    () => segmentText(doc.text, docAnnotations),
+    [doc.text, docAnnotations],
+  );
+
+  useEffect(() => {
+    const onDocPointerDown = (e: PointerEvent) => {
+      if (!pending) return;
+      const target = e.target as Node;
+      if (popoverRef.current && popoverRef.current.contains(target)) return;
+      if (containerRef.current && containerRef.current.contains(target)) return;
+      setPending(null);
+    };
+    document.addEventListener('pointerdown', onDocPointerDown);
+    return () => document.removeEventListener('pointerdown', onDocPointerDown);
+  }, [pending]);
+
+  const handleMouseUp = () => {
+    if (mode !== 'view') return;
+    requestAnimationFrame(() => {
+      const sel = window.getSelection();
+      if (!sel || sel.isCollapsed || sel.rangeCount === 0) {
+        setPending(null);
+        return;
+      }
+      const range = sel.getRangeAt(0);
+      const container = containerRef.current;
+      if (!container || !container.contains(range.commonAncestorContainer)) {
+        return;
+      }
+      const start = rangeOffset(container, range.startContainer, range.startOffset);
+      const end = rangeOffset(container, range.endContainer, range.endOffset);
+      if (start < 0 || end < 0 || start === end) {
+        setPending(null);
+        return;
+      }
+      const r = range.getBoundingClientRect();
+      const scrollY = window.scrollY;
+      const scrollX = window.scrollX;
+      setPending({
+        start: Math.min(start, end),
+        end: Math.max(start, end),
+        rect: {
+          top: r.top + scrollY,
+          left: r.left + scrollX,
+          right: r.right + scrollX,
+          bottom: r.bottom + scrollY,
+        },
+      });
+      setFocusedAnnotationId(null);
+    });
+  };
+
+  const commitEdit = () => {
+    if (draftText === doc.text) {
+      setMode('view');
+      return;
+    }
+    const newLen = draftText.length;
+    const docAnns = annotations.filter((a) => a.docId === doc.id);
+    for (const a of docAnns) {
+      if (a.start >= newLen) {
+        onDeleteAnnotation(a.id);
+      } else if (a.end > newLen) {
+        onUpdateAnnotation(a.id, { end: newLen });
+      }
+    }
+    onUpdateDoc({ text: draftText });
+    setMode('view');
+  };
+
+  return (
+    <div className="flex-1 min-w-0 flex flex-col">
+      <DocHeader doc={doc} metadataSchema={metadataSchema} onUpdateDoc={onUpdateDoc} />
+
+      <div className="px-8 py-3 flex items-center gap-2 border-b border-slate-200 bg-white sticky top-0 z-10">
+        <ToggleBtn active={mode === 'view'} onClick={() => mode === 'edit' && commitEdit()}>
+          Read & code
+        </ToggleBtn>
+        <ToggleBtn active={mode === 'edit'} onClick={() => setMode('edit')}>
+          Edit text
+        </ToggleBtn>
+        <div className="ml-auto text-[11px] text-slate-400 font-mono tabular-nums">
+          {doc.text.length.toLocaleString()} chars · {docAnnotations.length} annotation
+          {docAnnotations.length === 1 ? '' : 's'}
+        </div>
+      </div>
+
+      <div className="flex-1 overflow-auto bg-white">
+        {mode === 'edit' ? (
+          <div className="max-w-[760px] mx-auto px-8 py-6">
+            <textarea
+              value={draftText}
+              onChange={(e) => setDraftText(e.target.value)}
+              onBlur={commitEdit}
+              placeholder="Paste or type your document text here..."
+              className="w-full min-h-[60vh] p-4 font-sans text-[15px] leading-[1.65] text-slate-800 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 resize-y"
+            />
+            <div className="mt-2 text-[11px] text-slate-400">
+              Click <span className="font-semibold text-slate-600">Read & code</span> to commit. Annotations
+              whose spans fall outside the new length will be removed or clamped.
+            </div>
+          </div>
+        ) : (
+          <div className="max-w-[760px] mx-auto px-8 py-6">
+            <div
+              ref={containerRef}
+              onMouseUp={handleMouseUp}
+              onKeyUp={handleMouseUp}
+              className="font-sans text-[16px] leading-[1.7] text-slate-800 whitespace-pre-wrap break-words selection:bg-yellow-200"
+              style={{ tabSize: 4 }}
+            >
+              {doc.text.length === 0 ? (
+                <div className="text-slate-400 italic">
+                  This document is empty. Switch to <span className="font-semibold">Edit text</span> to add
+                  content.
+                </div>
+              ) : (
+                segments.map((seg, i) => {
+                  if (seg.annotations.length === 0) {
+                    return <span key={i}>{seg.text}</span>;
+                  }
+                  const top = seg.annotations[seg.annotations.length - 1];
+                  const color = resolveColor(codes, top.codeId);
+                  const dim =
+                    selectedCodeId !== null &&
+                    !seg.annotations.some((a) => a.codeId === selectedCodeId);
+                  const isFocused =
+                    focusedAnnotationId !== null &&
+                    seg.annotations.some((a) => a.id === focusedAnnotationId);
+                  return (
+                    <span
+                      key={i}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setFocusedAnnotationId(top.id);
+                      }}
+                      className={`cursor-pointer rounded-sm transition-opacity ${
+                        dim ? 'opacity-30' : ''
+                      }`}
+                      style={{
+                        backgroundColor: hexAlpha(color, isFocused ? 0.4 : 0.2),
+                        boxShadow: isFocused ? `inset 0 -2px 0 ${color}` : `inset 0 -1px 0 ${color}`,
+                      }}
+                      title={seg.annotations
+                        .map((a) => codePathString(codes, a.codeId))
+                        .join(' · ')}
+                    >
+                      {seg.text}
+                    </span>
+                  );
+                })
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+
+      <AnnotationsPanel
+        doc={doc}
+        codes={codes}
+        annotations={docAnnotations}
+        focusedAnnotationId={focusedAnnotationId}
+        onFocus={setFocusedAnnotationId}
+        onDelete={onDeleteAnnotation}
+        onUpdate={onUpdateAnnotation}
+      />
+
+      {pending && (
+        <SelectionPopover
+          ref={popoverRef}
+          pending={pending}
+          codes={codes}
+          text={doc.text}
+          onPick={(codeId) => {
+            onAddAnnotation(pending.start, pending.end, codeId);
+            setPending(null);
+            window.getSelection()?.removeAllRanges();
+          }}
+          onCancel={() => setPending(null)}
+        />
+      )}
+    </div>
+  );
+}
+
+function DocHeader({
+  doc,
+  metadataSchema,
+  onUpdateDoc,
+}: {
+  doc: Document;
+  metadataSchema: MetadataField[];
+  onUpdateDoc: (patch: Partial<Document>) => void;
+}) {
+  const [title, setTitle] = useState(doc.title);
+  useEffect(() => setTitle(doc.title), [doc.id]);
+
+  return (
+    <div className="px-8 pt-6 pb-4 border-b border-slate-200 bg-white">
+      <input
+        value={title}
+        onChange={(e) => setTitle(e.target.value)}
+        onBlur={() => {
+          const v = title.trim() || 'Untitled document';
+          if (v !== doc.title) onUpdateDoc({ title: v });
+        }}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
+        }}
+        placeholder="Document title"
+        className="w-full max-w-[760px] mx-auto block px-0 py-0 font-sans font-bold text-[28px] leading-tight text-slate-900 placeholder-slate-300 border-none focus:outline-none focus:ring-0 bg-transparent"
+        style={{ letterSpacing: '-0.02em' }}
+      />
+      {metadataSchema.length > 0 && (
+        <div className="max-w-[760px] mx-auto mt-3 flex flex-wrap gap-x-4 gap-y-2">
+          {metadataSchema.map((field) => (
+            <MetadataInput
+              key={field.key}
+              field={field}
+              value={doc.metadata[field.key] ?? null}
+              onChange={(v) =>
+                onUpdateDoc({
+                  metadata: { ...doc.metadata, [field.key]: v },
+                })
+              }
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function MetadataInput({
+  field,
+  value,
+  onChange,
+}: {
+  field: MetadataField;
+  value: string | number | null;
+  onChange: (v: string | number | null) => void;
+}) {
+  const common = 'px-2 py-1 text-[13px] text-slate-700 border border-slate-200 rounded focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 bg-white';
+  return (
+    <label className="inline-flex items-center gap-1.5">
+      <span className="text-[11px] font-medium text-slate-500 uppercase tracking-wide">
+        {field.label}
+      </span>
+      {field.type === 'enum' ? (
+        <select
+          value={value === null ? '' : String(value)}
+          onChange={(e) => onChange(e.target.value || null)}
+          className={common}
+        >
+          <option value="">—</option>
+          {(field.options ?? []).map((o) => (
+            <option key={o} value={o}>
+              {o}
+            </option>
+          ))}
+        </select>
+      ) : field.type === 'number' ? (
+        <input
+          type="number"
+          value={value === null ? '' : String(value)}
+          onChange={(e) => {
+            const v = e.target.value;
+            onChange(v === '' ? null : Number(v));
+          }}
+          className={`${common} w-[100px]`}
+        />
+      ) : field.type === 'date' ? (
+        <input
+          type="date"
+          value={value === null ? '' : String(value)}
+          onChange={(e) => onChange(e.target.value || null)}
+          className={common}
+        />
+      ) : (
+        <input
+          type="text"
+          value={value === null ? '' : String(value)}
+          onChange={(e) => onChange(e.target.value || null)}
+          className={`${common} w-[160px]`}
+        />
+      )}
+    </label>
+  );
+}
+
+type PopoverProps = {
+  pending: PendingSelection;
+  codes: Code[];
+  text: string;
+  onPick: (codeId: string) => void;
+  onCancel: () => void;
+};
+
+const SelectionPopover = forwardRef<HTMLDivElement, PopoverProps>(function SelectionPopover(
+  { pending, codes, text, onPick, onCancel },
+  ref,
+) {
+  const [query, setQuery] = useState('');
+  const flat = useMemo(() => flattenTree(buildCodeTree(codes)), [codes]);
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return flat;
+    return flat.filter((n) =>
+      codePathString(codes, n.code.id).toLowerCase().includes(q),
+    );
+  }, [flat, query, codes]);
+
+  const preview = text.slice(pending.start, pending.end);
+
+  return (
+    <div
+      ref={ref}
+      role="dialog"
+      className="fixed z-50 w-[320px] bg-white border border-slate-200 rounded-lg shadow-lg overflow-hidden"
+      style={{
+        top: pending.rect.bottom - window.scrollY + 8,
+        left: Math.min(
+          window.innerWidth - 340,
+          Math.max(8, pending.rect.left - window.scrollX),
+        ),
+      }}
+      onClick={(e) => e.stopPropagation()}
+    >
+      <div className="px-3 py-2 border-b border-slate-100 bg-slate-50">
+        <div className="text-[10px] uppercase tracking-wide text-slate-500 font-semibold mb-0.5">
+          Code selection
+        </div>
+        <div className="text-[12px] text-slate-700 line-clamp-2 italic">
+          “{preview.slice(0, 80)}
+          {preview.length > 80 ? '…' : ''}”
+        </div>
+      </div>
+      <input
+        autoFocus
+        value={query}
+        onChange={(e) => setQuery(e.target.value)}
+        placeholder={codes.length === 0 ? 'No codes yet — add one in the sidebar' : 'Search codes...'}
+        disabled={codes.length === 0}
+        className="w-full px-3 py-2 text-[13px] border-b border-slate-100 focus:outline-none focus:bg-slate-50 disabled:bg-slate-50 disabled:text-slate-400"
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' && filtered.length > 0) {
+            onPick(filtered[0].code.id);
+          }
+          if (e.key === 'Escape') onCancel();
+        }}
+      />
+      <div className="max-h-[240px] overflow-y-auto">
+        {filtered.length === 0 ? (
+          <div className="px-3 py-4 text-[12px] text-slate-400 italic text-center">
+            No matching codes.
+          </div>
+        ) : (
+          filtered.map((n) => {
+            const color = resolveColor(codes, n.code.id);
+            return (
+              <button
+                key={n.code.id}
+                type="button"
+                onClick={() => onPick(n.code.id)}
+                className="w-full flex items-center gap-2 px-3 py-1.5 text-left text-[13px] hover:bg-blue-50 transition-colors"
+                style={{ paddingLeft: `${12 + n.depth * 14}px` }}
+              >
+                <span
+                  className="w-2.5 h-2.5 rounded-sm flex-shrink-0 ring-1 ring-black/5"
+                  style={{ background: color }}
+                />
+                <span className="text-slate-800 truncate">{n.code.name}</span>
+              </button>
+            );
+          })
+        )}
+      </div>
+    </div>
+  );
+});
+
+function AnnotationsPanel({
+  doc,
+  codes,
+  annotations,
+  focusedAnnotationId,
+  onFocus,
+  onDelete,
+  onUpdate,
+}: {
+  doc: Document;
+  codes: Code[];
+  annotations: Annotation[];
+  focusedAnnotationId: string | null;
+  onFocus: (id: string | null) => void;
+  onDelete: (id: string) => void;
+  onUpdate: (id: string, patch: Partial<Annotation>) => void;
+}) {
+  if (annotations.length === 0) {
+    return (
+      <div className="border-t border-slate-200 bg-slate-50 px-8 py-4">
+        <div className="max-w-[760px] mx-auto text-[12px] text-slate-400 italic">
+          No annotations yet. Select text above and pick a code from the popover to begin.
+        </div>
+      </div>
+    );
+  }
+  return (
+    <div className="border-t border-slate-200 bg-slate-50 px-8 py-4 max-h-[40vh] overflow-y-auto">
+      <div className="max-w-[760px] mx-auto">
+        <div className="text-[10px] uppercase font-semibold tracking-[0.12em] text-slate-500 mb-2">
+          Annotations · {annotations.length}
+        </div>
+        <ul className="space-y-1.5">
+          {annotations.map((a) => {
+            const color = resolveColor(codes, a.codeId);
+            const path = codePathString(codes, a.codeId);
+            const focused = focusedAnnotationId === a.id;
+            return (
+              <li
+                key={a.id}
+                onClick={() => onFocus(focused ? null : a.id)}
+                className={`group p-2 rounded border cursor-pointer transition-colors ${
+                  focused
+                    ? 'bg-white border-blue-300 shadow-sm'
+                    : 'bg-white border-slate-200 hover:border-slate-300'
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  <span
+                    className="w-2.5 h-2.5 rounded-sm flex-shrink-0 ring-1 ring-black/5"
+                    style={{ background: color }}
+                  />
+                  <span className="text-[12px] font-semibold text-slate-700">{path}</span>
+                  <span className="text-[10px] font-mono text-slate-400 tabular-nums ml-auto">
+                    {a.start}–{a.end}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onDelete(a.id);
+                    }}
+                    className="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-red-600 text-[12px] transition-opacity"
+                    title="delete"
+                  >
+                    ×
+                  </button>
+                </div>
+                <div className="mt-1 text-[13px] text-slate-700 italic">
+                  “{doc.text.slice(a.start, a.end).slice(0, 200)}
+                  {a.end - a.start > 200 ? '…' : ''}”
+                </div>
+                {focused && (
+                  <textarea
+                    value={a.note ?? ''}
+                    onChange={(e) => onUpdate(a.id, { note: e.target.value })}
+                    onClick={(e) => e.stopPropagation()}
+                    placeholder="Add a note..."
+                    rows={2}
+                    className="mt-2 w-full px-2 py-1 text-[12px] border border-slate-200 rounded focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 resize-y"
+                  />
+                )}
+              </li>
+            );
+          })}
+        </ul>
+      </div>
+    </div>
+  );
+}
+
+function ToggleBtn({
+  active,
+  children,
+  onClick,
+}: {
+  active: boolean;
+  children: React.ReactNode;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`px-3 py-1 text-[12px] font-medium rounded transition-colors ${
+        active
+          ? 'bg-slate-900 text-white'
+          : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+      }`}
+    >
+      {children}
+    </button>
+  );
+}
+
+function rangeOffset(container: HTMLElement, node: Node, offset: number): number {
+  if (!container.contains(node)) return -1;
+  const range = document.createRange();
+  range.selectNodeContents(container);
+  try {
+    range.setEnd(node, offset);
+  } catch {
+    return -1;
+  }
+  return range.toString().length;
+}
+
+function hexAlpha(hex: string, alpha: number): string {
+  const m = hex.replace('#', '');
+  const r = parseInt(m.slice(0, 2), 16);
+  const g = parseInt(m.slice(2, 4), 16);
+  const b = parseInt(m.slice(4, 6), 16);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
