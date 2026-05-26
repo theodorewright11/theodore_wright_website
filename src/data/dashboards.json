@@ -21,9 +21,8 @@
   {
     "slug": "time-tracker",
     "title": "Time Tracker",
-    "desc": "Clock in/out by category with breaks that pause worked time, a Pomodoro timer, and a reward-minutes bank. Syncs to a private Google Sheet.",
-    "status": "in-progress",
-    "private": true
+    "desc": "Clock in/out by category with breaks and stopwatch laps, a Pomodoro timer with a reward-minutes bank, and per-session ratings (mood / productivity / enjoyment) plus activity-type tagging. Log tab shows category-stacked daily charts with date-range presets. Syncs to a private Google Sheet.",
+    "status": "in-progress"
   },
   {
     "slug": "qualitative-coding",

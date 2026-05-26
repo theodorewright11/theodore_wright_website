@@ -420,7 +420,7 @@ Headers are authoritative on import; column order doesn't matter. Same quoting r
 
 ### Time-tracker dashboard specifics
 
-Lives at [src/components/dashboards/time-tracker/](src/components/dashboards/time-tracker/). Mounted at `/dashboards/time-tracker`. v1 is **private** (`private: true` in `dashboards.json`, hidden from the roster). Three UI tabs: **Clock**, **Pomodoro**, **Log**.
+Lives at [src/components/dashboards/time-tracker/](src/components/dashboards/time-tracker/). Mounted at `/dashboards/time-tracker` and listed in the `/dashboards` roster. The page is publicly reachable but personal: Sheets sync requires `PUBLIC_TIMETRACKER_SHEET_ID` plus an account that owns that sheet, so a visitor without those gets the local-only mode in their own browser. Three UI tabs: **Clock**, **Pomodoro**, **Log**.
 
 **Files**: `TimeTrackerDashboard.tsx` (entry — tab router, state, 4-entity sync queue, the shared 1-second clock), `ClockTab.tsx` / `PomodoroTab.tsx` / `LogTab.tsx`, `WeekStrip.tsx` (always-visible week total pinned under the tab bar), `RatingRow.tsx` (shared 1–5 rating scale), `ActivityPicker.tsx` (shared activity-type picker with split sliders), `types.ts`, `compute.ts` (pure derivations + formatters), `storage.ts` (localStorage + session-log CSV export), `sheets.ts` (GIS OAuth + Sheets REST + `ensureTabs`), `AuthBar.tsx`.
 

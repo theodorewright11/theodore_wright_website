@@ -189,7 +189,7 @@ A needs-rating dashboard that surfaces the highest-leverage emotional needs to a
 
 #### Time Tracker
 
-**Status**: v1 shipped, **private** (`private: true` in `src/data/dashboards.json`, hidden from the roster and home page). The page renders at `/dashboards/time-tracker` for direct navigation. No public demo planned — this is a personal tool.
+**Status**: v1 shipped and listed in the `/dashboards` roster. Data is still personal — the Sheets sync requires `PUBLIC_TIMETRACKER_SHEET_ID` and an account that owns that sheet, so a visitor without those just gets the local-only mode in their own browser. Mounted at `/dashboards/time-tracker`. No "public demo" pre-seed planned — this is a personal tool that happens to be reachable.
 
 A personal time tracker for research work (OAIP, SPUR, and any user-made categories). Single user (Teddy). Answers: *how much real time did I put into each thing over any date range, and how is my focus work going?*
 
