@@ -742,7 +742,7 @@ function VerifyView() {
           On tasks where verification takes roughly as long as doing the work yourself (φ near or above 1), the spec-driven corner is dominated. The model collapses to a two-corner choice: do it yourself (if your capability is comparable) or hand it off without review (if AI capability is much higher and stakes are low enough that the unverified risk is acceptable).
         </p>
         <p className="text-[13px] text-ink-soft leading-relaxed mt-2">
-          Empirically, coding-cyborg work runs at φ ≈ 1.6 (from Mozannar 2024’s CUPS data: 22.4% of session time on verifying, 14.05% on writing-new — verify time exceeds generation time by ~5×). This is one reason "AI pair-programmer" workflows feel more cognitively expensive than expected. Treat code review of AI output as the real work; if you can’t afford that, drop to writing the code yourself or accept the unverified risk.
+          Empirically, coding-cyborg work runs at φ ≈ 1.6 (from Mozannar 2024’s CUPS data: 22.4% of session time on verifying, 14.05% on writing-new — verifying takes about 1.6× as long as generating, and the measured φ is ~5× the model’s lit-review-anchored default of 0.30). This is one reason "AI pair-programmer" workflows feel more cognitively expensive than expected. Treat code review of AI output as the real work; if you can’t afford that, drop to writing the code yourself or accept the unverified risk.
         </p>
       </div>
 
@@ -786,7 +786,7 @@ const CHEATSHEET = [
   },
   {
     title: 'Workflow architecture beats model capability',
-    body: 'Vaccaro et al. 2024 (Nature Human Behaviour, 106 studies, 370 effect sizes) found that human-AI combinations on average underperform best-of-either-alone, with losses concentrated in decision tasks and gains concentrated in content creation. The headline: bad workflows can negate frontier-model capability, while good workflows on mid-tier models can outperform naive use of frontier models. Tools matter less than how you wire them up.',
+    body: 'Vaccaro et al. 2024 (Nature Human Behaviour, 106 studies, 370 effect sizes) found that human-AI combinations on average underperform best-of-either-alone, with losses concentrated in decision tasks and gains concentrated in content creation. The implication, consistent with the model: complementarity is not automatic; task structure systematically modulates whether it is achieved. Within-study evidence (Goh→Everett +7.9 pp on the same physician-AI task with only the workflow changed) and the broader pattern across the 22-study record both support the same direction. Tools matter less than how you wire them up.',
   },
   {
     title: 'Outside-frontier delegation is the most expensive mistake',

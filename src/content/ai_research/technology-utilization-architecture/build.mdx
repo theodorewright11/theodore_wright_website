@@ -3,8 +3,16 @@ title: 'Build'
 description: 'A reader''s tool for picking how to use AI on any given task. Five views: pick a task (plain-language questions → corner recommendation with cited empirical anchor), compare strategies (route per-task vs flat cyborg vs always-self vs max-AI on the same day-mix, budget-aware), the five common mistakes the model identifies, when to verify (calibration coach + persuasion-bombing mitigation), and a seven-bullet cheat sheet. Translates the formalisation and data pipeline into something a knowledge worker can actually use.'
 date: 2026-05-05
 status: complete
-refinementPass: 1
+refinementPass: 2
 refinementLog:
+  - pass: 2
+    date: '2026-05-06'
+    passes: ['error check', 'truth/accuracy override on bias']
+    why: 'Cold-reading the explorer''s When-to-verify view surfaced one arithmetic slip and one over-claim. (a) The view said Mozannar cyborg-coding φ ≈ 1.6 means "verify time exceeds generation time by ~5×" — this conflates two different ratios. φ = verify/generate ratio = 1.6 means verifying takes ~1.6× as long as generating (a 60% premium); the 5× number is the ratio of measured φ to the model''s lit-review default (1.6 / 0.3 ≈ 5×). Different things. (b) Cheat-sheet take-away 4 leaned the Vaccaro 2024 meta into a stronger claim than the data stage supports: "good workflows on mid-tier models can outperform naive use of frontier models" is a natural extension but not directly tested by Vaccaro (a moderator analysis) or the rest of the 22-study record. The data stage''s §5 verdict on Q5 is "supported, with the meta-analysis load-bearing" but explicitly flagged the within-vs-across-study mid-tier comparison as not load-bearing. The pass-1 cheat sheet had wandered into the over-claim.'
+    changes:
+      - 'When-to-verify view (CognitivePartnershipExplorer.tsx) — corrected the verification-cost-ratio phrasing. Was "verify time exceeds generation time by ~5×"; now "verifying takes about 1.6× as long as generating, and the measured φ is ~5× the model''s lit-review-anchored default of 0.30." Distinguishes the two ratios that were silently conflated'
+      - 'Cheat-sheet take-away 4 rewritten. Was: "bad workflows can negate frontier-model capability, while good workflows on mid-tier models can outperform naive use of frontier models." Now: "complementarity is not automatic; task structure systematically modulates whether it is achieved. Within-study evidence (Goh→Everett +7.9 pp on the same physician-AI task with only the workflow changed) and the broader pattern across the 22-study record both support the same direction." Matches what the data stage actually establishes; drops the speculative mid-tier-vs-frontier extension'
+      - 'No changes to explorer math, logic, view structure, or any other view''s text. No changes elsewhere in build.mdx. Pure corrections to claims that survived pass 1 without independent verification'
   - pass: 1
     date: '2026-05-05'
     passes: ['decomposition', 'translation', 'integration']
