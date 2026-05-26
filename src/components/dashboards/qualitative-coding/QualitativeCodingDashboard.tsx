@@ -16,17 +16,18 @@ import {
 } from './compute';
 import {
   DriveAuthError,
-  createFile,
-  deleteFile as driveDeleteFile,
-  getFileContent,
   listAppFiles,
   loadStoredToken,
-  projectFileName,
   signIn,
   signOut,
-  updateFile,
+  type DriveItem,
   type StoredToken,
 } from './drive';
+import {
+  deleteProjectFromDrive,
+  pullProjectFromDrive,
+  syncProjectToDrive,
+} from './driveSync';
 import { exportDocumentMarkdown, exportProjectJSON, exportProjectMarkdown } from './exporters';
 import {
   coerceProject,
@@ -173,29 +174,12 @@ export default function QualitativeCodingDashboard() {
           setDrive((d) => ({ ...d, syncStatus: 'idle' }));
           return;
         }
-        if (!project.drive?.fileId) {
-          const file = await createFile(
-            drive.token.access_token,
-            projectFileName(project.name, project.id),
-            project,
-            DRIVE_FOLDER_ID,
-          );
-          updateProjectById(projectId, (p) => ({
-            ...p,
-            drive: { fileId: file.id, modifiedTime: file.modifiedTime },
-          }));
-        } else {
-          const file = await updateFile(
-            drive.token.access_token,
-            project.drive.fileId,
-            project,
-            projectFileName(project.name, project.id),
-          );
-          updateProjectById(projectId, (p) => ({
-            ...p,
-            drive: { fileId: file.id, modifiedTime: file.modifiedTime },
-          }));
-        }
+        const newDrive = await syncProjectToDrive(
+          drive.token.access_token,
+          project,
+          DRIVE_FOLDER_ID,
+        );
+        updateProjectById(projectId, (p) => ({ ...p, drive: newDrive }));
         inflightWrites.current.delete(projectId);
         setDrive((d) => ({ ...d, syncStatus: 'idle' }));
       } catch (err) {
@@ -218,26 +202,49 @@ export default function QualitativeCodingDashboard() {
     if (!drive.token) return;
     setDrive((d) => ({ ...d, syncStatus: 'syncing', lastError: null }));
     try {
-      const files = await listAppFiles(drive.token.access_token, DRIVE_FOLDER_ID);
-      const filesByModified = new Map(files.map((f) => [f.id, f]));
-      const pulled: Project[] = [];
-      for (const f of files) {
-        const content = await getFileContent<any>(drive.token.access_token, f.id);
-        const proj = coerceProject({ ...content, drive: { fileId: f.id, modifiedTime: f.modifiedTime } });
-        pulled.push(proj);
+      // Pulls have two paths:
+      //  - app-tagged project.json files (new layout: inside a project folder)
+      //  - legacy app-tagged flat files (v2: in DRIVE_FOLDER_ID or root)
+      // Both surface via listAppFiles. We then peek at the parent folder; if
+      // it's the DRIVE_FOLDER_ID (or root), it's legacy and needs migration —
+      // syncProjectToDrive will handle the move-into-folder on next write.
+      const tagged: DriveItem[] = await listAppFiles(drive.token.access_token);
+      // Also list children of DRIVE_FOLDER_ID for folder-per-project structures.
+      // (project.json sits inside a child folder, so listAppFiles already finds it.)
+      const pulledProjects: Project[] = [];
+      for (const f of tagged) {
+        try {
+          const parentId = f.parents?.[0];
+          const isLegacyFlat = !parentId || parentId === DRIVE_FOLDER_ID;
+          const content = await pullProjectFromDrive(drive.token.access_token, {
+            projectJsonId: f.id,
+          });
+          const projAttrs: any = { ...(content as object) };
+          if (isLegacyFlat) {
+            // Legacy file lived flat. Stamp drive.fileId so syncProjectToDrive
+            // will migrate it into a folder on the next write.
+            projAttrs.drive = { fileId: f.id, modifiedTime: f.modifiedTime };
+          } else {
+            projAttrs.drive = {
+              folderId: parentId!,
+              projectJsonId: f.id,
+              modifiedTime: f.modifiedTime,
+            };
+          }
+          const proj = coerceProject(projAttrs);
+          pulledProjects.push(proj);
+        } catch {
+          // Skip files we can't parse
+        }
       }
+      const pulledIds = new Set(pulledProjects.map((p) => p.id));
       setState((s) => {
-        const merged: Project[] = [];
-        const seenIds = new Set<string>();
-        for (const p of pulled) {
-          merged.push(p);
-          seenIds.add(p.id);
-        }
+        const merged: Project[] = [...pulledProjects];
         for (const p of s.projects) {
-          if (p.drive?.fileId && filesByModified.has(p.drive.fileId)) continue;
+          if (pulledIds.has(p.id)) continue;
           merged.push(p);
-          seenIds.add(p.id);
         }
+        const seenIds = new Set(merged.map((p) => p.id));
         return {
           ...s,
           projects: merged,
@@ -247,11 +254,15 @@ export default function QualitativeCodingDashboard() {
               : merged[0]?.id ?? null,
         };
       });
-      // Push any local projects without a drive link
-      const localSnapshot = JSON.parse(window.localStorage.getItem('tw-qual-coding-v1') ?? '{}');
+      // Push any local-only projects or projects that need migration.
+      const localSnapshot = JSON.parse(
+        window.localStorage.getItem('tw-qual-coding-v1') ?? '{}',
+      );
       const localProjects: Project[] = localSnapshot.projects ?? [];
       for (const p of localProjects) {
-        if (!p.drive?.fileId) queueWrite(p.id);
+        if (!p.drive || !p.drive.folderId) {
+          queueWrite(p.id);
+        }
       }
       setDrive((d) => ({ ...d, syncStatus: 'idle' }));
     } catch (err) {
@@ -331,8 +342,8 @@ export default function QualitativeCodingDashboard() {
         exploreProjectIds: (s.exploreProjectIds ?? []).filter((x) => x !== id),
       };
     });
-    if (proj?.drive?.fileId && drive.token) {
-      driveDeleteFile(drive.token.access_token, proj.drive.fileId).catch(() => {});
+    if (proj?.drive && drive.token) {
+      deleteProjectFromDrive(drive.token.access_token, proj.drive).catch(() => {});
     }
   };
 
@@ -391,6 +402,38 @@ export default function QualitativeCodingDashboard() {
       ),
     }));
     queueWrite(projectId);
+  };
+
+  const addFolder = (path: string) => {
+    if (!activeProject) return;
+    const trimmed = path.trim();
+    if (!trimmed) return;
+    const projectId = activeProject.id;
+    updateActiveProject((p) => {
+      const existing = p.folders ?? [];
+      if (existing.includes(trimmed)) return p;
+      return { ...p, folders: [...existing, trimmed] };
+    });
+    queueWrite(projectId);
+  };
+
+  const deleteFolder = (path: string) => {
+    if (!activeProject) return;
+    const projectId = activeProject.id;
+    updateActiveProject((p) => ({
+      ...p,
+      folders: (p.folders ?? []).filter((f) => f !== path && !f.startsWith(path + '/')),
+      documents: p.documents.map((d) =>
+        d.folder === path || d.folder?.startsWith(path + '/')
+          ? { ...d, folder: undefined, updated_at: new Date().toISOString() }
+          : d,
+      ),
+    }));
+    queueWrite(projectId);
+  };
+
+  const moveDocumentToFolder = (docId: string, folder: string | undefined) => {
+    updateDocument(docId, { folder });
   };
 
   // ----- Code CRUD -----
@@ -625,6 +668,9 @@ export default function QualitativeCodingDashboard() {
             }}
             onAddDoc={(folder) => addDocument(folder)}
             onDeleteDoc={deleteDocument}
+            onMoveDocToFolder={moveDocumentToFolder}
+            onAddFolder={addFolder}
+            onDeleteFolder={deleteFolder}
             deepCounts={counts}
             showCodeDefinitions={showCodeDefinitions}
             onToggleDefinitions={toggleDefinitions}
@@ -648,6 +694,8 @@ export default function QualitativeCodingDashboard() {
               annotations={docAnnotations}
               metadataSchema={activeProject.metadataSchema}
               selectedCodeId={selectedCodeId}
+              showCodeDefinitions={showCodeDefinitions}
+              onToggleDefinitions={toggleDefinitions}
               onUpdateDoc={(patch) => updateDocument(activeDoc.id, patch)}
               onAddAnnotation={(start, end, codeId, note) =>
                 addAnnotation(activeDoc.id, start, end, codeId, note)
@@ -752,10 +800,10 @@ function TopBar({
   const exploreCount = new Set([...exploreProjectIds, project.id]).size;
 
   return (
-    <header className="flex items-center gap-2 px-4 py-2.5 bg-white border-b border-slate-200">
+    <header className="flex items-center gap-2 px-5 py-3 bg-white border-b border-slate-200">
       <a
         href="/dashboards"
-        className="text-[11px] font-medium text-slate-400 hover:text-slate-700 transition-colors"
+        className="text-[12px] font-medium text-slate-400 hover:text-slate-700 transition-colors px-2 py-1 rounded hover:bg-slate-100"
       >
         ← Dashboards
       </a>
@@ -768,12 +816,12 @@ function TopBar({
             e.stopPropagation();
             setProjectMenuOpen((v) => !v);
           }}
-          className="flex items-center gap-1.5 px-2 py-1 rounded hover:bg-slate-100 transition-colors"
+          className="flex items-center gap-2 px-2.5 py-1.5 rounded-md hover:bg-slate-100 transition-colors"
         >
           <span className="text-[10px] uppercase font-semibold tracking-[0.12em] text-slate-400">
             Project
           </span>
-          <span className="text-[14px] font-bold text-slate-900 truncate max-w-[200px]">
+          <span className="text-[15px] font-bold text-slate-900 truncate max-w-[220px]">
             {project.name}
           </span>
           <span className="text-slate-400 text-[10px]">▾</span>
@@ -823,8 +871,8 @@ function TopBar({
                       <span className="text-[10px] font-mono text-slate-400 tabular-nums">
                         {p.documents.length}d · {p.codes.length}c
                       </span>
-                      {p.drive?.fileId && (
-                        <span title="synced to Drive" className="text-emerald-500 text-[10px]">
+                      {(p.drive?.folderId || (p.drive as any)?.fileId) && (
+                        <span title="synced to Drive" className="text-emerald-500 text-[11px]">
                           ☁
                         </span>
                       )}
@@ -883,7 +931,7 @@ function TopBar({
         )}
       </div>
 
-      <div className="ml-3 flex items-center bg-slate-100 rounded p-0.5">
+      <div className="ml-3 flex items-center bg-slate-100 rounded-lg p-1">
         <ViewBtn active={view === 'documents'} onClick={() => onSetView('documents')}>
           Documents
         </ViewBtn>
@@ -899,7 +947,7 @@ function TopBar({
         <button
           type="button"
           onClick={onOpenSchema}
-          className="px-2.5 py-1 text-[12px] font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded transition-colors"
+          className="px-3 py-1.5 text-[13px] font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-md transition-colors"
         >
           Metadata schema
         </button>
@@ -920,7 +968,7 @@ function TopBar({
               e.stopPropagation();
               setExportMenuOpen(!exportMenuOpen);
             }}
-            className="px-3 py-1 text-[12px] font-semibold bg-slate-900 text-white rounded hover:bg-black transition-colors flex items-center gap-1.5"
+            className="px-3.5 py-1.5 text-[13px] font-semibold bg-slate-900 text-white rounded-md hover:bg-black transition-colors flex items-center gap-1.5"
           >
             Export
             <span className="text-[10px]">▾</span>
@@ -987,7 +1035,7 @@ function ViewBtn({
     <button
       type="button"
       onClick={onClick}
-      className={`px-2.5 py-1 text-[12px] font-semibold rounded transition-colors ${
+      className={`px-3 py-1.5 text-[13px] font-semibold rounded-md transition-colors ${
         active
           ? 'bg-white shadow-sm text-slate-900'
           : 'text-slate-500 hover:text-slate-800'
@@ -1036,6 +1084,9 @@ function Sidebar({
   onSelectDoc,
   onAddDoc,
   onDeleteDoc,
+  onMoveDocToFolder,
+  onAddFolder,
+  onDeleteFolder,
   deepCounts,
   showCodeDefinitions,
   onToggleDefinitions,
@@ -1050,6 +1101,9 @@ function Sidebar({
   onSelectDoc: (id: string) => void;
   onAddDoc: (folder?: string) => void;
   onDeleteDoc: (id: string) => void;
+  onMoveDocToFolder: (docId: string, folder: string | undefined) => void;
+  onAddFolder: (path: string) => void;
+  onDeleteFolder: (path: string) => void;
   deepCounts: Map<string, number>;
   showCodeDefinitions: boolean;
   onToggleDefinitions: () => void;
@@ -1060,46 +1114,99 @@ function Sidebar({
   onDeleteCode: (id: string) => void;
 }) {
   const { rootDocs, folders } = useMemo(
-    () => buildFolderTree(project.documents),
-    [project.documents],
+    () => buildFolderTree(project.documents, project.folders ?? []),
+    [project.documents, project.folders],
   );
+  const [dragOverFolder, setDragOverFolder] = useState<string | null>(null);
+  const [rootDragOver, setRootDragOver] = useState(false);
+
+  const handleAddFolder = () => {
+    const path = window.prompt(
+      'New folder name (use / for nested, e.g. "Interviews/Round 1"):',
+    );
+    if (path && path.trim()) onAddFolder(path.trim());
+  };
+
+  const handleDrop = (folder: string | undefined) => (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const docId = e.dataTransfer.getData('application/x-qc-doc');
+    if (!docId) return;
+    onMoveDocToFolder(docId, folder);
+    setDragOverFolder(null);
+    setRootDragOver(false);
+  };
 
   return (
     <aside className="w-[280px] flex-shrink-0 border-r border-slate-200 bg-slate-50 flex flex-col">
       <div className="flex-1 overflow-y-auto">
         <div className="p-4 border-b border-slate-200">
           <div className="flex items-center justify-between mb-2">
-            <div className="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500">
+            <div className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">
               Documents
             </div>
-            <button
-              type="button"
-              onClick={() => onAddDoc()}
-              className="text-[11px] font-medium text-blue-600 hover:text-blue-800"
-            >
-              + new
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={handleAddFolder}
+                className="text-[12px] font-medium text-slate-500 hover:text-blue-600 transition-colors px-1.5 py-0.5 rounded hover:bg-white"
+                title="new folder"
+              >
+                + folder
+              </button>
+              <button
+                type="button"
+                onClick={() => onAddDoc()}
+                className="text-[12px] font-semibold text-blue-600 hover:text-blue-800 transition-colors px-2 py-0.5 rounded hover:bg-blue-50"
+              >
+                + doc
+              </button>
+            </div>
           </div>
-          {project.documents.length === 0 ? (
-            <div className="text-[12px] text-slate-400 italic py-1">No documents yet.</div>
+          {project.documents.length === 0 && folders.length === 0 ? (
+            <div className="text-[12px] text-slate-400 italic py-2">
+              No documents yet. Drop one in or click + doc.
+            </div>
           ) : (
             <div className="space-y-px">
-              {rootDocs.length > 0 && (
-                <DocList
-                  docs={rootDocs}
-                  activeDocId={activeDocId}
-                  onSelectDoc={onSelectDoc}
-                  onDeleteDoc={onDeleteDoc}
-                />
-              )}
+              <div
+                onDragOver={(e) => {
+                  if (e.dataTransfer.types.includes('application/x-qc-doc')) {
+                    e.preventDefault();
+                    setRootDragOver(true);
+                  }
+                }}
+                onDragLeave={() => setRootDragOver(false)}
+                onDrop={handleDrop(undefined)}
+                className={`rounded transition-colors ${
+                  rootDragOver ? 'ring-2 ring-blue-400 ring-inset bg-blue-50' : ''
+                }`}
+              >
+                {rootDocs.length === 0 && rootDragOver ? (
+                  <div className="text-[11px] text-blue-700 italic py-3 text-center">
+                    Drop here to move out of folder
+                  </div>
+                ) : (
+                  <DocList
+                    docs={rootDocs}
+                    activeDocId={activeDocId}
+                    onSelectDoc={onSelectDoc}
+                    onDeleteDoc={onDeleteDoc}
+                  />
+                )}
+              </div>
               {folders.map((f) => (
                 <FolderGroup
                   key={f.path}
                   node={f}
                   activeDocId={activeDocId}
+                  dragOverFolder={dragOverFolder}
+                  setDragOverFolder={setDragOverFolder}
                   onSelectDoc={onSelectDoc}
                   onDeleteDoc={onDeleteDoc}
                   onAddDoc={onAddDoc}
+                  onMoveDocToFolder={onMoveDocToFolder}
+                  onDeleteFolder={onDeleteFolder}
                 />
               ))}
             </div>
@@ -1122,7 +1229,7 @@ function Sidebar({
             <button
               type="button"
               onClick={() => onSelectCode(null)}
-              className="mt-3 w-full text-[11px] text-slate-500 hover:text-slate-800 py-1 border border-dashed border-slate-300 rounded"
+              className="mt-3 w-full text-[12px] text-slate-500 hover:text-slate-800 py-1.5 border border-dashed border-slate-300 rounded hover:bg-white transition-colors"
             >
               clear code filter
             </button>
@@ -1130,7 +1237,7 @@ function Sidebar({
         </div>
       </div>
       <div className="border-t border-slate-200 px-4 py-2.5 bg-white">
-        <div className="text-[10px] font-mono text-slate-400 leading-tight">
+        <div className="text-[11px] font-mono text-slate-400 leading-tight">
           {project.documents.length} doc{project.documents.length === 1 ? '' : 's'} ·{' '}
           {project.codes.length} code{project.codes.length === 1 ? '' : 's'} ·{' '}
           {project.annotations.length} annotation
@@ -1159,7 +1266,12 @@ function DocList({
       {docs.map((d) => (
         <li
           key={d.id}
-          className={`group flex items-center gap-2 rounded px-2 py-1.5 cursor-pointer text-[13px] transition-colors ${
+          draggable
+          onDragStart={(e) => {
+            e.dataTransfer.setData('application/x-qc-doc', d.id);
+            e.dataTransfer.effectAllowed = 'move';
+          }}
+          className={`group flex items-center gap-2 rounded px-2 py-2 cursor-pointer text-[13px] transition-colors ${
             d.id === activeDocId
               ? 'bg-blue-100 text-slate-900 font-medium'
               : 'text-slate-700 hover:bg-white'
@@ -1167,6 +1279,7 @@ function DocList({
           style={{ paddingLeft: `${8 + depth * 12}px` }}
           onClick={() => onSelectDoc(d.id)}
         >
+          <span className="text-slate-300 text-[10px] cursor-grab" title="drag to move">⋮⋮</span>
           <span className="flex-1 truncate">{d.title || 'Untitled'}</span>
           <button
             type="button"
@@ -1176,7 +1289,7 @@ function DocList({
                 onDeleteDoc(d.id);
               }
             }}
-            className="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-red-600 text-[12px] transition-opacity"
+            className="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-red-600 text-[14px] transition-opacity"
             title="delete"
           >
             ×
@@ -1190,27 +1303,59 @@ function DocList({
 function FolderGroup({
   node,
   activeDocId,
+  dragOverFolder,
+  setDragOverFolder,
   onSelectDoc,
   onDeleteDoc,
   onAddDoc,
+  onMoveDocToFolder,
+  onDeleteFolder,
 }: {
   node: FolderNode;
   activeDocId: string | null;
+  dragOverFolder: string | null;
+  setDragOverFolder: (path: string | null) => void;
   onSelectDoc: (id: string) => void;
   onDeleteDoc: (id: string) => void;
   onAddDoc: (folder: string) => void;
+  onMoveDocToFolder: (docId: string, folder: string | undefined) => void;
+  onDeleteFolder: (path: string) => void;
 }) {
   const [open, setOpen] = useState(true);
   const total = folderDocCount(node);
+  const isDragOver = dragOverFolder === node.path;
+
   return (
-    <div>
+    <div
+      onDragOver={(e) => {
+        if (e.dataTransfer.types.includes('application/x-qc-doc')) {
+          e.preventDefault();
+          setDragOverFolder(node.path);
+        }
+      }}
+      onDragLeave={(e) => {
+        const rt = e.relatedTarget as Node | null;
+        if (rt && (e.currentTarget as HTMLElement).contains(rt)) return;
+        if (dragOverFolder === node.path) setDragOverFolder(null);
+      }}
+      onDrop={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const docId = e.dataTransfer.getData('application/x-qc-doc');
+        if (docId) onMoveDocToFolder(docId, node.path);
+        setDragOverFolder(null);
+      }}
+      className={`rounded transition-colors ${
+        isDragOver ? 'bg-blue-50 ring-2 ring-blue-400 ring-inset' : ''
+      }`}
+    >
       <div
-        className="group flex items-center gap-1 px-1 py-1 cursor-pointer hover:bg-white rounded"
-        style={{ paddingLeft: `${4 + node.depth * 12}px` }}
+        className="group flex items-center gap-1.5 px-1.5 py-1.5 cursor-pointer hover:bg-white rounded"
+        style={{ paddingLeft: `${6 + node.depth * 12}px` }}
         onClick={() => setOpen((v) => !v)}
       >
         <span className="text-[10px] text-slate-400 w-3">{open ? '▾' : '▸'}</span>
-        <span className="text-[10px]">📁</span>
+        <span className="text-[12px]">📁</span>
         <span className="flex-1 text-[12px] font-semibold text-slate-700 truncate">
           {node.name}
         </span>
@@ -1221,10 +1366,27 @@ function FolderGroup({
             e.stopPropagation();
             onAddDoc(node.path);
           }}
-          className="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-blue-600 text-[12px] transition-opacity"
+          className="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-blue-600 text-[14px] w-5 h-5 flex items-center justify-center transition-opacity"
           title={`add document in ${node.path}`}
         >
           +
+        </button>
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            if (
+              window.confirm(
+                `Delete folder "${node.path}"? Documents inside will be moved to no folder.`,
+              )
+            ) {
+              onDeleteFolder(node.path);
+            }
+          }}
+          className="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-red-600 text-[14px] w-5 h-5 flex items-center justify-center transition-opacity"
+          title="delete folder"
+        >
+          ×
         </button>
       </div>
       {open && (
@@ -1238,14 +1400,26 @@ function FolderGroup({
               depth={node.depth + 1}
             />
           )}
+          {node.docs.length === 0 && node.children.length === 0 && (
+            <div
+              className="text-[11px] text-slate-400 italic py-1 px-2"
+              style={{ paddingLeft: `${20 + node.depth * 12}px` }}
+            >
+              {isDragOver ? 'Drop here' : 'empty'}
+            </div>
+          )}
           {node.children.map((child) => (
             <FolderGroup
               key={child.path}
               node={child}
               activeDocId={activeDocId}
+              dragOverFolder={dragOverFolder}
+              setDragOverFolder={setDragOverFolder}
               onSelectDoc={onSelectDoc}
               onDeleteDoc={onDeleteDoc}
               onAddDoc={onAddDoc}
+              onMoveDocToFolder={onMoveDocToFolder}
+              onDeleteFolder={onDeleteFolder}
             />
           ))}
         </div>

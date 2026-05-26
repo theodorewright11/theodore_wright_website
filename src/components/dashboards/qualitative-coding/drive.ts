@@ -1,9 +1,25 @@
 // Google Drive sync layer for the qualitative-coding dashboard. Browser-side
 // OAuth via Google Identity Services (GIS), direct REST calls to the Drive v3
-// API. One file per Project, JSON content. No server, no service account.
+// API.
 //
-// Scope: drive.file — only access files the app created or the user opened
-// with it. The app cannot see the user's other Drive files.
+// File layout in Drive (one folder per project):
+//
+//   <DRIVE_FOLDER_ID or root>/
+//     <project name>/
+//       project.json           <- canonical state (machine-readable)
+//       project.md             <- full export, all docs + annotations
+//       codebook.md            <- codes + definitions
+//       documents/
+//         <doc folder path>/   <- mirrors Document.folder
+//           <doc title>.md     <- per-document export with annotation table
+//
+// project.json carries the appProperty tag tw_qual_coding=v1 so the app's
+// listing query can find legacy flat files (created by v2) and offer a
+// migration path. Derived files (.md) are pure exports — the dashboard never
+// reads them back.
+//
+// Scope: drive.file — only files the app creates or the user explicitly opens
+// with it. *Not* full Drive.
 
 const GIS_SRC = 'https://accounts.google.com/gsi/client';
 const SCOPE = 'https://www.googleapis.com/auth/drive.file email profile';
@@ -11,7 +27,12 @@ const TOKEN_KEY = 'tw-qual-coding-google-token';
 
 export const APP_PROPERTY_KEY = 'tw_qual_coding';
 export const APP_PROPERTY_VALUE = 'v1';
-export const FILE_MIME = 'application/json';
+
+export const MIME = {
+  json: 'application/json',
+  md: 'text/markdown',
+  folder: 'application/vnd.google-apps.folder',
+} as const;
 
 export type StoredToken = {
   access_token: string;
@@ -19,10 +40,12 @@ export type StoredToken = {
   email?: string;
 };
 
-export type DriveFile = {
+export type DriveItem = {
   id: string;
   name: string;
-  modifiedTime: string;
+  mimeType: string;
+  modifiedTime?: string;
+  parents?: string[];
   appProperties?: Record<string, string>;
 };
 
@@ -147,7 +170,7 @@ export class DriveAuthError extends Error {
   }
 }
 
-async function api<T>(token: string, url: string, init?: RequestInit): Promise<T> {
+async function apiJSON<T>(token: string, url: string, init?: RequestInit): Promise<T> {
   const r = await fetch(url, {
     ...init,
     headers: {
@@ -165,27 +188,44 @@ async function api<T>(token: string, url: string, init?: RequestInit): Promise<T
   return r.json() as Promise<T>;
 }
 
-// List all files this app created (filtered by appProperties).
-export async function listAppFiles(token: string, folderId?: string): Promise<DriveFile[]> {
+const FIELDS = 'id,name,mimeType,modifiedTime,parents,appProperties';
+
+// --- Listing -------------------------------------------------------------
+
+export async function listAppFiles(
+  token: string,
+  rootFolderId?: string,
+): Promise<DriveItem[]> {
   const qParts = [
     `appProperties has { key='${APP_PROPERTY_KEY}' and value='${APP_PROPERTY_VALUE}' }`,
     'trashed=false',
   ];
-  if (folderId) qParts.push(`'${folderId}' in parents`);
+  if (rootFolderId) qParts.push(`'${rootFolderId}' in parents`);
   const q = encodeURIComponent(qParts.join(' and '));
-  const fields = encodeURIComponent('files(id,name,modifiedTime,appProperties)');
+  const fields = encodeURIComponent(`files(${FIELDS})`);
   const url = `https://www.googleapis.com/drive/v3/files?q=${q}&fields=${fields}&pageSize=1000`;
-  const r = await api<{ files?: DriveFile[] }>(token, url);
+  const r = await apiJSON<{ files?: DriveItem[] }>(token, url);
   return r.files ?? [];
 }
 
-export async function getFileContent<T = unknown>(token: string, fileId: string): Promise<T> {
+export async function listChildren(token: string, parentId: string): Promise<DriveItem[]> {
+  const q = encodeURIComponent(`'${parentId}' in parents and trashed=false`);
+  const fields = encodeURIComponent(`files(${FIELDS})`);
+  const url = `https://www.googleapis.com/drive/v3/files?q=${q}&fields=${fields}&pageSize=1000`;
+  const r = await apiJSON<{ files?: DriveItem[] }>(token, url);
+  return r.files ?? [];
+}
+
+// --- File ops ------------------------------------------------------------
+
+export async function getFileContent<T = unknown>(
+  token: string,
+  fileId: string,
+): Promise<T> {
   const url = `https://www.googleapis.com/drive/v3/files/${encodeURIComponent(fileId)}?alt=media`;
-  const r = await fetch(url, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
+  const r = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
   if (r.status === 401 || r.status === 403) {
-    throw new DriveAuthError(r.status, `Drive auth failed (${r.status}). Sign in again.`);
+    throw new DriveAuthError(r.status, `Drive auth failed (${r.status}).`);
   }
   if (!r.ok) {
     const body = await r.text().catch(() => '');
@@ -194,21 +234,77 @@ export async function getFileContent<T = unknown>(token: string, fileId: string)
   return r.json() as Promise<T>;
 }
 
-export async function createFile(
+export async function createFolder(
   token: string,
   name: string,
-  content: unknown,
-  folderId?: string,
-): Promise<DriveFile> {
+  parentId?: string,
+): Promise<DriveItem> {
   const metadata = {
     name,
-    mimeType: FILE_MIME,
-    appProperties: { [APP_PROPERTY_KEY]: APP_PROPERTY_VALUE },
-    parents: folderId ? [folderId] : undefined,
+    mimeType: MIME.folder,
+    parents: parentId ? [parentId] : undefined,
   };
-  const body = multipartBody(metadata, content);
-  const url =
-    'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name,modifiedTime,appProperties';
+  const url = `https://www.googleapis.com/drive/v3/files?fields=${encodeURIComponent(FIELDS)}`;
+  const r = await fetch(url, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(metadata),
+  });
+  if (r.status === 401 || r.status === 403) {
+    throw new DriveAuthError(r.status, `Drive auth failed (${r.status}).`);
+  }
+  if (!r.ok) {
+    const body = await r.text().catch(() => '');
+    throw new Error(`Drive create folder ${r.status}: ${body || r.statusText}`);
+  }
+  return (await r.json()) as DriveItem;
+}
+
+export async function findOrCreateFolder(
+  token: string,
+  name: string,
+  parentId: string | undefined,
+  cache?: Map<string, string>,
+): Promise<string> {
+  const cacheKey = `${parentId ?? 'root'}|${name}`;
+  if (cache?.has(cacheKey)) return cache.get(cacheKey)!;
+  const children = parentId ? await listChildren(token, parentId) : [];
+  const existing = children.find(
+    (c) => c.mimeType === MIME.folder && c.name === name,
+  );
+  if (existing) {
+    cache?.set(cacheKey, existing.id);
+    return existing.id;
+  }
+  const made = await createFolder(token, name, parentId);
+  cache?.set(cacheKey, made.id);
+  return made.id;
+}
+
+export type CreateOpts = {
+  name: string;
+  parentId?: string;
+  mimeType: string;
+  content: unknown | string;
+  appTagged?: boolean;
+};
+
+export async function createFile(token: string, opts: CreateOpts): Promise<DriveItem> {
+  const metadata: any = {
+    name: opts.name,
+    mimeType: opts.mimeType,
+    parents: opts.parentId ? [opts.parentId] : undefined,
+  };
+  if (opts.appTagged) {
+    metadata.appProperties = { [APP_PROPERTY_KEY]: APP_PROPERTY_VALUE };
+  }
+  const bodyContent =
+    typeof opts.content === 'string' ? opts.content : JSON.stringify(opts.content);
+  const body = multipartBody(metadata, bodyContent, opts.mimeType);
+  const url = `https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=${encodeURIComponent(FIELDS)}`;
   const r = await fetch(url, {
     method: 'POST',
     headers: {
@@ -224,37 +320,37 @@ export async function createFile(
     const t = await r.text().catch(() => '');
     throw new Error(`Drive create ${r.status}: ${t || r.statusText}`);
   }
-  return (await r.json()) as DriveFile;
+  return (await r.json()) as DriveItem;
 }
 
-export async function updateFile(
-  token: string,
-  fileId: string,
-  content: unknown,
-  newName?: string,
-): Promise<DriveFile> {
-  if (newName) {
-    // Rename via PATCH metadata
-    await fetch(
-      `https://www.googleapis.com/drive/v3/files/${encodeURIComponent(fileId)}`,
-      {
-        method: 'PATCH',
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ name: newName }),
+export type UpdateOpts = {
+  fileId: string;
+  content: unknown | string;
+  mimeType: string;
+  name?: string;
+};
+
+export async function updateFile(token: string, opts: UpdateOpts): Promise<DriveItem> {
+  if (opts.name) {
+    await fetch(`https://www.googleapis.com/drive/v3/files/${encodeURIComponent(opts.fileId)}`, {
+      method: 'PATCH',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
       },
-    );
+      body: JSON.stringify({ name: opts.name }),
+    });
   }
-  const url = `https://www.googleapis.com/upload/drive/v3/files/${encodeURIComponent(fileId)}?uploadType=media&fields=id,name,modifiedTime,appProperties`;
+  const bodyContent =
+    typeof opts.content === 'string' ? opts.content : JSON.stringify(opts.content);
+  const url = `https://www.googleapis.com/upload/drive/v3/files/${encodeURIComponent(opts.fileId)}?uploadType=media&fields=${encodeURIComponent(FIELDS)}`;
   const r = await fetch(url, {
     method: 'PATCH',
     headers: {
       Authorization: `Bearer ${token}`,
-      'Content-Type': FILE_MIME,
+      'Content-Type': opts.mimeType,
     },
-    body: JSON.stringify(content),
+    body: bodyContent,
   });
   if (r.status === 401 || r.status === 403) {
     throw new DriveAuthError(r.status, `Drive auth failed (${r.status}).`);
@@ -263,7 +359,40 @@ export async function updateFile(
     const t = await r.text().catch(() => '');
     throw new Error(`Drive update ${r.status}: ${t || r.statusText}`);
   }
-  return (await r.json()) as DriveFile;
+  return (await r.json()) as DriveItem;
+}
+
+export async function renameFile(
+  token: string,
+  fileId: string,
+  newName: string,
+): Promise<void> {
+  await fetch(`https://www.googleapis.com/drive/v3/files/${encodeURIComponent(fileId)}`, {
+    method: 'PATCH',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ name: newName }),
+  });
+}
+
+export async function moveFile(
+  token: string,
+  fileId: string,
+  newParentId: string,
+  removeParents?: string[],
+): Promise<void> {
+  const removeStr = removeParents?.length ? `&removeParents=${removeParents.join(',')}` : '';
+  const url = `https://www.googleapis.com/drive/v3/files/${encodeURIComponent(fileId)}?addParents=${encodeURIComponent(newParentId)}${removeStr}`;
+  await fetch(url, {
+    method: 'PATCH',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({}),
+  });
 }
 
 export async function deleteFile(token: string, fileId: string): Promise<void> {
@@ -285,28 +414,29 @@ export async function deleteFile(token: string, fileId: string): Promise<void> {
 
 const MULTIPART_BOUNDARY = 'tw_qc_boundary_' + Math.random().toString(36).slice(2);
 
-function multipartBody(metadata: unknown, content: unknown): string {
+function multipartBody(metadata: unknown, content: string, contentMime: string): string {
   const meta = JSON.stringify(metadata);
-  const body = JSON.stringify(content);
   return [
     `--${MULTIPART_BOUNDARY}`,
     'Content-Type: application/json; charset=UTF-8',
     '',
     meta,
     `--${MULTIPART_BOUNDARY}`,
-    `Content-Type: ${FILE_MIME}; charset=UTF-8`,
+    `Content-Type: ${contentMime}; charset=UTF-8`,
     '',
-    body,
+    content,
     `--${MULTIPART_BOUNDARY}--`,
   ].join('\r\n');
 }
 
-export function projectFileName(projectName: string, projectId: string): string {
-  const slug = projectName
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-    .slice(0, 50) || 'project';
-  return `${slug}.${projectId.slice(0, 8)}.qcoding.json`;
+// --- Naming --------------------------------------------------------------
+
+export function slugFile(name: string): string {
+  return (
+    name
+      .trim()
+      .replace(/[<>:"/\\|?*\x00-\x1F]/g, '')
+      .replace(/\s+/g, ' ')
+      .slice(0, 80) || 'untitled'
+  );
 }

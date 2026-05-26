@@ -1,4 +1,4 @@
-import { annotationsForDoc, codePathString } from './compute';
+import { annotationsForDoc, buildCodeTree, codePathString, flattenTree } from './compute';
 import type { Document, Project } from './types';
 
 export function exportProjectJSON(project: Project): unknown {
@@ -46,6 +46,35 @@ export function exportDocumentMarkdown(project: Project, doc: Document): string 
 
 function escapePipes(s: string): string {
   return s.replace(/\|/g, '\\|');
+}
+
+export function codebookMarkdown(project: Project): string {
+  const lines: string[] = [];
+  lines.push(`# Codebook · ${project.name}`);
+  lines.push('');
+  lines.push(`Generated: ${new Date().toISOString()}`);
+  lines.push('');
+  if (project.codes.length === 0) {
+    lines.push('_No codes defined yet._');
+    lines.push('');
+    return lines.join('\n');
+  }
+  const tree = flattenTree(buildCodeTree(project.codes));
+  for (const node of tree) {
+    const indent = '  '.repeat(node.depth);
+    const path = codePathString(project.codes, node.code.id);
+    lines.push(`${indent}- **${node.code.name}**${node.depth === 0 ? '' : `  · _${path}_`}`);
+    if (node.code.description && node.code.description.trim()) {
+      const wrapped = node.code.description
+        .trim()
+        .split('\n')
+        .map((l) => `${indent}  ${l}`)
+        .join('\n');
+      lines.push(wrapped);
+    }
+  }
+  lines.push('');
+  return lines.join('\n');
 }
 
 export function exportProjectMarkdown(project: Project): string {

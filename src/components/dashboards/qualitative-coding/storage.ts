@@ -55,9 +55,13 @@ export function coerceProject(p: any): Project {
     })),
     codes: Array.isArray(p.codes) ? p.codes : [],
     annotations: Array.isArray(p.annotations) ? p.annotations : [],
+    folders: Array.isArray(p.folders) ? p.folders.filter((f: any) => typeof f === 'string') : [],
     created_at: p.created_at ?? new Date().toISOString(),
     updated_at: p.updated_at ?? new Date().toISOString(),
-    drive: p.drive && typeof p.drive === 'object' && p.drive.fileId ? p.drive : undefined,
+    drive:
+      p.drive && typeof p.drive === 'object' && (p.drive.folderId || p.drive.fileId)
+        ? p.drive
+        : undefined,
   };
 }
 

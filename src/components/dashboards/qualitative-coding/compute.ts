@@ -164,20 +164,15 @@ export type FolderNode = {
   children: FolderNode[];
 };
 
-export function buildFolderTree(docs: Document[]): { rootDocs: Document[]; folders: FolderNode[] } {
+export function buildFolderTree(
+  docs: Document[],
+  explicitFolders: string[] = [],
+): { rootDocs: Document[]; folders: FolderNode[] } {
   const rootDocs: Document[] = [];
   const folderMap = new Map<string, FolderNode>();
-  for (const d of docs) {
-    const path = (d.folder ?? '').trim();
-    if (!path) {
-      rootDocs.push(d);
-      continue;
-    }
+  const ensureFolder = (path: string) => {
     const parts = path.split('/').map((s) => s.trim()).filter(Boolean);
-    if (parts.length === 0) {
-      rootDocs.push(d);
-      continue;
-    }
+    if (parts.length === 0) return null;
     let cur = '';
     for (let i = 0; i < parts.length; i++) {
       cur = cur ? `${cur}/${parts[i]}` : parts[i];
@@ -191,7 +186,23 @@ export function buildFolderTree(docs: Document[]): { rootDocs: Document[]; folde
         });
       }
     }
-    folderMap.get(cur)!.docs.push(d);
+    return folderMap.get(cur)!;
+  };
+  for (const ef of explicitFolders) {
+    ensureFolder(ef.trim());
+  }
+  for (const d of docs) {
+    const path = (d.folder ?? '').trim();
+    if (!path) {
+      rootDocs.push(d);
+      continue;
+    }
+    const node = ensureFolder(path);
+    if (!node) {
+      rootDocs.push(d);
+      continue;
+    }
+    node.docs.push(d);
   }
   const allPaths = [...folderMap.keys()].sort();
   const roots: FolderNode[] = [];
@@ -220,12 +231,35 @@ export function folderDocCount(node: FolderNode): number {
   );
 }
 
+export type FieldFilter = {
+  // text
+  contains?: string;
+  // number
+  numOp?: '=' | '>' | '<' | 'between';
+  numValue?: number;
+  numMin?: number;
+  numMax?: number;
+  // date
+  dateFrom?: string;
+  dateTo?: string;
+  // enum
+  enumEquals?: string;
+};
+
 export type ExploreFilter = {
   codeIds: Set<string> | null;
   textQuery: string;
-  metadataFilters: Record<string, string>;
+  metadataFilters: Record<string, FieldFilter>;
   folder?: string | null;
 };
+
+export type SortKey =
+  | 'created-desc'
+  | 'created-asc'
+  | 'code'
+  | 'doc'
+  | 'span-length'
+  | `meta:${string}`;
 
 export type ExploreRow = {
   projectId: string;
@@ -237,9 +271,45 @@ export type ExploreRow = {
   span: string;
 };
 
+function matchesFieldFilter(value: unknown, filter: FieldFilter): boolean {
+  const hasAny =
+    !!filter.contains ||
+    filter.numOp ||
+    filter.dateFrom ||
+    filter.dateTo ||
+    filter.enumEquals;
+  if (!hasAny) return true;
+  if (value === null || value === undefined || value === '') return false;
+  if (filter.contains) {
+    if (!String(value).toLowerCase().includes(filter.contains.toLowerCase())) return false;
+  }
+  if (filter.numOp) {
+    const n = typeof value === 'number' ? value : parseFloat(String(value));
+    if (Number.isNaN(n)) return false;
+    if (filter.numOp === '=' && filter.numValue !== undefined && n !== filter.numValue) return false;
+    if (filter.numOp === '>' && filter.numValue !== undefined && !(n > filter.numValue)) return false;
+    if (filter.numOp === '<' && filter.numValue !== undefined && !(n < filter.numValue)) return false;
+    if (
+      filter.numOp === 'between' &&
+      ((filter.numMin !== undefined && n < filter.numMin) ||
+        (filter.numMax !== undefined && n > filter.numMax))
+    ) {
+      return false;
+    }
+  }
+  if (filter.dateFrom || filter.dateTo) {
+    const s = String(value);
+    if (filter.dateFrom && s < filter.dateFrom) return false;
+    if (filter.dateTo && s > filter.dateTo) return false;
+  }
+  if (filter.enumEquals && String(value) !== filter.enumEquals) return false;
+  return true;
+}
+
 export function exploreRows(
   projects: Project[],
   filter: ExploreFilter,
+  sort: SortKey = 'created-desc',
 ): ExploreRow[] {
   const out: ExploreRow[] = [];
   const q = filter.textQuery.trim().toLowerCase();
@@ -255,14 +325,9 @@ export function exploreRows(
         if (filter.folder !== '' && !f.startsWith(filter.folder)) continue;
       }
       let metaOk = true;
-      for (const [k, v] of Object.entries(filter.metadataFilters)) {
-        if (!v) continue;
-        const dv = doc.metadata[k];
-        if (dv === null || dv === undefined) {
-          metaOk = false;
-          break;
-        }
-        if (!String(dv).toLowerCase().includes(v.toLowerCase())) {
+      for (const [k, ff] of Object.entries(filter.metadataFilters)) {
+        if (!ff) continue;
+        if (!matchesFieldFilter(doc.metadata[k], ff)) {
           metaOk = false;
           break;
         }
@@ -282,7 +347,32 @@ export function exploreRows(
       });
     }
   }
-  return out;
+  return sortRows(out, sort);
+}
+
+function sortRows(rows: ExploreRow[], sort: SortKey): ExploreRow[] {
+  const arr = [...rows];
+  if (sort === 'created-desc') {
+    arr.sort((a, b) => b.annotation.created_at.localeCompare(a.annotation.created_at));
+  } else if (sort === 'created-asc') {
+    arr.sort((a, b) => a.annotation.created_at.localeCompare(b.annotation.created_at));
+  } else if (sort === 'code') {
+    arr.sort((a, b) => a.codePath.localeCompare(b.codePath));
+  } else if (sort === 'doc') {
+    arr.sort((a, b) => a.doc.title.localeCompare(b.doc.title));
+  } else if (sort === 'span-length') {
+    arr.sort((a, b) => b.span.length - a.span.length);
+  } else if (sort.startsWith('meta:')) {
+    const key = sort.slice('meta:'.length);
+    arr.sort((a, b) => {
+      const av = a.doc.metadata[key];
+      const bv = b.doc.metadata[key];
+      if (av === undefined || av === null) return 1;
+      if (bv === undefined || bv === null) return -1;
+      return String(av).localeCompare(String(bv));
+    });
+  }
+  return arr;
 }
 
 export function exploreCodeUniverse(projects: Project[]): {

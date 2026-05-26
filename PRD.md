@@ -249,14 +249,19 @@ A personal qualitative-coding tool: organize text documents into projects, build
 
 **Persistence**: same `tw-qual-coding-v1` localStorage key; the blob now also serialises `exploreProjectIds`, `view`, and `showCodeDefinitions`. `Document.notes`, `Document.folder`, `Project.about`, and `Project.drive` ride inside their parent records.
 
-**Google Drive sync** (v2 addition):
+**Google Drive sync** (v3 layout — folder per project):
 
-- One Drive file per project. Filename `<slug>.<id-prefix>.qcoding.json`. Stored in the folder identified by `PUBLIC_QUAL_CODING_DRIVE_FOLDER_ID` (optional — if unset, files go to "My Drive" root).
+- Each project syncs to a Drive folder named after the project. Folder is created inside `PUBLIC_QUAL_CODING_DRIVE_FOLDER_ID` if set, otherwise in My Drive root. Inside each project folder:
+  - `project.json` — canonical state (machine-readable; the dashboard's source of truth).
+  - `project.md` — full project export (all documents + annotation tables).
+  - `codebook.md` — code tree with names + definitions.
+  - `documents/` — subfolder. Inside, each `Document` is rendered to its own `.md` file, with subfolders mirroring `Document.folder` (e.g. a doc with `folder: "Interviews/Round 1"` lives at `documents/Interviews/Round 1/<title>.md`).
+- Only `project.json` carries the `appProperties.tw_qual_coding=v1` tag — that's what `listAppFiles` uses to discover projects. The .md files are read-only exports (the dashboard never reads them).
+- **Legacy migration**: v2 wrote a single flat JSON per project directly in the configured folder (or root). On the first v3 sync, `syncProjectToDrive` detects a `drive.fileId` (or a `projectJsonId` whose parent is the configured root), creates a new project folder, moves the legacy file in, renames it to `project.json`, and writes the new derived files alongside.
 - Browser-side OAuth via Google Identity Services, scope `https://www.googleapis.com/auth/drive.file` (file-level scope — the app can only see files it created or the user explicitly opens with it; *not* full Drive access).
-- App-property tag `tw_qual_coding=v1` on each created file lets the app's "list files" query filter to its own files only, regardless of folder.
 - Token stored in `sessionStorage` (60s expiry safety margin). 401/403 from Drive drops the token and surfaces a "sign in again" prompt.
-- **Sync lifecycle**: on sign-in → list app files → fetch each as JSON → merge into local state (server wins for existing project IDs, local projects without a Drive file get pushed up). On every project mutation → debounce 800ms, then write the whole project JSON to its Drive file (latest-wins per-project queue; if a write is in-flight, the latest queued write fires after it). On `window` focus → re-pull all files (catches edits from another device). On project delete → delete the corresponding Drive file (best-effort).
-- AuthBar in the TopBar shows the current sync state: `local only` (no env var) / `Sign in to sync` (configured but not signed in) / signed-in pill with email + colored sync dot (`idle` green / `syncing` blue pulsing / `error` red / `offline` grey) and a dropdown with file count, last error, "Pull all from Drive", and Sign out.
+- **Sync lifecycle**: on sign-in → `listAppFiles` finds all `project.json` files → pull each → merge into local state (server wins for existing project IDs, local projects without a Drive folder get pushed up). On every project mutation → debounce 800ms, then `syncProjectToDrive(token, project, rootFolderId)` writes the whole project tree to Drive (latest-wins per-project queue). On `window` focus → re-pull all (catches edits from another device). On project delete → delete the whole Drive folder.
+- AuthBar in the TopBar shows the current sync state: `local only` (no env var) / `Sign in to sync` (configured but not signed in) / signed-in pill with email + colored sync dot (`idle` green / `syncing` blue pulsing / `error` red / `offline` grey) and a dropdown with synced-project count, last error, **"Refresh from Drive"** (re-pull everything — use after editing on another device), and Sign out.
 
 **Required env (when using Drive sync)**:
 - `PUBLIC_GOOGLE_CLIENT_ID` — same OAuth 2.0 Web Client ID used by Finance/Time Tracker. **The Drive API must be enabled** on that Cloud project (separate from the Sheets API enable). Authorized JS origins must cover localhost + the deploy domain.

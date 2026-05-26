@@ -42,7 +42,8 @@ export type Annotation = {
 };
 
 export type DriveLink = {
-  fileId: string;
+  folderId: string;
+  projectJsonId: string;
   modifiedTime?: string;
 };
 
@@ -56,6 +57,7 @@ export type Project = {
   documents: Document[];
   codes: Code[];
   annotations: Annotation[];
+  folders?: string[];
   created_at: string;
   updated_at: string;
   drive?: DriveLink;

@@ -27,29 +27,31 @@ export default function AuthBar({
 
   if (!configured) {
     return (
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        title="Drive sync not configured"
-        className="px-2.5 py-1 text-[11px] font-medium rounded text-slate-500 hover:bg-slate-100"
-      >
-        local only
+      <div className="relative">
+        <button
+          type="button"
+          onClick={() => setOpen((v) => !v)}
+          title="Drive sync not configured"
+          className="px-3 py-1.5 text-[12px] font-medium rounded-md text-slate-500 hover:bg-slate-100 transition-colors"
+        >
+          local only
+        </button>
         {open && (
-          <span
+          <div
             onClick={(e) => e.stopPropagation()}
-            className="absolute right-4 top-12 w-[300px] z-30 bg-white border border-slate-200 rounded-lg shadow-lg p-3 text-left"
+            className="absolute right-0 top-full mt-1 w-[320px] z-30 bg-white border border-slate-200 rounded-lg shadow-lg p-3 text-left"
           >
-            <span className="block text-[12px] font-semibold text-slate-800 mb-1">
+            <div className="text-[13px] font-semibold text-slate-800 mb-1">
               Drive sync not configured
-            </span>
-            <span className="block text-[11px] text-slate-500 leading-snug">
-              Set <code className="text-[10px] bg-slate-100 px-1 rounded">PUBLIC_GOOGLE_CLIENT_ID</code>{' '}
-              in <code className="text-[10px] bg-slate-100 px-1 rounded">.env</code> (same OAuth client as
-              Finance/Time Tracker, with Drive API enabled). Then reload.
-            </span>
-          </span>
+            </div>
+            <div className="text-[12px] text-slate-500 leading-snug">
+              Set <code className="text-[11px] bg-slate-100 px-1 rounded">PUBLIC_GOOGLE_CLIENT_ID</code>{' '}
+              in <code className="text-[11px] bg-slate-100 px-1 rounded">.env</code> (same OAuth client as
+              Finance/Time Tracker, with Drive API enabled). Then restart the dev server.
+            </div>
+          </div>
         )}
-      </button>
+      </div>
     );
   }
 
@@ -58,7 +60,7 @@ export default function AuthBar({
       <button
         type="button"
         onClick={onSignIn}
-        className="px-3 py-1 text-[12px] font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded transition-colors"
+        className="px-3.5 py-1.5 text-[12px] font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-md transition-colors"
       >
         Sign in to sync
       </button>
@@ -70,25 +72,25 @@ export default function AuthBar({
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="flex items-center gap-2 px-2.5 py-1 text-[11px] font-medium text-slate-600 hover:bg-slate-100 rounded transition-colors"
+        className="flex items-center gap-2 px-3 py-1.5 text-[12px] font-medium text-slate-600 hover:bg-slate-100 rounded-md transition-colors"
       >
         <SyncDot status={syncStatus} />
-        <span className="hidden sm:inline truncate max-w-[140px]">{email}</span>
+        <span className="hidden sm:inline truncate max-w-[160px]">{email}</span>
         <span className="text-slate-400 text-[9px]">▾</span>
       </button>
       {open && (
         <div
           onClick={(e) => e.stopPropagation()}
-          className="absolute right-0 top-full mt-1 w-[260px] z-30 bg-white border border-slate-200 rounded-lg shadow-lg overflow-hidden"
+          className="absolute right-0 top-full mt-1 w-[300px] z-30 bg-white border border-slate-200 rounded-lg shadow-lg overflow-hidden"
         >
-          <div className="px-3 py-2 border-b border-slate-100">
+          <div className="px-3.5 py-2.5 border-b border-slate-100">
             <div className="text-[10px] uppercase tracking-wide font-semibold text-slate-400">
               Signed in
             </div>
             <div className="text-[13px] text-slate-800 truncate">{email}</div>
           </div>
-          <div className="px-3 py-2 text-[11px] text-slate-500 border-b border-slate-100">
-            {fileCount} project file{fileCount === 1 ? '' : 's'} in Drive ·{' '}
+          <div className="px-3.5 py-2.5 text-[12px] text-slate-500 border-b border-slate-100">
+            {fileCount} project{fileCount === 1 ? '' : 's'} synced ·{' '}
             <SyncLabel status={syncStatus} />
             {lastError && (
               <div className="mt-1 text-[11px] text-red-600 leading-snug">{lastError}</div>
@@ -100,9 +102,12 @@ export default function AuthBar({
               setOpen(false);
               onPullAll();
             }}
-            className="w-full text-left px-3 py-2 text-[12px] text-slate-700 hover:bg-blue-50"
+            className="w-full text-left px-3.5 py-2.5 hover:bg-blue-50 transition-colors"
           >
-            Pull all from Drive
+            <div className="text-[13px] font-medium text-slate-800">Refresh from Drive</div>
+            <div className="text-[11px] text-slate-500 leading-snug">
+              Re-fetch every project from Drive (use after editing on another device).
+            </div>
           </button>
           <button
             type="button"
@@ -110,7 +115,7 @@ export default function AuthBar({
               setOpen(false);
               onSignOut();
             }}
-            className="w-full text-left px-3 py-2 text-[12px] text-slate-700 hover:bg-slate-100 border-t border-slate-100"
+            className="w-full text-left px-3.5 py-2.5 text-[13px] text-slate-700 hover:bg-slate-100 border-t border-slate-100 transition-colors"
           >
             Sign out
           </button>

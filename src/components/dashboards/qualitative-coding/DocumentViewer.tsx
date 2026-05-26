@@ -16,6 +16,8 @@ type Props = {
   annotations: Annotation[];
   metadataSchema: MetadataField[];
   selectedCodeId: string | null;
+  showCodeDefinitions: boolean;
+  onToggleDefinitions: () => void;
   onUpdateDoc: (patch: Partial<Document>) => void;
   onAddAnnotation: (start: number, end: number, codeId: string, note?: string) => void;
   onDeleteAnnotation: (id: string) => void;
@@ -34,6 +36,8 @@ export default function DocumentViewer({
   annotations,
   metadataSchema,
   selectedCodeId,
+  showCodeDefinitions,
+  onToggleDefinitions,
   onUpdateDoc,
   onAddAnnotation,
   onDeleteAnnotation,
@@ -135,23 +139,36 @@ export default function DocumentViewer({
     <div className="flex-1 min-w-0 flex flex-col">
       <DocHeader doc={doc} metadataSchema={metadataSchema} onUpdateDoc={onUpdateDoc} />
 
-      <div className="px-8 py-3 flex items-center gap-2 border-b border-slate-200 bg-white sticky top-0 z-10">
+      <div className="px-6 py-3 flex items-center gap-2 border-b border-slate-200 bg-white sticky top-0 z-10">
         <ToggleBtn active={mode === 'view'} onClick={() => mode === 'edit' && commitEdit()}>
-          Read & code
+          Read &amp; code
         </ToggleBtn>
         <ToggleBtn active={mode === 'edit'} onClick={() => setMode('edit')}>
           Edit text
         </ToggleBtn>
+        <div className="w-px h-5 bg-slate-200 mx-1" />
+        <button
+          type="button"
+          onClick={onToggleDefinitions}
+          title={showCodeDefinitions ? 'hide code definitions' : 'show code definitions'}
+          className={`px-2.5 py-1.5 text-[12px] font-medium rounded transition-colors flex items-center gap-1 ${
+            showCodeDefinitions
+              ? 'bg-blue-600 text-white'
+              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+          }`}
+        >
+          📖 Defs
+        </button>
         <button
           type="button"
           onClick={() => setNotesOpen((v) => !v)}
-          className={`ml-2 px-2.5 py-1 text-[12px] font-medium rounded transition-colors flex items-center gap-1 ${
+          className={`px-2.5 py-1.5 text-[12px] font-medium rounded transition-colors flex items-center gap-1 ${
             notesOpen
               ? 'bg-amber-100 text-amber-900'
               : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
           }`}
         >
-          📝 Notes{doc.notes ? ` · ${doc.notes.length > 0 ? '•' : ''}` : ''}
+          📝 Notes{doc.notes && doc.notes.length > 0 ? ' •' : ''}
         </button>
         <div className="ml-auto text-[11px] text-slate-400 font-mono tabular-nums">
           {doc.text.length.toLocaleString()} chars · {docAnnotations.length} annotation
@@ -234,6 +251,7 @@ export default function DocumentViewer({
         codes={codes}
         annotations={docAnnotations}
         focusedAnnotationId={focusedAnnotationId}
+        showDefinitions={showCodeDefinitions}
         onFocus={setFocusedAnnotationId}
         onDelete={onDeleteAnnotation}
         onUpdate={onUpdateAnnotation}
@@ -245,6 +263,7 @@ export default function DocumentViewer({
           pending={pending}
           codes={codes}
           text={doc.text}
+          showDefinitions={showCodeDefinitions}
           onPick={(codeId) => {
             onAddAnnotation(pending.start, pending.end, codeId);
             setPending(null);
@@ -418,12 +437,13 @@ type PopoverProps = {
   pending: PendingSelection;
   codes: Code[];
   text: string;
+  showDefinitions: boolean;
   onPick: (codeId: string) => void;
   onCancel: () => void;
 };
 
 const SelectionPopover = forwardRef<HTMLDivElement, PopoverProps>(function SelectionPopover(
-  { pending, codes, text, onPick, onCancel },
+  { pending, codes, text, showDefinitions, onPick, onCancel },
   ref,
 ) {
   const [query, setQuery] = useState('');
@@ -498,7 +518,7 @@ const SelectionPopover = forwardRef<HTMLDivElement, PopoverProps>(function Selec
                 />
                 <span className="flex-1 min-w-0">
                   <span className="block text-[13px] text-slate-800 truncate">{n.code.name}</span>
-                  {n.code.description && (
+                  {showDefinitions && n.code.description && (
                     <span className="block text-[11px] text-slate-500 leading-tight line-clamp-2 mt-0.5">
                       {n.code.description}
                     </span>
@@ -518,6 +538,7 @@ function AnnotationsPanel({
   codes,
   annotations,
   focusedAnnotationId,
+  showDefinitions,
   onFocus,
   onDelete,
   onUpdate,
@@ -526,6 +547,7 @@ function AnnotationsPanel({
   codes: Code[];
   annotations: Annotation[];
   focusedAnnotationId: string | null;
+  showDefinitions: boolean;
   onFocus: (id: string | null) => void;
   onDelete: (id: string) => void;
   onUpdate: (id: string, patch: Partial<Annotation>) => void;
@@ -582,7 +604,7 @@ function AnnotationsPanel({
                     ×
                   </button>
                 </div>
-                {focused && codeForA?.description && (
+                {(focused || showDefinitions) && codeForA?.description && (
                   <div className="mt-1 text-[11px] text-slate-500 leading-snug border-l-2 border-slate-200 pl-2">
                     {codeForA.description}
                   </div>
@@ -623,9 +645,9 @@ function ToggleBtn({
     <button
       type="button"
       onClick={onClick}
-      className={`px-3 py-1 text-[12px] font-medium rounded transition-colors ${
+      className={`px-3 py-1.5 text-[12px] font-semibold rounded-md transition-colors ${
         active
-          ? 'bg-slate-900 text-white'
+          ? 'bg-slate-900 text-white shadow-sm'
           : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
       }`}
     >
