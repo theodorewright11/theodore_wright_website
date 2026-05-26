@@ -216,10 +216,11 @@ export default function LogTab({
       {/* Summary */}
       <div className="rounded-lg border border-rule bg-paper p-5 space-y-4">
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-          <Stat label="Total worked" value={fmtHM(stats.totalNetMs)} />
+          <Stat label="Total worked" value={fmtHM(stats.totalNetMs)}
+                sub={`${fmtHM(stats.totalGrossMs)} gross`} />
           <Stat label="Avg / day"
                 value={stats.avgPerDayMs === null ? '—' : fmtHM(stats.avgPerDayMs)}
-                sub="total ÷ days in range" />
+                sub={stats.days > 0 ? `${fmtHM(stats.totalGrossMs / stats.days)} gross / day` : 'total ÷ days in range'} />
           <Stat label="Avg / working day"
                 value={stats.avgPerWorkingDayMs === null ? '—' : fmtHM(stats.avgPerWorkingDayMs)}
                 sub={`worked ${stats.workingDays} of ${stats.days} days`} />
