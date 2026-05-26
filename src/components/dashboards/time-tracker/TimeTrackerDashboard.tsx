@@ -329,11 +329,13 @@ export default function TimeTrackerDashboard() {
     const a = activeSession(state.sessions);
     if (!a) return;
     const ts = iso();
-    // Auto-close a forgotten open break so net time stays correct.
+    // Auto-close any forgotten open break so net time stays correct.
     const breaks = a.breaks.map((b, i) =>
       i === a.breaks.length - 1 && b.end === null ? { ...b, end: ts } : b);
+    // Auto-close any open lap so it doesn't tick on into the next session.
+    const laps = a.laps.map(l => l.end === null ? { ...l, end: ts } : l);
     setSessions(state.sessions.map(s =>
-      s.id === a.id ? { ...s, clock_out: ts, breaks, updated_at: ts } : s));
+      s.id === a.id ? { ...s, clock_out: ts, breaks, laps, updated_at: ts } : s));
     if (settings.autoRunWhenClockedIn) pomodoroReset();
   };
 
@@ -347,16 +349,25 @@ export default function TimeTrackerDashboard() {
     if (settings.autoRunWhenClockedIn) pomodoroPause();
   };
 
-  // Stopwatch lap on the active session: end of segment = now, start =
-  // previous lap's end (or the clock_in time for the first lap).
+  // Stopwatch lap: a start/stop toggle. First press opens a lap (end=null,
+  // start=now); next press closes it. At most one open lap at a time. When
+  // no lap is open the current-lap ticker is off entirely.
   const onAddLap = () => {
     const a = activeSession(state.sessions);
     if (!a || isOnBreak(a)) return;
     const ts = iso();
-    const lastEnd = a.laps.length > 0 ? a.laps[a.laps.length - 1].end : a.clock_in;
-    const newLap: Lap = { id: crypto.randomUUID(), start: lastEnd, end: ts };
-    setSessions(state.sessions.map(s =>
-      s.id === a.id ? { ...s, laps: [...s.laps, newLap], updated_at: ts } : s));
+    const openIdx = a.laps.findIndex(l => l.end === null);
+    if (openIdx >= 0) {
+      setSessions(state.sessions.map(s => s.id !== a.id ? s : {
+        ...s, laps: s.laps.map((l, i) => i === openIdx ? { ...l, end: ts } : l),
+        updated_at: ts,
+      }));
+    } else {
+      const newLap: Lap = { id: crypto.randomUUID(), start: ts, end: null };
+      setSessions(state.sessions.map(s => s.id !== a.id ? s : {
+        ...s, laps: [...s.laps, newLap], updated_at: ts,
+      }));
+    }
   };
 
   const onUpdateLap = (sessionId: string, lapId: string, patch: Partial<Lap>) => {

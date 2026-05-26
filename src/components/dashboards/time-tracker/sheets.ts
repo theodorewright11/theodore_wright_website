@@ -262,11 +262,11 @@ function parseLaps(json: string): Lap[] {
     const arr = JSON.parse(json);
     if (!Array.isArray(arr)) return [];
     return arr
-      .filter(l => l && typeof l.start === 'string' && typeof l.end === 'string')
+      .filter(l => l && typeof l.start === 'string')
       .map(l => ({
         id: typeof l.id === 'string' && l.id ? l.id : crypto.randomUUID(),
         start: l.start,
-        end: l.end,
+        end: typeof l.end === 'string' && l.end ? l.end : null,
         notes: typeof l.notes === 'string' && l.notes ? l.notes : undefined,
       }));
   } catch {

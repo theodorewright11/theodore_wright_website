@@ -35,7 +35,7 @@ export function loadState(): DataState {
         laps: (Array.isArray(s?.laps) ? s.laps : []).map((l: any) => ({
           id: typeof l?.id === 'string' && l.id ? l.id : crypto.randomUUID(),
           start: l?.start,
-          end: l?.end,
+          end: typeof l?.end === 'string' && l.end ? l.end : null,
           notes: typeof l?.notes === 'string' && l.notes ? l.notes : undefined,
         })),
         mood: Number.isFinite(s?.mood) ? s.mood : 0,

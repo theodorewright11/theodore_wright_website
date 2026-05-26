@@ -9,14 +9,14 @@ export type Break = {
   notes?: string;
 };
 
-// A stopwatch-style lap: a marked segment within a clock-in session, from
-// the previous lap's end (or the clock-in time, for the first lap) to the
-// moment the Lap button was pressed. Optional notes for what was done in
-// that segment. Doesn't affect net worked time — it's just a marker.
+// A stopwatch-style lap: an explicit start/stop segment within a clock-in
+// session. Press Lap once to start the lap (end stays null), press again to
+// stop it (end set to that moment). At most one lap is open at a time. Laps
+// don't affect net worked time — they're just markers for what was done.
 export type Lap = {
   id: string;
   start: string;
-  end: string;
+  end: string | null;
   notes?: string;
 };
 

@@ -58,13 +58,11 @@ export default function ClockTab({
   if (active) {
     const onBreak = isOnBreak(active);
     const curBreak = onBreak ? active.breaks[active.breaks.length - 1] : null;
-    // The current lap is the time since the previous lap end (or clock-in,
-    // if no laps yet). It ticks live alongside the worked-time clock; laps
-    // don't pause on breaks, so it keeps running through them.
-    const currentLapStart = active.laps.length > 0
-      ? active.laps[active.laps.length - 1].end
-      : active.clock_in;
-    const currentLapMs = Math.max(0, now - Date.parse(currentLapStart));
+    // Open lap = the one currently running (start set, end still null). The
+    // Lap button toggles: starts a new open lap, or stops the open one.
+    const openLapIdx = active.laps.findIndex(l => l.end === null);
+    const openLap = openLapIdx >= 0 ? active.laps[openLapIdx] : null;
+    const openLapMs = openLap ? Math.max(0, now - Date.parse(openLap.start)) : 0;
 
     return (
       <div className="space-y-6">
@@ -105,10 +103,12 @@ export default function ClockTab({
                   ? ` · ${fmtHM(sessionBreakMs(active, now))} on breaks`
                   : ''}
               </p>
-              <p className="font-mono text-[11px] text-muted m-0 mt-2 tabular-nums">
-                current lap #{active.laps.length + 1} ·{' '}
-                <span className="text-ink-soft">{fmtClock(currentLapMs)}</span>
-              </p>
+              {openLap && (
+                <p className="font-mono text-[11px] text-muted m-0 mt-2 tabular-nums">
+                  lap #{openLapIdx + 1} running ·{' '}
+                  <span className="text-ink-soft">{fmtClock(openLapMs)}</span>
+                </p>
+              )}
             </>
           )}
 
@@ -118,7 +118,9 @@ export default function ClockTab({
             ) : (
               <>
                 <button className={btnMuted} onClick={onStartBreak}>Take a break</button>
-                <button className={btnMuted} onClick={onAddLap}>Lap</button>
+                <button className={btnMuted} onClick={onAddLap}>
+                  {openLap ? 'Stop lap' : 'Start lap'}
+                </button>
               </>
             )}
             <button className={btnAccent}
@@ -141,9 +143,9 @@ export default function ClockTab({
 
         <p className="font-serif text-[13px] text-muted m-0">
           Take a break is a pseudo clock-out — for a meal or an errand. It pauses worked
-          time without ending the session. Lap marks the end of one segment within the
-          session for tracking what you did; it doesn't change the time accounting. Discard
-          removes the session entirely (use it if you clocked in by mistake).
+          time without ending the session. Start/Stop lap toggles a stopwatch lap on the
+          current session — it doesn't change the time accounting, just records a labelled
+          segment. Discard removes the session entirely (use it if you clocked in by mistake).
         </p>
 
         {active.laps.length > 0 && (
