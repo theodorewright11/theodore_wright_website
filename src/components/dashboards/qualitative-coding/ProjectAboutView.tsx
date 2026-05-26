@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { MarkdownEditor, MarkdownRendered } from './Markdown';
+import { emDash } from './storage';
 import type { Project } from './types';
 
 type Props = {
@@ -29,7 +30,7 @@ export default function ProjectAboutView({ project, onUpdate }: Props) {
 
         <input
           value={name}
-          onChange={(e) => setName(e.target.value)}
+          onChange={(e) => setName(emDash(e.target.value))}
           onBlur={() => {
             const v = name.trim();
             if (v && v !== project.name) onUpdate({ name: v });
@@ -49,7 +50,7 @@ export default function ProjectAboutView({ project, onUpdate }: Props) {
           </label>
           <input
             value={description}
-            onChange={(e) => setDescription(e.target.value)}
+            onChange={(e) => setDescription(emDash(e.target.value))}
             onBlur={() => {
               const v = description.trim();
               if (v !== (project.description ?? '')) {

@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react';
+import { emDash } from './storage';
 
 export function renderMarkdown(src: string): string {
   if (!src) return '';
@@ -260,7 +261,7 @@ export function MarkdownEditor({
         <textarea
           ref={taRef}
           value={value}
-          onChange={(e) => onChange(e.target.value)}
+          onChange={(e) => onChange(emDash(e.target.value))}
           onKeyDown={(e) => {
             if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'b') {
               e.preventDefault();

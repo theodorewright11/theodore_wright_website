@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { buildCodeTree, resolveColor, type CodeNode } from './compute';
+import { emDash } from './storage';
 import { PALETTE, type Code } from './types';
 
 type Props = {
@@ -267,7 +268,7 @@ function TreeRow({
           <input
             autoFocus
             value={draftName}
-            onChange={(e) => setDraftName(e.target.value)}
+            onChange={(e) => setDraftName(emDash(e.target.value))}
             onKeyDown={(e) => {
               if (e.key === 'Enter' && !e.shiftKey) saveEdit();
               if (e.key === 'Escape') cancelEdit();
@@ -277,7 +278,7 @@ function TreeRow({
           />
           <textarea
             value={draftDesc}
-            onChange={(e) => setDraftDesc(e.target.value)}
+            onChange={(e) => setDraftDesc(emDash(e.target.value))}
             onKeyDown={(e) => {
               if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) saveEdit();
               if (e.key === 'Escape') cancelEdit();

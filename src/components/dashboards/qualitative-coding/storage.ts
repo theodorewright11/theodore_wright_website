@@ -9,6 +9,8 @@ const empty: AppState = {
   exploreProjectIds: [],
   view: 'documents',
   showCodeDefinitions: false,
+  sidebarCollapsed: false,
+  deletedProjectIds: [],
 };
 
 export function loadState(): AppState {
@@ -23,8 +25,18 @@ export function loadState(): AppState {
         projects: parsed.projects.map(coerceProject),
         activeProjectId: parsed.activeProjectId ?? null,
         exploreProjectIds: Array.isArray(parsed.exploreProjectIds) ? parsed.exploreProjectIds : [],
-        view: parsed.view === 'explore' ? 'explore' : 'documents',
+        view:
+          parsed.view === 'explore' || parsed.view === 'about' || parsed.view === 'codebook'
+            ? parsed.view
+            : 'documents',
         showCodeDefinitions: !!parsed.showCodeDefinitions,
+        sidebarCollapsed: !!parsed.sidebarCollapsed,
+        sidebarWidth: typeof parsed.sidebarWidth === 'number' ? parsed.sidebarWidth : undefined,
+        notesWidth: typeof parsed.notesWidth === 'number' ? parsed.notesWidth : undefined,
+        codebookWidth: typeof parsed.codebookWidth === 'number' ? parsed.codebookWidth : undefined,
+        deletedProjectIds: Array.isArray(parsed.deletedProjectIds)
+          ? parsed.deletedProjectIds.filter((s: any) => typeof s === 'string')
+          : [],
       };
     }
   } catch {
@@ -108,6 +120,13 @@ function triggerDownload(filename: string, blob: Blob): void {
   a.click();
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
+}
+
+// Auto-converts double-hyphen to em-dash. Safe for prose fields where character
+// offsets don't carry semantic meaning. Do NOT apply to Document.text — that
+// would shift annotation offsets.
+export function emDash(s: string): string {
+  return s.replace(/--/g, '—');
 }
 
 export function readFileAsText(file: File): Promise<string> {

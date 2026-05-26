@@ -7,21 +7,34 @@ import {
   resolveColor,
   segmentText,
 } from './compute';
+import CodebookView from './CodebookView';
 import { MarkdownEditor } from './Markdown';
-import type { Annotation, Code, Document, MetadataField } from './types';
+import { ResizeHandle } from './Resizable';
+import { emDash } from './storage';
+import type { Annotation, Code, Document, MetadataField, Project } from './types';
 
 type Props = {
   doc: Document;
+  project: Project;
   codes: Code[];
   annotations: Annotation[];
   metadataSchema: MetadataField[];
   selectedCodeId: string | null;
   showCodeDefinitions: boolean;
+  codebookOpen: boolean;
+  notesWidth: number;
+  codebookWidth: number;
+  onResizeNotes: (n: number) => void;
+  onResizeCodebook: (n: number) => void;
   onToggleDefinitions: () => void;
+  onToggleCodebook: () => void;
   onUpdateDoc: (patch: Partial<Document>) => void;
   onAddAnnotation: (start: number, end: number, codeId: string, note?: string) => void;
   onDeleteAnnotation: (id: string) => void;
   onUpdateAnnotation: (id: string, patch: Partial<Annotation>) => void;
+  onAddCode: (parentId: string | null, name: string) => void;
+  onUpdateCode: (codeId: string, patch: Partial<Code>) => void;
+  onDeleteCode: (codeId: string) => void;
 };
 
 type PendingSelection = {
@@ -32,16 +45,26 @@ type PendingSelection = {
 
 export default function DocumentViewer({
   doc,
+  project,
   codes,
   annotations,
   metadataSchema,
   selectedCodeId,
   showCodeDefinitions,
+  codebookOpen,
+  notesWidth,
+  codebookWidth,
+  onResizeNotes,
+  onResizeCodebook,
   onToggleDefinitions,
+  onToggleCodebook,
   onUpdateDoc,
   onAddAnnotation,
   onDeleteAnnotation,
   onUpdateAnnotation,
+  onAddCode,
+  onUpdateCode,
+  onDeleteCode,
 }: Props) {
   const [mode, setMode] = useState<'view' | 'edit'>(doc.text ? 'view' : 'edit');
   const [draftText, setDraftText] = useState(doc.text);
@@ -80,40 +103,75 @@ export default function DocumentViewer({
     return () => document.removeEventListener('pointerdown', onDocPointerDown);
   }, [pending]);
 
-  const handleMouseUp = () => {
+  // Capture any selection that finalises anywhere on the page, as long as it
+  // started inside our document container. Robust against the user releasing
+  // the mouse outside the container or selecting via keyboard.
+  useEffect(() => {
     if (mode !== 'view') return;
-    requestAnimationFrame(() => {
-      const sel = window.getSelection();
-      if (!sel || sel.isCollapsed || sel.rangeCount === 0) {
-        setPending(null);
-        return;
-      }
-      const range = sel.getRangeAt(0);
-      const container = containerRef.current;
-      if (!container || !container.contains(range.commonAncestorContainer)) {
-        return;
-      }
-      const start = rangeOffset(container, range.startContainer, range.startOffset);
-      const end = rangeOffset(container, range.endContainer, range.endOffset);
-      if (start < 0 || end < 0 || start === end) {
-        setPending(null);
-        return;
-      }
-      const r = range.getBoundingClientRect();
-      const scrollY = window.scrollY;
-      const scrollX = window.scrollX;
-      setPending({
-        start: Math.min(start, end),
-        end: Math.max(start, end),
-        rect: {
-          top: r.top + scrollY,
-          left: r.left + scrollX,
-          right: r.right + scrollX,
-          bottom: r.bottom + scrollY,
-        },
+    const handler = () => {
+      // Defer one frame so the selection is finalised by the browser.
+      requestAnimationFrame(() => {
+        const sel = window.getSelection();
+        const container = containerRef.current;
+        if (!sel || !container || sel.rangeCount === 0) return;
+        const range = sel.getRangeAt(0);
+        // Only react if at least one endpoint lives in our container.
+        if (
+          !container.contains(range.startContainer) &&
+          !container.contains(range.endContainer)
+        ) {
+          return;
+        }
+        if (sel.isCollapsed) {
+          // Don't blow away an open popover just because the user clicked
+          // inside their own selection — only clear if the popover isn't open.
+          if (!pending) setPending(null);
+          return;
+        }
+        // Clamp the range to the container in case selection extends outside.
+        const start = rangeOffset(
+          container,
+          container.contains(range.startContainer) ? range.startContainer : container,
+          container.contains(range.startContainer) ? range.startOffset : 0,
+        );
+        const end = rangeOffset(
+          container,
+          container.contains(range.endContainer) ? range.endContainer : container,
+          container.contains(range.endContainer)
+            ? range.endOffset
+            : container.childNodes.length,
+        );
+        if (start < 0 || end < 0 || start === end) {
+          return;
+        }
+        const r = range.getBoundingClientRect();
+        if (r.width === 0 && r.height === 0) return;
+        const scrollY = window.scrollY;
+        const scrollX = window.scrollX;
+        setPending({
+          start: Math.min(start, end),
+          end: Math.max(start, end),
+          rect: {
+            top: r.top + scrollY,
+            left: r.left + scrollX,
+            right: r.right + scrollX,
+            bottom: r.bottom + scrollY,
+          },
+        });
+        setFocusedAnnotationId(null);
       });
-      setFocusedAnnotationId(null);
-    });
+    };
+    document.addEventListener('mouseup', handler);
+    document.addEventListener('keyup', handler);
+    return () => {
+      document.removeEventListener('mouseup', handler);
+      document.removeEventListener('keyup', handler);
+    };
+  }, [mode, pending]);
+
+  const handleMouseUp = () => {
+    // Kept as a no-op trigger so onMouseUp/onKeyUp handlers on the container
+    // still fire. The real work happens in the document-level listener above.
   };
 
   const commitEdit = () => {
@@ -149,28 +207,40 @@ export default function DocumentViewer({
         <div className="w-px h-5 bg-slate-200 mx-1" />
         <button
           type="button"
-          onClick={onToggleDefinitions}
-          title={showCodeDefinitions ? 'hide code definitions' : 'show code definitions'}
-          className={`px-2.5 py-1.5 text-[12px] font-medium rounded transition-colors flex items-center gap-1 ${
-            showCodeDefinitions
-              ? 'bg-blue-600 text-white'
+          onClick={onToggleCodebook}
+          title="open codebook side panel"
+          className={`px-3 py-1.5 text-[13px] font-medium rounded-md transition-colors ${
+            codebookOpen
+              ? 'bg-blue-600 text-white shadow-sm'
               : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
           }`}
         >
-          📖 Defs
+          Codebook
         </button>
         <button
           type="button"
           onClick={() => setNotesOpen((v) => !v)}
-          className={`px-2.5 py-1.5 text-[12px] font-medium rounded transition-colors flex items-center gap-1 ${
+          className={`px-3 py-1.5 text-[13px] font-medium rounded-md transition-colors ${
             notesOpen
               ? 'bg-amber-100 text-amber-900'
               : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
           }`}
         >
-          📝 Notes{doc.notes && doc.notes.length > 0 ? ' •' : ''}
+          Notes{doc.notes && doc.notes.length > 0 ? ' •' : ''}
         </button>
-        <div className="ml-auto text-[11px] text-slate-400 font-mono tabular-nums">
+        <button
+          type="button"
+          onClick={onToggleDefinitions}
+          title={showCodeDefinitions ? 'hide code definitions in popover/list' : 'show code definitions in popover/list'}
+          className={`px-2.5 py-1.5 text-[12px] font-medium rounded-md transition-colors ${
+            showCodeDefinitions
+              ? 'bg-slate-200 text-slate-800'
+              : 'text-slate-500 hover:text-slate-800 hover:bg-slate-100'
+          }`}
+        >
+          {showCodeDefinitions ? 'defs on' : 'defs off'}
+        </button>
+        <div className="ml-auto text-[12px] text-slate-400 font-mono tabular-nums">
           {doc.text.length.toLocaleString()} chars · {docAnnotations.length} annotation
           {docAnnotations.length === 1 ? '' : 's'}
         </div>
@@ -264,8 +334,8 @@ export default function DocumentViewer({
           codes={codes}
           text={doc.text}
           showDefinitions={showCodeDefinitions}
-          onPick={(codeId) => {
-            onAddAnnotation(pending.start, pending.end, codeId);
+          onPick={(codeId, note) => {
+            onAddAnnotation(pending.start, pending.end, codeId, note);
             setPending(null);
             window.getSelection()?.removeAllRanges();
           }}
@@ -273,8 +343,40 @@ export default function DocumentViewer({
         />
       )}
     </div>
+    {codebookOpen && (
+      <aside
+        className="flex-shrink-0 border-l border-slate-200 bg-white flex flex-col min-h-0 relative"
+        style={{ width: `${codebookWidth}px` }}
+      >
+        <ResizeHandle
+          side="left"
+          width={codebookWidth}
+          min={280}
+          max={640}
+          onChange={onResizeCodebook}
+        />
+        <CodebookView
+          project={project}
+          variant="panel"
+          onAddCode={onAddCode}
+          onUpdateCode={onUpdateCode}
+          onDeleteCode={onDeleteCode}
+          onClose={onToggleCodebook}
+        />
+      </aside>
+    )}
     {notesOpen && (
-      <aside className="w-[380px] flex-shrink-0 border-l border-slate-200 bg-amber-50/40 flex flex-col">
+      <aside
+        className="flex-shrink-0 border-l border-slate-200 bg-amber-50/40 flex flex-col min-h-0 relative"
+        style={{ width: `${notesWidth}px` }}
+      >
+        <ResizeHandle
+          side="left"
+          width={notesWidth}
+          min={280}
+          max={640}
+          onChange={onResizeNotes}
+        />
         <div className="px-4 py-3 border-b border-slate-200 flex items-center justify-between bg-white">
           <div>
             <div className="text-[10px] uppercase tracking-[0.12em] font-semibold text-amber-700">
@@ -344,7 +446,7 @@ function DocHeader({
       </div>
       <input
         value={title}
-        onChange={(e) => setTitle(e.target.value)}
+        onChange={(e) => setTitle(emDash(e.target.value))}
         onBlur={() => {
           const v = title.trim() || 'Untitled document';
           if (v !== doc.title) onUpdateDoc({ title: v });
@@ -438,7 +540,7 @@ type PopoverProps = {
   codes: Code[];
   text: string;
   showDefinitions: boolean;
-  onPick: (codeId: string) => void;
+  onPick: (codeId: string, note?: string) => void;
   onCancel: () => void;
 };
 
@@ -447,6 +549,7 @@ const SelectionPopover = forwardRef<HTMLDivElement, PopoverProps>(function Selec
   ref,
 ) {
   const [query, setQuery] = useState('');
+  const [note, setNote] = useState('');
   const flat = useMemo(() => flattenTree(buildCodeTree(codes)), [codes]);
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -457,26 +560,27 @@ const SelectionPopover = forwardRef<HTMLDivElement, PopoverProps>(function Selec
   }, [flat, query, codes]);
 
   const preview = text.slice(pending.start, pending.end);
+  const commit = (codeId: string) => onPick(codeId, note.trim() || undefined);
 
   return (
     <div
       ref={ref}
       role="dialog"
-      className="fixed z-50 w-[320px] bg-white border border-slate-200 rounded-lg shadow-lg overflow-hidden"
+      className="fixed z-50 w-[360px] bg-white border border-slate-200 rounded-lg shadow-xl overflow-hidden"
       style={{
         top: pending.rect.bottom - window.scrollY + 8,
         left: Math.min(
-          window.innerWidth - 340,
+          window.innerWidth - 380,
           Math.max(8, pending.rect.left - window.scrollX),
         ),
       }}
       onClick={(e) => e.stopPropagation()}
     >
-      <div className="px-3 py-2 border-b border-slate-100 bg-slate-50">
+      <div className="px-3.5 py-2.5 border-b border-slate-100 bg-slate-50">
         <div className="text-[10px] uppercase tracking-wide text-slate-500 font-semibold mb-0.5">
           Code selection
         </div>
-        <div className="text-[12px] text-slate-700 line-clamp-2 italic">
+        <div className="text-[13px] text-slate-700 line-clamp-2 italic">
           “{preview.slice(0, 80)}
           {preview.length > 80 ? '…' : ''}”
         </div>
@@ -485,17 +589,17 @@ const SelectionPopover = forwardRef<HTMLDivElement, PopoverProps>(function Selec
         autoFocus
         value={query}
         onChange={(e) => setQuery(e.target.value)}
-        placeholder={codes.length === 0 ? 'No codes yet — add one in the sidebar' : 'Search codes...'}
+        placeholder={codes.length === 0 ? 'No codes yet — add one in the sidebar' : 'Search codes…'}
         disabled={codes.length === 0}
-        className="w-full px-3 py-2 text-[13px] border-b border-slate-100 focus:outline-none focus:bg-slate-50 disabled:bg-slate-50 disabled:text-slate-400"
+        className="w-full px-3.5 py-2.5 text-[13px] border-b border-slate-100 focus:outline-none focus:bg-slate-50 disabled:bg-slate-50 disabled:text-slate-400"
         onKeyDown={(e) => {
           if (e.key === 'Enter' && filtered.length > 0) {
-            onPick(filtered[0].code.id);
+            commit(filtered[0].code.id);
           }
           if (e.key === 'Escape') onCancel();
         }}
       />
-      <div className="max-h-[240px] overflow-y-auto">
+      <div className="max-h-[220px] overflow-y-auto">
         {filtered.length === 0 ? (
           <div className="px-3 py-4 text-[12px] text-slate-400 italic text-center">
             No matching codes.
@@ -507,7 +611,7 @@ const SelectionPopover = forwardRef<HTMLDivElement, PopoverProps>(function Selec
               <button
                 key={n.code.id}
                 type="button"
-                onClick={() => onPick(n.code.id)}
+                onClick={() => commit(n.code.id)}
                 className="w-full flex items-start gap-2 px-3 py-1.5 text-left hover:bg-blue-50 transition-colors"
                 style={{ paddingLeft: `${12 + n.depth * 14}px` }}
                 title={n.code.description ?? undefined}
@@ -528,6 +632,25 @@ const SelectionPopover = forwardRef<HTMLDivElement, PopoverProps>(function Selec
             );
           })
         )}
+      </div>
+      <div className="border-t border-slate-100 p-2.5 bg-slate-50">
+        <textarea
+          value={note}
+          onChange={(e) => setNote(emDash(e.target.value))}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && (e.metaKey || e.ctrlKey) && filtered.length > 0) {
+              e.preventDefault();
+              commit(filtered[0].code.id);
+            }
+            if (e.key === 'Escape') onCancel();
+          }}
+          placeholder="Optional note for this annotation…"
+          rows={2}
+          className="w-full px-2.5 py-1.5 text-[12px] border border-slate-200 rounded bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 resize-y"
+        />
+        <div className="mt-1 text-[10px] text-slate-400">
+          Pick a code to commit. ⌘/Ctrl-Enter assigns the top match.
+        </div>
       </div>
     </div>
   );
@@ -616,7 +739,7 @@ function AnnotationsPanel({
                 {focused && (
                   <textarea
                     value={a.note ?? ''}
-                    onChange={(e) => onUpdate(a.id, { note: e.target.value })}
+                    onChange={(e) => onUpdate(a.id, { note: emDash(e.target.value) })}
                     onClick={(e) => e.stopPropagation()}
                     placeholder="Add a note..."
                     rows={2}

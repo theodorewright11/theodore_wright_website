@@ -1,10 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import AuthBar, { type SyncStatus } from './AuthBar';
 import CodeTree from './CodeTree';
+import CodebookView from './CodebookView';
 import DocumentViewer from './DocumentViewer';
 import ExploreView from './ExploreView';
 import MetadataSchemaEditor from './MetadataSchemaEditor';
 import ProjectAboutView from './ProjectAboutView';
+import { ResizeHandle } from './Resizable';
 import {
   buildFolderTree,
   deepCodeCounts,
@@ -68,6 +70,7 @@ export default function QualitativeCodingDashboard() {
   const [selectedCodeId, setSelectedCodeId] = useState<string | null>(null);
   const [schemaOpen, setSchemaOpen] = useState(false);
   const [exportMenuOpen, setExportMenuOpen] = useState(false);
+  const [codebookPanelOpen, setCodebookPanelOpen] = useState(false);
   const [drive, setDrive] = useState<DriveState>({
     token: null,
     syncStatus: 'offline',
@@ -77,7 +80,18 @@ export default function QualitativeCodingDashboard() {
 
   const view: View = state.view ?? 'documents';
   const showCodeDefinitions = !!state.showCodeDefinitions;
+  const sidebarCollapsed = !!state.sidebarCollapsed;
+  const sidebarWidth = state.sidebarWidth ?? 320;
+  const notesWidth = state.notesWidth ?? 380;
+  const codebookWidth = state.codebookWidth ?? 360;
   const exploreProjectIds = state.exploreProjectIds ?? [];
+
+  const setSidebarWidth = (n: number) =>
+    setState((s) => ({ ...s, sidebarWidth: n }));
+  const setNotesWidth = (n: number) =>
+    setState((s) => ({ ...s, notesWidth: n }));
+  const setCodebookWidth = (n: number) =>
+    setState((s) => ({ ...s, codebookWidth: n }));
 
   useEffect(() => {
     setHydrated(true);
@@ -212,6 +226,7 @@ export default function QualitativeCodingDashboard() {
       // Also list children of DRIVE_FOLDER_ID for folder-per-project structures.
       // (project.json sits inside a child folder, so listAppFiles already finds it.)
       const pulledProjects: Project[] = [];
+      const tombstones = new Set(state.deletedProjectIds ?? []);
       for (const f of tagged) {
         try {
           const parentId = f.parents?.[0];
@@ -232,18 +247,47 @@ export default function QualitativeCodingDashboard() {
             };
           }
           const proj = coerceProject(projAttrs);
+          // Honour tombstones: don't resurrect projects the user deleted locally
+          // (Drive trash may still hold the file briefly).
+          if (tombstones.has(proj.id)) continue;
           pulledProjects.push(proj);
         } catch {
           // Skip files we can't parse
         }
       }
       const pulledIds = new Set(pulledProjects.map((p) => p.id));
-      setState((s) => {
-        const merged: Project[] = [...pulledProjects];
-        for (const p of s.projects) {
-          if (pulledIds.has(p.id)) continue;
-          merged.push(p);
+      const localSnapshot = JSON.parse(
+        window.localStorage.getItem('tw-qual-coding-v1') ?? '{}',
+      );
+      const localProjects: Project[] = (localSnapshot.projects ?? []) as Project[];
+      const localById = new Map(localProjects.map((p) => [p.id, p]));
+      const localPreferredIds: string[] = [];
+
+      const merged: Project[] = [];
+      for (const pulled of pulledProjects) {
+        const local = localById.get(pulled.id);
+        if (!local) {
+          merged.push(pulled);
+          continue;
         }
+        const localTime = Date.parse(local.updated_at) || 0;
+        const serverTime = Date.parse(pulled.updated_at) || 0;
+        // Local wins ties so newer-typed edits aren't clobbered on a focus pull.
+        if (localTime >= serverTime) {
+          // Adopt server's Drive link (folderId / projectJsonId) so the next
+          // write updates the correct files rather than creating duplicates.
+          merged.push({ ...local, drive: pulled.drive });
+          localPreferredIds.push(pulled.id);
+        } else {
+          merged.push(pulled);
+        }
+      }
+      for (const local of localProjects) {
+        if (pulledIds.has(local.id)) continue;
+        merged.push(local);
+      }
+
+      setState((s) => {
         const seenIds = new Set(merged.map((p) => p.id));
         return {
           ...s,
@@ -254,11 +298,10 @@ export default function QualitativeCodingDashboard() {
               : merged[0]?.id ?? null,
         };
       });
-      // Push any local-only projects or projects that need migration.
-      const localSnapshot = JSON.parse(
-        window.localStorage.getItem('tw-qual-coding-v1') ?? '{}',
-      );
-      const localProjects: Project[] = localSnapshot.projects ?? [];
+
+      // Queue writes for: (a) local-newer projects so server catches up,
+      // (b) projects that need migration (no folderId yet).
+      for (const id of localPreferredIds) queueWrite(id);
       for (const p of localProjects) {
         if (!p.drive || !p.drive.folderId) {
           queueWrite(p.id);
@@ -335,11 +378,14 @@ export default function QualitativeCodingDashboard() {
     const proj = state.projects.find((p) => p.id === id);
     setState((s) => {
       const next = s.projects.filter((p) => p.id !== id);
+      const tombstones = [...(s.deletedProjectIds ?? []), id];
       return {
         ...s,
         projects: next,
         activeProjectId: s.activeProjectId === id ? next[0]?.id ?? null : s.activeProjectId,
         exploreProjectIds: (s.exploreProjectIds ?? []).filter((x) => x !== id),
+        // Keep tombstones bounded so the list doesn't grow forever.
+        deletedProjectIds: tombstones.slice(-200),
       };
     });
     if (proj?.drive && drive.token) {
@@ -572,12 +618,18 @@ export default function QualitativeCodingDashboard() {
   const toggleDefinitions = () =>
     setState((s) => ({ ...s, showCodeDefinitions: !s.showCodeDefinitions }));
 
+  const toggleSidebar = () =>
+    setState((s) => ({ ...s, sidebarCollapsed: !s.sidebarCollapsed }));
+
   const jumpToAnnotation = (projectId: string, docId: string, annotationId: string) => {
     if (projectId !== state.activeProjectId) {
       setState((s) => ({ ...s, activeProjectId: projectId, view: 'documents' }));
     } else {
       setView('documents');
     }
+    // Clear any sidebar code filter so the target annotation isn't filtered out
+    // of the doc viewer.
+    setSelectedCodeId(null);
     setActiveDocId(docId);
     setFocusedAnnotationId(annotationId);
   };
@@ -657,10 +709,15 @@ export default function QualitativeCodingDashboard() {
         }}
       />
       <div className="flex-1 min-h-0 flex">
-        {view !== 'about' && (
+        {view !== 'about' && view !== 'codebook' && (
           <Sidebar
             project={activeProject}
             activeDocId={activeDocId}
+            collapsed={sidebarCollapsed}
+            width={sidebarWidth}
+            onResize={setSidebarWidth}
+            onToggleCollapsed={toggleSidebar}
+            onOpenCodebookView={() => setView('codebook')}
             onSelectDoc={(id) => {
               setActiveDocId(id);
               setFocusedAnnotationId(null);
@@ -681,27 +738,45 @@ export default function QualitativeCodingDashboard() {
             onDeleteCode={deleteCode}
           />
         )}
-        <main className="flex-1 min-w-0 flex flex-col bg-white">
+        <main className="flex-1 min-w-0 min-h-0 flex flex-col bg-white">
           {view === 'about' ? (
             <ProjectAboutView project={activeProject} onUpdate={updateProjectMeta} />
+          ) : view === 'codebook' ? (
+            <CodebookView
+              project={activeProject}
+              variant="page"
+              onAddCode={addCode}
+              onUpdateCode={updateCode}
+              onDeleteCode={deleteCode}
+            />
           ) : view === 'explore' ? (
             <ExploreView projects={exploreProjects} onJumpToAnnotation={jumpToAnnotation} />
           ) : activeDoc ? (
             <DocumentViewer
               key={activeDoc.id + ':' + focusedAnnotationId}
               doc={activeDoc}
+              project={activeProject}
               codes={activeProject.codes}
               annotations={docAnnotations}
               metadataSchema={activeProject.metadataSchema}
               selectedCodeId={selectedCodeId}
               showCodeDefinitions={showCodeDefinitions}
+              codebookOpen={codebookPanelOpen}
+              notesWidth={notesWidth}
+              codebookWidth={codebookWidth}
+              onResizeNotes={setNotesWidth}
+              onResizeCodebook={setCodebookWidth}
               onToggleDefinitions={toggleDefinitions}
+              onToggleCodebook={() => setCodebookPanelOpen((v) => !v)}
               onUpdateDoc={(patch) => updateDocument(activeDoc.id, patch)}
               onAddAnnotation={(start, end, codeId, note) =>
                 addAnnotation(activeDoc.id, start, end, codeId, note)
               }
               onDeleteAnnotation={deleteAnnotation}
               onUpdateAnnotation={updateAnnotation}
+              onAddCode={addCode}
+              onUpdateCode={updateCode}
+              onDeleteCode={deleteCode}
             />
           ) : (
             <EmptyDocPane
@@ -935,6 +1010,9 @@ function TopBar({
         <ViewBtn active={view === 'documents'} onClick={() => onSetView('documents')}>
           Documents
         </ViewBtn>
+        <ViewBtn active={view === 'codebook'} onClick={() => onSetView('codebook')}>
+          Codebook
+        </ViewBtn>
         <ViewBtn active={view === 'explore'} onClick={() => onSetView('explore')}>
           Explore{exploreCount > 1 ? ` · ${exploreCount}` : ''}
         </ViewBtn>
@@ -1022,6 +1100,27 @@ function TopBar({
   );
 }
 
+function RailBtn({
+  children,
+  onClick,
+  title,
+}: {
+  children: React.ReactNode;
+  onClick: () => void;
+  title: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      title={title}
+      className="w-9 h-9 rounded-md text-[11px] font-semibold text-slate-500 hover:text-slate-900 hover:bg-white border border-transparent hover:border-slate-200 flex items-center justify-center transition-colors"
+    >
+      {children}
+    </button>
+  );
+}
+
 function ViewBtn({
   active,
   onClick,
@@ -1081,6 +1180,11 @@ function RenameModal({
 function Sidebar({
   project,
   activeDocId,
+  collapsed,
+  width,
+  onResize,
+  onToggleCollapsed,
+  onOpenCodebookView,
   onSelectDoc,
   onAddDoc,
   onDeleteDoc,
@@ -1098,6 +1202,11 @@ function Sidebar({
 }: {
   project: Project;
   activeDocId: string | null;
+  collapsed: boolean;
+  width: number;
+  onResize: (n: number) => void;
+  onToggleCollapsed: () => void;
+  onOpenCodebookView: () => void;
   onSelectDoc: (id: string) => void;
   onAddDoc: (folder?: string) => void;
   onDeleteDoc: (id: string) => void;
@@ -1137,19 +1246,64 @@ function Sidebar({
     setRootDragOver(false);
   };
 
+  if (collapsed) {
+    return (
+      <aside className="w-[52px] flex-shrink-0 border-r border-slate-200 bg-slate-50 flex flex-col items-center py-3 gap-2">
+        <RailBtn onClick={onToggleCollapsed} title="expand sidebar">
+          »
+        </RailBtn>
+        <div className="w-6 h-px bg-slate-200 my-1" />
+        <RailBtn
+          onClick={() => {
+            onToggleCollapsed();
+            onAddDoc();
+          }}
+          title="new document"
+        >
+          +D
+        </RailBtn>
+        <RailBtn onClick={onOpenCodebookView} title="open codebook">
+          Cb
+        </RailBtn>
+      </aside>
+    );
+  }
+
   return (
-    <aside className="w-[280px] flex-shrink-0 border-r border-slate-200 bg-slate-50 flex flex-col">
+    <aside
+      className="flex-shrink-0 border-r border-slate-200 bg-slate-50 flex flex-col relative"
+      style={{ width: `${width}px` }}
+    >
+      <ResizeHandle side="right" width={width} min={240} max={520} onChange={onResize} />
+      <div className="flex items-center justify-between px-4 py-2 border-b border-slate-200">
+        <button
+          type="button"
+          onClick={onToggleCollapsed}
+          className="text-[12px] font-medium text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded px-2 py-1 transition-colors"
+          title="collapse sidebar"
+        >
+          « Collapse
+        </button>
+        <button
+          type="button"
+          onClick={onOpenCodebookView}
+          className="text-[12px] font-medium text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded px-2 py-1 transition-colors"
+          title="open codebook view"
+        >
+          Codebook →
+        </button>
+      </div>
       <div className="flex-1 overflow-y-auto">
-        <div className="p-4 border-b border-slate-200">
-          <div className="flex items-center justify-between mb-2">
+        <div className="p-5 border-b border-slate-200">
+          <div className="flex items-center justify-between mb-3">
             <div className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">
               Documents
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1">
               <button
                 type="button"
                 onClick={handleAddFolder}
-                className="text-[12px] font-medium text-slate-500 hover:text-blue-600 transition-colors px-1.5 py-0.5 rounded hover:bg-white"
+                className="text-[12px] font-medium text-slate-500 hover:text-blue-600 transition-colors px-2 py-1 rounded hover:bg-white"
                 title="new folder"
               >
                 + folder
@@ -1157,7 +1311,7 @@ function Sidebar({
               <button
                 type="button"
                 onClick={() => onAddDoc()}
-                className="text-[12px] font-semibold text-blue-600 hover:text-blue-800 transition-colors px-2 py-0.5 rounded hover:bg-blue-50"
+                className="text-[12px] font-semibold text-blue-600 hover:text-blue-800 transition-colors px-2 py-1 rounded hover:bg-blue-50"
               >
                 + doc
               </button>
@@ -1213,7 +1367,7 @@ function Sidebar({
           )}
         </div>
 
-        <div className="p-4">
+        <div className="p-5">
           <CodeTree
             codes={project.codes}
             deepCounts={deepCounts}
@@ -1229,14 +1383,14 @@ function Sidebar({
             <button
               type="button"
               onClick={() => onSelectCode(null)}
-              className="mt-3 w-full text-[12px] text-slate-500 hover:text-slate-800 py-1.5 border border-dashed border-slate-300 rounded hover:bg-white transition-colors"
+              className="mt-3 w-full text-[12px] text-slate-500 hover:text-slate-800 py-2 border border-dashed border-slate-300 rounded-md hover:bg-white transition-colors"
             >
               clear code filter
             </button>
           )}
         </div>
       </div>
-      <div className="border-t border-slate-200 px-4 py-2.5 bg-white">
+      <div className="border-t border-slate-200 px-5 py-3 bg-white">
         <div className="text-[11px] font-mono text-slate-400 leading-tight">
           {project.documents.length} doc{project.documents.length === 1 ? '' : 's'} ·{' '}
           {project.codes.length} code{project.codes.length === 1 ? '' : 's'} ·{' '}

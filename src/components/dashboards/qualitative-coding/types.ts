@@ -63,7 +63,7 @@ export type Project = {
   drive?: DriveLink;
 };
 
-export type View = 'documents' | 'explore' | 'about';
+export type View = 'documents' | 'explore' | 'about' | 'codebook';
 
 export type AppState = {
   version: SchemaVersion;
@@ -72,6 +72,11 @@ export type AppState = {
   exploreProjectIds?: string[];
   view?: View;
   showCodeDefinitions?: boolean;
+  sidebarCollapsed?: boolean;
+  sidebarWidth?: number;
+  notesWidth?: number;
+  codebookWidth?: number;
+  deletedProjectIds?: string[];
 };
 
 export const PALETTE = [

@@ -1,4 +1,10 @@
-import { annotationsForDoc, buildCodeTree, codePathString, flattenTree } from './compute';
+import {
+  annotationsForDoc,
+  buildCodeTree,
+  codePathString,
+  descendantIds,
+  flattenTree,
+} from './compute';
 import type { Document, Project } from './types';
 
 export function exportProjectJSON(project: Project): unknown {
@@ -52,28 +58,74 @@ export function codebookMarkdown(project: Project): string {
   const lines: string[] = [];
   lines.push(`# Codebook · ${project.name}`);
   lines.push('');
-  lines.push(`Generated: ${new Date().toISOString()}`);
+  if (project.description) {
+    lines.push(`> ${project.description}`);
+    lines.push('');
+  }
+  lines.push(
+    `*Generated ${new Date().toISOString().slice(0, 10)} · ${project.codes.length} code${project.codes.length === 1 ? '' : 's'} · ${project.annotations.length} annotation${project.annotations.length === 1 ? '' : 's'}*`,
+  );
   lines.push('');
+
   if (project.codes.length === 0) {
     lines.push('_No codes defined yet._');
     lines.push('');
     return lines.join('\n');
   }
-  const tree = flattenTree(buildCodeTree(project.codes));
-  for (const node of tree) {
-    const indent = '  '.repeat(node.depth);
-    const path = codePathString(project.codes, node.code.id);
-    lines.push(`${indent}- **${node.code.name}**${node.depth === 0 ? '' : `  · _${path}_`}`);
-    if (node.code.description && node.code.description.trim()) {
-      const wrapped = node.code.description
-        .trim()
-        .split('\n')
-        .map((l) => `${indent}  ${l}`)
-        .join('\n');
-      lines.push(wrapped);
+
+  const counts = new Map<string, number>();
+  for (const a of project.annotations) {
+    for (const id of descendantIds(project.codes, a.codeId)) {
+      counts.set(id, (counts.get(id) ?? 0) + 1);
     }
   }
+
+  const flat = flattenTree(buildCodeTree(project.codes));
+
+  // Summary table — at-a-glance overview
+  lines.push('## At a glance');
   lines.push('');
+  lines.push('| Code | Definition | Annotations |');
+  lines.push('| --- | --- | ---: |');
+  for (const node of flat) {
+    const indent = '&nbsp;'.repeat(node.depth * 4);
+    const count = counts.get(node.code.id) ?? 0;
+    const desc = (node.code.description ?? '')
+      .replace(/\n+/g, ' ')
+      .replace(/\|/g, '\\|')
+      .slice(0, 140);
+    const name = `${indent}${node.depth > 0 ? '↳ ' : ''}**${escapePipes(node.code.name)}**`;
+    lines.push(`| ${name} | ${desc || '_—_'} | ${count} |`);
+  }
+  lines.push('');
+  lines.push('---');
+  lines.push('');
+
+  // Full body — one section per code, headers nested by depth
+  lines.push('## Definitions');
+  lines.push('');
+  for (const node of flat) {
+    const level = Math.min(node.depth + 3, 6); // H3 for top-level so toc-friendly
+    const heading = '#'.repeat(level);
+    lines.push(`${heading} ${node.code.name}`);
+    lines.push('');
+    const path = codePathString(project.codes, node.code.id);
+    const metaParts: string[] = [];
+    if (node.depth > 0) metaParts.push(`Path: \`${path}\``);
+    const cnt = counts.get(node.code.id) ?? 0;
+    if (cnt > 0) metaParts.push(`${cnt} annotation${cnt === 1 ? '' : 's'}`);
+    if (metaParts.length > 0) {
+      lines.push(`*${metaParts.join(' · ')}*`);
+      lines.push('');
+    }
+    if (node.code.description && node.code.description.trim()) {
+      lines.push(node.code.description.trim());
+    } else {
+      lines.push('_No definition yet._');
+    }
+    lines.push('');
+  }
+
   return lines.join('\n');
 }
 

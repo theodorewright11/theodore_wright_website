@@ -123,7 +123,7 @@ export default function ExploreView({ projects, onJumpToAnnotation }: Props) {
   const showProjectChips = projects.length > 1;
 
   return (
-    <div className="flex-1 min-w-0 flex flex-col bg-white">
+    <div className="flex-1 min-w-0 min-h-0 flex flex-col bg-white">
       <div className="px-8 pt-6 pb-3 border-b border-slate-200 bg-white">
         <div className="max-w-[1200px] mx-auto">
           <div className="flex items-end justify-between gap-4">
