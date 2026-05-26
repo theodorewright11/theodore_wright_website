@@ -77,10 +77,10 @@ const PROFILES: Profile[] = [
     slug: 'early-career-exposed',
     name: 'Early-career, highly AI-exposed',
     oneliner:
-      "A 22–28-year-old in a heavily AI-exposed role (junior coder, junior writer, junior analyst, junior consultant). The model says your upside is structurally larger than the average — low pre-attempt skill is what AI compresses most — but the apprenticeship-ladder break (the topology calls this G5) is happening above the model's scope: entry-level hiring in highly-exposed occupations is down ~13% in payroll data, and that constraint sits outside the dashboard's individual-decision frame.",
+      "A 22–28-year-old in a heavily AI-exposed role (junior coder, junior writer, junior analyst, junior consultant). The model says your upside is structurally larger than the average — low pre-attempt skill is what AI compresses most — but the apprenticeship-ladder break (the topology calls this G5) is happening above the model's scope: entry-level employment for 22–25-year-olds in highly-exposed occupations is down 13% *relative to comparable less-exposed peers* in US payroll data (the exposed-vs-unexposed gap, controlling for firm shocks; not an absolute 13% headcount drop), and that constraint sits outside the dashboard's individual-decision frame.",
     inputs: { T: 0.65, B: 0.20, phi: 0.65, kappa: 0.50, s: 0.20, a: 0.75, f: 0.60, rho: 0.55, d: 10, delta_R: 0.40 },
     risks: [
-      "The model's productivity-gain channel assumes you already have the work. The single largest empirical finding in the data corpus — entry-level employment in highly-exposed occupations down 13% for 22–25-year-olds, software developers 22–25 down 19.5% — is a labor-market shock, not a personal-discipline problem. The model is silent on it by design.",
+      "The model's productivity-gain channel assumes you already have the work. The single largest empirical finding in the data corpus — entry-level employment for 22–25-year-olds in highly-exposed occupations down 13% relative to less-exposed peers, software developers 22–25 down 19.5% from the late-2022 peak — is a labor-market shock, not a personal-discipline problem. The model is silent on it by design.",
       "Skill investment in domains where AI is fully capable now (boilerplate code, copywriting, summarisation, simple analysis) compounds slowly: each year you can do those tasks faster, but the floor under you keeps rising.",
       "Without explicit feedback loops on whether your AI-augmented output is actually right, you can sit just above the self-automator gate at the start of your career and drift below it without noticing.",
     ],
@@ -638,6 +638,7 @@ type Trap = {
   citesCorrectly: string[];
   ignores: string[];
   integratedReading: string;
+  pushback: string;
 };
 
 const TRAPS: Trap[] = [
@@ -658,6 +659,8 @@ const TRAPS: Trap[] = [
     ],
     integratedReading:
       "Timelines are genuinely uncertain. The honest response is to invest in moves whose payoff is robust across timelines (ballast, relationships, practice, dose-discipline) and to under-invest in moves that are only payoff-positive in the median scenario (specific career bets on AI-substitutable work). Fatalism collapses this distinction.",
+    pushback:
+      "The strongest argument against this reading is that under sufficiently fast-and-complete AGI scenarios, even the robust moves lose their context — there is no human labor market for the upskilled, no human relational network for the in-person-connected. The response: even those scenarios leave meaning-architecture, embodied practice, and in-person relationships load-bearing for what remains of human life. The fatalist version is not making this argument; it is using the tail forecast to deny the median.",
   },
   {
     id: 'D2',
@@ -675,7 +678,9 @@ const TRAPS: Trap[] = [
       "The apprenticeship-ladder break (Brynjolfsson-Chandar-Chen ADP data, 22-25-year-olds in highly AI-exposed occupations down 13%) is a real labor-market signal that aggregate measures average out.",
     ],
     integratedReading:
-      "Aggregate effects are modest so far; within-task effects are large where measured; cognitive and relational effects are operating on different timescales and through different mechanisms. The slow-camp reading is correct about macro and wrong about everything else.",
+      "Aggregate effects are modest so far; within-task effects are large where measured; cognitive and relational effects are operating on different timescales and through different mechanisms. The slow-camp reading captures the macro picture through 2024 accurately and underestimates the within-task, cognitive, and relational channels.",
+    pushback:
+      "The strongest argument against this reading is that the within-task RCTs run in artificial conditions and may not generalise; the cognitive-offloading studies are cross-sectional and select for users who chose to offload; the apprenticeship-break finding has confounders (post-COVID labor reallocation, interest-rate effects). This is a fair magnitude critique, but the multi-method convergence across distinct designs (lab RCTs, field experiments, payroll panel data, freelance-market panel data, neuroimaging) is harder to wave away than any single result.",
   },
   {
     id: 'D3',
@@ -694,6 +699,8 @@ const TRAPS: Trap[] = [
     ],
     integratedReading:
       "Productivity optimisation is necessary but not sufficient. The honest workflow is to optimise productivity within the constraints that ρ, B, and d stay in safe ranges, rather than optimising productivity unconditionally.",
+    pushback:
+      "The strongest argument against this reading is that ΔM_telic, ΔM_comp, ΔM_rel are not measurable on the same scale as ΔV_prod, and treating them as comparable is pseudo-precision. The response: the comparison is ordinal (this configuration is structurally better-positioned than that one) rather than metric (you lose 30% of your meaning), and the alternative — ignoring the harder-to-measure channels because they don't fit a single metric — is exactly the failure mode this trap identifies.",
   },
   {
     id: 'D4',
@@ -712,6 +719,8 @@ const TRAPS: Trap[] = [
     ],
     integratedReading:
       "The structural channels are real for everyone; the moves to address them are not equally accessible. Honest readings should specify which population the recommendation is most actionable for, and the material-floor question dominates for users below it.",
+    pushback:
+      "The strongest argument against this reading is that specifying advice by class licenses two-tier thinking — implicitly accepting that some readers get strategic moves and others get only the labor-economics question. The response: pretending uniform applicability when it doesn't hold is itself a kind of harm. The class-specificity here is descriptive (about what is feasible given starting position) rather than prescriptive (about who deserves what kind of advice).",
   },
 ];
 
@@ -755,11 +764,17 @@ function TrapsView() {
                 </ul>
               </div>
             </div>
-            <div className="border-l-2 border-accent pl-3 py-1 bg-paper-edge">
+            <div className="border-l-2 border-accent pl-3 py-1 bg-paper-edge mb-3">
               <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-accent block mb-1">
                 Integrated reading
               </span>
               <p className="text-[14px] text-ink-soft leading-relaxed">{t.integratedReading}</p>
+            </div>
+            <div className="border-l border-rule pl-3 py-1">
+              <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-muted block mb-1">
+                Strongest pushback on the integrated reading
+              </span>
+              <p className="text-[13px] text-ink-soft leading-relaxed italic">{t.pushback}</p>
             </div>
           </div>
         ))}

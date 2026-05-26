@@ -3,8 +3,16 @@ title: 'Build'
 description: 'A reader''s tool for the AI transition. Pick a life-situation (early-career exposed, mid-career default, self-automator, asymmetric exploiter, displaced expert, heavy companion user) and see the six-channel decomposition in plain language, the structural flags, named risks, and top moves. Plus the six channels demystified, the four motivated-reasoning traps, a ten-year trajectory under three atrophy regimes, the five robust moves, and an eight-bullet take-away. Translates the model formalization and data pipeline into something a non-specialist can use for actual decisions about career, education, relationships, and life architecture.'
 date: 2026-05-26
 status: complete
-refinementPass: 1
+refinementPass: 2
 refinementLog:
+  - pass: 2
+    date: '2026-05-26'
+    passes: ['adversarial + steelman', 'error check', 'cross-stage sync']
+    why: 'Two changes parallel to the writeup pass 2: (a) the early-career profile''s oneliner and risks list both said entry-level employment "down 13% in payroll data" without the relative-to-less-exposed-peers qualifier — same cross-stage error caught in the writeup; data.mdx and lit-review.mdx canonicalise it as relative not absolute. (b) The four-traps view in pass 1 carried opinionated integrated readings without a steelman of the strongest counter-argument against the integrated reading itself. Pass 1''s `build.md` working notes explicitly flagged this as a pass-2 candidate. Added a `pushback` field to the Trap type and rendered it as a secondary panel beneath each integrated reading.'
+    changes:
+      - 'AITransitionExplorer.tsx — Early-career profile: oneliner "entry-level hiring in highly-exposed occupations is down ~13% in payroll data" → "entry-level employment for 22–25-year-olds in highly-exposed occupations is down 13% *relative to comparable less-exposed peers* in US payroll data (the exposed-vs-unexposed gap, controlling for firm shocks; not an absolute 13% headcount drop)." First risk bullet rewritten in parallel.'
+      - 'AITransitionExplorer.tsx — TrapsView: added `pushback` field on the Trap type. Each of D1–D4 now carries a steelman of the strongest argument against my integrated reading, rendered as a secondary panel beneath the integrated-reading panel (border-l rule + muted "Strongest pushback on the integrated reading" label + italicised body). The pushbacks: D1 — "even robust moves lose context under fast-AGI" → "those scenarios leave meaning-architecture / embodied practice / in-person relationships load-bearing for what remains"; D2 — "within-task RCTs artificial, cognitive studies cross-sectional with selection bias" → "multi-method convergence across distinct designs is harder to wave away"; D3 — "treating non-measurable channels as comparable is pseudo-precision" → "the comparison is ordinal not metric"; D4 — "class-specifying advice licenses two-tier thinking" → "pretending uniform applicability when it doesn''t hold is itself a kind of harm". Also softened D2''s integrated reading itself: "correct about macro and wrong about everything else" → "captures the macro picture through 2024 accurately and underestimates the within-task, cognitive, and relational channels."'
+      - 'No body changes to build.mdx prose — the explorer is the artifact; mdx description and TLDR did not contain the "13%" claim and did not need re-statement of the trap framings.'
   - pass: 1
     date: '2026-05-26'
     passes: ['decomposition', 'translation', 'integration']
