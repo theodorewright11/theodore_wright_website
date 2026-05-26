@@ -15,6 +15,8 @@ export type Document = {
   id: string;
   title: string;
   text: string;
+  notes?: string;
+  folder?: string;
   metadata: Record<string, MetadataValue>;
   created_at: string;
   updated_at: string;
@@ -39,23 +41,35 @@ export type Annotation = {
   created_at: string;
 };
 
+export type DriveLink = {
+  fileId: string;
+  modifiedTime?: string;
+};
+
 export type Project = {
   version: SchemaVersion;
   id: string;
   name: string;
   description?: string;
+  about?: string;
   metadataSchema: MetadataField[];
   documents: Document[];
   codes: Code[];
   annotations: Annotation[];
   created_at: string;
   updated_at: string;
+  drive?: DriveLink;
 };
+
+export type View = 'documents' | 'explore' | 'about';
 
 export type AppState = {
   version: SchemaVersion;
   projects: Project[];
   activeProjectId: string | null;
+  exploreProjectIds?: string[];
+  view?: View;
+  showCodeDefinitions?: boolean;
 };
 
 export const PALETTE = [

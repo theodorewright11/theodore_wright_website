@@ -6,6 +6,8 @@ type Props = {
   codes: Code[];
   deepCounts: Map<string, number>;
   selectedCodeId: string | null;
+  showDefinitions: boolean;
+  onToggleDefinitions: () => void;
   onSelectCode: (codeId: string | null) => void;
   onAddCode: (parentId: string | null, name: string) => void;
   onUpdateCode: (codeId: string, patch: Partial<Code>) => void;
@@ -16,6 +18,8 @@ export default function CodeTree({
   codes,
   deepCounts,
   selectedCodeId,
+  showDefinitions,
+  onToggleDefinitions,
   onSelectCode,
   onAddCode,
   onUpdateCode,
@@ -34,20 +38,34 @@ export default function CodeTree({
 
   return (
     <div className="text-[13px]">
-      <div className="flex items-center justify-between mb-2">
+      <div className="flex items-center justify-between mb-2 gap-2">
         <div className="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500">
           Codes
         </div>
-        <button
-          type="button"
-          onClick={() => {
-            setAddingUnder('root');
-            setDraft('');
-          }}
-          className="text-[11px] font-medium text-slate-500 hover:text-blue-600 transition-colors"
-        >
-          + new
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={onToggleDefinitions}
+            className={`text-[10px] font-medium px-1.5 py-0.5 rounded transition-colors ${
+              showDefinitions
+                ? 'bg-blue-600 text-white'
+                : 'text-slate-500 hover:text-slate-800 hover:bg-slate-200'
+            }`}
+            title={showDefinitions ? 'hide definitions' : 'show definitions'}
+          >
+            defs
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setAddingUnder('root');
+              setDraft('');
+            }}
+            className="text-[11px] font-medium text-slate-500 hover:text-blue-600 transition-colors"
+          >
+            + new
+          </button>
+        </div>
       </div>
       {tree.length === 0 && addingUnder !== 'root' && (
         <div className="text-[12px] text-slate-400 italic py-2">No codes yet.</div>
@@ -60,6 +78,7 @@ export default function CodeTree({
             codes={codes}
             deepCounts={deepCounts}
             selectedCodeId={selectedCodeId}
+            showDefinitions={showDefinitions}
             onSelectCode={onSelectCode}
             onAddCode={onAddCode}
             onUpdateCode={onUpdateCode}
@@ -101,6 +120,7 @@ function TreeRow({
   codes,
   deepCounts,
   selectedCodeId,
+  showDefinitions,
   onSelectCode,
   onAddCode,
   onUpdateCode,
@@ -110,6 +130,7 @@ function TreeRow({
   codes: Code[];
   deepCounts: Map<string, number>;
   selectedCodeId: string | null;
+  showDefinitions: boolean;
   onSelectCode: (codeId: string | null) => void;
   onAddCode: (parentId: string | null, name: string) => void;
   onUpdateCode: (codeId: string, patch: Partial<Code>) => void;
@@ -119,7 +140,7 @@ function TreeRow({
   const [expanded, setExpanded] = useState(true);
   const [editing, setEditing] = useState(false);
   const [draftName, setDraftName] = useState(code.name);
-  const [pickerOpen, setPickerOpen] = useState(false);
+  const [draftDesc, setDraftDesc] = useState(code.description ?? '');
   const [adding, setAdding] = useState(false);
   const [draftChild, setDraftChild] = useState('');
 
@@ -127,6 +148,28 @@ function TreeRow({
   const count = deepCounts.get(code.id) ?? 0;
   const selected = selectedCodeId === code.id;
   const hasChildren = children.length > 0;
+
+  const startEdit = () => {
+    setDraftName(code.name);
+    setDraftDesc(code.description ?? '');
+    setEditing(true);
+  };
+  const cancelEdit = () => {
+    setDraftName(code.name);
+    setDraftDesc(code.description ?? '');
+    setEditing(false);
+  };
+  const saveEdit = () => {
+    const patch: Partial<Code> = {};
+    const newName = draftName.trim();
+    if (newName && newName !== code.name) patch.name = newName;
+    const newDesc = draftDesc.trim();
+    if (newDesc !== (code.description ?? '')) {
+      patch.description = newDesc || undefined;
+    }
+    if (Object.keys(patch).length > 0) onUpdateCode(code.id, patch);
+    setEditing(false);
+  };
 
   return (
     <li>
@@ -150,52 +193,28 @@ function TreeRow({
         >
           {expanded ? '▾' : '▸'}
         </button>
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            setPickerOpen((v) => !v);
-          }}
+        <span
           className="w-3 h-3 rounded-[3px] flex-shrink-0 ring-1 ring-black/5"
           style={{ background: color }}
-          aria-label="change color"
         />
-        {editing ? (
-          <input
-            autoFocus
-            value={draftName}
-            onChange={(e) => setDraftName(e.target.value)}
-            onClick={(e) => e.stopPropagation()}
-            onBlur={() => {
-              const v = draftName.trim();
-              if (v && v !== code.name) onUpdateCode(code.id, { name: v });
-              setEditing(false);
-            }}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                const v = draftName.trim();
-                if (v && v !== code.name) onUpdateCode(code.id, { name: v });
-                setEditing(false);
-              }
-              if (e.key === 'Escape') {
-                setDraftName(code.name);
-                setEditing(false);
-              }
-            }}
-            className="flex-1 min-w-0 px-1 py-0 text-[13px] border border-blue-500 rounded focus:outline-none"
-          />
-        ) : (
-          <span
-            className={`flex-1 min-w-0 truncate ${selected ? 'font-semibold text-slate-900' : 'text-slate-700'}`}
+        <div className="flex-1 min-w-0">
+          <div
+            className={`truncate ${
+              selected ? 'font-semibold text-slate-900' : 'text-slate-700'
+            }`}
             onDoubleClick={(e) => {
               e.stopPropagation();
-              setEditing(true);
-              setDraftName(code.name);
+              startEdit();
             }}
           >
             {code.name}
-          </span>
-        )}
+          </div>
+          {showDefinitions && code.description && !editing && (
+            <div className="text-[11px] text-slate-500 leading-snug mt-0.5 pr-1">
+              {code.description}
+            </div>
+          )}
+        </div>
         {count > 0 && (
           <span className="text-[10px] font-mono text-slate-400 tabular-nums flex-shrink-0">
             {count}
@@ -216,10 +235,9 @@ function TreeRow({
           <RowBtn
             onClick={(e) => {
               e.stopPropagation();
-              setEditing(true);
-              setDraftName(code.name);
+              startEdit();
             }}
-            title="rename"
+            title="edit"
           >
             ✎
           </RowBtn>
@@ -240,35 +258,78 @@ function TreeRow({
           </RowBtn>
         </div>
       </div>
-      {pickerOpen && (
+      {editing && (
         <div
-          className="ml-6 my-1 p-2 bg-white border border-slate-200 rounded shadow-sm inline-flex flex-wrap gap-1"
-          style={{ marginLeft: `${depth * 14 + 28}px` }}
+          className="my-1 ml-1 p-2 bg-white border border-slate-200 rounded shadow-sm space-y-2"
+          style={{ marginLeft: `${depth * 14 + 22}px` }}
           onClick={(e) => e.stopPropagation()}
         >
-          {PALETTE.map((c) => (
-            <button
-              key={c}
-              type="button"
-              onClick={() => {
-                onUpdateCode(code.id, { color: c });
-                setPickerOpen(false);
-              }}
-              className="w-5 h-5 rounded ring-1 ring-black/10 hover:scale-110 transition-transform"
-              style={{ background: c }}
-              aria-label={`color ${c}`}
-            />
-          ))}
-          <button
-            type="button"
-            onClick={() => {
-              onUpdateCode(code.id, { color: null });
-              setPickerOpen(false);
+          <input
+            autoFocus
+            value={draftName}
+            onChange={(e) => setDraftName(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey) saveEdit();
+              if (e.key === 'Escape') cancelEdit();
             }}
-            className="text-[10px] text-slate-500 px-1 hover:text-slate-800"
-          >
-            inherit
-          </button>
+            placeholder="Code name"
+            className="w-full px-2 py-1 text-[13px] font-semibold border border-slate-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500"
+          />
+          <textarea
+            value={draftDesc}
+            onChange={(e) => setDraftDesc(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) saveEdit();
+              if (e.key === 'Escape') cancelEdit();
+            }}
+            placeholder="Definition / when to apply this code"
+            rows={3}
+            className="w-full px-2 py-1 text-[12px] border border-slate-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 resize-y"
+          />
+          <div className="flex flex-wrap items-center gap-1.5">
+            <span className="text-[10px] uppercase font-semibold tracking-wider text-slate-400">
+              Color
+            </span>
+            {PALETTE.map((c) => (
+              <button
+                key={c}
+                type="button"
+                onClick={() => onUpdateCode(code.id, { color: c })}
+                className={`w-4 h-4 rounded ring-1 transition-transform ${
+                  code.color === c ? 'ring-slate-700 scale-110' : 'ring-black/10 hover:scale-110'
+                }`}
+                style={{ background: c }}
+                aria-label={`color ${c}`}
+              />
+            ))}
+            {code.parentId !== null && (
+              <button
+                type="button"
+                onClick={() => onUpdateCode(code.id, { color: null })}
+                className={`text-[10px] px-1 hover:text-slate-800 ${
+                  code.color === null ? 'text-slate-800 font-semibold' : 'text-slate-500'
+                }`}
+              >
+                inherit
+              </button>
+            )}
+          </div>
+          <div className="flex items-center gap-2 justify-end">
+            <button
+              type="button"
+              onClick={cancelEdit}
+              className="text-[11px] text-slate-500 hover:text-slate-800 px-2 py-1"
+            >
+              cancel
+            </button>
+            <button
+              type="button"
+              onClick={saveEdit}
+              className="text-[11px] font-semibold text-white bg-blue-600 hover:bg-blue-700 px-2.5 py-1 rounded"
+            >
+              save
+            </button>
+          </div>
         </div>
       )}
       {adding && (
@@ -312,6 +373,7 @@ function TreeRow({
               codes={codes}
               deepCounts={deepCounts}
               selectedCodeId={selectedCodeId}
+              showDefinitions={showDefinitions}
               onSelectCode={onSelectCode}
               onAddCode={onAddCode}
               onUpdateCode={onUpdateCode}

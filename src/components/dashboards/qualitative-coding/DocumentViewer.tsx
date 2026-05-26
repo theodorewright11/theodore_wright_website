@@ -7,6 +7,7 @@ import {
   resolveColor,
   segmentText,
 } from './compute';
+import { MarkdownEditor } from './Markdown';
 import type { Annotation, Code, Document, MetadataField } from './types';
 
 type Props = {
@@ -42,6 +43,7 @@ export default function DocumentViewer({
   const [draftText, setDraftText] = useState(doc.text);
   const [pending, setPending] = useState<PendingSelection | null>(null);
   const [focusedAnnotationId, setFocusedAnnotationId] = useState<string | null>(null);
+  const [notesOpen, setNotesOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const popoverRef = useRef<HTMLDivElement>(null);
 
@@ -129,6 +131,7 @@ export default function DocumentViewer({
   };
 
   return (
+    <div className="flex-1 min-w-0 flex">
     <div className="flex-1 min-w-0 flex flex-col">
       <DocHeader doc={doc} metadataSchema={metadataSchema} onUpdateDoc={onUpdateDoc} />
 
@@ -139,6 +142,17 @@ export default function DocumentViewer({
         <ToggleBtn active={mode === 'edit'} onClick={() => setMode('edit')}>
           Edit text
         </ToggleBtn>
+        <button
+          type="button"
+          onClick={() => setNotesOpen((v) => !v)}
+          className={`ml-2 px-2.5 py-1 text-[12px] font-medium rounded transition-colors flex items-center gap-1 ${
+            notesOpen
+              ? 'bg-amber-100 text-amber-900'
+              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+          }`}
+        >
+          📝 Notes{doc.notes ? ` · ${doc.notes.length > 0 ? '•' : ''}` : ''}
+        </button>
         <div className="ml-auto text-[11px] text-slate-400 font-mono tabular-nums">
           {doc.text.length.toLocaleString()} chars · {docAnnotations.length} annotation
           {docAnnotations.length === 1 ? '' : 's'}
@@ -240,6 +254,37 @@ export default function DocumentViewer({
         />
       )}
     </div>
+    {notesOpen && (
+      <aside className="w-[380px] flex-shrink-0 border-l border-slate-200 bg-amber-50/40 flex flex-col">
+        <div className="px-4 py-3 border-b border-slate-200 flex items-center justify-between bg-white">
+          <div>
+            <div className="text-[10px] uppercase tracking-[0.12em] font-semibold text-amber-700">
+              My notes
+            </div>
+            <div className="text-[11px] text-slate-500">
+              Your thoughts about this document. Not part of the coded data.
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => setNotesOpen(false)}
+            className="text-slate-400 hover:text-slate-800 text-[16px]"
+            aria-label="close notes"
+          >
+            ×
+          </button>
+        </div>
+        <div className="flex-1 overflow-y-auto p-3">
+          <MarkdownEditor
+            value={doc.notes ?? ''}
+            onChange={(v) => onUpdateDoc({ notes: v })}
+            placeholder="Write your thoughts, questions, hypotheses about this document. Markdown supported."
+            minHeight={520}
+          />
+        </div>
+      </aside>
+    )}
+    </div>
   );
 }
 
@@ -253,10 +298,31 @@ function DocHeader({
   onUpdateDoc: (patch: Partial<Document>) => void;
 }) {
   const [title, setTitle] = useState(doc.title);
-  useEffect(() => setTitle(doc.title), [doc.id]);
+  const [folder, setFolder] = useState(doc.folder ?? '');
+  useEffect(() => {
+    setTitle(doc.title);
+    setFolder(doc.folder ?? '');
+  }, [doc.id]);
 
   return (
     <div className="px-8 pt-6 pb-4 border-b border-slate-200 bg-white">
+      <div className="max-w-[760px] mx-auto mb-2 flex items-center gap-1.5 text-[11px] text-slate-400">
+        <span className="text-slate-300">📁</span>
+        <input
+          value={folder}
+          onChange={(e) => setFolder(e.target.value)}
+          onBlur={() => {
+            const v = folder.trim();
+            const next = v || undefined;
+            if (next !== doc.folder) onUpdateDoc({ folder: next });
+          }}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
+          }}
+          placeholder="folder (use / for nesting, e.g. Interviews/Round 1)"
+          className="flex-1 px-1 py-0.5 text-[12px] text-slate-600 placeholder-slate-300 bg-transparent border-none focus:outline-none focus:bg-slate-50 rounded"
+        />
+      </div>
       <input
         value={title}
         onChange={(e) => setTitle(e.target.value)}
@@ -422,14 +488,22 @@ const SelectionPopover = forwardRef<HTMLDivElement, PopoverProps>(function Selec
                 key={n.code.id}
                 type="button"
                 onClick={() => onPick(n.code.id)}
-                className="w-full flex items-center gap-2 px-3 py-1.5 text-left text-[13px] hover:bg-blue-50 transition-colors"
+                className="w-full flex items-start gap-2 px-3 py-1.5 text-left hover:bg-blue-50 transition-colors"
                 style={{ paddingLeft: `${12 + n.depth * 14}px` }}
+                title={n.code.description ?? undefined}
               >
                 <span
-                  className="w-2.5 h-2.5 rounded-sm flex-shrink-0 ring-1 ring-black/5"
+                  className="w-2.5 h-2.5 rounded-sm flex-shrink-0 ring-1 ring-black/5 mt-1"
                   style={{ background: color }}
                 />
-                <span className="text-slate-800 truncate">{n.code.name}</span>
+                <span className="flex-1 min-w-0">
+                  <span className="block text-[13px] text-slate-800 truncate">{n.code.name}</span>
+                  {n.code.description && (
+                    <span className="block text-[11px] text-slate-500 leading-tight line-clamp-2 mt-0.5">
+                      {n.code.description}
+                    </span>
+                  )}
+                </span>
               </button>
             );
           })
@@ -473,6 +547,7 @@ function AnnotationsPanel({
         </div>
         <ul className="space-y-1.5">
           {annotations.map((a) => {
+            const codeForA = codes.find((c) => c.id === a.codeId);
             const color = resolveColor(codes, a.codeId);
             const path = codePathString(codes, a.codeId);
             const focused = focusedAnnotationId === a.id;
@@ -507,6 +582,11 @@ function AnnotationsPanel({
                     ×
                   </button>
                 </div>
+                {focused && codeForA?.description && (
+                  <div className="mt-1 text-[11px] text-slate-500 leading-snug border-l-2 border-slate-200 pl-2">
+                    {codeForA.description}
+                  </div>
+                )}
                 <div className="mt-1 text-[13px] text-slate-700 italic">
                   “{doc.text.slice(a.start, a.end).slice(0, 200)}
                   {a.end - a.start > 200 ? '…' : ''}”

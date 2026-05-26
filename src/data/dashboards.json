@@ -28,8 +28,7 @@
   {
     "slug": "qualitative-coding",
     "title": "Qualitative Coding",
-    "desc": "Code text documents with a nested code tree and per-document metadata. Exports canonical JSON and Markdown-with-inline-codes for AI-comparison work.",
-    "status": "in-progress",
-    "private": true
+    "desc": "Personal qualitative-coding tool: nested code tree, per-doc metadata, cross-project Explore view, Markdown notes, and Google Drive sync. Exports canonical JSON and Markdown for AI-comparison work.",
+    "status": "in-progress"
   }
 ]

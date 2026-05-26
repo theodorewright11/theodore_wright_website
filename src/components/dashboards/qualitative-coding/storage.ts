@@ -6,6 +6,9 @@ const empty: AppState = {
   version: 1,
   projects: [],
   activeProjectId: null,
+  exploreProjectIds: [],
+  view: 'documents',
+  showCodeDefinitions: false,
 };
 
 export function loadState(): AppState {
@@ -19,6 +22,9 @@ export function loadState(): AppState {
         version: 1,
         projects: parsed.projects.map(coerceProject),
         activeProjectId: parsed.activeProjectId ?? null,
+        exploreProjectIds: Array.isArray(parsed.exploreProjectIds) ? parsed.exploreProjectIds : [],
+        view: parsed.view === 'explore' ? 'explore' : 'documents',
+        showCodeDefinitions: !!parsed.showCodeDefinitions,
       };
     }
   } catch {
@@ -33,17 +39,25 @@ export function saveState(state: AppState): void {
 }
 
 export function coerceProject(p: any): Project {
+  const docs = Array.isArray(p.documents) ? p.documents : [];
   return {
     version: 1,
     id: String(p.id ?? cryptoRandomId()),
     name: String(p.name ?? 'Untitled project'),
     description: p.description ?? undefined,
+    about: typeof p.about === 'string' ? p.about : undefined,
     metadataSchema: Array.isArray(p.metadataSchema) ? p.metadataSchema : [],
-    documents: Array.isArray(p.documents) ? p.documents : [],
+    documents: docs.map((d: any) => ({
+      ...d,
+      folder: typeof d.folder === 'string' && d.folder.trim() ? d.folder : undefined,
+      notes: typeof d.notes === 'string' ? d.notes : undefined,
+      metadata: d.metadata && typeof d.metadata === 'object' ? d.metadata : {},
+    })),
     codes: Array.isArray(p.codes) ? p.codes : [],
     annotations: Array.isArray(p.annotations) ? p.annotations : [],
     created_at: p.created_at ?? new Date().toISOString(),
     updated_at: p.updated_at ?? new Date().toISOString(),
+    drive: p.drive && typeof p.drive === 'object' && p.drive.fileId ? p.drive : undefined,
   };
 }
 

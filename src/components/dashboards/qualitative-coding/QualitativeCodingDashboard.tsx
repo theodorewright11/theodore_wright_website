@@ -1,13 +1,32 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import AuthBar, { type SyncStatus } from './AuthBar';
 import CodeTree from './CodeTree';
 import DocumentViewer from './DocumentViewer';
+import ExploreView from './ExploreView';
 import MetadataSchemaEditor from './MetadataSchemaEditor';
+import ProjectAboutView from './ProjectAboutView';
 import {
-  buildCodeTree,
+  buildFolderTree,
   deepCodeCounts,
   descendantIds,
   findDoc,
+  folderDocCount,
+  nextPaletteColor,
+  type FolderNode,
 } from './compute';
+import {
+  DriveAuthError,
+  createFile,
+  deleteFile as driveDeleteFile,
+  getFileContent,
+  listAppFiles,
+  loadStoredToken,
+  projectFileName,
+  signIn,
+  signOut,
+  updateFile,
+  type StoredToken,
+} from './drive';
 import { exportDocumentMarkdown, exportProjectJSON, exportProjectMarkdown } from './exporters';
 import {
   coerceProject,
@@ -19,20 +38,50 @@ import {
   readFileAsText,
   saveState,
 } from './storage';
-import { nextPaletteColor } from './compute';
-import type { Annotation, AppState, Code, Document, MetadataField, Project } from './types';
+import type {
+  Annotation,
+  AppState,
+  Code,
+  Document,
+  MetadataField,
+  Project,
+  View,
+} from './types';
+
+type DriveState = {
+  token: StoredToken | null;
+  syncStatus: SyncStatus;
+  lastError: string | null;
+};
+
+const GOOGLE_CLIENT_ID = (import.meta as any).env?.PUBLIC_GOOGLE_CLIENT_ID as string | undefined;
+const DRIVE_FOLDER_ID = (import.meta as any).env?.PUBLIC_QUAL_CODING_DRIVE_FOLDER_ID as
+  | string
+  | undefined;
 
 export default function QualitativeCodingDashboard() {
   const [state, setState] = useState<AppState>(() => loadState());
   const [hydrated, setHydrated] = useState(false);
   const [activeDocId, setActiveDocId] = useState<string | null>(null);
+  const [focusedAnnotationId, setFocusedAnnotationId] = useState<string | null>(null);
   const [selectedCodeId, setSelectedCodeId] = useState<string | null>(null);
   const [schemaOpen, setSchemaOpen] = useState(false);
   const [exportMenuOpen, setExportMenuOpen] = useState(false);
+  const [drive, setDrive] = useState<DriveState>({
+    token: null,
+    syncStatus: 'offline',
+    lastError: null,
+  });
   const importInputRef = useRef<HTMLInputElement>(null);
+
+  const view: View = state.view ?? 'documents';
+  const showCodeDefinitions = !!state.showCodeDefinitions;
+  const exploreProjectIds = state.exploreProjectIds ?? [];
 
   useEffect(() => {
     setHydrated(true);
+    const t = loadStoredToken();
+    if (t) setDrive((d) => ({ ...d, token: t, syncStatus: 'idle' }));
   }, []);
 
   useEffect(() => {
@@ -55,6 +104,7 @@ export default function QualitativeCodingDashboard() {
     }
   }, [activeProject, activeDocId]);
 
+  // ----- Mutation primitives -----
   const updateActiveProject = useCallback(
     (mutate: (p: Project) => Project) => {
       setState((s) => {
@@ -72,15 +122,196 @@ export default function QualitativeCodingDashboard() {
     [],
   );
 
+  const updateProjectById = useCallback(
+    (projectId: string, mutate: (p: Project) => Project) => {
+      setState((s) => ({
+        ...s,
+        projects: s.projects.map((p) =>
+          p.id === projectId
+            ? { ...mutate(p), updated_at: new Date().toISOString() }
+            : p,
+        ),
+      }));
+    },
+    [],
+  );
+
+  // ----- Drive sync queue -----
+  const pendingWrites = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
+  const inflightWrites = useRef<Set<string>>(new Set());
+
+  const queueWrite = useCallback(
+    (projectId: string) => {
+      if (!drive.token) return;
+      const existing = pendingWrites.current.get(projectId);
+      if (existing) clearTimeout(existing);
+      const t = setTimeout(() => {
+        pendingWrites.current.delete(projectId);
+        runWrite(projectId);
+      }, 800);
+      pendingWrites.current.set(projectId, t);
+    },
+    [drive.token],
+  );
+
+  const runWrite = useCallback(
+    async (projectId: string) => {
+      if (!drive.token) return;
+      if (inflightWrites.current.has(projectId)) {
+        queueWrite(projectId);
+        return;
+      }
+      inflightWrites.current.add(projectId);
+      setDrive((d) => ({ ...d, syncStatus: 'syncing', lastError: null }));
+      try {
+        const snapshot = JSON.parse(window.localStorage.getItem('tw-qual-coding-v1') ?? '{}');
+        const project: Project | undefined = (snapshot.projects ?? []).find(
+          (p: Project) => p.id === projectId,
+        );
+        if (!project) {
+          inflightWrites.current.delete(projectId);
+          setDrive((d) => ({ ...d, syncStatus: 'idle' }));
+          return;
+        }
+        if (!project.drive?.fileId) {
+          const file = await createFile(
+            drive.token.access_token,
+            projectFileName(project.name, project.id),
+            project,
+            DRIVE_FOLDER_ID,
+          );
+          updateProjectById(projectId, (p) => ({
+            ...p,
+            drive: { fileId: file.id, modifiedTime: file.modifiedTime },
+          }));
+        } else {
+          const file = await updateFile(
+            drive.token.access_token,
+            project.drive.fileId,
+            project,
+            projectFileName(project.name, project.id),
+          );
+          updateProjectById(projectId, (p) => ({
+            ...p,
+            drive: { fileId: file.id, modifiedTime: file.modifiedTime },
+          }));
+        }
+        inflightWrites.current.delete(projectId);
+        setDrive((d) => ({ ...d, syncStatus: 'idle' }));
+      } catch (err) {
+        inflightWrites.current.delete(projectId);
+        if (err instanceof DriveAuthError) {
+          setDrive({ token: null, syncStatus: 'error', lastError: err.message });
+        } else {
+          setDrive((d) => ({
+            ...d,
+            syncStatus: 'error',
+            lastError: err instanceof Error ? err.message : String(err),
+          }));
+        }
+      }
+    },
+    [drive.token, updateProjectById, queueWrite],
+  );
+
+  const pullAllFromDrive = useCallback(async () => {
+    if (!drive.token) return;
+    setDrive((d) => ({ ...d, syncStatus: 'syncing', lastError: null }));
+    try {
+      const files = await listAppFiles(drive.token.access_token, DRIVE_FOLDER_ID);
+      const filesByModified = new Map(files.map((f) => [f.id, f]));
+      const pulled: Project[] = [];
+      for (const f of files) {
+        const content = await getFileContent<any>(drive.token.access_token, f.id);
+        const proj = coerceProject({ ...content, drive: { fileId: f.id, modifiedTime: f.modifiedTime } });
+        pulled.push(proj);
+      }
+      setState((s) => {
+        const merged: Project[] = [];
+        const seenIds = new Set<string>();
+        for (const p of pulled) {
+          merged.push(p);
+          seenIds.add(p.id);
+        }
+        for (const p of s.projects) {
+          if (p.drive?.fileId && filesByModified.has(p.drive.fileId)) continue;
+          merged.push(p);
+          seenIds.add(p.id);
+        }
+        return {
+          ...s,
+          projects: merged,
+          activeProjectId:
+            s.activeProjectId && seenIds.has(s.activeProjectId)
+              ? s.activeProjectId
+              : merged[0]?.id ?? null,
+        };
+      });
+      // Push any local projects without a drive link
+      const localSnapshot = JSON.parse(window.localStorage.getItem('tw-qual-coding-v1') ?? '{}');
+      const localProjects: Project[] = localSnapshot.projects ?? [];
+      for (const p of localProjects) {
+        if (!p.drive?.fileId) queueWrite(p.id);
+      }
+      setDrive((d) => ({ ...d, syncStatus: 'idle' }));
+    } catch (err) {
+      if (err instanceof DriveAuthError) {
+        setDrive({ token: null, syncStatus: 'error', lastError: err.message });
+      } else {
+        setDrive((d) => ({
+          ...d,
+          syncStatus: 'error',
+          lastError: err instanceof Error ? err.message : String(err),
+        }));
+      }
+    }
+  }, [drive.token, queueWrite]);
+
+  // Pull on sign-in
+  useEffect(() => {
+    if (drive.token) pullAllFromDrive();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [drive.token?.access_token]);
+
+  // Refresh on focus
+  useEffect(() => {
+    if (!drive.token) return;
+    const onFocus = () => pullAllFromDrive();
+    window.addEventListener('focus', onFocus);
+    return () => window.removeEventListener('focus', onFocus);
+  }, [drive.token, pullAllFromDrive]);
+
+  const handleSignIn = async () => {
+    if (!GOOGLE_CLIENT_ID) return;
+    try {
+      const t = await signIn({ clientId: GOOGLE_CLIENT_ID, prompt: 'consent' });
+      setDrive({ token: t, syncStatus: 'idle', lastError: null });
+    } catch (err) {
+      setDrive((d) => ({
+        ...d,
+        syncStatus: 'error',
+        lastError: err instanceof Error ? err.message : String(err),
+      }));
+    }
+  };
+
+  const handleSignOut = () => {
+    signOut(drive.token?.access_token);
+    setDrive({ token: null, syncStatus: 'offline', lastError: null });
+  };
+
+  // ----- Project CRUD -----
   const createProject = (name: string) => {
     const p = newProject(name);
     setState((s) => ({
       ...s,
       projects: [...s.projects, p],
       activeProjectId: p.id,
+      view: 'documents',
     }));
     setActiveDocId(null);
     setSelectedCodeId(null);
+    queueWrite(p.id);
   };
 
   const switchProject = (id: string) => {
@@ -90,51 +321,82 @@ export default function QualitativeCodingDashboard() {
   };
 
   const deleteProject = (id: string) => {
+    const proj = state.projects.find((p) => p.id === id);
     setState((s) => {
       const next = s.projects.filter((p) => p.id !== id);
       return {
         ...s,
         projects: next,
         activeProjectId: s.activeProjectId === id ? next[0]?.id ?? null : s.activeProjectId,
+        exploreProjectIds: (s.exploreProjectIds ?? []).filter((x) => x !== id),
       };
+    });
+    if (proj?.drive?.fileId && drive.token) {
+      driveDeleteFile(drive.token.access_token, proj.drive.fileId).catch(() => {});
+    }
+  };
+
+  const updateProjectMeta = (patch: Partial<Project>) => {
+    if (!activeProject) return;
+    updateActiveProject((p) => ({ ...p, ...patch }));
+    queueWrite(activeProject.id);
+  };
+
+  const toggleExploreProject = (id: string) => {
+    setState((s) => {
+      const cur = s.exploreProjectIds ?? [];
+      const next = cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id];
+      return { ...s, exploreProjectIds: next };
     });
   };
 
-  const addDocument = () => {
+  // ----- Document CRUD -----
+  const addDocument = (folder?: string) => {
     if (!activeProject) return;
     const now = new Date().toISOString();
     const d: Document = {
       id: cryptoRandomId(),
       title: 'Untitled document',
       text: '',
+      folder: folder || undefined,
       metadata: {},
       created_at: now,
       updated_at: now,
     };
+    const projectId = activeProject.id;
     updateActiveProject((p) => ({ ...p, documents: [...p.documents, d] }));
     setActiveDocId(d.id);
+    queueWrite(projectId);
   };
 
   const deleteDocument = (id: string) => {
+    if (!activeProject) return;
+    const projectId = activeProject.id;
     updateActiveProject((p) => ({
       ...p,
       documents: p.documents.filter((d) => d.id !== id),
       annotations: p.annotations.filter((a) => a.docId !== id),
     }));
     if (activeDocId === id) setActiveDocId(null);
+    queueWrite(projectId);
   };
 
   const updateDocument = (id: string, patch: Partial<Document>) => {
+    if (!activeProject) return;
+    const projectId = activeProject.id;
     updateActiveProject((p) => ({
       ...p,
       documents: p.documents.map((d) =>
         d.id === id ? { ...d, ...patch, updated_at: new Date().toISOString() } : d,
       ),
     }));
+    queueWrite(projectId);
   };
 
+  // ----- Code CRUD -----
   const addCode = (parentId: string | null, name: string) => {
     if (!activeProject) return;
+    const projectId = activeProject.id;
     updateActiveProject((p) => {
       const code: Code = {
         id: cryptoRandomId(),
@@ -145,16 +407,22 @@ export default function QualitativeCodingDashboard() {
       };
       return { ...p, codes: [...p.codes, code] };
     });
+    queueWrite(projectId);
   };
 
   const updateCode = (codeId: string, patch: Partial<Code>) => {
+    if (!activeProject) return;
+    const projectId = activeProject.id;
     updateActiveProject((p) => ({
       ...p,
       codes: p.codes.map((c) => (c.id === codeId ? { ...c, ...patch } : c)),
     }));
+    queueWrite(projectId);
   };
 
   const deleteCode = (codeId: string) => {
+    if (!activeProject) return;
+    const projectId = activeProject.id;
     updateActiveProject((p) => {
       const toRemove = descendantIds(p.codes, codeId);
       return {
@@ -163,11 +431,13 @@ export default function QualitativeCodingDashboard() {
         annotations: p.annotations.filter((a) => !toRemove.has(a.codeId)),
       };
     });
-    if (selectedCodeId && descendantIds(activeProject?.codes ?? [], codeId).has(selectedCodeId)) {
+    if (selectedCodeId && descendantIds(activeProject.codes, codeId).has(selectedCodeId)) {
       setSelectedCodeId(null);
     }
+    queueWrite(projectId);
   };
 
+  // ----- Annotation CRUD -----
   const addAnnotation = (
     docId: string,
     start: number,
@@ -175,6 +445,8 @@ export default function QualitativeCodingDashboard() {
     codeId: string,
     note?: string,
   ) => {
+    if (!activeProject) return;
+    const projectId = activeProject.id;
     const a: Annotation = {
       id: cryptoRandomId(),
       docId,
@@ -185,38 +457,47 @@ export default function QualitativeCodingDashboard() {
       created_at: new Date().toISOString(),
     };
     updateActiveProject((p) => ({ ...p, annotations: [...p.annotations, a] }));
+    queueWrite(projectId);
   };
 
   const updateAnnotation = (id: string, patch: Partial<Annotation>) => {
+    if (!activeProject) return;
+    const projectId = activeProject.id;
     updateActiveProject((p) => ({
       ...p,
       annotations: p.annotations.map((a) => (a.id === id ? { ...a, ...patch } : a)),
     }));
+    queueWrite(projectId);
   };
 
   const deleteAnnotation = (id: string) => {
+    if (!activeProject) return;
+    const projectId = activeProject.id;
     updateActiveProject((p) => ({
       ...p,
       annotations: p.annotations.filter((a) => a.id !== id),
     }));
+    queueWrite(projectId);
   };
 
   const handleSchemaChange = (next: MetadataField[]) => {
+    if (!activeProject) return;
+    const projectId = activeProject.id;
     updateActiveProject((p) => ({ ...p, metadataSchema: next }));
+    queueWrite(projectId);
   };
 
+  // ----- Export / import -----
   const onExportJSON = () => {
     if (!activeProject) return;
     downloadJSON(`${slugFile(activeProject.name)}.json`, exportProjectJSON(activeProject));
     setExportMenuOpen(false);
   };
-
   const onExportProjectMD = () => {
     if (!activeProject) return;
     downloadText(`${slugFile(activeProject.name)}.md`, exportProjectMarkdown(activeProject));
     setExportMenuOpen(false);
   };
-
   const onExportDocMD = () => {
     if (!activeProject) return;
     const doc = findDoc(activeProject, activeDocId);
@@ -229,16 +510,33 @@ export default function QualitativeCodingDashboard() {
     try {
       const text = await readFileAsText(file);
       const parsed = JSON.parse(text);
-      const project = coerceProject({ ...parsed, id: cryptoRandomId() });
+      const project = coerceProject({ ...parsed, id: cryptoRandomId(), drive: undefined });
       setState((s) => ({
         ...s,
         projects: [...s.projects, project],
         activeProjectId: project.id,
       }));
       setActiveDocId(null);
+      queueWrite(project.id);
     } catch (err) {
       window.alert(`Could not import: ${err instanceof Error ? err.message : 'unknown error'}`);
     }
+  };
+
+  // ----- View helpers -----
+  const setView = (v: View) => setState((s) => ({ ...s, view: v }));
+
+  const toggleDefinitions = () =>
+    setState((s) => ({ ...s, showCodeDefinitions: !s.showCodeDefinitions }));
+
+  const jumpToAnnotation = (projectId: string, docId: string, annotationId: string) => {
+    if (projectId !== state.activeProjectId) {
+      setState((s) => ({ ...s, activeProjectId: projectId, view: 'documents' }));
+    } else {
+      setView('documents');
+    }
+    setActiveDocId(docId);
+    setFocusedAnnotationId(annotationId);
   };
 
   if (!hydrated) {
@@ -260,7 +558,6 @@ export default function QualitativeCodingDashboard() {
     );
   }
 
-  const tree = buildCodeTree(activeProject.codes);
   const counts = deepCodeCounts(activeProject);
   const activeDoc = findDoc(activeProject, activeDocId);
   const docAnnotations = selectedCodeId
@@ -269,15 +566,25 @@ export default function QualitativeCodingDashboard() {
       )
     : activeProject.annotations;
 
+  const exploreProjects = (() => {
+    const ids = new Set(exploreProjectIds);
+    ids.add(activeProject.id);
+    return state.projects.filter((p) => ids.has(p.id));
+  })();
+
   return (
     <div className="h-screen flex flex-col bg-white text-slate-900">
       <TopBar
         project={activeProject}
         projects={state.projects}
+        view={view}
+        onSetView={setView}
+        exploreProjectIds={exploreProjectIds}
+        onToggleExplore={toggleExploreProject}
         onSwitch={switchProject}
         onCreate={createProject}
         onDelete={deleteProject}
-        onRename={(name) => updateActiveProject((p) => ({ ...p, name }))}
+        onRename={(name) => updateProjectMeta({ name })}
         onOpenSchema={() => setSchemaOpen(true)}
         exportMenuOpen={exportMenuOpen}
         setExportMenuOpen={setExportMenuOpen}
@@ -286,6 +593,14 @@ export default function QualitativeCodingDashboard() {
         onExportDocMD={onExportDocMD}
         canExportDocMD={!!activeDoc}
         onImport={() => importInputRef.current?.click()}
+        driveConfigured={!!GOOGLE_CLIENT_ID}
+        driveEmail={drive.token?.email}
+        driveStatus={drive.syncStatus}
+        driveError={drive.lastError}
+        driveFileCount={state.projects.filter((p) => p.drive?.fileId).length}
+        onDriveSignIn={handleSignIn}
+        onDriveSignOut={handleSignOut}
+        onDrivePullAll={pullAllFromDrive}
       />
       <input
         ref={importInputRef}
@@ -299,23 +614,35 @@ export default function QualitativeCodingDashboard() {
         }}
       />
       <div className="flex-1 min-h-0 flex">
-        <Sidebar
-          project={activeProject}
-          activeDocId={activeDocId}
-          onSelectDoc={setActiveDocId}
-          onAddDoc={addDocument}
-          onDeleteDoc={deleteDocument}
-          deepCounts={counts}
-          selectedCodeId={selectedCodeId}
-          onSelectCode={setSelectedCodeId}
-          onAddCode={addCode}
-          onUpdateCode={updateCode}
-          onDeleteCode={deleteCode}
-        />
+        {view !== 'about' && (
+          <Sidebar
+            project={activeProject}
+            activeDocId={activeDocId}
+            onSelectDoc={(id) => {
+              setActiveDocId(id);
+              setFocusedAnnotationId(null);
+              if (view !== 'documents') setView('documents');
+            }}
+            onAddDoc={(folder) => addDocument(folder)}
+            onDeleteDoc={deleteDocument}
+            deepCounts={counts}
+            showCodeDefinitions={showCodeDefinitions}
+            onToggleDefinitions={toggleDefinitions}
+            selectedCodeId={selectedCodeId}
+            onSelectCode={setSelectedCodeId}
+            onAddCode={addCode}
+            onUpdateCode={updateCode}
+            onDeleteCode={deleteCode}
+          />
+        )}
         <main className="flex-1 min-w-0 flex flex-col bg-white">
-          {activeDoc ? (
+          {view === 'about' ? (
+            <ProjectAboutView project={activeProject} onUpdate={updateProjectMeta} />
+          ) : view === 'explore' ? (
+            <ExploreView projects={exploreProjects} onJumpToAnnotation={jumpToAnnotation} />
+          ) : activeDoc ? (
             <DocumentViewer
-              key={activeDoc.id}
+              key={activeDoc.id + ':' + focusedAnnotationId}
               doc={activeDoc}
               codes={activeProject.codes}
               annotations={docAnnotations}
@@ -329,7 +656,10 @@ export default function QualitativeCodingDashboard() {
               onUpdateAnnotation={updateAnnotation}
             />
           ) : (
-            <EmptyDocPane onAdd={addDocument} hasDocs={activeProject.documents.length > 0} />
+            <EmptyDocPane
+              onAdd={() => addDocument()}
+              hasDocs={activeProject.documents.length > 0}
+            />
           )}
         </main>
       </div>
@@ -344,9 +674,17 @@ export default function QualitativeCodingDashboard() {
   );
 }
 
+// ============================================================================
+// TopBar
+// ============================================================================
+
 function TopBar({
   project,
   projects,
+  view,
+  onSetView,
+  exploreProjectIds,
+  onToggleExplore,
   onSwitch,
   onCreate,
   onDelete,
@@ -359,9 +697,21 @@ function TopBar({
   onExportDocMD,
   canExportDocMD,
   onImport,
+  driveConfigured,
+  driveEmail,
+  driveStatus,
+  driveError,
+  driveFileCount,
+  onDriveSignIn,
+  onDriveSignOut,
+  onDrivePullAll,
 }: {
   project: Project;
   projects: Project[];
+  view: View;
+  onSetView: (v: View) => void;
+  exploreProjectIds: string[];
+  onToggleExplore: (id: string) => void;
   onSwitch: (id: string) => void;
   onCreate: (name: string) => void;
   onDelete: (id: string) => void;
@@ -374,6 +724,14 @@ function TopBar({
   onExportDocMD: () => void;
   canExportDocMD: boolean;
   onImport: () => void;
+  driveConfigured: boolean;
+  driveEmail: string | undefined;
+  driveStatus: SyncStatus;
+  driveError: string | null;
+  driveFileCount: number;
+  onDriveSignIn: () => void;
+  onDriveSignOut: () => void;
+  onDrivePullAll: () => void;
 }) {
   const [renaming, setRenaming] = useState(false);
   const [name, setName] = useState(project.name);
@@ -391,8 +749,10 @@ function TopBar({
     }
   }, [exportMenuOpen, projectMenuOpen, setExportMenuOpen]);
 
+  const exploreCount = new Set([...exploreProjectIds, project.id]).size;
+
   return (
-    <header className="flex items-center gap-3 px-4 py-2.5 bg-white border-b border-slate-200">
+    <header className="flex items-center gap-2 px-4 py-2.5 bg-white border-b border-slate-200">
       <a
         href="/dashboards"
         className="text-[11px] font-medium text-slate-400 hover:text-slate-700 transition-colors"
@@ -413,57 +773,86 @@ function TopBar({
           <span className="text-[10px] uppercase font-semibold tracking-[0.12em] text-slate-400">
             Project
           </span>
-          <span className="text-[14px] font-bold text-slate-900">{project.name}</span>
+          <span className="text-[14px] font-bold text-slate-900 truncate max-w-[200px]">
+            {project.name}
+          </span>
           <span className="text-slate-400 text-[10px]">▾</span>
         </button>
         {projectMenuOpen && (
           <div
             onClick={(e) => e.stopPropagation()}
-            className="absolute left-0 top-full mt-1 w-[280px] bg-white border border-slate-200 rounded-lg shadow-lg z-30 overflow-hidden"
+            className="absolute left-0 top-full mt-1 w-[340px] bg-white border border-slate-200 rounded-lg shadow-lg z-30 overflow-hidden"
           >
-            <div className="max-h-[300px] overflow-y-auto">
-              {projects.map((p) => (
-                <div
-                  key={p.id}
-                  className={`group flex items-center gap-2 px-3 py-2 cursor-pointer transition-colors ${
-                    p.id === project.id ? 'bg-blue-50' : 'hover:bg-slate-50'
-                  }`}
-                  onClick={() => {
-                    onSwitch(p.id);
-                    setProjectMenuOpen(false);
-                  }}
-                >
-                  <span
-                    className={`flex-1 truncate text-[13px] ${
-                      p.id === project.id ? 'font-semibold text-slate-900' : 'text-slate-700'
+            <div className="px-3 py-2 border-b border-slate-100 bg-slate-50 text-[10px] text-slate-500">
+              Click name to switch · checkbox includes in Explore
+            </div>
+            <div className="max-h-[340px] overflow-y-auto">
+              {projects.map((p) => {
+                const inExplore = exploreProjectIds.includes(p.id) || p.id === project.id;
+                const isActive = p.id === project.id;
+                return (
+                  <div
+                    key={p.id}
+                    className={`group flex items-center gap-2 px-3 py-2 transition-colors ${
+                      isActive ? 'bg-blue-50' : 'hover:bg-slate-50'
                     }`}
                   >
-                    {p.name}
-                  </span>
-                  <span className="text-[10px] font-mono text-slate-400 tabular-nums">
-                    {p.documents.length}d · {p.codes.length}c
-                  </span>
-                  {projects.length > 1 && (
+                    <input
+                      type="checkbox"
+                      checked={inExplore}
+                      disabled={isActive}
+                      onChange={() => onToggleExplore(p.id)}
+                      className="accent-blue-600"
+                      title={isActive ? 'active project is always included' : 'include in Explore'}
+                    />
                     <button
                       type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        if (
-                          window.confirm(
-                            `Delete project "${p.name}"? This cannot be undone (export first if you want a backup).`,
-                          )
-                        ) {
-                          onDelete(p.id);
-                        }
+                      onClick={() => {
+                        onSwitch(p.id);
+                        setProjectMenuOpen(false);
                       }}
-                      className="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-red-600 text-[14px] transition-opacity"
-                      title="delete project"
+                      className="flex-1 min-w-0 text-left flex items-center gap-2"
                     >
-                      ×
+                      <span
+                        className={`flex-1 truncate text-[13px] ${
+                          isActive ? 'font-semibold text-slate-900' : 'text-slate-700'
+                        }`}
+                      >
+                        {p.name}
+                      </span>
+                      <span className="text-[10px] font-mono text-slate-400 tabular-nums">
+                        {p.documents.length}d · {p.codes.length}c
+                      </span>
+                      {p.drive?.fileId && (
+                        <span title="synced to Drive" className="text-emerald-500 text-[10px]">
+                          ☁
+                        </span>
+                      )}
                     </button>
-                  )}
-                </div>
-              ))}
+                    {projects.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (
+                            window.confirm(
+                              `Delete project "${p.name}"? This cannot be undone${
+                                p.drive?.fileId ? ' (will also delete its Drive file)' : ''
+                              }.`,
+                            )
+                          ) {
+                            onDelete(p.id);
+                          }
+                        }}
+                        className="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-red-600 text-[14px] transition-opacity"
+                        title="delete project"
+                      >
+                        ×
+                      </button>
+                    )}
+                  </div>
+                );
+              })}
             </div>
             <div className="border-t border-slate-100 p-2 flex gap-2">
               <button
@@ -494,39 +883,17 @@ function TopBar({
         )}
       </div>
 
-      {renaming ? (
-        <input
-          autoFocus
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          onBlur={() => {
-            const v = name.trim();
-            if (v && v !== project.name) onRename(v);
-            setRenaming(false);
-          }}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') {
-              const v = name.trim();
-              if (v && v !== project.name) onRename(v);
-              setRenaming(false);
-            }
-            if (e.key === 'Escape') {
-              setName(project.name);
-              setRenaming(false);
-            }
-          }}
-          className="px-2 py-1 text-[14px] font-medium border border-blue-500 rounded focus:outline-none"
-        />
-      ) : (
-        <button
-          type="button"
-          onClick={() => setRenaming(true)}
-          className="text-[11px] text-slate-400 hover:text-slate-700 transition-colors"
-          title="rename project"
-        >
-          ✎ rename
-        </button>
-      )}
+      <div className="ml-3 flex items-center bg-slate-100 rounded p-0.5">
+        <ViewBtn active={view === 'documents'} onClick={() => onSetView('documents')}>
+          Documents
+        </ViewBtn>
+        <ViewBtn active={view === 'explore'} onClick={() => onSetView('explore')}>
+          Explore{exploreCount > 1 ? ` · ${exploreCount}` : ''}
+        </ViewBtn>
+        <ViewBtn active={view === 'about'} onClick={() => onSetView('about')}>
+          Info
+        </ViewBtn>
+      </div>
 
       <div className="ml-auto flex items-center gap-2">
         <button
@@ -536,6 +903,16 @@ function TopBar({
         >
           Metadata schema
         </button>
+        <AuthBar
+          configured={driveConfigured}
+          email={driveEmail}
+          syncStatus={driveStatus}
+          lastError={driveError}
+          fileCount={driveFileCount}
+          onSignIn={onDriveSignIn}
+          onSignOut={onDriveSignOut}
+          onPullAll={onDrivePullAll}
+        />
         <div className="relative">
           <button
             type="button"
@@ -558,24 +935,16 @@ function TopBar({
                 onClick={onExportJSON}
                 className="w-full flex flex-col items-start gap-0.5 px-3 py-2 hover:bg-blue-50 transition-colors"
               >
-                <span className="text-[13px] font-semibold text-slate-900">
-                  Project JSON
-                </span>
-                <span className="text-[11px] text-slate-500">
-                  Canonical, round-trips through Import
-                </span>
+                <span className="text-[13px] font-semibold text-slate-900">Project JSON</span>
+                <span className="text-[11px] text-slate-500">Canonical, round-trips through Import</span>
               </button>
               <button
                 type="button"
                 onClick={onExportProjectMD}
                 className="w-full flex flex-col items-start gap-0.5 px-3 py-2 border-t border-slate-100 hover:bg-blue-50 transition-colors"
               >
-                <span className="text-[13px] font-semibold text-slate-900">
-                  Project Markdown
-                </span>
-                <span className="text-[11px] text-slate-500">
-                  All documents + annotation tables
-                </span>
+                <span className="text-[13px] font-semibold text-slate-900">Project Markdown</span>
+                <span className="text-[11px] text-slate-500">All documents + annotation tables</span>
               </button>
               <button
                 type="button"
@@ -583,20 +952,83 @@ function TopBar({
                 disabled={!canExportDocMD}
                 className="w-full flex flex-col items-start gap-0.5 px-3 py-2 border-t border-slate-100 hover:bg-blue-50 transition-colors disabled:opacity-40 disabled:hover:bg-white"
               >
-                <span className="text-[13px] font-semibold text-slate-900">
-                  Current doc Markdown
-                </span>
-                <span className="text-[11px] text-slate-500">
-                  Just the open document
-                </span>
+                <span className="text-[13px] font-semibold text-slate-900">Current doc Markdown</span>
+                <span className="text-[11px] text-slate-500">Just the open document</span>
               </button>
             </div>
           )}
         </div>
       </div>
+
+      {renaming && (
+        <RenameModal
+          initial={project.name}
+          onCancel={() => setRenaming(false)}
+          onSave={(v) => {
+            onRename(v);
+            setRenaming(false);
+          }}
+        />
+      )}
     </header>
   );
 }
+
+function ViewBtn({
+  active,
+  onClick,
+  children,
+}: {
+  active: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`px-2.5 py-1 text-[12px] font-semibold rounded transition-colors ${
+        active
+          ? 'bg-white shadow-sm text-slate-900'
+          : 'text-slate-500 hover:text-slate-800'
+      }`}
+    >
+      {children}
+    </button>
+  );
+}
+
+function RenameModal({
+  initial,
+  onCancel,
+  onSave,
+}: {
+  initial: string;
+  onCancel: () => void;
+  onSave: (v: string) => void;
+}) {
+  const [v, setV] = useState(initial);
+  return (
+    <div className="fixed inset-0 bg-black/30 z-50 flex items-start justify-center pt-32" onClick={onCancel}>
+      <div className="bg-white rounded-xl shadow-2xl p-5 w-[420px]" onClick={(e) => e.stopPropagation()}>
+        <input
+          autoFocus
+          value={v}
+          onChange={(e) => setV(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && v.trim()) onSave(v.trim());
+            if (e.key === 'Escape') onCancel();
+          }}
+          className="w-full px-3 py-2 text-[18px] border border-slate-200 rounded focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500"
+        />
+      </div>
+    </div>
+  );
+}
+
+// ============================================================================
+// Sidebar
+// ============================================================================
 
 function Sidebar({
   project,
@@ -605,6 +1037,8 @@ function Sidebar({
   onAddDoc,
   onDeleteDoc,
   deepCounts,
+  showCodeDefinitions,
+  onToggleDefinitions,
   selectedCodeId,
   onSelectCode,
   onAddCode,
@@ -614,15 +1048,22 @@ function Sidebar({
   project: Project;
   activeDocId: string | null;
   onSelectDoc: (id: string) => void;
-  onAddDoc: () => void;
+  onAddDoc: (folder?: string) => void;
   onDeleteDoc: (id: string) => void;
   deepCounts: Map<string, number>;
+  showCodeDefinitions: boolean;
+  onToggleDefinitions: () => void;
   selectedCodeId: string | null;
   onSelectCode: (id: string | null) => void;
   onAddCode: (parentId: string | null, name: string) => void;
   onUpdateCode: (id: string, patch: Partial<Code>) => void;
   onDeleteCode: (id: string) => void;
 }) {
+  const { rootDocs, folders } = useMemo(
+    () => buildFolderTree(project.documents),
+    [project.documents],
+  );
+
   return (
     <aside className="w-[280px] flex-shrink-0 border-r border-slate-200 bg-slate-50 flex flex-col">
       <div className="flex-1 overflow-y-auto">
@@ -633,7 +1074,7 @@ function Sidebar({
             </div>
             <button
               type="button"
-              onClick={onAddDoc}
+              onClick={() => onAddDoc()}
               className="text-[11px] font-medium text-blue-600 hover:text-blue-800"
             >
               + new
@@ -642,36 +1083,26 @@ function Sidebar({
           {project.documents.length === 0 ? (
             <div className="text-[12px] text-slate-400 italic py-1">No documents yet.</div>
           ) : (
-            <ul className="space-y-px">
-              {project.documents.map((d) => (
-                <li
-                  key={d.id}
-                  className={`group flex items-center gap-2 rounded px-2 py-1.5 cursor-pointer text-[13px] transition-colors ${
-                    d.id === activeDocId
-                      ? 'bg-blue-100 text-slate-900 font-medium'
-                      : 'text-slate-700 hover:bg-white'
-                  }`}
-                  onClick={() => onSelectDoc(d.id)}
-                >
-                  <span className="flex-1 truncate">{d.title || 'Untitled'}</span>
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      if (
-                        window.confirm(`Delete "${d.title}" and its annotations?`)
-                      ) {
-                        onDeleteDoc(d.id);
-                      }
-                    }}
-                    className="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-red-600 text-[12px] transition-opacity"
-                    title="delete"
-                  >
-                    ×
-                  </button>
-                </li>
+            <div className="space-y-px">
+              {rootDocs.length > 0 && (
+                <DocList
+                  docs={rootDocs}
+                  activeDocId={activeDocId}
+                  onSelectDoc={onSelectDoc}
+                  onDeleteDoc={onDeleteDoc}
+                />
+              )}
+              {folders.map((f) => (
+                <FolderGroup
+                  key={f.path}
+                  node={f}
+                  activeDocId={activeDocId}
+                  onSelectDoc={onSelectDoc}
+                  onDeleteDoc={onDeleteDoc}
+                  onAddDoc={onAddDoc}
+                />
               ))}
-            </ul>
+            </div>
           )}
         </div>
 
@@ -680,6 +1111,8 @@ function Sidebar({
             codes={project.codes}
             deepCounts={deepCounts}
             selectedCodeId={selectedCodeId}
+            showDefinitions={showCodeDefinitions}
+            onToggleDefinitions={onToggleDefinitions}
             onSelectCode={onSelectCode}
             onAddCode={onAddCode}
             onUpdateCode={onUpdateCode}
@@ -707,6 +1140,123 @@ function Sidebar({
     </aside>
   );
 }
+
+function DocList({
+  docs,
+  activeDocId,
+  onSelectDoc,
+  onDeleteDoc,
+  depth = 0,
+}: {
+  docs: Document[];
+  activeDocId: string | null;
+  onSelectDoc: (id: string) => void;
+  onDeleteDoc: (id: string) => void;
+  depth?: number;
+}) {
+  return (
+    <ul className="space-y-px">
+      {docs.map((d) => (
+        <li
+          key={d.id}
+          className={`group flex items-center gap-2 rounded px-2 py-1.5 cursor-pointer text-[13px] transition-colors ${
+            d.id === activeDocId
+              ? 'bg-blue-100 text-slate-900 font-medium'
+              : 'text-slate-700 hover:bg-white'
+          }`}
+          style={{ paddingLeft: `${8 + depth * 12}px` }}
+          onClick={() => onSelectDoc(d.id)}
+        >
+          <span className="flex-1 truncate">{d.title || 'Untitled'}</span>
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              if (window.confirm(`Delete "${d.title}" and its annotations?`)) {
+                onDeleteDoc(d.id);
+              }
+            }}
+            className="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-red-600 text-[12px] transition-opacity"
+            title="delete"
+          >
+            ×
+          </button>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function FolderGroup({
+  node,
+  activeDocId,
+  onSelectDoc,
+  onDeleteDoc,
+  onAddDoc,
+}: {
+  node: FolderNode;
+  activeDocId: string | null;
+  onSelectDoc: (id: string) => void;
+  onDeleteDoc: (id: string) => void;
+  onAddDoc: (folder: string) => void;
+}) {
+  const [open, setOpen] = useState(true);
+  const total = folderDocCount(node);
+  return (
+    <div>
+      <div
+        className="group flex items-center gap-1 px-1 py-1 cursor-pointer hover:bg-white rounded"
+        style={{ paddingLeft: `${4 + node.depth * 12}px` }}
+        onClick={() => setOpen((v) => !v)}
+      >
+        <span className="text-[10px] text-slate-400 w-3">{open ? '▾' : '▸'}</span>
+        <span className="text-[10px]">📁</span>
+        <span className="flex-1 text-[12px] font-semibold text-slate-700 truncate">
+          {node.name}
+        </span>
+        <span className="text-[10px] font-mono text-slate-400 tabular-nums">{total}</span>
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onAddDoc(node.path);
+          }}
+          className="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-blue-600 text-[12px] transition-opacity"
+          title={`add document in ${node.path}`}
+        >
+          +
+        </button>
+      </div>
+      {open && (
+        <div>
+          {node.docs.length > 0 && (
+            <DocList
+              docs={node.docs}
+              activeDocId={activeDocId}
+              onSelectDoc={onSelectDoc}
+              onDeleteDoc={onDeleteDoc}
+              depth={node.depth + 1}
+            />
+          )}
+          {node.children.map((child) => (
+            <FolderGroup
+              key={child.path}
+              node={child}
+              activeDocId={activeDocId}
+              onSelectDoc={onSelectDoc}
+              onDeleteDoc={onDeleteDoc}
+              onAddDoc={onAddDoc}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ============================================================================
+// Empty states
+// ============================================================================
 
 function NoProjects({
   projects,
@@ -826,7 +1376,7 @@ function NoProjects({
           </div>
         </div>
         <div className="mt-6 text-[12px] text-slate-400 text-center">
-          Data lives in your browser (localStorage). Use Export often to save.
+          Data lives in your browser (localStorage). Sign in to sync to Google Drive.
         </div>
       </div>
     </div>
@@ -860,10 +1410,12 @@ function EmptyDocPane({ onAdd, hasDocs }: { onAdd: () => void; hasDocs: boolean 
 }
 
 function slugFile(name: string): string {
-  return name
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-    .slice(0, 60) || 'project';
+  return (
+    name
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '')
+      .slice(0, 60) || 'project'
+  );
 }

@@ -221,37 +221,58 @@ A **week strip** is pinned under the tab bar on every tab: this week's net worke
 
 #### Qualitative Coding
 
-**Status**: v1 shipped, **private** (`private: true` in `src/data/dashboards.json`, hidden from the roster and home page). The page renders at `/dashboards/qualitative-coding` for direct navigation. This dashboard deliberately uses a different UI language than the rest of the site — white background, Inter sans-serif, app-style three-pane layout — and bypasses `BaseLayout` (no site Nav/Footer). The goal is a clean tool-style interface tuned for text annotation work, not editorial reading.
+**Status**: v2 shipped, **public** (listed in `src/data/dashboards.json` without the `private` flag, so it appears in the `/dashboards` roster and the home Dashboards column). The page renders at `/dashboards/qualitative-coding`. Public-but-data-isolated: there is no Cloudflare Access gate; the URL is reachable to anyone, but the app stores everything in the visitor's own localStorage and the only cloud sync target is the signed-in user's own Google Drive. A stranger landing on the URL gets the empty "create your first project" screen, never the owner's data.
 
-A personal qualitative-coding tool: organize text documents into a project, build a nested code tree, tag spans of text with codes, and export the result as JSON or Markdown for AI-comparison work in VS Code. Single user. Answers: *given a set of text documents and a code tree, what spans am I tagging with what codes — and how does that compare to what an AI assigns to the same text?*
+This dashboard deliberately uses a different UI language than the rest of the site — white background, Inter sans-serif, app-style three-pane layout — and bypasses `BaseLayout` (no site Nav/Footer). The goal is a clean tool-style interface tuned for text annotation work, not editorial reading.
 
-**Pages** — single React component at `/dashboards/qualitative-coding` with three regions:
+A personal qualitative-coding tool: organize text documents into projects, build a nested code tree, tag spans of text with codes, capture per-document Markdown notes, and export the result as JSON or Markdown for AI-comparison work in VS Code. Multi-project, with a cross-project Explore view for aggregating annotations across project boundaries (e.g. "my coding of interviews" vs. "AI's coding of the same interviews" as two projects to compare).
 
-- **Sidebar (left, 280px)** — Documents list (selectable, deletable, "+ new" button) and the nested Code tree (expand/collapse, color swatches with a 12-color palette, inline rename via double-click, "+" to add child, click row to filter the document view to annotations under that code). A footer line shows project counts (docs / codes / annotations).
-- **TopBar** — project picker (switch/create/delete/import JSON), inline-rename project name, "Metadata schema" button (opens a modal to define per-document fields like Date, Gender, Source, etc.), "Export" dropdown with three options (Project JSON / Project Markdown / Current doc Markdown).
-- **Main pane** — the active document. Editable title at the top, then a row of metadata inputs (one per schema field). A `Read & code` ↔ `Edit text` toggle below: edit mode shows a raw textarea; read mode renders text with annotations highlighted (background tint = top annotation's color; underline = same color) and lets the user select text to open a floating popover that picks a code (search the tree, click or press Enter to commit). Below the text, an annotations list shows every annotation in the doc with code path, char range, the span text, an optional note (expand on focus), and a delete button.
+**Three top-level views** (toggle in the TopBar):
 
-**Data model**:
+- **Documents** — the active project's documents and codes. Sidebar (left, 280px) lists documents grouped by folder (path-style nesting, e.g. `Interviews/Round 1`) with collapsible folder headers, plus the nested code tree. Main pane shows the active document with title + metadata + body. A right-side **Notes** panel (toggle from the doc toolbar) opens a 380px column with a full Markdown editor — bold/italic/headers/lists toolbar plus a Write/Preview tab — for personal commentary on the document (separate from the coded body; never appears in annotations).
+- **Explore** — cross-project annotation browser. Filter by code (multi-select tree of all selected projects' codes), folder, metadata field, free-text search of span/note. Headline counts (annotations / unique codes / documents / projects), top-codes-in-view chip row, then a card list of every matching annotation with project chip (when multiple projects are aggregated), folder path, doc title, code path, span text, note, and the doc's metadata fields. Clicking a card jumps to Documents view focused on that annotation. Projects included in this view = the active project plus any others ticked via the project-picker checkboxes.
+- **Info** — project-level metadata: editable name, a one-line description, and an `About` Markdown doc (Write/Read tabs) for project background, code-tree decisions, research questions, etc. Plus a "Project at a glance" stat strip (docs / codes / annotations / metadata fields) and a created/updated date line.
 
-- `Project` — `{ id, name, description?, metadataSchema: MetadataField[], documents: Document[], codes: Code[], annotations: Annotation[], created_at, updated_at, version: 1 }`. The whole project is the storage unit; multiple projects can coexist in localStorage.
-- `MetadataField` — `{ key (slug), label, type: 'text' | 'number' | 'date' | 'enum', options? }`. Schema is per-project; renaming a label doesn't change the key. Deleting a field leaves existing values on documents in their JSON until cleared.
-- `Document` — `{ id, title, text (plain text / markdown), metadata: Record<key, value>, created_at, updated_at }`. v1 supports plain-text/Markdown only — no PDF, no audio.
-- `Code` — `{ id, name, parentId (null = root), color (null = inherit from ancestor), description?, created_at }`. The tree is reconstructed from `parentId` relations. Deleting a code cascades to descendants and removes all annotations using any of them.
-- `Annotation` — `{ id, docId, start, end, codeId, note?, created_at }`. `start`/`end` are character offsets into `document.text`. One annotation = one (span, code) pair; overlapping spans and multiple codes on the same span are achieved by creating multiple annotation records.
+**Sidebar mechanics**:
 
-**Persistence**: browser `localStorage` under key `tw-qual-coding-v1`. A single JSON object `{ version: 1, projects: Project[], activeProjectId }`. Versioned via `version` for future migrations. On every state change the whole blob is rewritten. No sync (Google Drive sync is planned for v2 — see below).
+- Documents are grouped by `Document.folder` (a path string with `/` separators). Folders render as collapsible groups, nested by path depth. Documents with no folder appear at the top, ungrouped. Each folder group has a "+" button to add a document directly inside it (auto-fills the folder path on the new doc). Editing a document's folder in the doc header (a `📁` input above the title) reparents it.
+- Code tree gains a **`defs` toggle** (next to "+ new") that, when on, displays each code's description inline beneath its name. Each code's edit form (pencil icon) now exposes name, description (the definition / when-to-apply guidance), and an inline color palette. Definitions also appear in the selection popover (under each code name) and in the annotations panel below the doc (when an annotation is focused).
 
-**Export formats** (downloads, no sync target):
+**Multi-select projects**: the project picker dropdown gives each project (other than the active one) a checkbox to include it in the Explore aggregation. The active project is always included implicitly. The selection persists in `AppState.exploreProjectIds`.
 
-- `<project>.json` — canonical full-project dump. Round-trips through Import JSON (a new project ID is assigned on import so duplicates don't collide).
+**Data model** (extensions in v2 marked with †):
+
+- `Project` — `{ version: 1, id, name, description?, about?† (markdown), metadataSchema, documents, codes, annotations, drive?† ({ fileId, modifiedTime }), created_at, updated_at }`.
+- `Document` — `{ id, title, text, notes?† (markdown), folder?† (path string), metadata: Record<key, value>, created_at, updated_at }`. Body remains plain text — character offsets matter for annotations.
+- `Code`, `Annotation`, `MetadataField` — unchanged from v1.
+- `AppState` — `{ version: 1, projects, activeProjectId, exploreProjectIds?† , view?† ('documents' | 'explore' | 'about'), showCodeDefinitions?† }`.
+
+**Persistence**: same `tw-qual-coding-v1` localStorage key; the blob now also serialises `exploreProjectIds`, `view`, and `showCodeDefinitions`. `Document.notes`, `Document.folder`, `Project.about`, and `Project.drive` ride inside their parent records.
+
+**Google Drive sync** (v2 addition):
+
+- One Drive file per project. Filename `<slug>.<id-prefix>.qcoding.json`. Stored in the folder identified by `PUBLIC_QUAL_CODING_DRIVE_FOLDER_ID` (optional — if unset, files go to "My Drive" root).
+- Browser-side OAuth via Google Identity Services, scope `https://www.googleapis.com/auth/drive.file` (file-level scope — the app can only see files it created or the user explicitly opens with it; *not* full Drive access).
+- App-property tag `tw_qual_coding=v1` on each created file lets the app's "list files" query filter to its own files only, regardless of folder.
+- Token stored in `sessionStorage` (60s expiry safety margin). 401/403 from Drive drops the token and surfaces a "sign in again" prompt.
+- **Sync lifecycle**: on sign-in → list app files → fetch each as JSON → merge into local state (server wins for existing project IDs, local projects without a Drive file get pushed up). On every project mutation → debounce 800ms, then write the whole project JSON to its Drive file (latest-wins per-project queue; if a write is in-flight, the latest queued write fires after it). On `window` focus → re-pull all files (catches edits from another device). On project delete → delete the corresponding Drive file (best-effort).
+- AuthBar in the TopBar shows the current sync state: `local only` (no env var) / `Sign in to sync` (configured but not signed in) / signed-in pill with email + colored sync dot (`idle` green / `syncing` blue pulsing / `error` red / `offline` grey) and a dropdown with file count, last error, "Pull all from Drive", and Sign out.
+
+**Required env (when using Drive sync)**:
+- `PUBLIC_GOOGLE_CLIENT_ID` — same OAuth 2.0 Web Client ID used by Finance/Time Tracker. **The Drive API must be enabled** on that Cloud project (separate from the Sheets API enable). Authorized JS origins must cover localhost + the deploy domain.
+- `PUBLIC_QUAL_CODING_DRIVE_FOLDER_ID` — *optional*. The Drive folder ID where project files should live (copy the long ID from the folder URL). If unset, files go to My Drive root.
+
+**Export formats** (downloads, complementary to Drive sync):
+
+- `<project>.json` — canonical full-project dump. Round-trips through Import JSON (a fresh project ID is assigned on import; the `drive` link is dropped so the import doesn't try to overwrite an existing Drive file).
 - `<project>.md` — Project Markdown. Project name + flat code-tree listing + every document in turn with metadata, full text, and an annotations table (`# | chars | span | code | note`).
-- `<doc>.coded.md` — single-document Markdown, same shape as one section of the project Markdown. The intended hand-off to Claude in VS Code: paste this into a conversation, ask Claude to code the same text using the same tree, diff.
+- `<doc>.coded.md` — single-document Markdown for the AI hand-off workflow.
 
-**Editing safety**: when the user switches from `Edit text` back to `Read & code` and the text has shrunk, annotations whose `start` is past the new length are deleted; annotations whose `end` overruns are clamped. Annotations whose offsets are still inside the new text but no longer cover the original span are left alone (the user can manually re-check / delete).
+**Editing safety**: when the user switches from `Edit text` back to `Read & code` and the text has shrunk, annotations whose `start` is past the new length are deleted; annotations whose `end` overruns are clamped. Notes (`Document.notes`) and the project About doc (`Project.about`) are free-form Markdown — no offset constraints.
 
-**Future (v2)**: Google Drive sync (one JSON file per project, browser-side OAuth using the Drive Files API — same GIS pattern as Finance/Time Tracker but Drive REST instead of Sheets). Inline `[span]{code}` rendering in the per-document Markdown export. PDF import (PDF.js text extraction). Multi-code-per-span shorthand in the popover (assign multiple codes at once).
+**Future (v3)**: inline `[span]{code}` rendering in per-document Markdown export. PDF import (PDF.js text extraction). Multi-code-per-span shorthand in the popover. Drive conflict resolution beyond "server wins on pull / client wins on write" (e.g. surface diffs when both sides have changed). Code-co-occurrence and intercoder-reliability stats in Explore.
 
-**Public-data conventions**: no public demo. The dashboard runs entirely in browser localStorage, so no data is sent anywhere by the app itself. Coded interview transcripts and other source documents should never be committed to the repo; this is enforced by convention (no scripts that read project state from disk).
+**Public-data conventions**: no source-document content is ever committed to the repo. The dashboard's only persistent stores are localStorage and the user's own Drive — both per-user. Coded transcripts stay in those stores; this is enforced by convention (no scripts read project state from disk).
 
 ## Papers and PDFs
 

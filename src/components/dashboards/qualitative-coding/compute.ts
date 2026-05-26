@@ -155,3 +155,144 @@ export function findDoc(project: Project, docId: string | null): Document | null
   if (!docId) return null;
   return project.documents.find((d) => d.id === docId) ?? null;
 }
+
+export type FolderNode = {
+  path: string;
+  name: string;
+  depth: number;
+  docs: Document[];
+  children: FolderNode[];
+};
+
+export function buildFolderTree(docs: Document[]): { rootDocs: Document[]; folders: FolderNode[] } {
+  const rootDocs: Document[] = [];
+  const folderMap = new Map<string, FolderNode>();
+  for (const d of docs) {
+    const path = (d.folder ?? '').trim();
+    if (!path) {
+      rootDocs.push(d);
+      continue;
+    }
+    const parts = path.split('/').map((s) => s.trim()).filter(Boolean);
+    if (parts.length === 0) {
+      rootDocs.push(d);
+      continue;
+    }
+    let cur = '';
+    for (let i = 0; i < parts.length; i++) {
+      cur = cur ? `${cur}/${parts[i]}` : parts[i];
+      if (!folderMap.has(cur)) {
+        folderMap.set(cur, {
+          path: cur,
+          name: parts[i],
+          depth: i,
+          docs: [],
+          children: [],
+        });
+      }
+    }
+    folderMap.get(cur)!.docs.push(d);
+  }
+  const allPaths = [...folderMap.keys()].sort();
+  const roots: FolderNode[] = [];
+  for (const p of allPaths) {
+    const node = folderMap.get(p)!;
+    const slash = p.lastIndexOf('/');
+    if (slash === -1) {
+      roots.push(node);
+    } else {
+      const parent = folderMap.get(p.slice(0, slash));
+      if (parent) parent.children.push(node);
+      else roots.push(node);
+    }
+  }
+  rootDocs.sort((a, b) => a.title.localeCompare(b.title));
+  for (const node of folderMap.values()) {
+    node.docs.sort((a, b) => a.title.localeCompare(b.title));
+  }
+  return { rootDocs, folders: roots };
+}
+
+export function folderDocCount(node: FolderNode): number {
+  return (
+    node.docs.length +
+    node.children.reduce((sum, c) => sum + folderDocCount(c), 0)
+  );
+}
+
+export type ExploreFilter = {
+  codeIds: Set<string> | null;
+  textQuery: string;
+  metadataFilters: Record<string, string>;
+  folder?: string | null;
+};
+
+export type ExploreRow = {
+  projectId: string;
+  projectName: string;
+  doc: Document;
+  annotation: Annotation;
+  codePath: string;
+  codeColor: string;
+  span: string;
+};
+
+export function exploreRows(
+  projects: Project[],
+  filter: ExploreFilter,
+): ExploreRow[] {
+  const out: ExploreRow[] = [];
+  const q = filter.textQuery.trim().toLowerCase();
+  for (const p of projects) {
+    const docById = new Map(p.documents.map((d) => [d.id, d]));
+    for (const a of p.annotations) {
+      const doc = docById.get(a.docId);
+      if (!doc) continue;
+      if (filter.codeIds && !filter.codeIds.has(a.codeId)) continue;
+      if (filter.folder !== undefined && filter.folder !== null) {
+        const f = doc.folder ?? '';
+        if (filter.folder === '' && f !== '') continue;
+        if (filter.folder !== '' && !f.startsWith(filter.folder)) continue;
+      }
+      let metaOk = true;
+      for (const [k, v] of Object.entries(filter.metadataFilters)) {
+        if (!v) continue;
+        const dv = doc.metadata[k];
+        if (dv === null || dv === undefined) {
+          metaOk = false;
+          break;
+        }
+        if (!String(dv).toLowerCase().includes(v.toLowerCase())) {
+          metaOk = false;
+          break;
+        }
+      }
+      if (!metaOk) continue;
+      const span = doc.text.slice(a.start, a.end);
+      const note = a.note ?? '';
+      if (q && !span.toLowerCase().includes(q) && !note.toLowerCase().includes(q)) continue;
+      out.push({
+        projectId: p.id,
+        projectName: p.name,
+        doc,
+        annotation: a,
+        codePath: codePathString(p.codes, a.codeId),
+        codeColor: resolveColor(p.codes, a.codeId),
+        span,
+      });
+    }
+  }
+  return out;
+}
+
+export function exploreCodeUniverse(projects: Project[]): {
+  projectId: string;
+  projectName: string;
+  codes: Code[];
+}[] {
+  return projects.map((p) => ({
+    projectId: p.id,
+    projectName: p.name,
+    codes: p.codes,
+  }));
+}
