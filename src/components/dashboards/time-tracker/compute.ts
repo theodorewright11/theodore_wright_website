@@ -318,3 +318,40 @@ export function localInputToIso(local: string): string {
   const t = Date.parse(local);
   return Number.isFinite(t) ? new Date(t).toISOString() : '';
 }
+
+// "14:30" / "1430" / "9:5" → canonical "HH:MM", or '' if invalid. Used by
+// the inline lap/break time editors and the session-form text fallback.
+export function normalizeHHMM(s: string): string {
+  const cleaned = s.replace(/[^\d:]/g, '');
+  let hPart: string, mPart: string;
+  if (cleaned.includes(':')) {
+    const [a, b] = cleaned.split(':');
+    hPart = a; mPart = b ?? '';
+  } else if (cleaned.length === 4) {
+    hPart = cleaned.slice(0, 2); mPart = cleaned.slice(2);
+  } else if (cleaned.length === 3) {
+    hPart = cleaned.slice(0, 1); mPart = cleaned.slice(1);
+  } else if (cleaned.length > 0 && cleaned.length <= 2) {
+    hPart = cleaned; mPart = '';
+  } else {
+    return '';
+  }
+  const hh = parseInt(hPart || '0', 10);
+  const mm = mPart === '' ? 0 : parseInt(mPart, 10);
+  if (!Number.isFinite(hh) || !Number.isFinite(mm) || hh < 0 || hh > 23 || mm < 0 || mm > 59) return '';
+  return `${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}`;
+}
+
+// Replace only the local HH:MM portion of an ISO datetime; keep its date.
+// Returns the original iso when hhmm is empty or invalid.
+export function withLocalTime(iso: string, hhmm: string): string {
+  if (!iso) return iso;
+  const t = Date.parse(iso);
+  if (!Number.isFinite(t)) return iso;
+  const norm = normalizeHHMM(hhmm);
+  if (!norm) return iso;
+  const [hh, mm] = norm.split(':').map(Number);
+  const d = new Date(t);
+  d.setHours(hh, mm, 0, 0);
+  return d.toISOString();
+}

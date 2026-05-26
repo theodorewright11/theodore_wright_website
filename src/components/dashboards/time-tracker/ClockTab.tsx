@@ -2,7 +2,7 @@ import { useState } from 'react';
 import type { Session, Lap, Break } from './types';
 import {
   activeSession, isOnBreak, sessionNetMs, sessionGrossMs, sessionBreakMs, breakMs,
-  fmtClock, fmtHM, fmtTimeOfDay,
+  fmtClock, fmtHM, fmtTimeOfDay, isoToLocalInput, withLocalTime, normalizeHHMM,
 } from './compute';
 import RatingRow from './RatingRow';
 import ActivityPicker from './ActivityPicker';
@@ -58,6 +58,13 @@ export default function ClockTab({
   if (active) {
     const onBreak = isOnBreak(active);
     const curBreak = onBreak ? active.breaks[active.breaks.length - 1] : null;
+    // The current lap is the time since the previous lap end (or clock-in,
+    // if no laps yet). It ticks live alongside the worked-time clock; laps
+    // don't pause on breaks, so it keeps running through them.
+    const currentLapStart = active.laps.length > 0
+      ? active.laps[active.laps.length - 1].end
+      : active.clock_in;
+    const currentLapMs = Math.max(0, now - Date.parse(currentLapStart));
 
     return (
       <div className="space-y-6">
@@ -97,6 +104,10 @@ export default function ClockTab({
                 {sessionBreakMs(active, now) > 0
                   ? ` · ${fmtHM(sessionBreakMs(active, now))} on breaks`
                   : ''}
+              </p>
+              <p className="font-mono text-[11px] text-muted m-0 mt-2 tabular-nums">
+                current lap #{active.laps.length + 1} ·{' '}
+                <span className="text-ink-soft">{fmtClock(currentLapMs)}</span>
               </p>
             </>
           )}
@@ -143,6 +154,8 @@ export default function ClockTab({
             }))}
             now={now}
             onChangeNotes={(id, notes) => onUpdateLap(active.id, id, { notes: notes || undefined })}
+            onChangeStart={(id, iso) => onUpdateLap(active.id, id, { start: iso })}
+            onChangeEnd={(id, iso) => onUpdateLap(active.id, id, { end: iso })}
             onDelete={id => onDeleteLap(active.id, id)}
           />
         )}
@@ -155,6 +168,8 @@ export default function ClockTab({
             }))}
             now={now}
             onChangeNotes={(id, notes) => onUpdateBreak(active.id, id, { notes: notes || undefined })}
+            onChangeStart={(id, iso) => onUpdateBreak(active.id, id, { start: iso })}
+            onChangeEnd={(id, iso) => onUpdateBreak(active.id, id, { end: iso })}
             onDelete={id => {
               if (window.confirm('Delete this break? Its time will become worked time again.')) {
                 onDeleteBreak(active.id, id);
@@ -330,11 +345,15 @@ function ClockOutRating({ session, onSave, onSkip, onDiscard }: {
 // delete button. Items with `end: null` (an active break) render as "ongoing"
 // and hide the delete control. Notes save on every keystroke via the lifted
 // onChangeNotes — the sheet sync queue coalesces bursts into one write.
-export function SegmentList({ title, items, now, onChangeNotes, onDelete }: {
+export function SegmentList({
+  title, items, now, onChangeNotes, onChangeStart, onChangeEnd, onDelete,
+}: {
   title: string;
   items: { id: string; start: string; end: string | null; notes: string }[];
   now: number;
   onChangeNotes: (id: string, notes: string) => void;
+  onChangeStart?: (id: string, iso: string) => void;
+  onChangeEnd?: (id: string, iso: string) => void;
   onDelete: (id: string) => void;
 }) {
   return (
@@ -348,18 +367,26 @@ export function SegmentList({ title, items, now, onChangeNotes, onDelete }: {
           const endMs = it.end ? Date.parse(it.end) : now;
           const durMs = Math.max(0, endMs - startMs);
           const ongoing = it.end === null;
+          const startHHMM = isoToLocalInput(it.start).split('T')[1] ?? '';
+          const endHHMM = ongoing ? '' : (isoToLocalInput(it.end!).split('T')[1] ?? '');
           return (
             <div key={it.id}
-                 className="flex items-center gap-3 py-2 flex-wrap border-b border-rule-soft last:border-b-0">
+                 className="flex items-center gap-2 py-2 flex-wrap border-b border-rule-soft last:border-b-0">
               <span className="font-mono text-[10px] text-muted w-6 shrink-0">#{i + 1}</span>
               <span className="font-mono text-[11px] text-ink-soft tabular-nums w-14 shrink-0">
                 {fmtHM(durMs)}
               </span>
-              <span className="font-mono text-[10px] text-muted w-32 shrink-0">
-                {fmtTimeOfDay(it.start)} – {ongoing
-                  ? <em className="not-italic text-accent">ongoing</em>
-                  : fmtTimeOfDay(it.end!)}
-              </span>
+              <TimeCell value={startHHMM}
+                        onCommit={onChangeStart
+                          ? v => { const nv = normalizeHHMM(v); if (nv) onChangeStart(it.id, withLocalTime(it.start, nv)); }
+                          : undefined} />
+              <span className="font-mono text-[11px] text-muted">–</span>
+              {ongoing
+                ? <em className="font-mono text-[11px] text-accent not-italic">ongoing</em>
+                : <TimeCell value={endHHMM}
+                            onCommit={onChangeEnd
+                              ? v => { const nv = normalizeHHMM(v); if (nv) onChangeEnd(it.id, withLocalTime(it.end!, nv)); }
+                              : undefined} />}
               <input type="text" placeholder="notes" value={it.notes}
                      onChange={e => onChangeNotes(it.id, e.target.value)}
                      className="flex-1 min-w-[140px] font-serif text-[13px] bg-paper-edge/40
@@ -376,5 +403,20 @@ export function SegmentList({ title, items, now, onChangeNotes, onDelete }: {
         })}
       </div>
     </div>
+  );
+}
+
+// Compact HH:MM cell — read-only when onCommit is undefined; otherwise a
+// text input that commits on blur (normalize tolerates "1430" / "9:5" etc).
+function TimeCell({ value, onCommit }: { value: string; onCommit?: (v: string) => void }) {
+  if (!onCommit) {
+    return <span className="font-mono text-[11px] text-muted tabular-nums w-12 shrink-0 text-center">{value}</span>;
+  }
+  return (
+    <input type="text" inputMode="numeric" defaultValue={value} maxLength={5} placeholder="HH:MM"
+           key={value}
+           onBlur={e => onCommit(e.target.value)}
+           className="font-mono text-[11px] tabular-nums w-14 text-center bg-paper
+                      border border-rule rounded-sm px-1 py-0.5 focus:border-accent outline-none" />
   );
 }

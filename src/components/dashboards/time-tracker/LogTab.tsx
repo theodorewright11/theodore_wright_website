@@ -4,6 +4,7 @@ import type { DayBucket } from './compute';
 import {
   rangeStats, sessionNetMs, sessionBreakMs, dayKey, todayKey,
   fmtHM, fmtTimeOfDay, fmtDateShort, isoToLocalInput, localInputToIso,
+  normalizeHHMM,
 } from './compute';
 import { sessionsToCsv, downloadFile } from './storage';
 import RatingRow from './RatingRow';
@@ -88,29 +89,7 @@ function compactHours(ms: number): string {
   return Number.isInteger(r) ? String(r) : r.toFixed(1);
 }
 
-// Accept "14:30", "1430", "9:5", "9", etc. Returns canonical "HH:MM" with
-// zero padding, or '' if not a valid 0–23 / 0–59 pair. Used by the form's
-// time inputs (a plain text field, no native picker).
-function normalizeHHMM(s: string): string {
-  const cleaned = s.replace(/[^\d:]/g, '');
-  let hPart: string, mPart: string;
-  if (cleaned.includes(':')) {
-    const [a, b] = cleaned.split(':');
-    hPart = a; mPart = b ?? '';
-  } else if (cleaned.length === 4) {
-    hPart = cleaned.slice(0, 2); mPart = cleaned.slice(2);
-  } else if (cleaned.length === 3) {
-    hPart = cleaned.slice(0, 1); mPart = cleaned.slice(1);
-  } else if (cleaned.length > 0 && cleaned.length <= 2) {
-    hPart = cleaned; mPart = '';
-  } else {
-    return '';
-  }
-  const hh = parseInt(hPart || '0', 10);
-  const mm = mPart === '' ? 0 : parseInt(mPart, 10);
-  if (!Number.isFinite(hh) || !Number.isFinite(mm) || hh < 0 || hh > 23 || mm < 0 || mm > 59) return '';
-  return `${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}`;
-}
+// normalizeHHMM lives in compute.ts now; imported above.
 
 type EditState =
   | { mode: 'new' }
@@ -120,26 +99,33 @@ type EditState =
 export default function LogTab({
   sessions, categories, now, onUpdateSession, onDeleteSession, onAddSession,
 }: Props) {
-  const [from, setFrom] = useState(() => dayKey(now - 6 * DAY));
+  // Default range: This week (Sun-start, matching the preset of the same name).
+  const [from, setFrom] = useState(() => dayKey(now - new Date(now).getDay() * DAY));
   const [to, setTo] = useState(() => todayKey(now));
   const [edit, setEdit] = useState<EditState>(null);
   const [catFilter, setCatFilter] = useState('all');
   const [hoverDay, setHoverDay] = useState<number | null>(null);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   // Date-range presets. Each resolves against `now` (and `sessions` for "all").
+  // "Workdays" uses ISO-week Mon–Fri of the current week (Sunday belongs to
+  // the previous week's workdays).
   const presets = useMemo(() => {
     const d = new Date(now);
+    const dow = d.getDay();
+    const isoDow = dow === 0 ? 7 : dow;
     const monthStart = new Date(d.getFullYear(), d.getMonth(), 1).getTime();
     const earliest = sessions.length
       ? Math.min(...sessions.map(s => Date.parse(s.clock_in)))
       : now;
     return [
-      { label: 'Today',     from: todayKey(now),                  to: todayKey(now) },
-      { label: 'This week', from: dayKey(now - d.getDay() * DAY), to: todayKey(now) },
-      { label: 'Last 7d',   from: dayKey(now - 6 * DAY),          to: todayKey(now) },
-      { label: 'This month',from: dayKey(monthStart),             to: todayKey(now) },
-      { label: 'Last 30d',  from: dayKey(now - 29 * DAY),         to: todayKey(now) },
-      { label: 'All time',  from: dayKey(earliest),               to: todayKey(now) },
+      { label: 'Today',     from: todayKey(now),                          to: todayKey(now) },
+      { label: 'This week', from: dayKey(now - dow * DAY),                to: todayKey(now) },
+      { label: 'Workdays',  from: dayKey(now - (isoDow - 1) * DAY),       to: dayKey(now + (5 - isoDow) * DAY) },
+      { label: 'Last 7d',   from: dayKey(now - 6 * DAY),                  to: todayKey(now) },
+      { label: 'This month',from: dayKey(monthStart),                     to: todayKey(now) },
+      { label: 'Last 30d',  from: dayKey(now - 29 * DAY),                 to: todayKey(now) },
+      { label: 'All time',  from: dayKey(earliest),                       to: todayKey(now) },
     ];
   }, [now, sessions]);
 
@@ -423,41 +409,92 @@ export default function LogTab({
           {rowsInRange.map(s => {
             const active = s.clock_out === null;
             const breaksMs = sessionBreakMs(s, now);
+            const expanded = expandedId === s.id;
+            const hasSegments = s.laps.length > 0 || s.breaks.length > 0;
+            const patchLaps = (next: Lap[]) =>
+              onUpdateSession({ ...s, laps: next, updated_at: new Date().toISOString() });
+            const patchBreaks = (next: Break[]) =>
+              onUpdateSession({ ...s, breaks: next, updated_at: new Date().toISOString() });
             return (
-              <div key={s.id}
-                   className="flex items-center gap-3 flex-wrap py-3 border-b border-rule-soft">
-                <span className="font-mono text-[11px] text-muted w-14 shrink-0">
-                  {fmtDateShort(s.clock_in)}
-                </span>
-                <span className="font-mono text-[11px] uppercase tracking-[0.08em] text-accent
-                                 w-24 shrink-0 truncate" title={s.category}>
-                  {s.category}
-                </span>
-                <span className="font-serif text-[13px] text-ink-soft w-36 shrink-0">
-                  {fmtTimeOfDay(s.clock_in)} – {active
-                    ? <em className="text-accent not-italic">active</em>
-                    : fmtTimeOfDay(s.clock_out!)}
-                </span>
-                <span className="font-serif text-[13px] text-muted w-20 shrink-0">
-                  {breaksMs > 0 ? `${fmtHM(breaksMs)} brk` : ''}
-                </span>
-                <span className="font-display text-[15px] text-ink tabular-nums w-16 shrink-0">
-                  {fmtHM(sessionNetMs(s, now))}
-                </span>
-                {s.notes && (
-                  <span className="font-serif text-[12px] text-muted italic truncate max-w-[200px]"
-                        title={s.notes}>{s.notes}</span>
+              <div key={s.id} className="border-b border-rule-soft">
+                <div className="flex items-center gap-3 flex-wrap py-3">
+                  <button
+                    onClick={() => setExpandedId(expanded ? null : s.id)}
+                    className={'font-mono text-[12px] w-5 shrink-0 leading-none transition-colors ' +
+                      (hasSegments ? 'text-muted hover:text-accent' : 'text-rule cursor-default')}
+                    disabled={!hasSegments}
+                    title={hasSegments ? 'Show laps & breaks' : 'No laps or breaks'}>
+                    {expanded ? '▾' : '▸'}
+                  </button>
+                  <span className="font-mono text-[11px] text-muted w-14 shrink-0">
+                    {fmtDateShort(s.clock_in)}
+                  </span>
+                  <span className="font-mono text-[11px] uppercase tracking-[0.08em] text-accent
+                                   w-24 shrink-0 truncate" title={s.category}>
+                    {s.category}
+                  </span>
+                  <span className="font-serif text-[13px] text-ink-soft w-36 shrink-0">
+                    {fmtTimeOfDay(s.clock_in)} – {active
+                      ? <em className="text-accent not-italic">active</em>
+                      : fmtTimeOfDay(s.clock_out!)}
+                  </span>
+                  <span className="font-serif text-[13px] text-muted w-20 shrink-0">
+                    {breaksMs > 0 ? `${fmtHM(breaksMs)} brk` : ''}
+                  </span>
+                  <span className="font-display text-[15px] text-ink tabular-nums w-16 shrink-0">
+                    {fmtHM(sessionNetMs(s, now))}
+                  </span>
+                  {s.notes && (
+                    <span className="font-serif text-[12px] text-muted italic truncate max-w-[200px]"
+                          title={s.notes}>{s.notes}</span>
+                  )}
+                  <span className="ml-auto flex gap-2">
+                    <button className="font-mono text-[10px] uppercase text-muted hover:text-accent
+                                       transition-colors"
+                            onClick={() => setEdit({ mode: 'edit', session: s })}>edit</button>
+                    <button className="font-mono text-[10px] uppercase text-muted hover:text-accent
+                                       transition-colors"
+                            onClick={() => {
+                              if (window.confirm('Delete this session?')) onDeleteSession(s.id);
+                            }}>del</button>
+                  </span>
+                </div>
+                {expanded && hasSegments && (
+                  <div className="pl-8 pr-2 pb-4 space-y-3">
+                    {s.laps.length > 0 && (
+                      <SegmentList
+                        title={`Laps (${s.laps.length})`}
+                        items={s.laps.map(l => ({ id: l.id, start: l.start, end: l.end as string | null, notes: l.notes ?? '' }))}
+                        now={now}
+                        onChangeNotes={(id, notesV) =>
+                          patchLaps(s.laps.map(l => l.id === id ? { ...l, notes: notesV || undefined } : l))}
+                        onChangeStart={(id, iso) =>
+                          patchLaps(s.laps.map(l => l.id === id ? { ...l, start: iso } : l))}
+                        onChangeEnd={(id, iso) =>
+                          patchLaps(s.laps.map(l => l.id === id ? { ...l, end: iso } : l))}
+                        onDelete={id => patchLaps(s.laps.filter(l => l.id !== id))}
+                      />
+                    )}
+                    {s.breaks.length > 0 && (
+                      <SegmentList
+                        title={`Breaks (${s.breaks.length})`}
+                        items={s.breaks.map(b => ({ id: b.id, start: b.start, end: b.end, notes: b.notes ?? '' }))}
+                        now={now}
+                        onChangeNotes={(id, notesV) =>
+                          patchBreaks(s.breaks.map(b => b.id === id ? { ...b, notes: notesV || undefined } : b))}
+                        onChangeStart={(id, iso) =>
+                          patchBreaks(s.breaks.map(b => b.id === id ? { ...b, start: iso } : b))}
+                        onChangeEnd={(id, iso) =>
+                          patchBreaks(s.breaks.map(b => b.id === id ? { ...b, end: iso } : b))}
+                        onDelete={id => {
+                          if (window.confirm('Delete this break? Its time will become worked time again.')) {
+                            patchBreaks(s.breaks.filter(b => b.id !== id));
+                          }
+                        }}
+                      />
+                    )}
+                  </div>
                 )}
-                <span className="ml-auto flex gap-2">
-                  <button className="font-mono text-[10px] uppercase text-muted hover:text-accent
-                                     transition-colors"
-                          onClick={() => setEdit({ mode: 'edit', session: s })}>edit</button>
-                  <button className="font-mono text-[10px] uppercase text-muted hover:text-accent
-                                     transition-colors"
-                          onClick={() => {
-                            if (window.confirm('Delete this session?')) onDeleteSession(s.id);
-                          }}>del</button>
-                </span>
               </div>
             );
           })}
@@ -656,6 +693,10 @@ function SessionForm({
           now={now}
           onChangeNotes={(id, notesV) =>
             setLaps(prev => prev.map(l => l.id === id ? { ...l, notes: notesV || undefined } : l))}
+          onChangeStart={(id, iso) =>
+            setLaps(prev => prev.map(l => l.id === id ? { ...l, start: iso } : l))}
+          onChangeEnd={(id, iso) =>
+            setLaps(prev => prev.map(l => l.id === id ? { ...l, end: iso } : l))}
           onDelete={id => setLaps(prev => prev.filter(l => l.id !== id))}
         />
       )}
@@ -666,6 +707,10 @@ function SessionForm({
           now={now}
           onChangeNotes={(id, notesV) =>
             setBreaks(prev => prev.map(b => b.id === id ? { ...b, notes: notesV || undefined } : b))}
+          onChangeStart={(id, iso) =>
+            setBreaks(prev => prev.map(b => b.id === id ? { ...b, start: iso } : b))}
+          onChangeEnd={(id, iso) =>
+            setBreaks(prev => prev.map(b => b.id === id ? { ...b, end: iso } : b))}
           onDelete={id => setBreaks(prev => prev.filter(b => b.id !== id))}
         />
       )}
