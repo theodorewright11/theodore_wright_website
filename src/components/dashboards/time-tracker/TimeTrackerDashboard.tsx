@@ -241,6 +241,24 @@ export default function TimeTrackerDashboard() {
     return () => window.removeEventListener('focus', onFocus);
   }, [token, config, pull]);
 
+  // Silent token refresh ~1 minute before expiry. GIS reissues a new access
+  // token with no popup as long as the user is still signed into Google in
+  // any browser tab and previously consented to this app. If silent refresh
+  // fails (signed out of Google, consent revoked), the current token is left
+  // alone and dies at natural expiry, prompting normal manual sign-in.
+  useEffect(() => {
+    if (!token || !config) return;
+    const delay = token.expires_at - 60_000 - Date.now();
+    if (delay <= 0) return;
+    const tid = window.setTimeout(async () => {
+      try {
+        const fresh = await gisSignIn({ clientId: config.clientId, prompt: 'none' });
+        setToken(fresh);   // no mergePending — local is in sync mid-session
+      } catch { /* let the token die naturally */ }
+    }, delay);
+    return () => clearTimeout(tid);
+  }, [token, config]);
+
   // --- Sign-in / out --------------------------------------------------------
   const handleSignIn = useCallback(async () => {
     if (!config) return;
