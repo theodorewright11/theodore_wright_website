@@ -3,8 +3,19 @@ title: 'Writeup'
 description: 'Long-form synthesis of the whole pipeline. What the evidence actually says about how to use AI as an individual knowledge worker, written for someone who is educated and curious but has not read the model or data stages. Defines terms as it goes, names the failure modes, and ends with action-relevant guidance that survives the pipeline. About 7,000 words.'
 date: 2026-05-05
 status: complete
-refinementPass: 3
+refinementPass: 4
 refinementLog:
+  - pass: 4
+    date: '2026-05-06'
+    passes: ['adversarial + steelman', 'fresh-eyes audit']
+    why: 'Pass 3 rewrote §4 around factions in the AI-use discourse, which engages objections from people who reject the project from one side (boosters / skeptics / etc.). What was missing was engagement with objections from a thoughtful reader who broadly ACCEPTS the project but presses on specific claims: "three corners is too coarse for real cognition," "AI capability is unobservable on the cases that matter," "workflow > capability is selectively cited." The model stage handles these technically (§10 there) but the writeup did not take them on at the lay-reader level — a serious reader finishing pass 3 could plausibly think "yes but what about..." and not find the question addressed. Also a fresh-eyes catch: an early draft of §5.1 wrote that the three-corners finding follows from "where the per-task optimum lives" without acknowledging that bilinearity is itself a deliberate simplification the model stage explicitly names as a scope-limit ("partial verification rounds to full or none"). The clean version would have been misleading about a real limit.'
+    changes:
+      - 'Added new §5 "Three objections worth engaging head-on" with three subsections. §5.1 takes on the three-corners-is-too-coarse objection — what survives is that bilinearity in (u, v) is a simplification, and under a more realistic concave-v cost structure the verification axis could produce interior optima; the autonomy axis stays corner-bound; the framework is a coordinate system for the decision rather than a description of execution. §5.2 engages the c_AI-is-unobservable objection — what survives is that corner structure is robust across capability ranges, the interesting boundary regions are spec-driven, and verification cost is the explicit price of resolving capability uncertainty (the calibration mechanism reading from the model stage). §5.3 engages the workflow-vs-capability-is-selectively-cited objection — what survives is the modest version (within-model workflow swings comparable to a generation of capability improvement; complementarity is not automatic on average) rather than the strong cross-tier version (which the model stage names as Stage-4 fitting target Q5 on which current data is suggestive but not dispositive)'
+      - '§5.1 written in the honest-about-limitations register the model stage already named — acknowledges bilinearity is a simplification and points to the partial-verification scope-limit. The cleaner "three corners is just a coordinate system for the optimum" answer would have been misleading because the model stage itself disclaims it'
+      - 'Renumbered downstream sections: §5 What the field hasn''t resolved → §6; §6 What to do with this → §7; §7 What this pipeline establishes → §8. All subsection numbers within those sections (6.1, 6.2, 6.3, 7.1, 7.2, 7.3) updated to match. Body has no internal §-number cross-references (verified by grep) so no further cross-ref work required'
+      - 'TLDR and §3 left intact — the integrated findings and the headline TLDR claims stand. The new §5 is an addition to the structure, not a revision of existing claims'
+      - 'Internal consistency post-edit: all numbers stable; section flow now reads as motivation (§1) → vocabulary (§2) → integrated findings (§3) → factions (§4) → objections-to-framework (§5) → open-field-questions (§6) → action (§7) → close (§8). The outward-inward-outward-forward arc reads cleanly'
+      - 'Body word count grew from ~7,000 to ~7,800 — still inside the sibling psych-variation envelope (~7,600). PRD registry updated to writeup (pass 4) matching the new frontmatter pass number'
   - pass: 3
     date: '2026-05-06'
     passes: ['redundancy prune', 'scope check', 'internal consistency check']
@@ -203,11 +214,33 @@ The public conversation about AI in knowledge work has four identifiable faction
 
 ---
 
-## 5. What the field hasn't resolved
+## 5. Three objections worth engaging head-on
+
+The framework above makes claims strong enough that a thoughtful reader who broadly accepts the project will still push back on specifics. Three objections deserve direct engagement — they are different in kind from the factional objections in §4, because they come from someone willing to grant the project's premises but pressing on its weak spots.
+
+### 5.1 "Three corners is too coarse to capture real cognitive work."
+
+*The objection.* Real workflows have more dimensions than autonomy and verification. Context engineering, prompt iteration, tool selection, conversation mode versus structured mode — collapsing the per-task choice to a unit square with only three viable corners loses what actually makes good AI use skilled. The framework is suspiciously crisp; reality is messier.
+
+*What survives.* The three-corner result follows from a specific structural assumption: that the value function is linear in autonomy and linear in verification depth (with a cross-term between them). Real value functions may be concave in verification depth — the first 10% of verification probably catches the obvious errors and the next 50% has diminishing returns. Under such a function, partial verification would be genuinely optimal, and the model would predict interior corners on some tasks. The model stage names this as a known scope-limit ("partial verification rounds to full or none"). What does not change under the richer model is the autonomy axis — *do it yourself* versus *delegate* stays a corner question even with non-linear verification, because the autonomy decision is more discrete in practice than verification depth is. So the *three-corner* claim is slightly too strong; the *delegate-yes-or-no-and-if-yes-then-verify-meaningfully-or-not* claim is what robustly survives. The framework is a coordinate system for the decision; the execution within each corner is a separate skill set the practitioner literature addresses well.
+
+### 5.2 "You cannot actually rate AI capability on a task without running it — so the framework is unactionable where it would matter most."
+
+*The objection.* Every recommendation depends on knowing how good the AI is on the specific task in front of you. On familiar task types you have a rough estimate from prior experience; on novel tasks — which are much of knowledge work — you are guessing. A framework whose recommendation hinges on a parameter the user cannot measure on the cases that most need a recommendation is, at best, a check on intuition rather than a usable tool.
+
+*What survives.* This concern is real and it is the binding constraint the model stage names as objection 1. What rescues the framework is that the corner structure is robust across capability ranges. For almost any low AI capability in a high-stakes regime, the corner is *do-yourself*; for almost any high AI capability in low-stakes routine, the corner is *self-automator*. The "interesting" boundary regions where capability uncertainty actually flips the recommendation are precisely the regions where the model's prescription is *spec-driven* — full delegation with rubric-based verification. The verification cost is then not just overhead; it is the explicit price of resolving the capability uncertainty for that task type. Each verified instance updates your prior on what the AI can and can't do, so the spec-driven corner doubles as a Bayesian calibration mechanism. You do not need a precise capability estimate; you need a rough one, and the framework's prescription on the uncertain cases tells you how to refine it. The framework is in fact *most* actionable on novel tasks precisely because verification is most informative there.
+
+### 5.3 "Workflow architecture beating model capability is overclaimed; on average, frontier models with naive workflows beat mid-tier models with sophisticated workflows."
+
+*The objection.* The Vaccaro 2024 meta-analysis has enormous heterogeneity, and the headline finding (human-AI on average underperforms best-of-either-alone) hides huge variation across tasks and studies. Citing it for "workflow > capability" is selective — capability differences across model generations typically dwarf workflow differences within a generation. Pursuit of the next frontier model is probably a better investment of attention than the routing discipline the framework prescribes.
+
+*What survives.* The pipeline does not establish that mid-tier-with-good-workflow beats frontier-with-naive-workflow as a universal claim. The model stage names this exact question as a Stage-4 fitting target (Q5) on which current data is suggestive but not dispositive. What the evidence does establish is more modest: within the *same* model, workflow change can produce swings comparable to a model-generation improvement (Goh→Everett +7.9 percentage points on physician-AI tasks with workflow held against only model class), and on average across the 22-study record, complementarity is not automatic — task structure systematically modulates whether it is achieved. The strong version of the claim is over-extending; the supported version is that workflow choice is large enough to matter relative to capability differences, and within any given capability tier it is the bigger lever an individual worker can pull. Pursuit of capability is a job for model developers; pursuit of workflow is what is left for the worker. Both matter; the marginal returns to the worker's attention are concentrated in the latter.
+
+## 6. What the field hasn't resolved
 
 Three things the pipeline confronts but does not solve. Each is honest open territory.
 
-### 5.1 The aggregate-zero puzzle
+### 6.1 The aggregate-zero puzzle
 
 Humlum and Vestergaard's 2025 study of 25,000 Danish workers found zero earnings effect and zero hours effect from AI adoption at the population level. This is in striking tension with the individual-level field-experiment evidence, which finds positive effects on average (most RCTs find AI helps a typical user by some margin).
 
@@ -217,13 +250,13 @@ The empirical answer might be that they don't — that AI productivity at the in
 
 This is the most important open question for anyone setting workflow policy across a team rather than for themselves alone. The individual optimisation surface (which this writeup characterises) is necessary but not sufficient. A sibling artifact at the organisational level is what would close the gap; this pipeline does not produce one.
 
-### 5.2 Persuasion bombing as a structural threat to verification
+### 6.2 Persuasion bombing as a structural threat to verification
 
 Randazzo HBS 26-021 is recent and currently the strongest evidence on this specific mechanism. The pipeline treats it as a named scope-limit on the spec-driven corner, with the rubric-based-verification advice as the structural mitigation. But the mitigation is partial: even with a rubric, some verification surface remains conversational (you sometimes have to ask the AI a follow-up question to interpret an output, and that conversation opens the door to persuasion escalation), and we do not yet know how persuasion-bombing dynamics evolve as model behaviour shifts.
 
 A future model variant would carry a parameter representing the user's resistance to AI-pushback as a separate quantity from their generation skill — the "verifier capability" might be uncorrelated with the "generation capability" on the same task. This is named in the model stage as Karpathy's *generator-verifier asymmetry* (G9 in the topology) and held for future passes. The current pipeline ships the practical advice (write rubrics, don't dialogue) without the formal extension.
 
-### 5.3 Frontier migration over time
+### 6.3 Frontier migration over time
 
 AI capability shifts month to month. The current model treats c_AI as static within a session, which is the right scope for per-task decisions but wrong scope for long-horizon planning. A worker who calibrates their workflow to today's frontier will be re-calibrating next quarter when a new model ships and the corner boundaries move.
 
@@ -231,9 +264,9 @@ The sibling topic *navigating-ai-world* in this AI research collection takes up 
 
 ---
 
-## 6. What to do with this
+## 7. What to do with this
 
-### 6.1 For an individual using AI now
+### 7.1 For an individual using AI now
 
 The actionable layer is narrower than the framework's full apparatus.
 
@@ -247,7 +280,7 @@ Fourth, expect verification to be expensive on cognitive work — the Mozannar d
 
 Fifth, don't chase the next frontier model. The Vaccaro meta and the Goh-vs-Everett comparison both suggest workflow architecture is doing more work than model capability. Switching from a mid-tier model to frontier capability while keeping a naive workflow is plausibly a smaller gain than switching from naive to per-task routing on the same model.
 
-### 6.2 For someone setting workflow norms across a team
+### 7.2 For someone setting workflow norms across a team
 
 The individual-level optimisation surface (everything above) is necessary but not sufficient. The aggregate-zero puzzle is a real limit. Some practical implications:
 
@@ -257,7 +290,7 @@ Second, the *persuasion-bombing* finding has team implications. If verification 
 
 Third, the calibration burden is real. Each worker on a team has their own c_H on each task type; AI capability c_AI may also be perceived differently across workers. Some shared calibration work — anchored to specific tasks, periodically re-run as model capability shifts — pays off because it makes individual workflow choices less idiosyncratic.
 
-### 6.3 For thinking about the longer trajectory
+### 7.3 For thinking about the longer trajectory
 
 Three considerations that are specifically about the multi-year horizon, beyond the static optimisation the model covers.
 
@@ -269,7 +302,7 @@ Third, the workflow architecture itself is changing. The interactive tools this 
 
 ---
 
-## 7. What this pipeline does and doesn't establish
+## 8. What this pipeline does and doesn't establish
 
 A few things to be clear about.
 
