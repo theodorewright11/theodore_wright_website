@@ -54,7 +54,8 @@
 │   │       ├── AITransitionModel.tsx    ← model dashboard for navigating-ai-world (integrated ΔNet = ΔV + ΔM with channel decomposition + structural flags + ρ(t) trajectory tab)
 │   │       ├── CognitivePartnershipGraph.tsx ← topology graph for technology-utilization-architecture (~66 nodes, 5 variants incl. capability-regime fragility, P-type practitioner nodes + op edge, pan + wheel-zoom + reset)
 │       ├── CognitivePartnershipModel.tsx ← model dashboard for technology-utilization-architecture (per-task router with seven presets + day-portfolio four-strategy comparison; V(u,v;θ) generator-verifier loop)
-│       └── CognitivePartnershipData.tsx ← data findings panel for technology-utilization-architecture (seven tabs — productivity-record landscape + Q1 CUPS + Q2 Bastani + Q3 mode distribution + Q4 outside-frontier scatter + Q5 workflow swings + Q6 calibration; hand-rolled SVG charts)
+│       ├── CognitivePartnershipData.tsx ← data findings panel for technology-utilization-architecture (seven tabs — productivity-record landscape + Q1 CUPS + Q2 Bastani + Q3 mode distribution + Q4 outside-frontier scatter + Q5 workflow swings + Q6 calibration; hand-rolled SVG charts)
+│       └── CognitivePartnershipExplorer.tsx ← build-stage reader's tool for technology-utilization-architecture (five views: pick-a-task plain-language router + compare-strategies portfolio view + common-mistakes + when-to-verify + cheat sheet; wraps the same bilinear math as CognitivePartnershipModel but with discrete low/medium/high pickers and named empirical anchors per recommendation)
 │   ├── content/
 │   │   ├── blog/<slug>.mdx              ← essays
 │   │   ├── research/<slug>.mdx          ← formal research entries

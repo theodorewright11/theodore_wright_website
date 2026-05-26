@@ -93,7 +93,7 @@ Active topics — folders exist in `src/content/ai_research/` and `stage_outputs
 |---|---|---|---|
 | `human-psych-variation` | Psychology of Individual Differences | writeup (pass 5) | **finished** |
 | `navigating-ai-world` | Navigating an AI World | data (pass 4) | in progress |
-| `technology-utilization-architecture` | Technology Utilization Architecture | data (pass 9) | in progress |
+| `technology-utilization-architecture` | Technology Utilization Architecture | writeup (pass 1) | in progress |
 
 A topic is **finished** when every one of its six stages (lit-review, topology, model, data, build, writeup) has `status: complete` in the stage frontmatter. The `/ai-research` index page renders finished topics in a "Finished" bucket above the "In Progress" bucket; cards carry a small `finished` accent tag next to the title; the home page status pill reads `finished`.
 

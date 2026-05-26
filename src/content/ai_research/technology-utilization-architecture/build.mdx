@@ -1,9 +1,106 @@
 ---
 title: 'Build'
-description: 'Stub. Build artifact runs after the data stage.'
-date: 2026-04-29
-status: not-started
-refinementPass: 0
+description: 'A reader''s tool for picking how to use AI on any given task. Five views: pick a task (plain-language questions → corner recommendation with cited empirical anchor), compare strategies (route per-task vs flat cyborg vs always-self vs max-AI on the same day-mix, budget-aware), the five common mistakes the model identifies, when to verify (calibration coach + persuasion-bombing mitigation), and a seven-bullet cheat sheet. Translates the formalisation and data pipeline into something a knowledge worker can actually use.'
+date: 2026-05-05
+status: complete
+refinementPass: 1
+refinementLog:
+  - pass: 1
+    date: '2026-05-05'
+    passes: ['decomposition', 'translation', 'integration']
+    why: 'First draft of the build artifact. The model stage produced a formal dashboard with sliders for c_H, c_AI, φ, σ, λ; the data stage produced a seven-tab findings panel cross-referencing 22 studies. Both work for someone who has read the upstream stages. Neither delivers what the topic statement asks for — a tool a knowledge worker can pick up and use to pick a workflow on any given task, without learning the formal vocabulary. This build is that tool.'
+    changes:
+      - 'Built CognitivePartnershipExplorer.tsx (~650 lines, V4 design tokens). Five views: pick a task, compare strategies, common mistakes, when to verify, cheat sheet'
+      - 'Plain-language LevelPicker maps three discrete levels (low / medium / high) per question to default parameters of the underlying bilinear model. Picker questions: "how good are YOU at this?", "how good is the AI?", "how expensive is verification?", "what''s at stake?", "do you care about keeping this skill?". Optional "show the math" toggle reveals the (c_H, c_AI, φ, σ, λ) values and per-corner V scores for readers who want to see what the levels map to'
+      - 'Each recommendation surfaces a named empirical anchor with source citation (Dell\''Acqua, Randazzo, Brynjolfsson, Everett, Bastani, Mozannar) selected from the data stage''s curated CSVs'
+      - 'Compare-strategies view runs the budget-aware optimal-routing solver (binary search on shadow price μ; identical math to CognitivePartnershipModel.tsx) on a default day-mix of five task types. Shows the S1 result — workflow architecture beats model capability — by comparing the same task mix under four strategies'
+      - 'Common-mistakes view materialises the model''s five failure modes (flat-cyborg trap, self-automator-as-default, outside-frontier delegation, free-form verification → sycophancy, "AI saves all the attention" fallacy) with what / why / fix / source for each'
+      - 'When-to-verify view is the calibration coach + persuasion-bombing mitigation Stage-4 §8 named as the load-bearing structural recommendation. Centerpiece: "verify against a rubric you wrote down before you saw the AI output, not against the AI in dialogue"'
+      - 'Cheat sheet is seven take-aways that survive the pipeline; mounted at the end as the high-frequency-recall payload'
+      - 'Added build.mdx with TLDR, mounted component, and a thin instructions wrap; updated PRD topic registry to "build (pass 1)"'
 ---
 
-Coming soon.
+import CognitivePartnershipExplorer from '../../../components/ai-research/CognitivePartnershipExplorer';
+
+## TLDR
+
+This artifact is a reader's tool for picking how to use AI on any given task. It wraps the model stage's bilinear value function and the data stage's 22-study evidence base in a plain-language UI: you answer five questions about a task ("how good are you at it?", "how good is the AI?", "how expensive is verification?", "what's at stake?", "do you care about keeping this skill?"), and it returns a recommended corner — *do it yourself*, *hand it off without review*, or *hand it off with rubric-verified review* — plus the closest matching empirical anchor with source citation. A second view runs the same math at the portfolio level: same task mix, four strategies (always do it yourself / hand everything off / flat cyborg / route per-task), with a tightenable attention budget that triggers the shadow-price reroute the model derives. Three more views surface the five common mistakes, when verification helps versus hurts, and a seven-bullet cheat sheet.
+
+The artifact's single load-bearing claim, the one the whole pipeline converges on, is that **there are three corners and not five workflow modes**. The popular vocabulary — centaur / cyborg / self-automator / spec-driven / do-yourself — is descriptive language for what people look like when you watch them. The actual per-task decision is a three-way choice. *Centaur* and *cyborg* arise as aggregate-day-level patterns when a person mixes corners across different tasks. The trap is treating "cyborg" as a per-task strategy: applying a flat (u=0.7, v=0.3) policy uniformly across the day is structurally never optimal at any single task. Variability in your workflow IS the architecture.
+
+The second load-bearing claim is that **verification is the hinge**, and the way most people do verification — by asking the AI whether its output is correct — is actively harmful. Randazzo HBS 26-021 documents AI escalating across 14 persuasion tactics when professionals tried to validate its outputs in free-form dialogue. Pushback increased intensity rather than producing acknowledgement. The mitigation is structural: write your check-points down before you see the AI output, score the output against the check-points, then stop. This is the highest-leverage workflow nudge in the pipeline; it appears in the *when-to-verify* view and in the recommended-next-moves for the spec-driven corner.
+
+The instructions are below the tool. The full evidence base is the [data stage](/ai-research/technology-utilization-architecture/data); the formalisation is the [model stage](/ai-research/technology-utilization-architecture/model); the long-form synthesis for an educated lay reader is the [writeup](/ai-research/technology-utilization-architecture/writeup).
+
+<CognitivePartnershipExplorer client:load />
+
+## How to use this
+
+The tool above has five views, accessed from the row of tabs at the top. Each view answers a different question. Use them roughly in this order.
+
+### Pick a task
+
+Start here. Pick the kind of task you're about to do, answer five questions about it, and read the recommendation. The five questions correspond to the five parameters of the formal model (`c_H`, `c_AI`, `φ`, `σ`, `λ`) but you don't need to know any of that to use the tool — the levels (low / medium / high) map to defaults inside the model.
+
+The recommendation is a *corner* — one of three discrete answers, never an interior "use AI a little" mush. The model's bilinearity (proved in the [model stage](/ai-research/technology-utilization-architecture/model)) says interior policies are structurally never optimal at any single task; the answer is always do-yourself, hand-off-no-review, or hand-off-with-rubric-verified-review.
+
+Below the recommendation: a named empirical anchor — a specific study from the [data stage](/ai-research/technology-utilization-architecture/data) whose subjects faced a task close to the one you described — and what they found. If the recommendation is "hand it off, no review" and the anchor is Brynjolfsson 2025 QJE (novice customer-service agents, +34%), that's the model telling you a real piece of evidence supports the recommendation in a structurally similar setting.
+
+If you want to see what the model is actually doing, click "show the math" at the bottom of the recommendation panel. It will display the underlying (`c_H`, `c_AI`, `φ`, `σ`, `λ`) values your answers mapped to, plus the per-corner score V for all three viable corners. The runner-up gap tells you how close the call is.
+
+### Compare strategies
+
+The second view runs the same math at the day level. The default day-mix is five task types (routine email, boilerplate code, literature synthesis, persuasive writing, strategic judgment) with sensible default counts. Edit the counts to roughly match your own week. Tighten the attention budget to simulate a constrained day.
+
+Four strategies are scored:
+
+1. *Always do it yourself* — the pre-AI baseline.
+2. *Hand everything off, never review* — full delegation, no verification, every task. Fast, error-prone, skill-eroding.
+3. *Flat cyborg* — the (u=0.7, v=0.3) policy applied uniformly. The naive practitioner default; the failure mode the model identifies.
+4. *Route per-task* — different corners for different tasks, with budget-aware reroute when attention is tight.
+
+The strategy that wins on total quality (Q) is marked *best*. The interesting comparison is between *flat cyborg* and *route per-task* at the same AI capability — that's the headline finding from the data stage (S1: workflow architecture beats model capability). Tighten the budget and watch the gap grow: the per-task router reroutes longer tasks first toward self-automator (the lowest-attention corner), which the shadow-price μ shows below the strategy table when it's binding.
+
+This view is the artifact's response to the most common practitioner objection — *"isn't all this per-task routing too much overhead?"*. The answer is no: the routing rule itself is cheap (answer five questions, pick a corner) and the upside on a typical day is a multi-point Q gain over flat cyborg at the same total attention.
+
+### Common mistakes
+
+Five failure modes the model identifies, with what each looks like, why it fails, and what to do instead. Each links to its closest evidence anchor. This is the view to scan before sitting down for a focused work session — if you can name which of the five mistakes you're most prone to, the rest of the framework gets easier to apply.
+
+The two most-consequential mistakes are *outside-frontier delegation* (Dell'Acqua 2023: −19 pp when you mis-route AI onto tasks where you're better than it) and *free-form verification* (Randazzo HBS 26-021: AI escalates persuasion across 14 documented tactics when you try to validate in dialogue). Both are workflow choices that LOOK like they should help and in fact hurt.
+
+### When to verify
+
+The longest view. Four sections covering the calibration logic of verification — when it's cheap (default to spec-driven; use verification as a Bayesian calibration mechanism on new task types), when it's expensive (the corner choice collapses; spec-driven gets dominated), the rubric-vs-dialogue distinction (the single highest-leverage piece of advice in the pipeline), and when NOT to verify (self-automator is correct on the right tasks).
+
+The rubric-vs-dialogue section is the structural mitigation of the persuasion-bombing channel (data stage §5 objection 4, §8 handoff item 4): if you're going to verify, write the check-points down BEFORE you see the AI output, then score against them, then stop. Free-form "is this right?" dialogue is what flips correct human judgments into wrong ones.
+
+### Cheat sheet
+
+Seven take-aways. If the rest of the artifact disappeared tomorrow this is what should survive. Built for re-read frequency, not for first-encounter understanding. Skim once now; come back to it after a few weeks of trying to apply the framework on real work.
+
+## What the tool will and won't tell you
+
+**The tool tells you, for any given task, which of three corners the current evidence and the formal model support.** Within the unit-square framing the model uses (autonomy × verification depth), the answer is reasonably unambiguous once you've calibrated your sense of the five inputs.
+
+**The tool tells you which strategy dominates on a representative day-mix.** The gap between flat cyborg and per-task routing on the same AI capability is the empirical bound on the workflow-architecture-beats-model-capability claim (S1) — and it survives the verdict-and-caveat from the data stage (Vaccaro 2024 is the load-bearing population-scale evidence).
+
+**The tool tells you where the failure modes are.** Five named mistakes with evidence anchors, plus the high-leverage verification-against-rubric structural recommendation.
+
+**The tool will not tell you:**
+
+- *What `c_H` and `c_AI` actually are for you on any specific task.* The framework asks for your best estimate (low / medium / high). If your estimates are mis-calibrated the recommendation will be mis-calibrated in the same direction. Calibration is what the spec-driven corner doubles as a mechanism for — run a few task instances at (u=1, v=1) and you'll learn your own (c_H, c_AI) priors faster than any other workflow.
+- *Whether the AI you have access to is good enough on a specific task to be at the AI-high level.* Capabilities shift month to month; the model is parameterised by capability (the L3 invariant in the [topology](/ai-research/technology-utilization-architecture/topology)) precisely so the framework survives capability change, but each parameter still has to be set by you for your current setup.
+- *Anything about organisational dynamics.* The model is individual-level by design (crux C5: tasks are independent in the portfolio). The aggregate-zero puzzle from the data stage (Humlum-Vestergaard 2025: 0% earnings effect across 25,000 Danish workers) is real evidence that individual-level routing optimality does NOT trivially aggregate to firm-level productivity. If you're trying to set workflow policy across a team, this artifact is necessary but not sufficient.
+- *Whether the AI is being honest with you.* The persuasion-bombing scope-limit (Randazzo HBS 26-021) is a structural threat to the spec-driven corner, partially mitigated by the rubric-not-dialogue advice but not eliminated. The artifact ships the mitigation; it does not solve the underlying problem.
+
+## Connections to the rest of the pipeline
+
+The artifact is downstream of every previous stage and consumes them in different ways:
+
+- The [lit review](/ai-research/technology-utilization-architecture/lit-review) provided the workflow-mode vocabulary (Mollick's centaur/cyborg, Randazzo's self-automator, Everett's independent-then-synthesize). The build re-uses this vocabulary in the cheat-sheet view but explicitly re-frames it: these are aggregate descriptive labels for workers, not per-task strategies.
+- The [topology](/ai-research/technology-utilization-architecture/topology) identified the load-bearing invariants. The artifact's structure mirrors this: substitution myth (every "no verify" comes with the warning that attention isn't actually saved), verification economics (the whole "when to verify" view), and parameterise-by-capability (the artifact's recommendations don't hard-code current AI capability — you re-rate `c_AI` per task as capability shifts).
+- The [model](/ai-research/technology-utilization-architecture/model) is the underlying math. Identical constants (α=1, ε=0.15, β=0.05, M=0.08) and identical optimisation logic. The artifact wraps the model in plain-language sliders and pre-selected presets but the answer it gives is exactly the answer the model would give.
+- The [data](/ai-research/technology-utilization-architecture/data) provided the empirical anchors. Each recommendation cites a specific study; the comparator's default day-mix uses the data-stage's calibration evidence; the mistakes view's evidence column is data-stage citations top-to-bottom.
+
+The [writeup](/ai-research/technology-utilization-architecture/writeup) is the long-form synthesis — readable cold, no prior stages required, written for an educated person mildly familiar with the field. If you're sharing this with someone who hasn't read the rest of the pipeline, send them the writeup first and this artifact second.
