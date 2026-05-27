@@ -188,6 +188,78 @@ export function docAnnotationCount(project: Project, docId: string): number {
   return n;
 }
 
+// ---------------------------------------------------------------------------
+// Co-occurrence: for each project, find docs containing any focal annotation,
+// then count which OTHER codes appear in those docs.
+// ---------------------------------------------------------------------------
+
+export type CoOccurrenceResult = {
+  projectId: string;
+  projectName: string;
+  codeId: string;
+  codePath: string;
+  color: string;
+  annotationCount: number; // total annotations of this code inside focal docs
+  docCount: number; // distinct docs containing both focal and this code
+};
+
+export function coOccurringCodes(
+  projects: Project[],
+  focalCodeIds: Set<string>,
+): {
+  focalDocCount: number;
+  results: CoOccurrenceResult[];
+} {
+  const allResults: CoOccurrenceResult[] = [];
+  let focalDocCount = 0;
+
+  for (const p of projects) {
+    // Expand focal set to include descendants of selected codes in this
+    // project (so picking a parent code matches its children too).
+    const expanded = new Set<string>();
+    for (const id of focalCodeIds) {
+      if (p.codes.some((c) => c.id === id)) {
+        for (const d of descendantIds(p.codes, id)) expanded.add(d);
+      }
+    }
+    if (expanded.size === 0) continue;
+
+    const focalDocs = new Set<string>();
+    for (const a of p.annotations) {
+      if (expanded.has(a.codeId)) focalDocs.add(a.docId);
+    }
+    if (focalDocs.size === 0) continue;
+    focalDocCount += focalDocs.size;
+
+    const counts = new Map<string, { ann: number; docs: Set<string> }>();
+    for (const a of p.annotations) {
+      if (!focalDocs.has(a.docId)) continue;
+      if (expanded.has(a.codeId)) continue;
+      const cur = counts.get(a.codeId) ?? { ann: 0, docs: new Set() };
+      cur.ann += 1;
+      cur.docs.add(a.docId);
+      counts.set(a.codeId, cur);
+    }
+
+    for (const [codeId, { ann, docs }] of counts) {
+      allResults.push({
+        projectId: p.id,
+        projectName: p.name,
+        codeId,
+        codePath: codePathString(p.codes, codeId),
+        color: resolveColor(p.codes, codeId),
+        annotationCount: ann,
+        docCount: docs.size,
+      });
+    }
+  }
+
+  allResults.sort(
+    (a, b) => b.docCount - a.docCount || b.annotationCount - a.annotationCount,
+  );
+  return { focalDocCount, results: allResults };
+}
+
 export type FolderNode = {
   path: string;
   name: string;

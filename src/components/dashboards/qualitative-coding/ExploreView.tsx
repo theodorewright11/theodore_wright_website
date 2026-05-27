@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import {
   buildCodeTree,
   codePathString,
+  coOccurringCodes,
   descendantIds,
   exploreRows,
   flattenTree,
@@ -84,6 +85,11 @@ export default function ExploreView({ projects, onJumpToAnnotation }: Props) {
       sort,
     );
   }, [projects, expandedCodeIds, textQuery, metaFilters, folderFilter, sort, docCharsFilter, docWordsFilter, docAnnotsFilter]);
+
+  const coOccurrence = useMemo(() => {
+    if (selectedCodeIds.size === 0) return null;
+    return coOccurringCodes(projects, selectedCodeIds);
+  }, [projects, selectedCodeIds]);
 
   const stats = useMemo(() => {
     const uniqueCodes = new Set(rows.map((r) => r.annotation.codeId));
@@ -344,6 +350,78 @@ export default function ExploreView({ projects, onJumpToAnnotation }: Props) {
                   </div>
                 ))}
               </div>
+            </div>
+          )}
+
+          {coOccurrence && coOccurrence.focalDocCount > 0 && (
+            <div className="mb-6 border border-amber-200 bg-amber-50/40 rounded-lg p-4">
+              <div className="flex items-baseline gap-2 mb-1">
+                <div className="text-[11px] uppercase font-semibold tracking-[0.12em] text-amber-800">
+                  Codes that co-occur with your selection
+                </div>
+              </div>
+              <p className="text-[12px] text-slate-600 mb-3">
+                {coOccurrence.focalDocCount} doc{coOccurrence.focalDocCount === 1 ? '' : 's'}{' '}
+                contain{coOccurrence.focalDocCount === 1 ? 's' : ''} the selected code
+                {selectedCodeIds.size === 1 ? '' : 's'}. Other codes ranked by how many
+                of those docs they also show up in:
+              </p>
+              {coOccurrence.results.length === 0 ? (
+                <div className="text-[12px] text-slate-500 italic">
+                  No other codes appear in those docs.
+                </div>
+              ) : (
+                <ul className="space-y-1.5">
+                  {coOccurrence.results.slice(0, 20).map((r) => {
+                    const pct =
+                      coOccurrence.focalDocCount > 0
+                        ? Math.round((r.docCount / coOccurrence.focalDocCount) * 100)
+                        : 0;
+                    const showProject =
+                      projects.length > 1 ||
+                      coOccurrence.results.some((x) => x.projectId !== r.projectId);
+                    return (
+                      <li
+                        key={`${r.projectId}::${r.codeId}`}
+                        onClick={() => toggleCode(r.codeId)}
+                        className="flex items-center gap-2 px-2.5 py-1.5 bg-white border border-slate-200 rounded-md hover:border-amber-300 cursor-pointer transition-colors"
+                        title="click to add/remove from filter"
+                      >
+                        <span
+                          className="w-2.5 h-2.5 rounded-sm ring-1 ring-black/5 flex-shrink-0"
+                          style={{ background: r.color }}
+                        />
+                        <span className="text-[13px] text-slate-800 truncate flex-1 min-w-0">
+                          {r.codePath}
+                        </span>
+                        {showProject && (
+                          <span className="text-[10px] uppercase font-semibold tracking-wider text-blue-600 px-1.5 py-0.5 rounded bg-blue-50 flex-shrink-0">
+                            {r.projectName}
+                          </span>
+                        )}
+                        <div
+                          className="hidden sm:block w-[80px] h-1.5 bg-slate-100 rounded-full overflow-hidden flex-shrink-0"
+                          title={`${r.docCount} of ${coOccurrence.focalDocCount} docs`}
+                        >
+                          <div
+                            className="h-full bg-amber-400"
+                            style={{ width: `${pct}%` }}
+                          />
+                        </div>
+                        <span className="text-[11px] font-mono text-slate-500 tabular-nums w-[44px] text-right flex-shrink-0">
+                          {pct}%
+                        </span>
+                        <span
+                          className="text-[11px] font-mono text-slate-400 tabular-nums w-[60px] text-right flex-shrink-0"
+                          title="docs · annotations"
+                        >
+                          {r.docCount}d · {r.annotationCount}a
+                        </span>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
             </div>
           )}
 
