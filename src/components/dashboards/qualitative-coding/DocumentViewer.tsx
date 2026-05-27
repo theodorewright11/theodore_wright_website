@@ -677,7 +677,7 @@ const SelectionPopover = forwardRef<HTMLDivElement, PopoverProps>(function Selec
           if (e.key === 'Escape') onCancel();
         }}
       />
-      <div className="max-h-[220px] overflow-y-auto">
+      <div className="max-h-[380px] overflow-y-auto">
         {filtered.length === 0 ? (
           <div className="px-3 py-4 text-[12px] text-slate-400 italic text-center">
             No matching codes.
@@ -723,7 +723,7 @@ const SelectionPopover = forwardRef<HTMLDivElement, PopoverProps>(function Selec
             if (e.key === 'Escape') onCancel();
           }}
           placeholder="Optional note for this annotation…"
-          rows={2}
+          rows={3}
           className="w-full px-2.5 py-1.5 text-[12px] border border-slate-200 rounded bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 resize-y"
         />
         {canSendToNote && (
