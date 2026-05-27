@@ -33,7 +33,9 @@ type Props = {
   onAddAnnotation: (start: number, end: number, codeId: string, note?: string, id?: string) => void;
   onDeleteAnnotation: (id: string) => void;
   onUpdateAnnotation: (id: string, patch: Partial<Annotation>) => void;
-  onSendAnnotationToNote?: (annotationId: string) => void;
+  onSendAnnotationToNote?: (
+    annData: { id: string; start: number; end: number; codeId: string },
+  ) => void;
   canSendToNote?: boolean;
   qcLinkOptions?: QcLinkOptions;
   onJumpToQcLink?: (href: string) => void;
@@ -394,7 +396,12 @@ export default function DocumentViewer({
             const id = cryptoRandomId();
             onAddAnnotation(pending.start, pending.end, codeId, note, id);
             if (sendToNote && onSendAnnotationToNote) {
-              onSendAnnotationToNote(id);
+              onSendAnnotationToNote({
+                id,
+                start: pending.start,
+                end: pending.end,
+                codeId,
+              });
             }
             setPending(null);
             window.getSelection()?.removeAllRanges();
@@ -765,7 +772,7 @@ function AnnotationsPanel({
   onFocus: (id: string | null) => void;
   onDelete: (id: string) => void;
   onUpdate: (id: string, patch: Partial<Annotation>) => void;
-  onSendToNote?: (id: string) => void;
+  onSendToNote?: (annData: { id: string; start: number; end: number; codeId: string }) => void;
 }) {
   if (annotations.length === 0) {
     return (
@@ -834,7 +841,12 @@ function AnnotationsPanel({
                       type="button"
                       onClick={(e) => {
                         e.stopPropagation();
-                        onSendToNote(a.id);
+                        onSendToNote({
+                          id: a.id,
+                          start: a.start,
+                          end: a.end,
+                          codeId: a.codeId,
+                        });
                       }}
                       className="opacity-0 group-hover:opacity-100 text-amber-600 hover:text-amber-900 text-[10px] font-semibold uppercase tracking-wider transition-opacity px-1.5 py-0.5 rounded hover:bg-amber-50"
                       title="send a link to the first open note pane"
@@ -999,6 +1011,7 @@ function NoteDocViewer({
           onChange={(v) => onUpdateDoc({ text: v })}
           onQcLinkClick={onJumpToQcLink}
           qcLinkOptions={qcLinkOptions}
+          defaultTab="preview"
           placeholder="Write commentary, link annotations from other docs, take running notes. Markdown supported."
           minHeight={500}
         />

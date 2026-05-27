@@ -761,7 +761,13 @@ export default function QualitativeCodingDashboard() {
   const toggleSidebar = () =>
     setState((s) => ({ ...s, sidebarCollapsed: !s.sidebarCollapsed }));
 
-  const sendAnnotationToNote = (annotationId: string, fromDoc: Document) => {
+  // Build a markdown link to an annotation and append it to the first open
+  // note pane. Takes the annotation data directly so it works for annotations
+  // that were just-created (state hasn't flushed yet) as well as existing ones.
+  const sendAnnotationToNote = (
+    fromDoc: Document,
+    annotationData: { id: string; start: number; end: number; codeId: string },
+  ) => {
     if (!activeProject) return;
     const openNotes = openDocIds
       .map((id) => activeProject.documents.find((d) => d.id === id))
@@ -773,13 +779,14 @@ export default function QualitativeCodingDashboard() {
       return;
     }
     const note = openNotes[0];
-    const ann = activeProject.annotations.find((a) => a.id === annotationId);
-    if (!ann) return;
-    const span = fromDoc.text.slice(ann.start, ann.end).slice(0, 80).replace(/\s+/g, ' ');
-    const truncated = ann.end - ann.start > 80 ? '…' : '';
-    const path = codePathString(activeProject.codes, ann.codeId);
+    const span = fromDoc.text
+      .slice(annotationData.start, annotationData.end)
+      .slice(0, 80)
+      .replace(/\s+/g, ' ');
+    const truncated = annotationData.end - annotationData.start > 80 ? '…' : '';
+    const path = codePathString(activeProject.codes, annotationData.codeId);
     const label = `${fromDoc.title} · ${path} · "${span}${truncated}"`;
-    const href = `qcanno://${activeProject.id}/${fromDoc.id}/${annotationId}`;
+    const href = `qcanno://${activeProject.id}/${fromDoc.id}/${annotationData.id}`;
     const linkMd = `- [${label.replace(/[\[\]]/g, '')}](${href})`;
     const newText = note.text && note.text.trim() ? `${note.text}\n${linkMd}` : linkMd;
     updateDocument(note.id, { text: newText });
@@ -1011,7 +1018,7 @@ export default function QualitativeCodingDashboard() {
                         }
                         onDeleteAnnotation={deleteAnnotation}
                         onUpdateAnnotation={updateAnnotation}
-                        onSendAnnotationToNote={(annId) => sendAnnotationToNote(annId, d)}
+                        onSendAnnotationToNote={(annData) => sendAnnotationToNote(d, annData)}
                         canSendToNote={openDocs.some((o) => o.kind === 'note')}
                         qcLinkOptions={{
                           projectId: activeProject.id,

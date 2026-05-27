@@ -154,6 +154,7 @@ type EditorProps = {
   minHeight?: number;
   onQcLinkClick?: (href: string) => void;
   qcLinkOptions?: QcLinkOptions;
+  defaultTab?: 'write' | 'preview';
 };
 
 export function MarkdownEditor({
@@ -163,8 +164,13 @@ export function MarkdownEditor({
   minHeight = 240,
   onQcLinkClick,
   qcLinkOptions,
+  defaultTab,
 }: EditorProps) {
-  const [tab, setTab] = useState<'write' | 'preview'>('write');
+  // Honour defaultTab only when there's content to preview; otherwise start
+  // in 'write' so new docs aren't stuck on an empty "Nothing to preview".
+  const [tab, setTab] = useState<'write' | 'preview'>(
+    defaultTab === 'preview' && value.trim().length > 0 ? 'preview' : 'write',
+  );
   const [qcPickerOpen, setQcPickerOpen] = useState(false);
   const taRef = useRef<HTMLTextAreaElement>(null);
 
