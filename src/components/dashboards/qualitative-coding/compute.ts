@@ -214,19 +214,42 @@ export function coOccurringCodes(
   let focalDocCount = 0;
 
   for (const p of projects) {
-    // Expand focal set to include descendants of selected codes in this
-    // project (so picking a parent code matches its children too).
-    const expanded = new Set<string>();
+    // Build one "match group" per originally-selected code, each containing
+    // that code id plus all its descendants. A doc is focal iff it has at
+    // least one annotation in EVERY group (intersection across selected
+    // codes, not union). "Other" codes shown afterwards are anything not
+    // in any focal group.
+    const groups: Set<string>[] = [];
+    const allFocalIds = new Set<string>();
     for (const id of focalCodeIds) {
       if (p.codes.some((c) => c.id === id)) {
-        for (const d of descendantIds(p.codes, id)) expanded.add(d);
+        const g = new Set<string>();
+        for (const d of descendantIds(p.codes, id)) {
+          g.add(d);
+          allFocalIds.add(d);
+        }
+        groups.push(g);
       }
     }
-    if (expanded.size === 0) continue;
+    if (groups.length === 0) continue;
 
-    const focalDocs = new Set<string>();
+    // For each doc, track which groups it has hit.
+    const groupsHitByDoc = new Map<string, Set<number>>();
     for (const a of p.annotations) {
-      if (expanded.has(a.codeId)) focalDocs.add(a.docId);
+      for (let gi = 0; gi < groups.length; gi++) {
+        if (groups[gi].has(a.codeId)) {
+          let s = groupsHitByDoc.get(a.docId);
+          if (!s) {
+            s = new Set<number>();
+            groupsHitByDoc.set(a.docId, s);
+          }
+          s.add(gi);
+        }
+      }
+    }
+    const focalDocs = new Set<string>();
+    for (const [docId, hit] of groupsHitByDoc) {
+      if (hit.size === groups.length) focalDocs.add(docId);
     }
     if (focalDocs.size === 0) continue;
     focalDocCount += focalDocs.size;
@@ -234,7 +257,7 @@ export function coOccurringCodes(
     const counts = new Map<string, { ann: number; docs: Set<string> }>();
     for (const a of p.annotations) {
       if (!focalDocs.has(a.docId)) continue;
-      if (expanded.has(a.codeId)) continue;
+      if (allFocalIds.has(a.codeId)) continue;
       const cur = counts.get(a.codeId) ?? { ann: 0, docs: new Set() };
       cur.ann += 1;
       cur.docs.add(a.docId);

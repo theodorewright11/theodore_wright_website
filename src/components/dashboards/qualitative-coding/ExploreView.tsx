@@ -361,10 +361,13 @@ export default function ExploreView({ projects, onJumpToAnnotation }: Props) {
                 </div>
               </div>
               <p className="text-[12px] text-slate-600 mb-3">
-                {coOccurrence.focalDocCount} doc{coOccurrence.focalDocCount === 1 ? '' : 's'}{' '}
-                contain{coOccurrence.focalDocCount === 1 ? 's' : ''} the selected code
-                {selectedCodeIds.size === 1 ? '' : 's'}. Other codes ranked by how many
-                of those docs they also show up in:
+                {coOccurrence.focalDocCount} doc
+                {coOccurrence.focalDocCount === 1 ? '' : 's'} contain
+                {coOccurrence.focalDocCount === 1 ? 's' : ''}{' '}
+                {selectedCodeIds.size === 1
+                  ? 'the selected code'
+                  : `all ${selectedCodeIds.size} selected codes`}
+                . Other codes ranked by how many of those docs they also show up in:
               </p>
               {coOccurrence.results.length === 0 ? (
                 <div className="text-[12px] text-slate-500 italic">
