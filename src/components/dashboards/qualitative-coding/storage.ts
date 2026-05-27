@@ -40,6 +40,8 @@ export function loadState(): AppState {
             : undefined,
         annotationsPanelCollapsed: !!parsed.annotationsPanelCollapsed,
         metadataCollapsed: !!parsed.metadataCollapsed,
+        exploreFiltersCollapsed: !!parsed.exploreFiltersCollapsed,
+        exploreCoOccurrenceCollapsed: !!parsed.exploreCoOccurrenceCollapsed,
         deletedProjectIds: Array.isArray(parsed.deletedProjectIds)
           ? parsed.deletedProjectIds.filter((s: any) => typeof s === 'string')
           : [],

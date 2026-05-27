@@ -149,6 +149,35 @@ export default function DocumentViewer({
     return () => document.removeEventListener('pointerdown', onDocPointerDown);
   }, [pending]);
 
+  // Ctrl/Cmd-C while a selection popover is open copies the selected span to
+  // the clipboard. The popover steals focus via autoFocus on its search input,
+  // which means native copy on the doc selection doesn't fire — so synthesise
+  // it here.
+  useEffect(() => {
+    if (!pending) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (!(e.metaKey || e.ctrlKey)) return;
+      if (e.key !== 'c' && e.key !== 'C') return;
+      const target = e.target as HTMLElement | null;
+      // If the user is typing in an input that has its own selected text, let
+      // the browser handle copy normally.
+      if (target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement) {
+        const hasOwnSel =
+          target.selectionStart != null &&
+          target.selectionEnd != null &&
+          target.selectionStart !== target.selectionEnd;
+        if (hasOwnSel) return;
+      }
+      e.preventDefault();
+      const span = doc.text.slice(pending.start, pending.end);
+      if (navigator.clipboard?.writeText) {
+        navigator.clipboard.writeText(span).catch(() => {});
+      }
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [pending, doc.text]);
+
   // Capture any selection that finalises anywhere on the page, as long as it
   // started inside our document container. Robust against the user releasing
   // the mouse outside the container or selecting via keyboard.

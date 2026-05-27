@@ -957,7 +957,24 @@ export default function QualitativeCodingDashboard() {
               onMoveCode={moveCode}
             />
           ) : view === 'explore' ? (
-            <ExploreView projects={exploreProjects} onJumpToAnnotation={jumpToAnnotation} />
+            <ExploreView
+              projects={exploreProjects}
+              filtersCollapsed={!!state.exploreFiltersCollapsed}
+              coOccurrenceCollapsed={!!state.exploreCoOccurrenceCollapsed}
+              onToggleFilters={() =>
+                setState((s) => ({
+                  ...s,
+                  exploreFiltersCollapsed: !s.exploreFiltersCollapsed,
+                }))
+              }
+              onToggleCoOccurrence={() =>
+                setState((s) => ({
+                  ...s,
+                  exploreCoOccurrenceCollapsed: !s.exploreCoOccurrenceCollapsed,
+                }))
+              }
+              onJumpToAnnotation={jumpToAnnotation}
+            />
           ) : openDocs.length > 0 ? (
             <div className="flex-1 min-w-0 min-h-0 flex">
               <div className="flex-1 min-w-0 min-h-0 flex overflow-x-auto">

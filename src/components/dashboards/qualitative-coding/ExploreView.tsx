@@ -15,6 +15,10 @@ import type { MetadataField, Project } from './types';
 
 type Props = {
   projects: Project[];
+  filtersCollapsed: boolean;
+  coOccurrenceCollapsed: boolean;
+  onToggleFilters: () => void;
+  onToggleCoOccurrence: () => void;
   onJumpToAnnotation: (projectId: string, docId: string, annotationId: string) => void;
 };
 
@@ -26,7 +30,14 @@ const SORT_OPTIONS: { value: SortKey; label: string }[] = [
   { value: 'span-length', label: 'Longest span' },
 ];
 
-export default function ExploreView({ projects, onJumpToAnnotation }: Props) {
+export default function ExploreView({
+  projects,
+  filtersCollapsed,
+  coOccurrenceCollapsed,
+  onToggleFilters,
+  onToggleCoOccurrence,
+  onJumpToAnnotation,
+}: Props) {
   const [textQuery, setTextQuery] = useState('');
   const [selectedCodeIds, setSelectedCodeIds] = useState<Set<string>>(new Set());
   const [codePickerOpen, setCodePickerOpen] = useState(false);
@@ -210,8 +221,27 @@ export default function ExploreView({ projects, onJumpToAnnotation }: Props) {
         </div>
       </div>
 
-      <div className="px-8 py-4 border-b border-slate-200 bg-slate-50">
-        <div className="max-w-[1200px] mx-auto">
+      <div className="border-b border-slate-200 bg-slate-50">
+        <div className="max-w-[1200px] mx-auto px-8 py-2 flex items-center gap-2">
+          <button
+            type="button"
+            onClick={onToggleFilters}
+            className="flex items-center gap-1.5 text-[11px] uppercase font-semibold tracking-[0.12em] text-slate-600 hover:text-slate-900 transition-colors px-1 py-1 rounded hover:bg-white"
+            title={filtersCollapsed ? 'show filters' : 'hide filters'}
+          >
+            <span className="text-[10px] text-slate-400 w-3">
+              {filtersCollapsed ? '▸' : '▾'}
+            </span>
+            <span>Filters</span>
+            {hasFilters && (
+              <span className="ml-1 text-[10px] font-semibold text-blue-700 bg-blue-100 px-1.5 py-0.5 rounded normal-case tracking-normal">
+                active
+              </span>
+            )}
+          </button>
+        </div>
+        {!filtersCollapsed && (
+        <div className="max-w-[1200px] mx-auto px-8 pb-4">
           <div className="flex items-center gap-3 flex-wrap">
             <input
               value={textQuery}
@@ -379,6 +409,7 @@ export default function ExploreView({ projects, onJumpToAnnotation }: Props) {
             </div>
           )}
         </div>
+        )}
       </div>
 
       <div className="flex-1 min-h-0 overflow-y-auto">
@@ -415,12 +446,32 @@ export default function ExploreView({ projects, onJumpToAnnotation }: Props) {
           )}
 
           {coOccurrence && coOccurrence.focalDocCount > 0 && (
-            <div className="mb-6 border border-amber-200 bg-amber-50/40 rounded-lg p-4">
-              <div className="flex items-baseline gap-2 mb-1">
-                <div className="text-[11px] uppercase font-semibold tracking-[0.12em] text-amber-800">
+            <div className="mb-6 border border-amber-200 bg-amber-50/40 rounded-lg">
+              <button
+                type="button"
+                onClick={onToggleCoOccurrence}
+                className="w-full flex items-center gap-2 px-4 py-3 hover:bg-amber-50 transition-colors rounded-lg"
+                title={
+                  coOccurrenceCollapsed
+                    ? 'show co-occurrence list'
+                    : 'hide co-occurrence list'
+                }
+              >
+                <span className="text-[10px] text-amber-700 w-3">
+                  {coOccurrenceCollapsed ? '▸' : '▾'}
+                </span>
+                <span className="text-[11px] uppercase font-semibold tracking-[0.12em] text-amber-800">
                   Codes that co-occur with your selection
-                </div>
-              </div>
+                </span>
+                <span className="ml-auto text-[11px] text-amber-700 font-mono tabular-nums">
+                  {coOccurrence.focalDocCount} doc
+                  {coOccurrence.focalDocCount === 1 ? '' : 's'} ·{' '}
+                  {coOccurrence.results.length} other code
+                  {coOccurrence.results.length === 1 ? '' : 's'}
+                </span>
+              </button>
+              {!coOccurrenceCollapsed && (
+              <div className="px-4 pb-4">
               <p className="text-[12px] text-slate-600 mb-3">
                 {coOccurrence.focalDocCount} doc
                 {coOccurrence.focalDocCount === 1 ? '' : 's'} contain
@@ -485,6 +536,8 @@ export default function ExploreView({ projects, onJumpToAnnotation }: Props) {
                     );
                   })}
                 </ul>
+              )}
+              </div>
               )}
             </div>
           )}

@@ -83,6 +83,8 @@ export type AppState = {
   annotationsPanelHeight?: number;
   annotationsPanelCollapsed?: boolean;
   metadataCollapsed?: boolean;
+  exploreFiltersCollapsed?: boolean;
+  exploreCoOccurrenceCollapsed?: boolean;
   deletedProjectIds?: string[];
 };
 
