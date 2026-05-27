@@ -449,16 +449,18 @@ export default function DocumentViewer({
           text={doc.text}
           showDefinitions={showCodeDefinitions}
           canSendToNote={!!canSendToNote && !!onSendAnnotationToNote}
-          onPick={(codeId, note, sendToNote) => {
-            const id = cryptoRandomId();
-            onAddAnnotation(pending.start, pending.end, codeId, note, id);
-            if (sendToNote && onSendAnnotationToNote) {
-              onSendAnnotationToNote({
-                id,
-                start: pending.start,
-                end: pending.end,
-                codeId,
-              });
+          onPick={(codeIds, note, sendToNote) => {
+            for (const codeId of codeIds) {
+              const id = cryptoRandomId();
+              onAddAnnotation(pending.start, pending.end, codeId, note, id);
+              if (sendToNote && onSendAnnotationToNote) {
+                onSendAnnotationToNote({
+                  id,
+                  start: pending.start,
+                  end: pending.end,
+                  codeId,
+                });
+              }
             }
             setPending(null);
             window.getSelection()?.removeAllRanges();
@@ -662,7 +664,7 @@ type PopoverProps = {
   text: string;
   showDefinitions: boolean;
   canSendToNote: boolean;
-  onPick: (codeId: string, note?: string, sendToNote?: boolean) => void;
+  onPick: (codeIds: string[], note?: string, sendToNote?: boolean) => void;
   onCancel: () => void;
 };
 
@@ -673,6 +675,8 @@ const SelectionPopover = forwardRef<HTMLDivElement, PopoverProps>(function Selec
   const [query, setQuery] = useState('');
   const [note, setNote] = useState('');
   const [sendToNote, setSendToNote] = useState(false);
+  const [multiMode, setMultiMode] = useState(false);
+  const [pickedCodeIds, setPickedCodeIds] = useState<Set<string>>(new Set());
   const flat = useMemo(() => flattenTree(buildCodeTree(codes)), [codes]);
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -682,18 +686,45 @@ const SelectionPopover = forwardRef<HTMLDivElement, PopoverProps>(function Selec
     );
   }, [flat, query, codes]);
 
-  const commit = (codeId: string) =>
-    onPick(codeId, note.trim() || undefined, sendToNote);
+  const commitOne = (codeId: string) =>
+    onPick([codeId], note.trim() || undefined, sendToNote);
+
+  const commitMany = () => {
+    if (pickedCodeIds.size === 0) return;
+    onPick([...pickedCodeIds], note.trim() || undefined, sendToNote);
+  };
+
+  const togglePick = (codeId: string) => {
+    setPickedCodeIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(codeId)) next.delete(codeId);
+      else next.add(codeId);
+      return next;
+    });
+  };
+
+  const toggleMulti = () => {
+    setMultiMode((v) => {
+      if (v) setPickedCodeIds(new Set());
+      return !v;
+    });
+  };
+
+  const handleEnter = () => {
+    if (filtered.length === 0) return;
+    if (multiMode) togglePick(filtered[0].code.id);
+    else commitOne(filtered[0].code.id);
+  };
 
   return (
     <div
       ref={ref}
       role="dialog"
-      className="fixed z-50 w-[360px] bg-white border border-slate-200 rounded-lg shadow-xl overflow-hidden"
+      className="fixed z-50 w-[380px] bg-white border border-slate-200 rounded-lg shadow-xl overflow-hidden"
       style={{
         top: pending.rect.bottom - window.scrollY + 8,
         left: Math.min(
-          window.innerWidth - 380,
+          window.innerWidth - 400,
           Math.max(8, pending.rect.left - window.scrollX),
         ),
       }}
@@ -708,12 +739,22 @@ const SelectionPopover = forwardRef<HTMLDivElement, PopoverProps>(function Selec
           disabled={codes.length === 0}
           className="flex-1 px-3.5 py-2.5 text-[13px] focus:outline-none focus:bg-slate-50 disabled:bg-slate-50 disabled:text-slate-400"
           onKeyDown={(e) => {
-            if (e.key === 'Enter' && filtered.length > 0) {
-              commit(filtered[0].code.id);
-            }
+            if (e.key === 'Enter') handleEnter();
             if (e.key === 'Escape') onCancel();
           }}
         />
+        <button
+          type="button"
+          onClick={toggleMulti}
+          className={`flex-shrink-0 h-8 mr-1 px-2 rounded text-[11px] font-semibold transition-colors ${
+            multiMode
+              ? 'bg-blue-600 text-white hover:bg-blue-700'
+              : 'text-slate-500 hover:bg-slate-100'
+          }`}
+          title={multiMode ? 'switch to single-pick' : 'pick multiple codes at once'}
+        >
+          {multiMode ? `Multi · ${pickedCodeIds.size}` : 'Multi'}
+        </button>
         <button
           type="button"
           onClick={onCancel}
@@ -732,15 +773,33 @@ const SelectionPopover = forwardRef<HTMLDivElement, PopoverProps>(function Selec
         ) : (
           filtered.map((n) => {
             const color = resolveColor(codes, n.code.id);
+            const picked = pickedCodeIds.has(n.code.id);
             return (
               <button
                 key={n.code.id}
                 type="button"
-                onClick={() => commit(n.code.id)}
-                className="w-full flex items-start gap-2 px-3 py-1.5 text-left hover:bg-blue-50 transition-colors"
+                onClick={() =>
+                  multiMode ? togglePick(n.code.id) : commitOne(n.code.id)
+                }
+                className={`w-full flex items-start gap-2 px-3 py-1.5 text-left transition-colors ${
+                  picked ? 'bg-blue-100 hover:bg-blue-200' : 'hover:bg-blue-50'
+                }`}
                 style={{ paddingLeft: `${12 + n.depth * 14}px` }}
                 title={n.code.description ?? undefined}
               >
+                {multiMode && (
+                  <span
+                    className={`flex-shrink-0 w-3.5 h-3.5 rounded-sm border mt-0.5 flex items-center justify-center transition-colors ${
+                      picked
+                        ? 'bg-blue-600 border-blue-600 text-white'
+                        : 'border-slate-300 bg-white'
+                    }`}
+                  >
+                    {picked && (
+                      <span className="text-[10px] leading-none">✓</span>
+                    )}
+                  </span>
+                )}
                 <span
                   className="w-2.5 h-2.5 rounded-sm flex-shrink-0 ring-1 ring-black/5 mt-1"
                   style={{ background: color }}
@@ -763,9 +822,10 @@ const SelectionPopover = forwardRef<HTMLDivElement, PopoverProps>(function Selec
           value={note}
           onChange={(e) => setNote(emDash(e.target.value))}
           onKeyDown={(e) => {
-            if (e.key === 'Enter' && (e.metaKey || e.ctrlKey) && filtered.length > 0) {
+            if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
               e.preventDefault();
-              commit(filtered[0].code.id);
+              if (multiMode) commitMany();
+              else if (filtered.length > 0) commitOne(filtered[0].code.id);
             }
             if (e.key === 'Escape') onCancel();
           }}
@@ -781,8 +841,23 @@ const SelectionPopover = forwardRef<HTMLDivElement, PopoverProps>(function Selec
               onChange={(e) => setSendToNote(e.target.checked)}
               className="accent-amber-600"
             />
-            Also link this annotation in the open note
+            Also link {multiMode && pickedCodeIds.size > 1 ? 'each annotation' : 'this annotation'} in
+            the open note
           </label>
+        )}
+        {multiMode && (
+          <button
+            type="button"
+            onClick={commitMany}
+            disabled={pickedCodeIds.size === 0}
+            className="mt-2 w-full px-3 py-2 text-[13px] font-semibold bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-slate-300 disabled:cursor-not-allowed transition-colors"
+          >
+            Commit {pickedCodeIds.size === 0
+              ? '— pick codes above'
+              : pickedCodeIds.size === 1
+                ? '1 code'
+                : `${pickedCodeIds.size} codes`}
+          </button>
         )}
       </div>
     </div>

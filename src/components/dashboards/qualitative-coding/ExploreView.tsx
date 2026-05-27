@@ -3,20 +3,46 @@ import {
   buildCodeTree,
   codePathString,
   coOccurringCodes,
-  descendantIds,
   exploreRows,
   flattenTree,
   resolveColor,
+  type CodeFilterMode,
   type ExploreRow,
   type FieldFilter,
   type SortKey,
 } from './compute';
 import type { MetadataField, Project } from './types';
 
+export type ExploreFilterState = {
+  textQuery: string;
+  selectedCodeIds: Set<string>;
+  codeFilterMode: CodeFilterMode;
+  metaFilters: Record<string, FieldFilter>;
+  folderFilter: string;
+  sort: SortKey;
+  docCharsFilter: FieldFilter;
+  docWordsFilter: FieldFilter;
+  docAnnotsFilter: FieldFilter;
+};
+
+export const defaultExploreFilterState = (): ExploreFilterState => ({
+  textQuery: '',
+  selectedCodeIds: new Set(),
+  codeFilterMode: 'or',
+  metaFilters: {},
+  folderFilter: '',
+  sort: 'created-desc',
+  docCharsFilter: {},
+  docWordsFilter: {},
+  docAnnotsFilter: {},
+});
+
 type Props = {
   projects: Project[];
   filtersCollapsed: boolean;
   coOccurrenceCollapsed: boolean;
+  filterState: ExploreFilterState;
+  onChangeFilter: (patch: Partial<ExploreFilterState>) => void;
   onToggleFilters: () => void;
   onToggleCoOccurrence: () => void;
   onJumpToAnnotation: (projectId: string, docId: string, annotationId: string) => void;
@@ -34,33 +60,49 @@ export default function ExploreView({
   projects,
   filtersCollapsed,
   coOccurrenceCollapsed,
+  filterState,
+  onChangeFilter,
   onToggleFilters,
   onToggleCoOccurrence,
   onJumpToAnnotation,
 }: Props) {
-  const [textQuery, setTextQuery] = useState('');
-  const [selectedCodeIds, setSelectedCodeIds] = useState<Set<string>>(new Set());
+  const {
+    textQuery,
+    selectedCodeIds,
+    codeFilterMode,
+    metaFilters,
+    folderFilter,
+    sort,
+    docCharsFilter,
+    docWordsFilter,
+    docAnnotsFilter,
+  } = filterState;
+  const setTextQuery = (v: string) => onChangeFilter({ textQuery: v });
+  const setSelectedCodeIds = (
+    v: Set<string> | ((prev: Set<string>) => Set<string>),
+  ) =>
+    onChangeFilter({
+      selectedCodeIds:
+        typeof v === 'function' ? (v as any)(filterState.selectedCodeIds) : v,
+    });
+  const setCodeFilterMode = (v: CodeFilterMode) => onChangeFilter({ codeFilterMode: v });
+  const setMetaFilters = (
+    v:
+      | Record<string, FieldFilter>
+      | ((prev: Record<string, FieldFilter>) => Record<string, FieldFilter>),
+  ) =>
+    onChangeFilter({
+      metaFilters:
+        typeof v === 'function' ? (v as any)(filterState.metaFilters) : v,
+    });
+  const setFolderFilter = (v: string) => onChangeFilter({ folderFilter: v });
+  const setSort = (v: SortKey) => onChangeFilter({ sort: v });
+  const setDocCharsFilter = (v: FieldFilter) => onChangeFilter({ docCharsFilter: v });
+  const setDocWordsFilter = (v: FieldFilter) => onChangeFilter({ docWordsFilter: v });
+  const setDocAnnotsFilter = (v: FieldFilter) => onChangeFilter({ docAnnotsFilter: v });
+
   const [codePickerOpen, setCodePickerOpen] = useState(false);
   const codePickerRef = useRef<HTMLDivElement>(null);
-  const [metaFilters, setMetaFilters] = useState<Record<string, FieldFilter>>({});
-  const [folderFilter, setFolderFilter] = useState<string>('');
-  const [sort, setSort] = useState<SortKey>('created-desc');
-  const [docCharsFilter, setDocCharsFilter] = useState<FieldFilter>({});
-  const [docWordsFilter, setDocWordsFilter] = useState<FieldFilter>({});
-  const [docAnnotsFilter, setDocAnnotsFilter] = useState<FieldFilter>({});
-
-  const expandedCodeIds = useMemo(() => {
-    if (selectedCodeIds.size === 0) return null;
-    const out = new Set<string>();
-    for (const p of projects) {
-      for (const codeId of selectedCodeIds) {
-        if (p.codes.some((c) => c.id === codeId)) {
-          for (const d of descendantIds(p.codes, codeId)) out.add(d);
-        }
-      }
-    }
-    return out;
-  }, [projects, selectedCodeIds]);
 
   const metadataFields = useMemo<MetadataField[]>(() => {
     const m = new Map<string, MetadataField>();
@@ -86,7 +128,8 @@ export default function ExploreView({
     return exploreRows(
       projects,
       {
-        codeIds: expandedCodeIds,
+        codeIds: selectedCodeIds.size > 0 ? selectedCodeIds : null,
+        codeFilterMode,
         textQuery,
         metadataFilters: metaFilters,
         folder: folderFilter ? folderFilter : undefined,
@@ -96,7 +139,7 @@ export default function ExploreView({
       },
       sort,
     );
-  }, [projects, expandedCodeIds, textQuery, metaFilters, folderFilter, sort, docCharsFilter, docWordsFilter, docAnnotsFilter]);
+  }, [projects, selectedCodeIds, codeFilterMode, textQuery, metaFilters, folderFilter, sort, docCharsFilter, docWordsFilter, docAnnotsFilter]);
 
   useEffect(() => {
     if (!codePickerOpen) return;
@@ -165,13 +208,15 @@ export default function ExploreView({
   };
 
   const clearAllFilters = () => {
-    setTextQuery('');
-    setSelectedCodeIds(new Set());
-    setMetaFilters({});
-    setFolderFilter('');
-    setDocCharsFilter({});
-    setDocWordsFilter({});
-    setDocAnnotsFilter({});
+    onChangeFilter({
+      textQuery: '',
+      selectedCodeIds: new Set(),
+      metaFilters: {},
+      folderFilter: '',
+      docCharsFilter: {},
+      docWordsFilter: {},
+      docAnnotsFilter: {},
+    });
   };
 
   const hasFilters =
@@ -250,18 +295,42 @@ export default function ExploreView({
               className="flex-1 min-w-[200px] px-3 py-2 text-[13px] border border-slate-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500"
             />
             <div className="relative" ref={codePickerRef}>
-              <button
-                type="button"
-                onClick={() => setCodePickerOpen((v) => !v)}
-                className={`px-3 py-2 text-[13px] font-medium rounded-lg border transition-colors ${
-                  selectedCodeIds.size > 0
-                    ? 'bg-blue-600 text-white border-blue-600 hover:bg-blue-700'
-                    : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
-                }`}
-              >
-                Codes
-                {selectedCodeIds.size > 0 ? ` · ${selectedCodeIds.size}` : ''}
-              </button>
+              <div className="flex items-stretch">
+                <button
+                  type="button"
+                  onClick={() => setCodePickerOpen((v) => !v)}
+                  className={`px-3 py-2 text-[13px] font-medium border transition-colors ${
+                    selectedCodeIds.size > 1 ? 'rounded-l-lg' : 'rounded-lg'
+                  } ${
+                    selectedCodeIds.size > 0
+                      ? 'bg-blue-600 text-white border-blue-600 hover:bg-blue-700'
+                      : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
+                  }`}
+                >
+                  Codes
+                  {selectedCodeIds.size > 0 ? ` · ${selectedCodeIds.size}` : ''}
+                </button>
+                {selectedCodeIds.size > 1 && (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setCodeFilterMode(codeFilterMode === 'or' ? 'and' : 'or')
+                    }
+                    title={
+                      codeFilterMode === 'or'
+                        ? 'OR — annotations whose code matches any selection. Click for AND mode.'
+                        : 'AND — annotations from docs that contain every selected code. Click for OR mode.'
+                    }
+                    className={`px-2.5 py-2 text-[11px] font-bold uppercase tracking-wider border border-l-0 rounded-r-lg transition-colors ${
+                      codeFilterMode === 'and'
+                        ? 'bg-blue-700 text-white border-blue-700 hover:bg-blue-800'
+                        : 'bg-white text-blue-700 border-blue-600 hover:bg-blue-50'
+                    }`}
+                  >
+                    {codeFilterMode}
+                  </button>
+                )}
+              </div>
               {codePickerOpen && (
                 <div className="absolute left-0 top-full mt-1 w-[320px] max-h-[440px] bg-white border border-slate-200 rounded-lg shadow-xl z-30 flex flex-col">
                   <div className="flex items-center px-3 py-2 border-b border-slate-100 bg-slate-50">

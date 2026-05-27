@@ -3,7 +3,10 @@ import AuthBar, { type SyncStatus } from './AuthBar';
 import CodeTree from './CodeTree';
 import CodebookView from './CodebookView';
 import DocumentViewer from './DocumentViewer';
-import ExploreView from './ExploreView';
+import ExploreView, {
+  defaultExploreFilterState,
+  type ExploreFilterState,
+} from './ExploreView';
 import MetadataSchemaEditor from './MetadataSchemaEditor';
 import ProjectAboutView from './ProjectAboutView';
 import { ResizeHandle } from './Resizable';
@@ -100,6 +103,13 @@ export default function QualitativeCodingDashboard() {
   const [schemaOpen, setSchemaOpen] = useState(false);
   const [exportMenuOpen, setExportMenuOpen] = useState(false);
   const [codebookPanelOpen, setCodebookPanelOpen] = useState(false);
+  // Explore filters are session-state (not persisted), but lifted here so
+  // they survive navigating away from the Explore tab and back.
+  const [exploreFilterState, setExploreFilterState] = useState<ExploreFilterState>(
+    () => defaultExploreFilterState(),
+  );
+  const updateExploreFilter = (patch: Partial<ExploreFilterState>) =>
+    setExploreFilterState((s) => ({ ...s, ...patch }));
   const [drive, setDrive] = useState<DriveState>({
     token: null,
     syncStatus: 'offline',
@@ -961,6 +971,8 @@ export default function QualitativeCodingDashboard() {
               projects={exploreProjects}
               filtersCollapsed={!!state.exploreFiltersCollapsed}
               coOccurrenceCollapsed={!!state.exploreCoOccurrenceCollapsed}
+              filterState={exploreFilterState}
+              onChangeFilter={updateExploreFilter}
               onToggleFilters={() =>
                 setState((s) => ({
                   ...s,

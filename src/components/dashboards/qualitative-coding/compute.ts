@@ -427,8 +427,11 @@ export type FieldFilter = {
   enumEquals?: string;
 };
 
+export type CodeFilterMode = 'or' | 'and';
+
 export type ExploreFilter = {
   codeIds: Set<string> | null;
+  codeFilterMode?: CodeFilterMode;
   textQuery: string;
   metadataFilters: Record<string, FieldFilter>;
   folder?: string | null;
@@ -497,16 +500,80 @@ export function exploreRows(
 ): ExploreRow[] {
   const out: ExploreRow[] = [];
   const q = filter.textQuery.trim().toLowerCase();
+  const mode = filter.codeFilterMode ?? 'or';
+  const hasCodeFilter = !!filter.codeIds && filter.codeIds.size > 0;
+
+  // Per-project, precompute the structures we need:
+  //  - expanded: union of descendants of every selected code id that exists
+  //    in this project (used for OR-mode annotation matching)
+  //  - focalDocs: docs containing an annotation from EACH selected code's
+  //    descendant group (used for AND-mode doc filtering)
+  const expandedByProject = new Map<string, Set<string>>();
+  const focalDocsByProject = new Map<string, Set<string>>();
+  if (hasCodeFilter) {
+    for (const p of projects) {
+      const groups: Set<string>[] = [];
+      const expanded = new Set<string>();
+      for (const id of filter.codeIds!) {
+        if (p.codes.some((c) => c.id === id)) {
+          const g = new Set<string>();
+          for (const d of descendantIds(p.codes, id)) {
+            g.add(d);
+            expanded.add(d);
+          }
+          groups.push(g);
+        }
+      }
+      expandedByProject.set(p.id, expanded);
+      if (mode === 'and') {
+        if (groups.length === 0) {
+          focalDocsByProject.set(p.id, new Set());
+        } else {
+          const hits = new Map<string, Set<number>>();
+          for (const a of p.annotations) {
+            for (let gi = 0; gi < groups.length; gi++) {
+              if (groups[gi].has(a.codeId)) {
+                let s = hits.get(a.docId);
+                if (!s) {
+                  s = new Set<number>();
+                  hits.set(a.docId, s);
+                }
+                s.add(gi);
+              }
+            }
+          }
+          const focal = new Set<string>();
+          for (const [docId, h] of hits) {
+            if (h.size === groups.length) focal.add(docId);
+          }
+          focalDocsByProject.set(p.id, focal);
+        }
+      }
+    }
+  }
+
   for (const p of projects) {
     const docById = new Map(p.documents.map((d) => [d.id, d]));
     const annotCountByDoc = new Map<string, number>();
     for (const a of p.annotations) {
       annotCountByDoc.set(a.docId, (annotCountByDoc.get(a.docId) ?? 0) + 1);
     }
+    const expanded = expandedByProject.get(p.id);
+    const focalDocs = focalDocsByProject.get(p.id);
     for (const a of p.annotations) {
       const doc = docById.get(a.docId);
       if (!doc) continue;
-      if (filter.codeIds && !filter.codeIds.has(a.codeId)) continue;
+      // Code filter: in OR mode, annotation's own code (or a descendant of a
+      // selected parent) must be in scope. In AND mode, instead require that
+      // its doc be a focal doc (one that contains an annotation from every
+      // selected code group). All annotations in those docs are shown.
+      if (hasCodeFilter) {
+        if (mode === 'and') {
+          if (!focalDocs || !focalDocs.has(a.docId)) continue;
+        } else {
+          if (!expanded || !expanded.has(a.codeId)) continue;
+        }
+      }
       if (filter.folder !== undefined && filter.folder !== null) {
         const f = doc.folder ?? '';
         if (filter.folder === '' && f !== '') continue;
