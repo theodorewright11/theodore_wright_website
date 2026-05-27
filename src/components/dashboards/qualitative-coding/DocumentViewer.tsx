@@ -653,7 +653,6 @@ const SelectionPopover = forwardRef<HTMLDivElement, PopoverProps>(function Selec
     );
   }, [flat, query, codes]);
 
-  const preview = text.slice(pending.start, pending.end);
   const commit = (codeId: string) =>
     onPick(codeId, note.trim() || undefined, sendToNote);
 
@@ -671,40 +670,31 @@ const SelectionPopover = forwardRef<HTMLDivElement, PopoverProps>(function Selec
       }}
       onClick={(e) => e.stopPropagation()}
     >
-      <div className="px-3.5 py-2.5 border-b border-slate-100 bg-slate-50 flex items-start gap-2">
-        <div className="flex-1 min-w-0">
-          <div className="text-[10px] uppercase tracking-wide text-slate-500 font-semibold mb-0.5">
-            Code selection
-          </div>
-          <div className="text-[13px] text-slate-700 line-clamp-2 italic">
-            “{preview.slice(0, 80)}
-            {preview.length > 80 ? '…' : ''}”
-          </div>
-        </div>
+      <div className="flex items-center border-b border-slate-100">
+        <input
+          autoFocus
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder={codes.length === 0 ? 'No codes yet — add one in the sidebar' : 'Search codes…'}
+          disabled={codes.length === 0}
+          className="flex-1 px-3.5 py-2.5 text-[13px] focus:outline-none focus:bg-slate-50 disabled:bg-slate-50 disabled:text-slate-400"
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && filtered.length > 0) {
+              commit(filtered[0].code.id);
+            }
+            if (e.key === 'Escape') onCancel();
+          }}
+        />
         <button
           type="button"
           onClick={onCancel}
-          className="flex-shrink-0 w-6 h-6 rounded text-slate-400 hover:text-slate-900 hover:bg-white flex items-center justify-center text-[16px] transition-colors"
+          className="flex-shrink-0 w-8 h-8 mr-1 rounded text-slate-400 hover:text-slate-900 hover:bg-slate-100 flex items-center justify-center text-[16px] transition-colors"
           aria-label="close"
           title="close (Esc)"
         >
           ×
         </button>
       </div>
-      <input
-        autoFocus
-        value={query}
-        onChange={(e) => setQuery(e.target.value)}
-        placeholder={codes.length === 0 ? 'No codes yet — add one in the sidebar' : 'Search codes…'}
-        disabled={codes.length === 0}
-        className="w-full px-3.5 py-2.5 text-[13px] border-b border-slate-100 focus:outline-none focus:bg-slate-50 disabled:bg-slate-50 disabled:text-slate-400"
-        onKeyDown={(e) => {
-          if (e.key === 'Enter' && filtered.length > 0) {
-            commit(filtered[0].code.id);
-          }
-          if (e.key === 'Escape') onCancel();
-        }}
-      />
       <div className="max-h-[380px] overflow-y-auto">
         {filtered.length === 0 ? (
           <div className="px-3 py-4 text-[12px] text-slate-400 italic text-center">
