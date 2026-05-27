@@ -236,9 +236,31 @@ export default function TimeTrackerDashboard() {
 
   useEffect(() => {
     if (!token || !config) return;
-    function onFocus() { pull(); }
-    window.addEventListener('focus', onFocus);
-    return () => window.removeEventListener('focus', onFocus);
+    // Two background-tab quirks made this fire too late:
+    //   1) setTimeout is throttled in background tabs, so the silent-refresh
+    //      timer below can fire well after the token has actually expired.
+    //   2) When the user comes back, focus fires and pull() runs first with
+    //      the stale token → 401 → token cleared → "signed out" appears.
+    // So on focus: if the token is within 5 minutes of expiry, silent-refresh
+    // first; the token-change effect above will then pull with the new token.
+    // Otherwise just pull. Document `visibilitychange` covers tab-switches
+    // where window 'focus' doesn't always fire.
+    const wake = () => {
+      if (!token || !config) return;
+      if (token.expires_at - Date.now() < 5 * 60_000) {
+        gisSignIn({ clientId: config.clientId, prompt: 'none' })
+          .then(setToken)
+          .catch(() => pull());   // silent refresh failed — try anyway
+      } else {
+        pull();
+      }
+    };
+    window.addEventListener('focus', wake);
+    document.addEventListener('visibilitychange', wake);
+    return () => {
+      window.removeEventListener('focus', wake);
+      document.removeEventListener('visibilitychange', wake);
+    };
   }, [token, config, pull]);
 
   // Silent token refresh ~1 minute before expiry. GIS reissues a new access
