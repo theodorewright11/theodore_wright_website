@@ -135,6 +135,11 @@ export async function signIn(opts: SignInOptions): Promise<StoredToken> {
         saveToken(t);
         resolve(t);
       },
+      // Without error_callback, silent-refresh (prompt: 'none') failures like
+      // "popup closed" / "interaction required" can leave the promise hanging.
+      error_callback: (err: any) => {
+        reject(new Error(err?.message || err?.type || 'sign-in failed'));
+      },
     });
     tokenClient.requestAccessToken({ prompt: opts.prompt ?? 'consent' });
   });

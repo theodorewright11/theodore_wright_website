@@ -65,7 +65,20 @@ const DRIVE_FOLDER_ID = (import.meta as any).env?.PUBLIC_QUAL_CODING_DRIVE_FOLDE
 export default function QualitativeCodingDashboard() {
   const [state, setState] = useState<AppState>(() => loadState());
   const [hydrated, setHydrated] = useState(false);
-  const [activeDocId, setActiveDocId] = useState<string | null>(null);
+  const [openDocIds, setOpenDocIds] = useState<string[]>([]);
+  const activeDocId = openDocIds[0] ?? null;
+  const setActiveDocId = (id: string | null) => {
+    setOpenDocIds(id ? [id] : []);
+  };
+  const addCompareDoc = (id: string) => {
+    setOpenDocIds((prev) => {
+      if (prev.includes(id)) return prev;
+      return [...prev, id].slice(0, 4);
+    });
+  };
+  const closeDocPane = (id: string) => {
+    setOpenDocIds((prev) => prev.filter((x) => x !== id));
+  };
   const [focusedAnnotationId, setFocusedAnnotationId] = useState<string | null>(null);
   const [selectedCodeId, setSelectedCodeId] = useState<string | null>(null);
   const [schemaOpen, setSchemaOpen] = useState(false);
@@ -110,14 +123,17 @@ export default function QualitativeCodingDashboard() {
 
   useEffect(() => {
     if (!activeProject) {
-      setActiveDocId(null);
+      setOpenDocIds([]);
       setSelectedCodeId(null);
       return;
     }
-    if (activeDocId && !activeProject.documents.some((d) => d.id === activeDocId)) {
-      setActiveDocId(activeProject.documents[0]?.id ?? null);
+    const validIds = new Set(activeProject.documents.map((d) => d.id));
+    const filtered = openDocIds.filter((id) => validIds.has(id));
+    if (filtered.length !== openDocIds.length) {
+      setOpenDocIds(filtered);
     }
-  }, [activeProject, activeDocId]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeProject]);
 
   // ----- Mutation primitives -----
   const updateActiveProject = useCallback(
@@ -327,13 +343,50 @@ export default function QualitativeCodingDashboard() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [drive.token?.access_token]);
 
-  // Refresh on focus
+  // Wake handler: covers tab-switch (visibilitychange) and window focus.
+  // setTimeout is throttled in background tabs so the silent-refresh timer
+  // below may fire well after expiry; on wake, if the token is within 5
+  // minutes of expiry, silent-refresh first so the subsequent pull uses a
+  // fresh token (otherwise pull → 401 → token cleared → "signed out").
   useEffect(() => {
-    if (!drive.token) return;
-    const onFocus = () => pullAllFromDrive();
-    window.addEventListener('focus', onFocus);
-    return () => window.removeEventListener('focus', onFocus);
+    if (!drive.token || !GOOGLE_CLIENT_ID) return;
+    const wake = () => {
+      if (!drive.token) return;
+      if (drive.token.expires_at - Date.now() < 5 * 60_000) {
+        signIn({ clientId: GOOGLE_CLIENT_ID, prompt: 'none' })
+          .then((t) => setDrive({ token: t, syncStatus: 'idle', lastError: null }))
+          .catch(() => pullAllFromDrive()); // silent refresh failed — try pull anyway
+      } else {
+        pullAllFromDrive();
+      }
+    };
+    window.addEventListener('focus', wake);
+    document.addEventListener('visibilitychange', wake);
+    return () => {
+      window.removeEventListener('focus', wake);
+      document.removeEventListener('visibilitychange', wake);
+    };
   }, [drive.token, pullAllFromDrive]);
+
+  // Silent token refresh ~1 minute before expiry. GIS reissues a new access
+  // token with no popup as long as the user is still signed into Google in
+  // any browser tab and previously consented to this app. If silent refresh
+  // fails (signed out of Google, consent revoked), the current token is left
+  // alone and dies at natural expiry, prompting normal manual sign-in.
+  useEffect(() => {
+    if (!drive.token || !GOOGLE_CLIENT_ID) return;
+    const delay = drive.token.expires_at - 60_000 - Date.now();
+    if (delay <= 0) return;
+    const tid = window.setTimeout(async () => {
+      try {
+        const fresh = await signIn({ clientId: GOOGLE_CLIENT_ID, prompt: 'none' });
+        setDrive({ token: fresh, syncStatus: 'idle', lastError: null });
+      } catch {
+        /* let the token die naturally */
+      }
+    }, delay);
+    return () => clearTimeout(tid);
+  }, [drive.token]);
 
   const handleSignIn = async () => {
     if (!GOOGLE_CLIENT_ID) return;
@@ -434,7 +487,7 @@ export default function QualitativeCodingDashboard() {
       documents: p.documents.filter((d) => d.id !== id),
       annotations: p.annotations.filter((a) => a.docId !== id),
     }));
-    if (activeDocId === id) setActiveDocId(null);
+    closeDocPane(id);
     queueWrite(projectId);
   };
 
@@ -714,7 +767,9 @@ export default function QualitativeCodingDashboard() {
   }
 
   const counts = deepCodeCounts(activeProject);
-  const activeDoc = findDoc(activeProject, activeDocId);
+  const openDocs = openDocIds
+    .map((id) => findDoc(activeProject, id))
+    .filter((d): d is NonNullable<typeof d> => d !== null);
   const docAnnotations = selectedCodeId
     ? activeProject.annotations.filter((a) =>
         descendantIds(activeProject.codes, selectedCodeId).has(a.codeId),
@@ -772,7 +827,7 @@ export default function QualitativeCodingDashboard() {
         {view !== 'about' && view !== 'codebook' && (
           <Sidebar
             project={activeProject}
-            activeDocId={activeDocId}
+            openDocIds={openDocIds}
             collapsed={sidebarCollapsed}
             width={sidebarWidth}
             onResize={setSidebarWidth}
@@ -780,6 +835,11 @@ export default function QualitativeCodingDashboard() {
             onOpenCodebookView={() => setView('codebook')}
             onSelectDoc={(id) => {
               setActiveDocId(id);
+              setFocusedAnnotationId(null);
+              if (view !== 'documents') setView('documents');
+            }}
+            onCompareDoc={(id) => {
+              addCompareDoc(id);
               setFocusedAnnotationId(null);
               if (view !== 'documents') setView('documents');
             }}
@@ -806,33 +866,66 @@ export default function QualitativeCodingDashboard() {
             />
           ) : view === 'explore' ? (
             <ExploreView projects={exploreProjects} onJumpToAnnotation={jumpToAnnotation} />
-          ) : activeDoc ? (
-            <DocumentViewer
-              key={activeDoc.id + ':' + focusedAnnotationId}
-              doc={activeDoc}
-              project={activeProject}
-              codes={activeProject.codes}
-              annotations={docAnnotations}
-              metadataSchema={activeProject.metadataSchema}
-              selectedCodeId={selectedCodeId}
-              showCodeDefinitions={showCodeDefinitions}
-              codebookOpen={codebookPanelOpen}
-              notesWidth={notesWidth}
-              codebookWidth={codebookWidth}
-              onResizeNotes={setNotesWidth}
-              onResizeCodebook={setCodebookWidth}
-              onToggleDefinitions={toggleDefinitions}
-              onToggleCodebook={() => setCodebookPanelOpen((v) => !v)}
-              onUpdateDoc={(patch) => updateDocument(activeDoc.id, patch)}
-              onAddAnnotation={(start, end, codeId, note) =>
-                addAnnotation(activeDoc.id, start, end, codeId, note)
-              }
-              onDeleteAnnotation={deleteAnnotation}
-              onUpdateAnnotation={updateAnnotation}
-              onAddCode={addCode}
-              onUpdateCode={updateCode}
-              onDeleteCode={deleteCode}
-            />
+          ) : openDocs.length > 0 ? (
+            <div className="flex-1 min-w-0 min-h-0 flex">
+              <div className="flex-1 min-w-0 min-h-0 flex overflow-x-auto">
+                {openDocs.map((d, idx) => (
+                  <div
+                    key={d.id}
+                    className={`flex-1 min-w-[440px] min-h-0 flex ${
+                      idx < openDocs.length - 1 ? 'border-r border-slate-200' : ''
+                    }`}
+                  >
+                    <DocumentViewer
+                      key={d.id + (idx === 0 && focusedAnnotationId ? ':' + focusedAnnotationId : '')}
+                      doc={d}
+                      codes={activeProject.codes}
+                      annotations={docAnnotations}
+                      metadataSchema={activeProject.metadataSchema}
+                      selectedCodeId={selectedCodeId}
+                      showCodeDefinitions={showCodeDefinitions}
+                      codebookOpen={codebookPanelOpen}
+                      notesWidth={notesWidth}
+                      onResizeNotes={setNotesWidth}
+                      onToggleCodebook={() => setCodebookPanelOpen((v) => !v)}
+                      onUpdateDoc={(patch) => updateDocument(d.id, patch)}
+                      onAddAnnotation={(start, end, codeId, note) =>
+                        addAnnotation(d.id, start, end, codeId, note)
+                      }
+                      onDeleteAnnotation={deleteAnnotation}
+                      onUpdateAnnotation={updateAnnotation}
+                      onClose={() => closeDocPane(d.id)}
+                      showCloseButton={openDocs.length > 1}
+                    />
+                  </div>
+                ))}
+              </div>
+              {codebookPanelOpen && (
+                <aside
+                  className="flex-shrink-0 border-l border-slate-200 bg-white flex flex-col min-h-0 relative"
+                  style={{ width: `${codebookWidth}px` }}
+                >
+                  <ResizeHandle
+                    side="left"
+                    width={codebookWidth}
+                    min={280}
+                    max={640}
+                    onChange={setCodebookWidth}
+                  />
+                  <CodebookView
+                    project={activeProject}
+                    variant="panel"
+                    showDefinitions={showCodeDefinitions}
+                    onToggleDefinitions={toggleDefinitions}
+                    onAddCode={addCode}
+                    onUpdateCode={updateCode}
+                    onDeleteCode={deleteCode}
+                    onMoveCode={moveCode}
+                    onClose={() => setCodebookPanelOpen(false)}
+                  />
+                </aside>
+              )}
+            </div>
           ) : (
             <EmptyDocPane
               onAdd={() => addDocument()}
@@ -1234,13 +1327,14 @@ function RenameModal({
 
 function Sidebar({
   project,
-  activeDocId,
+  openDocIds,
   collapsed,
   width,
   onResize,
   onToggleCollapsed,
   onOpenCodebookView,
   onSelectDoc,
+  onCompareDoc,
   onAddDoc,
   onDeleteDoc,
   onMoveDocToFolder,
@@ -1248,13 +1342,14 @@ function Sidebar({
   onDeleteFolder,
 }: {
   project: Project;
-  activeDocId: string | null;
+  openDocIds: string[];
   collapsed: boolean;
   width: number;
   onResize: (n: number) => void;
   onToggleCollapsed: () => void;
   onOpenCodebookView: () => void;
   onSelectDoc: (id: string) => void;
+  onCompareDoc: (id: string) => void;
   onAddDoc: (folder?: string) => void;
   onDeleteDoc: (id: string) => void;
   onMoveDocToFolder: (docId: string, folder: string | undefined) => void;
@@ -1382,8 +1477,9 @@ function Sidebar({
                 ) : (
                   <DocList
                     docs={rootDocs}
-                    activeDocId={activeDocId}
+                    openDocIds={openDocIds}
                     onSelectDoc={onSelectDoc}
+                    onCompareDoc={onCompareDoc}
                     onDeleteDoc={onDeleteDoc}
                   />
                 )}
@@ -1392,10 +1488,11 @@ function Sidebar({
                 <FolderGroup
                   key={f.path}
                   node={f}
-                  activeDocId={activeDocId}
+                  openDocIds={openDocIds}
                   dragOverFolder={dragOverFolder}
                   setDragOverFolder={setDragOverFolder}
                   onSelectDoc={onSelectDoc}
+                  onCompareDoc={onCompareDoc}
                   onDeleteDoc={onDeleteDoc}
                   onAddDoc={onAddDoc}
                   onMoveDocToFolder={onMoveDocToFolder}
@@ -1436,72 +1533,104 @@ function Sidebar({
 
 function DocList({
   docs,
-  activeDocId,
+  openDocIds,
   onSelectDoc,
+  onCompareDoc,
   onDeleteDoc,
   depth = 0,
 }: {
   docs: Document[];
-  activeDocId: string | null;
+  openDocIds: string[];
   onSelectDoc: (id: string) => void;
+  onCompareDoc: (id: string) => void;
   onDeleteDoc: (id: string) => void;
   depth?: number;
 }) {
+  const openSet = new Set(openDocIds);
+  const primary = openDocIds[0];
   return (
     <ul className="space-y-px">
-      {docs.map((d) => (
-        <li
-          key={d.id}
-          draggable
-          onDragStart={(e) => {
-            e.dataTransfer.setData('application/x-qc-doc', d.id);
-            e.dataTransfer.effectAllowed = 'move';
-          }}
-          className={`group flex items-center gap-2 rounded px-2 py-2 cursor-pointer text-[13px] transition-colors ${
-            d.id === activeDocId
-              ? 'bg-blue-100 text-slate-900 font-medium'
-              : 'text-slate-700 hover:bg-white'
-          }`}
-          style={{ paddingLeft: `${8 + depth * 12}px` }}
-          onClick={() => onSelectDoc(d.id)}
-        >
-          <span className="text-slate-300 text-[10px] cursor-grab" title="drag to move">⋮⋮</span>
-          <span className="flex-1 truncate">{d.title || 'Untitled'}</span>
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              if (window.confirm(`Delete "${d.title}" and its annotations?`)) {
-                onDeleteDoc(d.id);
-              }
+      {docs.map((d) => {
+        const isOpen = openSet.has(d.id);
+        const isPrimary = primary === d.id;
+        return (
+          <li
+            key={d.id}
+            draggable
+            onDragStart={(e) => {
+              e.dataTransfer.setData('application/x-qc-doc', d.id);
+              e.dataTransfer.effectAllowed = 'move';
             }}
-            className="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-red-600 text-[14px] transition-opacity"
-            title="delete"
+            className={`group flex items-center gap-2 rounded-md px-2 py-2 cursor-pointer text-[14px] transition-colors ${
+              isPrimary
+                ? 'bg-blue-100 text-slate-900 font-medium'
+                : isOpen
+                  ? 'bg-blue-50 text-slate-800'
+                  : 'text-slate-700 hover:bg-white'
+            }`}
+            style={{ paddingLeft: `${10 + depth * 14}px` }}
+            onClick={() => onSelectDoc(d.id)}
           >
-            ×
-          </button>
-        </li>
-      ))}
+            <span className="text-slate-300 text-[11px] cursor-grab" title="drag to move">⋮⋮</span>
+            <span className="flex-1 truncate">{d.title || 'Untitled'}</span>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onCompareDoc(d.id);
+              }}
+              disabled={isOpen && openDocIds.length >= 4}
+              className={`opacity-0 group-hover:opacity-100 text-slate-400 hover:text-blue-600 text-[12px] font-bold w-6 h-6 flex items-center justify-center rounded hover:bg-blue-50 transition-opacity disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-slate-400 ${
+                isOpen ? 'opacity-100 text-blue-600' : ''
+              }`}
+              title={
+                isOpen
+                  ? openDocIds.length >= 4
+                    ? 'already open · max 4'
+                    : 'already open'
+                  : 'open alongside (compare)'
+              }
+            >
+              +
+            </button>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                if (window.confirm(`Delete "${d.title}" and its annotations?`)) {
+                  onDeleteDoc(d.id);
+                }
+              }}
+              className="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-red-600 text-[16px] w-6 h-6 flex items-center justify-center transition-opacity"
+              title="delete"
+            >
+              ×
+            </button>
+          </li>
+        );
+      })}
     </ul>
   );
 }
 
 function FolderGroup({
   node,
-  activeDocId,
+  openDocIds,
   dragOverFolder,
   setDragOverFolder,
   onSelectDoc,
+  onCompareDoc,
   onDeleteDoc,
   onAddDoc,
   onMoveDocToFolder,
   onDeleteFolder,
 }: {
   node: FolderNode;
-  activeDocId: string | null;
+  openDocIds: string[];
   dragOverFolder: string | null;
   setDragOverFolder: (path: string | null) => void;
   onSelectDoc: (id: string) => void;
+  onCompareDoc: (id: string) => void;
   onDeleteDoc: (id: string) => void;
   onAddDoc: (folder: string) => void;
   onMoveDocToFolder: (docId: string, folder: string | undefined) => void;
@@ -1580,8 +1709,9 @@ function FolderGroup({
           {node.docs.length > 0 && (
             <DocList
               docs={node.docs}
-              activeDocId={activeDocId}
+              openDocIds={openDocIds}
               onSelectDoc={onSelectDoc}
+              onCompareDoc={onCompareDoc}
               onDeleteDoc={onDeleteDoc}
               depth={node.depth + 1}
             />
@@ -1598,10 +1728,11 @@ function FolderGroup({
             <FolderGroup
               key={child.path}
               node={child}
-              activeDocId={activeDocId}
+              openDocIds={openDocIds}
               dragOverFolder={dragOverFolder}
               setDragOverFolder={setDragOverFolder}
               onSelectDoc={onSelectDoc}
+              onCompareDoc={onCompareDoc}
               onDeleteDoc={onDeleteDoc}
               onAddDoc={onAddDoc}
               onMoveDocToFolder={onMoveDocToFolder}

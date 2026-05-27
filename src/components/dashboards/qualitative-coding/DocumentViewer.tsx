@@ -7,15 +7,13 @@ import {
   resolveColor,
   segmentText,
 } from './compute';
-import CodebookView from './CodebookView';
 import { MarkdownEditor } from './Markdown';
 import { ResizeHandle } from './Resizable';
 import { emDash } from './storage';
-import type { Annotation, Code, Document, MetadataField, Project } from './types';
+import type { Annotation, Code, Document, MetadataField } from './types';
 
 type Props = {
   doc: Document;
-  project: Project;
   codes: Code[];
   annotations: Annotation[];
   metadataSchema: MetadataField[];
@@ -23,19 +21,14 @@ type Props = {
   showCodeDefinitions: boolean;
   codebookOpen: boolean;
   notesWidth: number;
-  codebookWidth: number;
   onResizeNotes: (n: number) => void;
-  onResizeCodebook: (n: number) => void;
-  onToggleDefinitions: () => void;
   onToggleCodebook: () => void;
   onUpdateDoc: (patch: Partial<Document>) => void;
   onAddAnnotation: (start: number, end: number, codeId: string, note?: string) => void;
   onDeleteAnnotation: (id: string) => void;
   onUpdateAnnotation: (id: string, patch: Partial<Annotation>) => void;
-  onAddCode: (parentId: string | null, name: string) => void;
-  onUpdateCode: (codeId: string, patch: Partial<Code>) => void;
-  onDeleteCode: (codeId: string) => void;
-  onMoveCode: (codeId: string, targetCodeId: string | null, position: 'before' | 'after' | 'inside') => void;
+  onClose?: () => void;
+  showCloseButton?: boolean;
 };
 
 type PendingSelection = {
@@ -46,7 +39,6 @@ type PendingSelection = {
 
 export default function DocumentViewer({
   doc,
-  project,
   codes,
   annotations,
   metadataSchema,
@@ -54,19 +46,14 @@ export default function DocumentViewer({
   showCodeDefinitions,
   codebookOpen,
   notesWidth,
-  codebookWidth,
   onResizeNotes,
-  onResizeCodebook,
-  onToggleDefinitions,
   onToggleCodebook,
   onUpdateDoc,
   onAddAnnotation,
   onDeleteAnnotation,
   onUpdateAnnotation,
-  onAddCode,
-  onUpdateCode,
-  onDeleteCode,
-  onMoveCode,
+  onClose,
+  showCloseButton,
 }: Props) {
   const [mode, setMode] = useState<'view' | 'edit'>(doc.text ? 'view' : 'edit');
   const [draftText, setDraftText] = useState(doc.text);
@@ -235,6 +222,16 @@ export default function DocumentViewer({
           {docAnnotations.length} annotation
           {docAnnotations.length === 1 ? '' : 's'}
         </div>
+        {showCloseButton && onClose && (
+          <button
+            type="button"
+            onClick={onClose}
+            title="close this document"
+            className="ml-2 w-7 h-7 rounded-md text-slate-400 hover:text-slate-900 hover:bg-slate-100 flex items-center justify-center text-[16px] transition-colors"
+          >
+            ×
+          </button>
+        )}
       </div>
 
       <div className="flex-1 overflow-auto bg-white">
@@ -334,31 +331,6 @@ export default function DocumentViewer({
         />
       )}
     </div>
-    {codebookOpen && (
-      <aside
-        className="flex-shrink-0 border-l border-slate-200 bg-white flex flex-col min-h-0 relative"
-        style={{ width: `${codebookWidth}px` }}
-      >
-        <ResizeHandle
-          side="left"
-          width={codebookWidth}
-          min={280}
-          max={640}
-          onChange={onResizeCodebook}
-        />
-        <CodebookView
-          project={project}
-          variant="panel"
-          showDefinitions={showCodeDefinitions}
-          onToggleDefinitions={onToggleDefinitions}
-          onAddCode={onAddCode}
-          onUpdateCode={onUpdateCode}
-          onDeleteCode={onDeleteCode}
-          onMoveCode={onMoveCode}
-          onClose={onToggleCodebook}
-        />
-      </aside>
-    )}
     {notesOpen && (
       <aside
         className="flex-shrink-0 border-l border-slate-200 bg-amber-50/40 flex flex-col min-h-0 relative"
