@@ -86,19 +86,20 @@ export default function ClockTab({
                 {fmtClock(breakMs(curBreak!, now))}
               </p>
               <p className="font-serif text-[13px] text-muted m-0 mt-2">
-                Worked time is paused. Net so far: {fmtHM(sessionNetMs(active, now))}.
+                Worked time is paused. Clocked-in so far: {fmtHM(sessionGrossMs(active, now))}
+                {' '}({fmtHM(sessionNetMs(active, now))} net).
               </p>
             </>
           ) : (
             <>
               <p className="font-mono text-[11px] uppercase tracking-[0.12em] text-muted m-0 mt-3 mb-1">
-                Worked time
+                Time worked
               </p>
               <p className="font-display text-[44px] leading-none text-ink m-0 tabular-nums">
-                {fmtClock(sessionNetMs(active, now))}
+                {fmtClock(sessionGrossMs(active, now))}
               </p>
               <p className="font-serif text-[13px] text-muted m-0 mt-2">
-                {fmtHM(sessionGrossMs(active, now))} elapsed
+                {fmtHM(sessionNetMs(active, now))} net
                 {sessionBreakMs(active, now) > 0
                   ? ` · ${fmtHM(sessionBreakMs(active, now))} on breaks`
                   : ''}

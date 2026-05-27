@@ -105,8 +105,8 @@ function startOfNextLocalDay(epoch: number): number {
   return new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1).getTime();
 }
 
-export function sessionDayContributions(s: Session, now: number): Map<string, number> {
-  const out = new Map<string, number>();
+export function sessionDayContributions(s: Session, now: number): Map<string, { net: number; gross: number }> {
+  const out = new Map<string, { net: number; gross: number }>();
   const inStart = ms(s.clock_in);
   const inEnd = s.clock_out ? ms(s.clock_out) : now;
   if (inEnd <= inStart) return out;
@@ -124,7 +124,7 @@ export function sessionDayContributions(s: Session, now: number): Map<string, nu
       breakOverlap += Math.max(0, Math.min(bEnd, dayEnd) - Math.max(bStart, dayStart));
     }
     const net = Math.max(0, grossOverlap - breakOverlap);
-    if (net > 0) out.set(dayKey(dayStart), net);
+    if (grossOverlap > 0) out.set(dayKey(dayStart), { net, gross: grossOverlap });
     cursor = dayEnd;
   }
   return out;
@@ -135,19 +135,24 @@ export function sessionDayContributions(s: Session, now: number): Map<string, nu
 export type CategoryStat = {
   category: string;
   netMs: number;
+  grossMs: number;
   sessionCount: number;
-  sharePct: number;       // % of totalNetMs
-  avgSessionMs: number;   // netMs / sessionCount
-  avgPerDayMs: number;    // netMs / calendar days in range
+  sharePct: number;       // % of totalGrossMs (primary display = gross)
+  avgSessionMs: number;   // grossMs / sessionCount  (gross primary)
+  avgSessionNetMs: number;
+  avgPerDayMs: number;    // grossMs / calendar days in range
+  avgPerDayNetMs: number;
 };
 
 // One day's worked time, plus a per-category breakdown for stacked charts.
 // `byCategory` lists only categories with > 0 time on this day, in the same
-// order as the top-level `byCategory` (largest-total first).
+// order as the top-level `byCategory` (largest-total first). Both net and
+// gross are tracked; UI defaults to gross with net as the secondary read.
 export type DayBucket = {
   dayKey: string;
   netMs: number;
-  byCategory: { category: string; netMs: number }[];
+  grossMs: number;
+  byCategory: { category: string; netMs: number; grossMs: number }[];
 };
 
 export type RangeStats = {
@@ -155,15 +160,19 @@ export type RangeStats = {
   totalGrossMs: number;
   totalBreakMs: number;
   breakSharePct: number | null;       // break / gross; null when no clocked time
-  byCategory: CategoryStat[];         // sorted by netMs, descending
+  byCategory: CategoryStat[];         // sorted by grossMs, descending
   sessionCount: number;
   days: number;                       // calendar days in range
   workingDays: number;                // distinct local days with >= 1 session
-  avgPerDayMs: number | null;         // totalNet / calendar days
-  avgPerWorkingDayMs: number | null;  // totalNet / working days
+  // Gross-primary, net-secondary (the rest of the UI defaults to gross).
+  avgPerDayMs: number | null;         // totalGross / calendar days
+  avgPerDayNetMs: number | null;      // totalNet / calendar days
+  avgPerWorkingDayMs: number | null;  // totalGross / working days
+  avgPerWorkingDayNetMs: number | null;
+  // Session length stats use gross now (clock-in → clock-out, breaks included).
   longestMs: number | null;
   shortestMs: number | null;
-  medianMs: number | null;            // median session net duration
+  medianMs: number | null;
   perDay: DayBucket[];                // one bucket per calendar day in range
 };
 
@@ -184,25 +193,30 @@ export function rangeStats(
     return outDay >= fromKey && inDay <= toKey;
   });
   let totalNetMs = 0, totalGrossMs = 0, totalBreakMs = 0;
-  const cat = new Map<string, { net: number; count: number }>();
+  const cat = new Map<string, { net: number; gross: number; count: number }>();
   const dayNet = new Map<string, number>();
-  const dayCatNet = new Map<string, number>();   // key = "dayKey|category"
-  const nets: number[] = [];
+  const dayGross = new Map<string, number>();
+  const dayCatNet = new Map<string, number>();    // key = "dayKey|category"
+  const dayCatGross = new Map<string, number>();
+  const grosses: number[] = [];                   // session-level gross durations
   for (const s of inRange) {
     const net = sessionNetMs(s, now);
+    const gross = sessionGrossMs(s, now);
     totalNetMs += net;
-    totalGrossMs += sessionGrossMs(s, now);
+    totalGrossMs += gross;
     totalBreakMs += sessionBreakMs(s, now);
-    nets.push(net);
-    const c = cat.get(s.category) ?? { net: 0, count: 0 };
-    c.net += net; c.count += 1;
+    grosses.push(gross);
+    const c = cat.get(s.category) ?? { net: 0, gross: 0, count: 0 };
+    c.net += net; c.gross += gross; c.count += 1;
     cat.set(s.category, c);
     // Per-day buckets split across local midnights; clipped to the visible range.
-    for (const [dk, msInDay] of sessionDayContributions(s, now)) {
+    for (const [dk, contrib] of sessionDayContributions(s, now)) {
       if (dk < fromKey || dk > toKey) continue;
-      dayNet.set(dk, (dayNet.get(dk) ?? 0) + msInDay);
+      dayNet.set(dk, (dayNet.get(dk) ?? 0) + contrib.net);
+      dayGross.set(dk, (dayGross.get(dk) ?? 0) + contrib.gross);
       const ck = `${dk}|${s.category}`;
-      dayCatNet.set(ck, (dayCatNet.get(ck) ?? 0) + msInDay);
+      dayCatNet.set(ck, (dayCatNet.get(ck) ?? 0) + contrib.net);
+      dayCatGross.set(ck, (dayCatGross.get(ck) ?? 0) + contrib.gross);
     }
   }
   const days = dayCount(fromKey, toKey);
@@ -210,27 +224,39 @@ export function rangeStats(
     .map(([category, v]) => ({
       category,
       netMs: v.net,
+      grossMs: v.gross,
       sessionCount: v.count,
-      sharePct: totalNetMs > 0 ? (v.net / totalNetMs) * 100 : 0,
-      avgSessionMs: v.count > 0 ? v.net / v.count : 0,
-      avgPerDayMs: days > 0 ? v.net / days : 0,
+      sharePct: totalGrossMs > 0 ? (v.gross / totalGrossMs) * 100 : 0,
+      avgSessionMs: v.count > 0 ? v.gross / v.count : 0,
+      avgSessionNetMs: v.count > 0 ? v.net / v.count : 0,
+      avgPerDayMs: days > 0 ? v.gross / days : 0,
+      avgPerDayNetMs: days > 0 ? v.net / days : 0,
     }))
-    .sort((a, b) => b.netMs - a.netMs);
+    .sort((a, b) => b.grossMs - a.grossMs);
 
-  const workingDays = dayNet.size;
-  const sorted = [...nets].sort((a, b) => a - b);
+  const workingDays = dayGross.size;
+  const sorted = [...grosses].sort((a, b) => a - b);
   const median = sorted.length === 0
     ? null
     : sorted.length % 2 === 1
       ? sorted[(sorted.length - 1) / 2]
       : (sorted[sorted.length / 2 - 1] + sorted[sorted.length / 2]) / 2;
   const perDay: DayBucket[] = daysBetween(fromKey, toKey).map(dk => {
-    const cats: { category: string; netMs: number }[] = [];
+    const cats: { category: string; netMs: number; grossMs: number }[] = [];
     for (const c of byCategory) {
-      const m = dayCatNet.get(`${dk}|${c.category}`) ?? 0;
-      if (m > 0) cats.push({ category: c.category, netMs: m });
+      const g = dayCatGross.get(`${dk}|${c.category}`) ?? 0;
+      if (g > 0) cats.push({
+        category: c.category,
+        netMs: dayCatNet.get(`${dk}|${c.category}`) ?? 0,
+        grossMs: g,
+      });
     }
-    return { dayKey: dk, netMs: dayNet.get(dk) ?? 0, byCategory: cats };
+    return {
+      dayKey: dk,
+      netMs: dayNet.get(dk) ?? 0,
+      grossMs: dayGross.get(dk) ?? 0,
+      byCategory: cats,
+    };
   });
 
   return {
@@ -242,8 +268,10 @@ export function rangeStats(
     sessionCount: inRange.length,
     days,
     workingDays,
-    avgPerDayMs: days > 0 ? totalNetMs / days : null,
-    avgPerWorkingDayMs: workingDays > 0 ? totalNetMs / workingDays : null,
+    avgPerDayMs: days > 0 ? totalGrossMs / days : null,
+    avgPerDayNetMs: days > 0 ? totalNetMs / days : null,
+    avgPerWorkingDayMs: workingDays > 0 ? totalGrossMs / workingDays : null,
+    avgPerWorkingDayNetMs: workingDays > 0 ? totalNetMs / workingDays : null,
     longestMs: sorted.length ? sorted[sorted.length - 1] : null,
     shortestMs: sorted.length ? sorted[0] : null,
     medianMs: median,

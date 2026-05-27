@@ -4,9 +4,9 @@ import { rangeStats, dayKey, todayKey, fmtHM } from './compute';
 
 const DAY = 86_400_000;
 
-// Always-visible strip under the tab bar: this week's net worked time,
-// filterable to one category. "This week" is Sunday-start, matching the
-// Log tab's "This week" preset.
+// Always-visible strip under the tab bar: this week's clocked-in time (gross,
+// breaks included) with the net read as a sub. Filterable to one category.
+// "This week" is Sunday-start, matching the Log tab's "This week" preset.
 export default function WeekStrip({ sessions, categories, now }: {
   sessions: Session[];
   categories: string[];
@@ -15,7 +15,10 @@ export default function WeekStrip({ sessions, categories, now }: {
   const [filter, setFilter] = useState('all');
   const weekStart = dayKey(now - new Date(now).getDay() * DAY);
   const stats = rangeStats(sessions, weekStart, todayKey(now), now);
-  const value = filter === 'all'
+  const gross = filter === 'all'
+    ? stats.totalGrossMs
+    : (stats.byCategory.find(c => c.category === filter)?.grossMs ?? 0);
+  const net = filter === 'all'
     ? stats.totalNetMs
     : (stats.byCategory.find(c => c.category === filter)?.netMs ?? 0);
 
@@ -27,7 +30,10 @@ export default function WeekStrip({ sessions, categories, now }: {
           This week
         </span>
         <span className="font-display text-[20px] leading-none text-ink tabular-nums">
-          {fmtHM(value)}
+          {fmtHM(gross)}
+        </span>
+        <span className="font-mono text-[11px] text-muted tabular-nums">
+          {fmtHM(net)} net
         </span>
         <span className="font-serif text-[12px] text-muted">
           {filter === 'all' ? 'all categories' : filter}

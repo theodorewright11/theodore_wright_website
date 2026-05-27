@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import type { Session } from './types';
 import type { DayBucket } from './compute';
 import {
-  rangeStats, sessionNetMs, sessionBreakMs, dayKey, todayKey,
+  rangeStats, sessionNetMs, sessionGrossMs, sessionBreakMs, dayKey, todayKey,
   fmtHM, fmtTimeOfDay, fmtDateShort, isoToLocalInput, localInputToIso,
   normalizeHHMM,
 } from './compute';
@@ -148,8 +148,10 @@ export default function LogTab({
       .sort((a, b) => Date.parse(b.clock_in) - Date.parse(a.clock_in));
   }, [filtered, from, to]);
 
-  const maxCat = stats.byCategory[0]?.netMs ?? 0;
-  const maxDay = Math.max(1, ...stats.perDay.map(d => d.netMs));
+  // Gross is the primary number across the chart, the per-category bars, and
+  // the table. Net is the secondary read shown in subs / tooltips.
+  const maxCat = stats.byCategory[0]?.grossMs ?? 0;
+  const maxDay = Math.max(1, ...stats.perDay.map(d => d.grossMs));
 
   // Stable color per category — shared by the chart segments, the chart
   // legend, and the by-category breakdown bars.
@@ -216,11 +218,13 @@ export default function LogTab({
       {/* Summary */}
       <div className="rounded-lg border border-rule bg-paper p-5 space-y-4">
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-          <Stat label="Total worked" value={fmtHM(stats.totalNetMs)}
-                sub={`${fmtHM(stats.totalGrossMs)} gross`} />
+          <Stat label="Time worked" value={fmtHM(stats.totalGrossMs)}
+                sub={`${fmtHM(stats.totalNetMs)} net (breaks excluded)`} />
           <Stat label="Avg / day"
                 value={stats.avgPerDayMs === null ? '—' : fmtHM(stats.avgPerDayMs)}
-                sub={stats.days > 0 ? `${fmtHM(stats.totalGrossMs / stats.days)} gross / day` : 'total ÷ days in range'} />
+                sub={stats.avgPerDayNetMs === null
+                  ? 'total ÷ days in range'
+                  : `${fmtHM(stats.avgPerDayNetMs)} net / day`} />
           <Stat label="Avg / working day"
                 value={stats.avgPerWorkingDayMs === null ? '—' : fmtHM(stats.avgPerWorkingDayMs)}
                 sub={`worked ${stats.workingDays} of ${stats.days} days`} />
@@ -280,10 +284,10 @@ export default function LogTab({
                   ))}
                 </div>
 
-                {/* Bars */}
+                {/* Bars (gross) */}
                 <div className="absolute inset-0 flex items-end gap-px">
                   {stats.perDay.map((d, i) => {
-                    const totalPct = (d.netMs / (chartScale.max * 3_600_000)) * 100;
+                    const totalPct = (d.grossMs / (chartScale.max * 3_600_000)) * 100;
                     return (
                       <div key={d.dayKey}
                            className="flex-1 min-w-[2px] h-full relative"
@@ -292,15 +296,15 @@ export default function LogTab({
                         <div className="absolute inset-x-0 inset-y-0 flex flex-col-reverse">
                           {d.byCategory.map(c => (
                             <div key={c.category}
-                                 style={{ height: `${(c.netMs / (chartScale.max * 3_600_000)) * 100}%`,
+                                 style={{ height: `${(c.grossMs / (chartScale.max * 3_600_000)) * 100}%`,
                                           background: catColor(c.category) }} />
                           ))}
                         </div>
-                        {showAllDates && d.netMs > 0 && (
+                        {showAllDates && d.grossMs > 0 && (
                           <span className="absolute inset-x-0 text-center font-mono text-[8px]
                                            text-ink-soft leading-none tabular-nums pointer-events-none"
                                 style={{ bottom: `${totalPct}%`, transform: 'translateY(-3px)' }}>
-                            {compactHours(d.netMs)}
+                            {compactHours(d.grossMs)}
                           </span>
                         )}
                       </div>
@@ -370,16 +374,17 @@ export default function LogTab({
                         title={c.category}>{c.category}</span>
                   <span className="h-2 rounded-sm"
                         style={{
-                          width: `${maxCat > 0 ? Math.max(2, (c.netMs / maxCat) * 100) : 2}%`,
+                          width: `${maxCat > 0 ? Math.max(2, (c.grossMs / maxCat) * 100) : 2}%`,
                           background: catColor(c.category),
                         }} />
                   <span className="font-mono text-[11px] text-ink ml-auto tabular-nums">
-                    {fmtHM(c.netMs)}
+                    {fmtHM(c.grossMs)}
                   </span>
                 </div>
                 <p className="font-mono text-[10px] text-muted m-0 mt-0.5 ml-[124px]">
                   {c.sessionCount} session{c.sessionCount === 1 ? '' : 's'} ·{' '}
                   {c.sharePct.toFixed(0)}% · avg/day {fmtHM(c.avgPerDayMs)}
+                  {' '}({fmtHM(c.avgPerDayNetMs)} net)
                 </p>
               </div>
             ))}
@@ -442,8 +447,9 @@ export default function LogTab({
                   <span className="font-serif text-[13px] text-muted w-20 shrink-0">
                     {breaksMs > 0 ? `${fmtHM(breaksMs)} brk` : ''}
                   </span>
-                  <span className="font-display text-[15px] text-ink tabular-nums w-16 shrink-0">
-                    {fmtHM(sessionNetMs(s, now))}
+                  <span className="font-display text-[15px] text-ink tabular-nums w-16 shrink-0"
+                        title={`${fmtHM(sessionNetMs(s, now))} net`}>
+                    {fmtHM(sessionGrossMs(s, now))}
                   </span>
                   {s.notes && (
                     <span className="font-serif text-[12px] text-muted italic truncate max-w-[200px]"
@@ -521,14 +527,20 @@ function ChartTooltip({ d, catColor }: { d: DayBucket; catColor: (c: string) => 
               <span className="inline-block w-2 h-2 rounded-sm" style={{ background: catColor(c.category) }} />
               {c.category}
             </span>
-            <span className="font-mono text-[10px] text-muted tabular-nums">{fmtHM(c.netMs)}</span>
+            <span className="font-mono text-[10px] text-muted tabular-nums">{fmtHM(c.grossMs)}</span>
           </div>
         ))
       )}
-      {d.netMs > 0 && (
-        <div className="flex items-center justify-between gap-4 border-t border-rule-soft mt-1 pt-1">
-          <span className="font-mono text-[10px] text-ink">total</span>
-          <span className="font-mono text-[10px] text-ink tabular-nums">{fmtHM(d.netMs)}</span>
+      {d.grossMs > 0 && (
+        <div className="border-t border-rule-soft mt-1 pt-1">
+          <div className="flex items-center justify-between gap-4">
+            <span className="font-mono text-[10px] text-ink">total</span>
+            <span className="font-mono text-[10px] text-ink tabular-nums">{fmtHM(d.grossMs)}</span>
+          </div>
+          <div className="flex items-center justify-between gap-4">
+            <span className="font-mono text-[10px] text-muted">net</span>
+            <span className="font-mono text-[10px] text-muted tabular-nums">{fmtHM(d.netMs)}</span>
+          </div>
         </div>
       )}
     </div>
