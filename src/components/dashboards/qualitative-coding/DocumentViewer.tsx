@@ -28,7 +28,9 @@ type Props = {
   onDeleteAnnotation: (id: string) => void;
   onUpdateAnnotation: (id: string, patch: Partial<Annotation>) => void;
   onClose?: () => void;
-  showCloseButton?: boolean;
+  showPaneControls?: boolean;
+  onPaneDragStart?: () => void;
+  onPaneDragEnd?: () => void;
 };
 
 type PendingSelection = {
@@ -53,7 +55,9 @@ export default function DocumentViewer({
   onDeleteAnnotation,
   onUpdateAnnotation,
   onClose,
-  showCloseButton,
+  showPaneControls,
+  onPaneDragStart,
+  onPaneDragEnd,
 }: Props) {
   const [mode, setMode] = useState<'view' | 'edit'>(doc.text ? 'view' : 'edit');
   const [draftText, setDraftText] = useState(doc.text);
@@ -84,8 +88,9 @@ export default function DocumentViewer({
     const onDocPointerDown = (e: PointerEvent) => {
       if (!pending) return;
       const target = e.target as Node;
+      // Click anywhere outside the popover closes it (including back inside
+      // the doc, where the user may want to start a new selection).
       if (popoverRef.current && popoverRef.current.contains(target)) return;
-      if (containerRef.current && containerRef.current.contains(target)) return;
       setPending(null);
     };
     document.addEventListener('pointerdown', onDocPointerDown);
@@ -184,6 +189,33 @@ export default function DocumentViewer({
   return (
     <div className="flex-1 min-w-0 flex">
     <div className="flex-1 min-w-0 flex flex-col">
+      {showPaneControls && (
+        <div className="flex items-center px-3 py-1.5 border-b border-slate-100 bg-slate-50">
+          <span
+            draggable
+            onDragStart={(e) => {
+              e.dataTransfer.effectAllowed = 'move';
+              onPaneDragStart?.();
+            }}
+            onDragEnd={() => onPaneDragEnd?.()}
+            className="cursor-grab text-slate-400 hover:text-slate-700 text-[12px] select-none flex items-center gap-1.5 px-2 py-0.5 rounded hover:bg-white transition-colors"
+            title="drag to reorder this pane"
+          >
+            <span>⋮⋮</span>
+            <span className="text-[10px] uppercase tracking-wider font-semibold">drag</span>
+          </span>
+          {onClose && (
+            <button
+              type="button"
+              onClick={onClose}
+              title="close this document"
+              className="ml-auto w-7 h-7 rounded-md text-slate-400 hover:text-slate-900 hover:bg-white flex items-center justify-center text-[18px] transition-colors"
+            >
+              ×
+            </button>
+          )}
+        </div>
+      )}
       <DocHeader doc={doc} metadataSchema={metadataSchema} onUpdateDoc={onUpdateDoc} />
 
       <div className="px-6 py-3 flex items-center gap-2 border-b border-slate-200 bg-white sticky top-0 z-10">
@@ -222,16 +254,6 @@ export default function DocumentViewer({
           {docAnnotations.length} annotation
           {docAnnotations.length === 1 ? '' : 's'}
         </div>
-        {showCloseButton && onClose && (
-          <button
-            type="button"
-            onClick={onClose}
-            title="close this document"
-            className="ml-2 w-7 h-7 rounded-md text-slate-400 hover:text-slate-900 hover:bg-slate-100 flex items-center justify-center text-[16px] transition-colors"
-          >
-            ×
-          </button>
-        )}
       </div>
 
       <div className="flex-1 overflow-auto bg-white">
@@ -542,14 +564,25 @@ const SelectionPopover = forwardRef<HTMLDivElement, PopoverProps>(function Selec
       }}
       onClick={(e) => e.stopPropagation()}
     >
-      <div className="px-3.5 py-2.5 border-b border-slate-100 bg-slate-50">
-        <div className="text-[10px] uppercase tracking-wide text-slate-500 font-semibold mb-0.5">
-          Code selection
+      <div className="px-3.5 py-2.5 border-b border-slate-100 bg-slate-50 flex items-start gap-2">
+        <div className="flex-1 min-w-0">
+          <div className="text-[10px] uppercase tracking-wide text-slate-500 font-semibold mb-0.5">
+            Code selection
+          </div>
+          <div className="text-[13px] text-slate-700 line-clamp-2 italic">
+            “{preview.slice(0, 80)}
+            {preview.length > 80 ? '…' : ''}”
+          </div>
         </div>
-        <div className="text-[13px] text-slate-700 line-clamp-2 italic">
-          “{preview.slice(0, 80)}
-          {preview.length > 80 ? '…' : ''}”
-        </div>
+        <button
+          type="button"
+          onClick={onCancel}
+          className="flex-shrink-0 w-6 h-6 rounded text-slate-400 hover:text-slate-900 hover:bg-white flex items-center justify-center text-[16px] transition-colors"
+          aria-label="close"
+          title="close (Esc)"
+        >
+          ×
+        </button>
       </div>
       <input
         autoFocus

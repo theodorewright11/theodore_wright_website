@@ -66,6 +66,8 @@ export default function QualitativeCodingDashboard() {
   const [state, setState] = useState<AppState>(() => loadState());
   const [hydrated, setHydrated] = useState(false);
   const [openDocIds, setOpenDocIds] = useState<string[]>([]);
+  const [dragPaneId, setDragPaneId] = useState<string | null>(null);
+  const [dragOverPaneId, setDragOverPaneId] = useState<string | null>(null);
   const activeDocId = openDocIds[0] ?? null;
   const setActiveDocId = (id: string | null) => {
     setOpenDocIds(id ? [id] : []);
@@ -73,11 +75,24 @@ export default function QualitativeCodingDashboard() {
   const addCompareDoc = (id: string) => {
     setOpenDocIds((prev) => {
       if (prev.includes(id)) return prev;
-      return [...prev, id].slice(0, 4);
+      // Soft cap: 20. Doc area scrolls horizontally past ~4.
+      return [...prev, id].slice(0, 20);
     });
   };
   const closeDocPane = (id: string) => {
     setOpenDocIds((prev) => prev.filter((x) => x !== id));
+  };
+  const movePaneTo = (fromId: string, toId: string) => {
+    if (fromId === toId) return;
+    setOpenDocIds((prev) => {
+      const fromIdx = prev.indexOf(fromId);
+      const toIdx = prev.indexOf(toId);
+      if (fromIdx < 0 || toIdx < 0) return prev;
+      const next = [...prev];
+      const [moved] = next.splice(fromIdx, 1);
+      next.splice(toIdx, 0, moved);
+      return next;
+    });
   };
   const [focusedAnnotationId, setFocusedAnnotationId] = useState<string | null>(null);
   const [selectedCodeId, setSelectedCodeId] = useState<string | null>(null);
@@ -869,36 +884,68 @@ export default function QualitativeCodingDashboard() {
           ) : openDocs.length > 0 ? (
             <div className="flex-1 min-w-0 min-h-0 flex">
               <div className="flex-1 min-w-0 min-h-0 flex overflow-x-auto">
-                {openDocs.map((d, idx) => (
-                  <div
-                    key={d.id}
-                    className={`flex-1 min-w-[440px] min-h-0 flex ${
-                      idx < openDocs.length - 1 ? 'border-r border-slate-200' : ''
-                    }`}
-                  >
-                    <DocumentViewer
-                      key={d.id + (idx === 0 && focusedAnnotationId ? ':' + focusedAnnotationId : '')}
-                      doc={d}
-                      codes={activeProject.codes}
-                      annotations={docAnnotations}
-                      metadataSchema={activeProject.metadataSchema}
-                      selectedCodeId={selectedCodeId}
-                      showCodeDefinitions={showCodeDefinitions}
-                      codebookOpen={codebookPanelOpen}
-                      notesWidth={notesWidth}
-                      onResizeNotes={setNotesWidth}
-                      onToggleCodebook={() => setCodebookPanelOpen((v) => !v)}
-                      onUpdateDoc={(patch) => updateDocument(d.id, patch)}
-                      onAddAnnotation={(start, end, codeId, note) =>
-                        addAnnotation(d.id, start, end, codeId, note)
-                      }
-                      onDeleteAnnotation={deleteAnnotation}
-                      onUpdateAnnotation={updateAnnotation}
-                      onClose={() => closeDocPane(d.id)}
-                      showCloseButton={openDocs.length > 1}
-                    />
-                  </div>
-                ))}
+                {openDocs.map((d, idx) => {
+                  const isDragOver =
+                    dragPaneId !== null && dragPaneId !== d.id && dragOverPaneId === d.id;
+                  const isBeingDragged = dragPaneId === d.id;
+                  return (
+                    <div
+                      key={d.id}
+                      onDragOver={(e) => {
+                        if (dragPaneId && dragPaneId !== d.id) {
+                          e.preventDefault();
+                          e.dataTransfer.dropEffect = 'move';
+                          setDragOverPaneId(d.id);
+                        }
+                      }}
+                      onDragLeave={(e) => {
+                        const rt = e.relatedTarget as Node | null;
+                        if (rt && (e.currentTarget as HTMLElement).contains(rt)) return;
+                        if (dragOverPaneId === d.id) setDragOverPaneId(null);
+                      }}
+                      onDrop={(e) => {
+                        e.preventDefault();
+                        if (dragPaneId && dragPaneId !== d.id) {
+                          movePaneTo(dragPaneId, d.id);
+                        }
+                        setDragPaneId(null);
+                        setDragOverPaneId(null);
+                      }}
+                      className={`flex-1 min-w-[440px] min-h-0 flex transition-colors ${
+                        idx < openDocs.length - 1 ? 'border-r border-slate-200' : ''
+                      } ${isBeingDragged ? 'opacity-40' : ''} ${
+                        isDragOver ? 'bg-blue-50 ring-2 ring-blue-400 ring-inset' : ''
+                      }`}
+                    >
+                      <DocumentViewer
+                        key={d.id + (idx === 0 && focusedAnnotationId ? ':' + focusedAnnotationId : '')}
+                        doc={d}
+                        codes={activeProject.codes}
+                        annotations={docAnnotations}
+                        metadataSchema={activeProject.metadataSchema}
+                        selectedCodeId={selectedCodeId}
+                        showCodeDefinitions={showCodeDefinitions}
+                        codebookOpen={codebookPanelOpen}
+                        notesWidth={notesWidth}
+                        onResizeNotes={setNotesWidth}
+                        onToggleCodebook={() => setCodebookPanelOpen((v) => !v)}
+                        onUpdateDoc={(patch) => updateDocument(d.id, patch)}
+                        onAddAnnotation={(start, end, codeId, note) =>
+                          addAnnotation(d.id, start, end, codeId, note)
+                        }
+                        onDeleteAnnotation={deleteAnnotation}
+                        onUpdateAnnotation={updateAnnotation}
+                        onClose={() => closeDocPane(d.id)}
+                        showPaneControls={openDocs.length > 1}
+                        onPaneDragStart={() => setDragPaneId(d.id)}
+                        onPaneDragEnd={() => {
+                          setDragPaneId(null);
+                          setDragOverPaneId(null);
+                        }}
+                      />
+                    </div>
+                  );
+                })}
               </div>
               {codebookPanelOpen && (
                 <aside
