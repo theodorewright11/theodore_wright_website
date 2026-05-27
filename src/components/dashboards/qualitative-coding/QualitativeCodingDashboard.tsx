@@ -526,6 +526,66 @@ export default function QualitativeCodingDashboard() {
     queueWrite(projectId);
   };
 
+  // Move a code in the tree: relative to targetCodeId (before/after as sibling,
+  // or inside as last child). Prevents cycles. Renumbers the new sibling group.
+  const moveCode = (
+    codeId: string,
+    targetCodeId: string | null,
+    position: 'before' | 'after' | 'inside',
+  ) => {
+    if (!activeProject) return;
+    const projectId = activeProject.id;
+    if (codeId === targetCodeId) return;
+    // Cycle check: refuse to drop a code into its own descendant.
+    if (targetCodeId && descendantIds(activeProject.codes, codeId).has(targetCodeId)) {
+      return;
+    }
+    updateActiveProject((p) => {
+      const target = targetCodeId ? p.codes.find((c) => c.id === targetCodeId) : null;
+      // Determine the new parent id.
+      let newParentId: string | null;
+      if (position === 'inside') {
+        newParentId = targetCodeId; // null means root (drop on root zone)
+      } else if (target) {
+        newParentId = target.parentId;
+      } else {
+        newParentId = null;
+      }
+      // Update parentId on the moved code
+      const moved = p.codes.find((c) => c.id === codeId);
+      if (!moved) return p;
+      const updatedCode: Code = { ...moved, parentId: newParentId };
+      // Sibling group of the new parent (excluding the moved code)
+      const siblings = p.codes
+        .filter((c) => c.parentId === newParentId && c.id !== codeId)
+        .sort((a, b) => {
+          const ao = a.order ?? Number.MAX_SAFE_INTEGER;
+          const bo = b.order ?? Number.MAX_SAFE_INTEGER;
+          if (ao !== bo) return ao - bo;
+          return a.created_at.localeCompare(b.created_at);
+        });
+      let insertIdx: number;
+      if (position === 'inside' || !target) {
+        insertIdx = siblings.length; // last child
+      } else {
+        const ti = siblings.findIndex((c) => c.id === targetCodeId);
+        insertIdx = ti < 0 ? siblings.length : position === 'before' ? ti : ti + 1;
+      }
+      const reordered = [...siblings];
+      reordered.splice(insertIdx, 0, updatedCode);
+      // Reassign sequential orders to the new sibling group
+      const reorderedById = new Map(reordered.map((c, i) => [c.id, { ...c, order: i }]));
+      // Apply: every code stays if it's not in the affected sibling group;
+      // otherwise pull the reordered version.
+      const nextCodes = p.codes.map((c) => {
+        if (c.id === codeId) return reorderedById.get(c.id) ?? updatedCode;
+        return reorderedById.get(c.id) ?? c;
+      });
+      return { ...p, codes: nextCodes };
+    });
+    queueWrite(projectId);
+  };
+
   // ----- Annotation CRUD -----
   const addAnnotation = (
     docId: string,
@@ -728,14 +788,6 @@ export default function QualitativeCodingDashboard() {
             onMoveDocToFolder={moveDocumentToFolder}
             onAddFolder={addFolder}
             onDeleteFolder={deleteFolder}
-            deepCounts={counts}
-            showCodeDefinitions={showCodeDefinitions}
-            onToggleDefinitions={toggleDefinitions}
-            selectedCodeId={selectedCodeId}
-            onSelectCode={setSelectedCodeId}
-            onAddCode={addCode}
-            onUpdateCode={updateCode}
-            onDeleteCode={deleteCode}
           />
         )}
         <main className="flex-1 min-w-0 min-h-0 flex flex-col bg-white">
@@ -745,9 +797,12 @@ export default function QualitativeCodingDashboard() {
             <CodebookView
               project={activeProject}
               variant="page"
+              showDefinitions={showCodeDefinitions}
+              onToggleDefinitions={toggleDefinitions}
               onAddCode={addCode}
               onUpdateCode={updateCode}
               onDeleteCode={deleteCode}
+              onMoveCode={moveCode}
             />
           ) : view === 'explore' ? (
             <ExploreView projects={exploreProjects} onJumpToAnnotation={jumpToAnnotation} />
@@ -1191,14 +1246,6 @@ function Sidebar({
   onMoveDocToFolder,
   onAddFolder,
   onDeleteFolder,
-  deepCounts,
-  showCodeDefinitions,
-  onToggleDefinitions,
-  selectedCodeId,
-  onSelectCode,
-  onAddCode,
-  onUpdateCode,
-  onDeleteCode,
 }: {
   project: Project;
   activeDocId: string | null;
@@ -1213,14 +1260,6 @@ function Sidebar({
   onMoveDocToFolder: (docId: string, folder: string | undefined) => void;
   onAddFolder: (path: string) => void;
   onDeleteFolder: (path: string) => void;
-  deepCounts: Map<string, number>;
-  showCodeDefinitions: boolean;
-  onToggleDefinitions: () => void;
-  selectedCodeId: string | null;
-  onSelectCode: (id: string | null) => void;
-  onAddCode: (parentId: string | null, name: string) => void;
-  onUpdateCode: (id: string, patch: Partial<Code>) => void;
-  onDeleteCode: (id: string) => void;
 }) {
   const { rootDocs, folders } = useMemo(
     () => buildFolderTree(project.documents, project.folders ?? []),
@@ -1367,27 +1406,20 @@ function Sidebar({
           )}
         </div>
 
-        <div className="p-5">
-          <CodeTree
-            codes={project.codes}
-            deepCounts={deepCounts}
-            selectedCodeId={selectedCodeId}
-            showDefinitions={showCodeDefinitions}
-            onToggleDefinitions={onToggleDefinitions}
-            onSelectCode={onSelectCode}
-            onAddCode={onAddCode}
-            onUpdateCode={onUpdateCode}
-            onDeleteCode={onDeleteCode}
-          />
-          {selectedCodeId && (
-            <button
-              type="button"
-              onClick={() => onSelectCode(null)}
-              className="mt-3 w-full text-[12px] text-slate-500 hover:text-slate-800 py-2 border border-dashed border-slate-300 rounded-md hover:bg-white transition-colors"
-            >
-              clear code filter
-            </button>
-          )}
+        <div className="p-5 pt-3">
+          <button
+            type="button"
+            onClick={onOpenCodebookView}
+            className="w-full px-3 py-2.5 text-left text-[13px] font-medium text-slate-600 hover:text-slate-900 border border-slate-200 hover:border-slate-300 bg-white hover:bg-slate-50 rounded-md transition-colors flex items-center justify-between"
+            title="open the codebook to manage codes"
+          >
+            <span>Codes &amp; definitions</span>
+            <span className="text-slate-400 text-[12px]">→</span>
+          </button>
+          <div className="mt-1.5 text-[11px] text-slate-400 leading-snug px-1">
+            {project.codes.length} code{project.codes.length === 1 ? '' : 's'} ·
+            manage in Codebook
+          </div>
         </div>
       </div>
       <div className="border-t border-slate-200 px-5 py-3 bg-white">

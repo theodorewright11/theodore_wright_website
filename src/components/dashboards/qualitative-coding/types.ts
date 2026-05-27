@@ -28,6 +28,7 @@ export type Code = {
   parentId: string | null;
   color: string | null;
   description?: string;
+  order?: number;
   created_at: string;
 };
 

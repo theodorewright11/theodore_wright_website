@@ -32,6 +32,9 @@ export default function ExploreView({ projects, onJumpToAnnotation }: Props) {
   const [metaFilters, setMetaFilters] = useState<Record<string, FieldFilter>>({});
   const [folderFilter, setFolderFilter] = useState<string>('');
   const [sort, setSort] = useState<SortKey>('created-desc');
+  const [docCharsFilter, setDocCharsFilter] = useState<FieldFilter>({});
+  const [docWordsFilter, setDocWordsFilter] = useState<FieldFilter>({});
+  const [docAnnotsFilter, setDocAnnotsFilter] = useState<FieldFilter>({});
 
   const expandedCodeIds = useMemo(() => {
     if (selectedCodeIds.size === 0) return null;
@@ -74,10 +77,13 @@ export default function ExploreView({ projects, onJumpToAnnotation }: Props) {
         textQuery,
         metadataFilters: metaFilters,
         folder: folderFilter ? folderFilter : undefined,
+        docCharsFilter,
+        docWordsFilter,
+        docAnnotsFilter,
       },
       sort,
     );
-  }, [projects, expandedCodeIds, textQuery, metaFilters, folderFilter, sort]);
+  }, [projects, expandedCodeIds, textQuery, metaFilters, folderFilter, sort, docCharsFilter, docWordsFilter, docAnnotsFilter]);
 
   const stats = useMemo(() => {
     const uniqueCodes = new Set(rows.map((r) => r.annotation.codeId));
@@ -112,13 +118,19 @@ export default function ExploreView({ projects, onJumpToAnnotation }: Props) {
     setSelectedCodeIds(new Set());
     setMetaFilters({});
     setFolderFilter('');
+    setDocCharsFilter({});
+    setDocWordsFilter({});
+    setDocAnnotsFilter({});
   };
 
   const hasFilters =
     textQuery.length > 0 ||
     selectedCodeIds.size > 0 ||
     folderFilter.length > 0 ||
-    Object.values(metaFilters).some(hasAnyFilter);
+    Object.values(metaFilters).some(hasAnyFilter) ||
+    hasAnyFilter(docCharsFilter) ||
+    hasAnyFilter(docWordsFilter) ||
+    hasAnyFilter(docAnnotsFilter);
 
   const showProjectChips = projects.length > 1;
 
@@ -259,6 +271,26 @@ export default function ExploreView({ projects, onJumpToAnnotation }: Props) {
             </div>
           </div>
 
+          <div className="mt-3 flex items-center gap-3 flex-wrap">
+            <span className="text-[10px] uppercase tracking-wider font-semibold text-slate-500">
+              Doc stats
+            </span>
+            <MetadataFilterInput
+              field={{ key: '__chars', label: 'Chars', type: 'number' }}
+              value={docCharsFilter}
+              onChange={setDocCharsFilter}
+            />
+            <MetadataFilterInput
+              field={{ key: '__words', label: 'Words', type: 'number' }}
+              value={docWordsFilter}
+              onChange={setDocWordsFilter}
+            />
+            <MetadataFilterInput
+              field={{ key: '__annots', label: 'Annotations', type: 'number' }}
+              value={docAnnotsFilter}
+              onChange={setDocAnnotsFilter}
+            />
+          </div>
           {metadataFields.length > 0 && (
             <div className="mt-3 flex items-center gap-3 flex-wrap">
               <span className="text-[10px] uppercase tracking-wider font-semibold text-slate-500">

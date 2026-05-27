@@ -15,7 +15,12 @@ export function buildCodeTree(codes: Code[]): CodeNode[] {
     byParent.set(c.parentId, list);
   }
   for (const list of byParent.values()) {
-    list.sort((a, b) => a.created_at.localeCompare(b.created_at));
+    list.sort((a, b) => {
+      const ao = a.order ?? Number.MAX_SAFE_INTEGER;
+      const bo = b.order ?? Number.MAX_SAFE_INTEGER;
+      if (ao !== bo) return ao - bo;
+      return a.created_at.localeCompare(b.created_at);
+    });
   }
   const build = (parentId: string | null, depth: number): CodeNode[] =>
     (byParent.get(parentId) ?? []).map((code) => ({
@@ -156,6 +161,18 @@ export function findDoc(project: Project, docId: string | null): Document | null
   return project.documents.find((d) => d.id === docId) ?? null;
 }
 
+export function countWords(text: string): number {
+  if (!text) return 0;
+  const m = text.trim().match(/\S+/g);
+  return m ? m.length : 0;
+}
+
+export function docAnnotationCount(project: Project, docId: string): number {
+  let n = 0;
+  for (const a of project.annotations) if (a.docId === docId) n++;
+  return n;
+}
+
 export type FolderNode = {
   path: string;
   name: string;
@@ -251,6 +268,9 @@ export type ExploreFilter = {
   textQuery: string;
   metadataFilters: Record<string, FieldFilter>;
   folder?: string | null;
+  docCharsFilter?: FieldFilter;
+  docWordsFilter?: FieldFilter;
+  docAnnotsFilter?: FieldFilter;
 };
 
 export type SortKey =
@@ -315,6 +335,10 @@ export function exploreRows(
   const q = filter.textQuery.trim().toLowerCase();
   for (const p of projects) {
     const docById = new Map(p.documents.map((d) => [d.id, d]));
+    const annotCountByDoc = new Map<string, number>();
+    for (const a of p.annotations) {
+      annotCountByDoc.set(a.docId, (annotCountByDoc.get(a.docId) ?? 0) + 1);
+    }
     for (const a of p.annotations) {
       const doc = docById.get(a.docId);
       if (!doc) continue;
@@ -323,6 +347,18 @@ export function exploreRows(
         const f = doc.folder ?? '';
         if (filter.folder === '' && f !== '') continue;
         if (filter.folder !== '' && !f.startsWith(filter.folder)) continue;
+      }
+      if (filter.docCharsFilter && !matchesFieldFilter(doc.text.length, filter.docCharsFilter)) {
+        continue;
+      }
+      if (filter.docWordsFilter && !matchesFieldFilter(countWords(doc.text), filter.docWordsFilter)) {
+        continue;
+      }
+      if (
+        filter.docAnnotsFilter &&
+        !matchesFieldFilter(annotCountByDoc.get(doc.id) ?? 0, filter.docAnnotsFilter)
+      ) {
+        continue;
       }
       let metaOk = true;
       for (const [k, ff] of Object.entries(filter.metadataFilters)) {

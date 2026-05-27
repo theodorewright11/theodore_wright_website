@@ -120,10 +120,8 @@ export function codebookMarkdown(project: Project): string {
     }
     if (node.code.description && node.code.description.trim()) {
       lines.push(node.code.description.trim());
-    } else {
-      lines.push('_No definition yet._');
+      lines.push('');
     }
-    lines.push('');
   }
 
   return lines.join('\n');

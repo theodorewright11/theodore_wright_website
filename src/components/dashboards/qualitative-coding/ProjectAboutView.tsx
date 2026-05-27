@@ -21,21 +21,60 @@ export default function ProjectAboutView({ project, onUpdate }: Props) {
     setAboutMode(project.about ? 'view' : 'edit');
   }, [project.id]);
 
+  const isDirty =
+    name.trim() !== project.name ||
+    description !== (project.description ?? '') ||
+    aboutDraft !== (project.about ?? '');
+
+  const save = () => {
+    const patch: Partial<Project> = {};
+    const v = name.trim();
+    if (v && v !== project.name) patch.name = v;
+    if (description !== (project.description ?? '')) {
+      patch.description = description.trim() || undefined;
+    }
+    if (aboutDraft !== (project.about ?? '')) {
+      patch.about = aboutDraft || undefined;
+    }
+    if (Object.keys(patch).length > 0) onUpdate(patch);
+  };
+
+  const discard = () => {
+    setName(project.name);
+    setDescription(project.description ?? '');
+    setAboutDraft(project.about ?? '');
+  };
+
   return (
     <div className="flex-1 min-w-0 overflow-y-auto bg-white">
       <div className="max-w-[820px] mx-auto px-8 py-10">
-        <div className="text-[11px] uppercase tracking-[0.16em] font-semibold text-blue-600 mb-2">
-          Project info
+        <div className="flex items-start justify-between mb-2 gap-3">
+          <div className="text-[11px] uppercase tracking-[0.16em] font-semibold text-blue-600">
+            Project info
+          </div>
+          {isDirty && (
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={discard}
+                className="px-3 py-1.5 text-[12px] font-medium text-slate-500 hover:text-slate-800 rounded-md hover:bg-slate-100 transition-colors"
+              >
+                Discard
+              </button>
+              <button
+                type="button"
+                onClick={save}
+                className="px-4 py-1.5 text-[12px] font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-md transition-colors"
+              >
+                Save changes
+              </button>
+            </div>
+          )}
         </div>
 
         <input
           value={name}
           onChange={(e) => setName(emDash(e.target.value))}
-          onBlur={() => {
-            const v = name.trim();
-            if (v && v !== project.name) onUpdate({ name: v });
-            else setName(project.name);
-          }}
           onKeyDown={(e) => {
             if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
           }}
@@ -51,12 +90,6 @@ export default function ProjectAboutView({ project, onUpdate }: Props) {
           <input
             value={description}
             onChange={(e) => setDescription(emDash(e.target.value))}
-            onBlur={() => {
-              const v = description.trim();
-              if (v !== (project.description ?? '')) {
-                onUpdate({ description: v || undefined });
-              }
-            }}
             placeholder="One-line summary of what this project is about"
             className="w-full px-3 py-2 text-[15px] text-slate-700 border border-slate-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500"
           />
@@ -95,10 +128,7 @@ export default function ProjectAboutView({ project, onUpdate }: Props) {
           {aboutMode === 'edit' ? (
             <MarkdownEditor
               value={aboutDraft}
-              onChange={(v) => {
-                setAboutDraft(v);
-                onUpdate({ about: v || undefined });
-              }}
+              onChange={setAboutDraft}
               placeholder="Background, goals, code-tree decisions, research questions, what to look for. Markdown supported (B, I, headings, lists)."
               minHeight={360}
             />
@@ -108,6 +138,28 @@ export default function ProjectAboutView({ project, onUpdate }: Props) {
             </div>
           )}
         </div>
+
+        {isDirty && (
+          <div className="mb-8 flex items-center gap-3">
+            <button
+              type="button"
+              onClick={save}
+              className="px-5 py-2 text-[13px] font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-md transition-colors"
+            >
+              Save changes
+            </button>
+            <button
+              type="button"
+              onClick={discard}
+              className="px-3 py-2 text-[13px] font-medium text-slate-500 hover:text-slate-800 rounded-md hover:bg-slate-100 transition-colors"
+            >
+              Discard
+            </button>
+            <span className="text-[12px] text-slate-400 italic">
+              Unsaved changes
+            </span>
+          </div>
+        )}
 
         <div className="mt-12 pt-6 border-t border-slate-200">
           <div className="text-[10px] uppercase font-semibold tracking-[0.12em] text-slate-500 mb-3">
@@ -122,7 +174,7 @@ export default function ProjectAboutView({ project, onUpdate }: Props) {
           <div className="mt-4 text-[11px] text-slate-400 font-mono">
             Created {new Date(project.created_at).toLocaleDateString()} · Updated{' '}
             {new Date(project.updated_at).toLocaleDateString()}
-            {project.drive?.fileId && <> · synced to Drive</>}
+            {project.drive?.folderId && <> · synced to Drive</>}
           </div>
         </div>
       </div>

@@ -35,6 +35,7 @@ type Props = {
   onAddCode: (parentId: string | null, name: string) => void;
   onUpdateCode: (codeId: string, patch: Partial<Code>) => void;
   onDeleteCode: (codeId: string) => void;
+  onMoveCode: (codeId: string, targetCodeId: string | null, position: 'before' | 'after' | 'inside') => void;
 };
 
 type PendingSelection = {
@@ -65,6 +66,7 @@ export default function DocumentViewer({
   onAddCode,
   onUpdateCode,
   onDeleteCode,
+  onMoveCode,
 }: Props) {
   const [mode, setMode] = useState<'view' | 'edit'>(doc.text ? 'view' : 'edit');
   const [draftText, setDraftText] = useState(doc.text);
@@ -228,20 +230,9 @@ export default function DocumentViewer({
         >
           Notes{doc.notes && doc.notes.length > 0 ? ' •' : ''}
         </button>
-        <button
-          type="button"
-          onClick={onToggleDefinitions}
-          title={showCodeDefinitions ? 'hide code definitions in popover/list' : 'show code definitions in popover/list'}
-          className={`px-2.5 py-1.5 text-[12px] font-medium rounded-md transition-colors ${
-            showCodeDefinitions
-              ? 'bg-slate-200 text-slate-800'
-              : 'text-slate-500 hover:text-slate-800 hover:bg-slate-100'
-          }`}
-        >
-          {showCodeDefinitions ? 'defs on' : 'defs off'}
-        </button>
         <div className="ml-auto text-[12px] text-slate-400 font-mono tabular-nums">
-          {doc.text.length.toLocaleString()} chars · {docAnnotations.length} annotation
+          {doc.text.length.toLocaleString()} chars · {countWords(doc.text).toLocaleString()} words ·{' '}
+          {docAnnotations.length} annotation
           {docAnnotations.length === 1 ? '' : 's'}
         </div>
       </div>
@@ -358,9 +349,12 @@ export default function DocumentViewer({
         <CodebookView
           project={project}
           variant="panel"
+          showDefinitions={showCodeDefinitions}
+          onToggleDefinitions={onToggleDefinitions}
           onAddCode={onAddCode}
           onUpdateCode={onUpdateCode}
           onDeleteCode={onDeleteCode}
+          onMoveCode={onMoveCode}
           onClose={onToggleCodebook}
         />
       </aside>
@@ -789,6 +783,12 @@ function rangeOffset(container: HTMLElement, node: Node, offset: number): number
     return -1;
   }
   return range.toString().length;
+}
+
+function countWords(text: string): number {
+  if (!text) return 0;
+  const m = text.trim().match(/\S+/g);
+  return m ? m.length : 0;
 }
 
 function hexAlpha(hex: string, alpha: number): string {

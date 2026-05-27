@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 export type SyncStatus = 'idle' | 'syncing' | 'error' | 'offline';
 
@@ -24,10 +24,23 @@ export default function AuthBar({
   onPullAll,
 }: Props) {
   const [open, setOpen] = useState(false);
+  const rootRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const onDown = (e: MouseEvent) => {
+      const t = e.target as Node;
+      if (rootRef.current && !rootRef.current.contains(t)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', onDown);
+    return () => document.removeEventListener('mousedown', onDown);
+  }, [open]);
 
   if (!configured) {
     return (
-      <div className="relative">
+      <div className="relative" ref={rootRef}>
         <button
           type="button"
           onClick={() => setOpen((v) => !v)}
@@ -68,7 +81,7 @@ export default function AuthBar({
   }
 
   return (
-    <div className="relative">
+    <div className="relative" ref={rootRef}>
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}

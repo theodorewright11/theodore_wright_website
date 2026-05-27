@@ -3,23 +3,33 @@ import { buildCodeTree, descendantIds, resolveColor, type CodeNode } from './com
 import { emDash } from './storage';
 import { PALETTE, type Code, type Project } from './types';
 
+type DropPosition = 'before' | 'after' | 'inside';
+
 type Props = {
   project: Project;
   variant?: 'page' | 'panel';
+  showDefinitions: boolean;
+  onToggleDefinitions: () => void;
   onAddCode: (parentId: string | null, name: string) => void;
   onUpdateCode: (codeId: string, patch: Partial<Code>) => void;
   onDeleteCode: (codeId: string) => void;
+  onMoveCode: (codeId: string, targetCodeId: string | null, position: DropPosition) => void;
   onClose?: () => void; // for panel variant
 };
 
 export default function CodebookView({
   project,
   variant = 'page',
+  showDefinitions,
+  onToggleDefinitions,
   onAddCode,
   onUpdateCode,
   onDeleteCode,
+  onMoveCode,
   onClose,
 }: Props) {
+  const [dragCodeId, setDragCodeId] = useState<string | null>(null);
+  const [rootDragOver, setRootDragOver] = useState(false);
   const tree = buildCodeTree(project.codes);
   const [addingRoot, setAddingRoot] = useState(false);
   const [draft, setDraft] = useState('');
@@ -38,11 +48,11 @@ export default function CodebookView({
       <div
         className={
           isPanel
-            ? 'px-4 py-3 border-b border-slate-200 flex items-center justify-between bg-white'
-            : 'px-8 pt-8 pb-3 max-w-[820px] mx-auto'
+            ? 'px-4 py-3 border-b border-slate-200 flex items-start justify-between bg-white gap-2'
+            : 'px-8 pt-8 pb-4 max-w-[820px] mx-auto'
         }
       >
-        <div>
+        <div className="flex-1 min-w-0">
           <div className="text-[11px] uppercase tracking-[0.16em] font-semibold text-blue-600 mb-1">
             Codebook
           </div>
@@ -62,16 +72,30 @@ export default function CodebookView({
             </p>
           )}
         </div>
-        {isPanel && onClose && (
+        <div className="flex items-center gap-2 flex-shrink-0">
           <button
             type="button"
-            onClick={onClose}
-            className="text-slate-400 hover:text-slate-800 text-[18px] w-7 h-7 flex items-center justify-center rounded hover:bg-slate-100"
-            aria-label="close codebook"
+            onClick={onToggleDefinitions}
+            title={showDefinitions ? 'Hide definitions while annotating' : 'Show definitions while annotating'}
+            className={`px-3 py-1.5 text-[12px] font-semibold rounded-md transition-colors ${
+              showDefinitions
+                ? 'bg-blue-600 text-white shadow-sm'
+                : 'border border-slate-300 text-slate-600 hover:bg-slate-100'
+            }`}
           >
-            ×
+            Definitions {showDefinitions ? 'on' : 'off'}
           </button>
-        )}
+          {isPanel && onClose && (
+            <button
+              type="button"
+              onClick={onClose}
+              className="text-slate-400 hover:text-slate-800 text-[18px] w-8 h-8 flex items-center justify-center rounded hover:bg-slate-100"
+              aria-label="close codebook"
+            >
+              ×
+            </button>
+          )}
+        </div>
       </div>
 
       <div
@@ -84,20 +108,49 @@ export default function CodebookView({
         {tree.length === 0 ? (
           <EmptyState onAdd={() => setAddingRoot(true)} addingRoot={addingRoot} />
         ) : (
-          <ul className="space-y-3">
-            {tree.map((node) => (
-              <CodebookRow
-                key={node.code.id}
-                node={node}
-                codes={project.codes}
-                counts={counts}
-                isPanel={isPanel}
-                onAddCode={onAddCode}
-                onUpdateCode={onUpdateCode}
-                onDeleteCode={onDeleteCode}
-              />
-            ))}
-          </ul>
+          <>
+            <ul className="space-y-3">
+              {tree.map((node) => (
+                <CodebookRow
+                  key={node.code.id}
+                  node={node}
+                  codes={project.codes}
+                  counts={counts}
+                  isPanel={isPanel}
+                  dragCodeId={dragCodeId}
+                  setDragCodeId={setDragCodeId}
+                  onAddCode={onAddCode}
+                  onUpdateCode={onUpdateCode}
+                  onDeleteCode={onDeleteCode}
+                  onMoveCode={onMoveCode}
+                />
+              ))}
+            </ul>
+            <div
+              onDragOver={(e) => {
+                if (dragCodeId && e.dataTransfer.types.includes('application/x-qc-code')) {
+                  e.preventDefault();
+                  setRootDragOver(true);
+                }
+              }}
+              onDragLeave={() => setRootDragOver(false)}
+              onDrop={(e) => {
+                e.preventDefault();
+                if (dragCodeId) onMoveCode(dragCodeId, null, 'inside');
+                setDragCodeId(null);
+                setRootDragOver(false);
+              }}
+              className={`mt-3 py-3 text-center text-[11px] italic rounded-md border-2 border-dashed transition-colors ${
+                rootDragOver
+                  ? 'border-blue-400 bg-blue-50 text-blue-700'
+                  : dragCodeId
+                    ? 'border-slate-300 text-slate-500'
+                    : 'border-transparent text-transparent'
+              }`}
+            >
+              Drop here to make a top-level code
+            </div>
+          </>
         )}
 
         {(addingRoot || tree.length > 0) && (
@@ -197,17 +250,23 @@ function CodebookRow({
   codes,
   counts,
   isPanel,
+  dragCodeId,
+  setDragCodeId,
   onAddCode,
   onUpdateCode,
   onDeleteCode,
+  onMoveCode,
 }: {
   node: CodeNode;
   codes: Code[];
   counts: Map<string, number>;
   isPanel: boolean;
+  dragCodeId: string | null;
+  setDragCodeId: (id: string | null) => void;
   onAddCode: (parentId: string | null, name: string) => void;
   onUpdateCode: (codeId: string, patch: Partial<Code>) => void;
   onDeleteCode: (codeId: string) => void;
+  onMoveCode: (codeId: string, targetCodeId: string | null, position: DropPosition) => void;
 }) {
   const { code, depth, children } = node;
   const [editing, setEditing] = useState(false);
@@ -215,9 +274,35 @@ function CodebookRow({
   const [draftDesc, setDraftDesc] = useState(code.description ?? '');
   const [adding, setAdding] = useState(false);
   const [draftChild, setDraftChild] = useState('');
+  const [dropZone, setDropZone] = useState<DropPosition | null>(null);
 
   const color = resolveColor(codes, code.id);
   const count = counts.get(code.id) ?? 0;
+  const isBeingDragged = dragCodeId === code.id;
+
+  const handleDragOver = (e: React.DragEvent) => {
+    if (!dragCodeId || dragCodeId === code.id) return;
+    if (!e.dataTransfer.types.includes('application/x-qc-code')) return;
+    e.preventDefault();
+    e.stopPropagation();
+    e.dataTransfer.dropEffect = 'move';
+    const rect = e.currentTarget.getBoundingClientRect();
+    const y = e.clientY - rect.top;
+    const h = rect.height;
+    if (y < h * 0.25) setDropZone('before');
+    else if (y > h * 0.75) setDropZone('after');
+    else setDropZone('inside');
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (dragCodeId && dropZone) {
+      onMoveCode(dragCodeId, code.id, dropZone);
+    }
+    setDropZone(null);
+    setDragCodeId(null);
+  };
 
   const startEdit = () => {
     setDraftName(code.name);
@@ -245,9 +330,37 @@ function CodebookRow({
     depth === 0 ? (isPanel ? 'text-[18px]' : 'text-[22px]') : depth === 1 ? (isPanel ? 'text-[15px]' : 'text-[17px]') : isPanel ? 'text-[14px]' : 'text-[15px]';
   const indent = depth > 0 ? `pl-${Math.min(depth * 4, 12)}` : '';
 
+  const dropClass =
+    dropZone === 'before'
+      ? 'border-t-2 border-t-blue-500'
+      : dropZone === 'after'
+        ? 'border-b-2 border-b-blue-500'
+        : dropZone === 'inside'
+          ? 'ring-2 ring-blue-400 bg-blue-50/40'
+          : '';
+
   return (
     <li
-      className={`group rounded-lg p-3 ${depth === 0 ? 'border border-slate-200 bg-white' : ''}`}
+      draggable
+      onDragStart={(e) => {
+        e.dataTransfer.setData('application/x-qc-code', code.id);
+        e.dataTransfer.effectAllowed = 'move';
+        setDragCodeId(code.id);
+      }}
+      onDragEnd={() => {
+        setDragCodeId(null);
+        setDropZone(null);
+      }}
+      onDragOver={handleDragOver}
+      onDragLeave={(e) => {
+        const rt = e.relatedTarget as Node | null;
+        if (rt && (e.currentTarget as HTMLElement).contains(rt)) return;
+        setDropZone(null);
+      }}
+      onDrop={handleDrop}
+      className={`group rounded-lg p-3 transition-colors ${
+        depth === 0 ? 'border border-slate-200 bg-white' : ''
+      } ${isBeingDragged ? 'opacity-40' : ''} ${dropClass}`}
       style={depth > 0 ? { marginLeft: `${depth * 16}px` } : undefined}
     >
       {editing ? (
@@ -308,16 +421,16 @@ function CodebookRow({
               <button
                 type="button"
                 onClick={() => setEditing(false)}
-                className="text-[12px] text-slate-500 hover:text-slate-800 px-2 py-1"
+                className="text-[13px] text-slate-500 hover:text-slate-800 px-3 py-1.5 rounded-md hover:bg-slate-100"
               >
-                cancel
+                Cancel
               </button>
               <button
                 type="button"
                 onClick={saveEdit}
-                className="text-[12px] font-semibold text-white bg-blue-600 hover:bg-blue-700 px-3 py-1.5 rounded-md"
+                className="text-[13px] font-semibold text-white bg-blue-600 hover:bg-blue-700 px-4 py-1.5 rounded-md"
               >
-                save
+                Save
               </button>
             </div>
           </div>
@@ -341,11 +454,6 @@ function CodebookRow({
               {code.description && (
                 <p className="text-[13px] text-slate-600 leading-snug mt-1.5 m-0">
                   {code.description}
-                </p>
-              )}
-              {!code.description && (
-                <p className="text-[12px] text-slate-400 italic mt-1 m-0">
-                  No definition yet.
                 </p>
               )}
             </div>
@@ -428,9 +536,12 @@ function CodebookRow({
               codes={codes}
               counts={counts}
               isPanel={isPanel}
+              dragCodeId={dragCodeId}
+              setDragCodeId={setDragCodeId}
               onAddCode={onAddCode}
               onUpdateCode={onUpdateCode}
               onDeleteCode={onDeleteCode}
+              onMoveCode={onMoveCode}
             />
           ))}
         </ul>
