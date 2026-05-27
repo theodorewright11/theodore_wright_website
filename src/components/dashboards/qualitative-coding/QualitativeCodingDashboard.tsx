@@ -9,6 +9,7 @@ import ProjectAboutView from './ProjectAboutView';
 import { ResizeHandle } from './Resizable';
 import {
   buildFolderTree,
+  codePathString,
   deepCodeCounts,
   descendantIds,
   findDoc,
@@ -112,6 +113,9 @@ export default function QualitativeCodingDashboard() {
   const sidebarWidth = state.sidebarWidth ?? 320;
   const notesWidth = state.notesWidth ?? 380;
   const codebookWidth = state.codebookWidth ?? 360;
+  const annotationsPanelHeight = state.annotationsPanelHeight ?? 280;
+  const annotationsPanelCollapsed = !!state.annotationsPanelCollapsed;
+  const metadataCollapsed = !!state.metadataCollapsed;
   const exploreProjectIds = state.exploreProjectIds ?? [];
 
   const setSidebarWidth = (n: number) =>
@@ -120,6 +124,12 @@ export default function QualitativeCodingDashboard() {
     setState((s) => ({ ...s, notesWidth: n }));
   const setCodebookWidth = (n: number) =>
     setState((s) => ({ ...s, codebookWidth: n }));
+  const setAnnotationsPanelHeight = (n: number) =>
+    setState((s) => ({ ...s, annotationsPanelHeight: n }));
+  const toggleAnnotationsPanel = () =>
+    setState((s) => ({ ...s, annotationsPanelCollapsed: !s.annotationsPanelCollapsed }));
+  const toggleMetadata = () =>
+    setState((s) => ({ ...s, metadataCollapsed: !s.metadataCollapsed }));
 
   useEffect(() => {
     setHydrated(true);
@@ -476,13 +486,14 @@ export default function QualitativeCodingDashboard() {
   };
 
   // ----- Document CRUD -----
-  const addDocument = (folder?: string) => {
+  const addDocument = (folder?: string, kind: 'document' | 'note' = 'document') => {
     if (!activeProject) return;
     const now = new Date().toISOString();
     const d: Document = {
       id: cryptoRandomId(),
-      title: 'Untitled document',
+      title: kind === 'note' ? 'Untitled note' : 'Untitled document',
       text: '',
+      kind,
       folder: folder || undefined,
       metadata: {},
       created_at: now,
@@ -749,6 +760,38 @@ export default function QualitativeCodingDashboard() {
   const toggleSidebar = () =>
     setState((s) => ({ ...s, sidebarCollapsed: !s.sidebarCollapsed }));
 
+  const sendAnnotationToNote = (annotationId: string, fromDoc: Document) => {
+    if (!activeProject) return;
+    const openNotes = openDocIds
+      .map((id) => activeProject.documents.find((d) => d.id === id))
+      .filter((d): d is Document => !!d && d.kind === 'note');
+    if (openNotes.length === 0) {
+      window.alert(
+        'Open a note pane first (click "+ note" in the sidebar, then open it as a compare pane).',
+      );
+      return;
+    }
+    const note = openNotes[0];
+    const ann = activeProject.annotations.find((a) => a.id === annotationId);
+    if (!ann) return;
+    const span = fromDoc.text.slice(ann.start, ann.end).slice(0, 80).replace(/\s+/g, ' ');
+    const truncated = ann.end - ann.start > 80 ? '…' : '';
+    const path = codePathString(activeProject.codes, ann.codeId);
+    const label = `${fromDoc.title} · ${path} · "${span}${truncated}"`;
+    const href = `qcanno://${activeProject.id}/${fromDoc.id}/${annotationId}`;
+    const linkMd = `- [${label.replace(/[\[\]]/g, '')}](${href})`;
+    const newText = note.text && note.text.trim() ? `${note.text}\n${linkMd}` : linkMd;
+    updateDocument(note.id, { text: newText });
+  };
+
+  const handleQcLinkClick = (href: string) => {
+    // qcanno://<projectId>/<docId>/<annotationId>
+    const m = /^qcanno:\/\/([^/]+)\/([^/]+)\/(.+)$/i.exec(href);
+    if (!m) return;
+    const [, projectId, docId, annotationId] = m;
+    jumpToAnnotation(projectId, docId, annotationId);
+  };
+
   const jumpToAnnotation = (projectId: string, docId: string, annotationId: string) => {
     if (projectId !== state.activeProjectId) {
       setState((s) => ({ ...s, activeProjectId: projectId, view: 'documents' }));
@@ -927,7 +970,13 @@ export default function QualitativeCodingDashboard() {
                         showCodeDefinitions={showCodeDefinitions}
                         codebookOpen={codebookPanelOpen}
                         notesWidth={notesWidth}
+                        annotationsPanelHeight={annotationsPanelHeight}
+                        annotationsPanelCollapsed={annotationsPanelCollapsed}
+                        metadataCollapsed={metadataCollapsed}
                         onResizeNotes={setNotesWidth}
+                        onResizeAnnotationsPanel={setAnnotationsPanelHeight}
+                        onToggleAnnotationsPanel={toggleAnnotationsPanel}
+                        onToggleMetadata={toggleMetadata}
                         onToggleCodebook={() => setCodebookPanelOpen((v) => !v)}
                         onUpdateDoc={(patch) => updateDocument(d.id, patch)}
                         onAddAnnotation={(start, end, codeId, note) =>
@@ -935,6 +984,8 @@ export default function QualitativeCodingDashboard() {
                         }
                         onDeleteAnnotation={deleteAnnotation}
                         onUpdateAnnotation={updateAnnotation}
+                        onSendAnnotationToNote={(annId) => sendAnnotationToNote(annId, d)}
+                        onJumpToQcLink={handleQcLinkClick}
                         onClose={() => closeDocPane(d.id)}
                         showPaneControls={openDocs.length > 1}
                         onPaneDragStart={() => setDragPaneId(d.id)}
@@ -1397,7 +1448,7 @@ function Sidebar({
   onOpenCodebookView: () => void;
   onSelectDoc: (id: string) => void;
   onCompareDoc: (id: string) => void;
-  onAddDoc: (folder?: string) => void;
+  onAddDoc: (folder?: string, kind?: 'document' | 'note') => void;
   onDeleteDoc: (id: string) => void;
   onMoveDocToFolder: (docId: string, folder: string | undefined) => void;
   onAddFolder: (path: string) => void;
@@ -1491,7 +1542,15 @@ function Sidebar({
               </button>
               <button
                 type="button"
-                onClick={() => onAddDoc()}
+                onClick={() => onAddDoc(undefined, 'note')}
+                className="text-[12px] font-medium text-amber-700 hover:text-amber-900 transition-colors px-2 py-1 rounded hover:bg-amber-50"
+                title="new notes doc (markdown, for commentary + links to annotations)"
+              >
+                + note
+              </button>
+              <button
+                type="button"
+                onClick={() => onAddDoc(undefined, 'document')}
                 className="text-[12px] font-semibold text-blue-600 hover:text-blue-800 transition-colors px-2 py-1 rounded hover:bg-blue-50"
               >
                 + doc
@@ -1600,6 +1659,7 @@ function DocList({
       {docs.map((d) => {
         const isOpen = openSet.has(d.id);
         const isPrimary = primary === d.id;
+        const isNote = d.kind === 'note';
         return (
           <li
             key={d.id}
@@ -1610,16 +1670,32 @@ function DocList({
             }}
             className={`group flex items-center gap-2 rounded-md px-2 py-2 cursor-pointer text-[14px] transition-colors ${
               isPrimary
-                ? 'bg-blue-100 text-slate-900 font-medium'
+                ? isNote
+                  ? 'bg-amber-100 text-slate-900 font-medium'
+                  : 'bg-blue-100 text-slate-900 font-medium'
                 : isOpen
-                  ? 'bg-blue-50 text-slate-800'
-                  : 'text-slate-700 hover:bg-white'
+                  ? isNote
+                    ? 'bg-amber-50 text-slate-800'
+                    : 'bg-blue-50 text-slate-800'
+                  : isNote
+                    ? 'text-amber-800 hover:bg-white'
+                    : 'text-slate-700 hover:bg-white'
             }`}
             style={{ paddingLeft: `${10 + depth * 14}px` }}
             onClick={() => onSelectDoc(d.id)}
           >
             <span className="text-slate-300 text-[11px] cursor-grab" title="drag to move">⋮⋮</span>
-            <span className="flex-1 truncate">{d.title || 'Untitled'}</span>
+            {isNote && (
+              <span
+                className="text-[9px] font-semibold uppercase tracking-wider text-amber-700 px-1 py-0.5 rounded bg-amber-100 flex-shrink-0"
+                title="note (markdown)"
+              >
+                note
+              </span>
+            )}
+            <span className={`flex-1 truncate ${isNote ? 'italic' : ''}`}>
+              {d.title || 'Untitled'}
+            </span>
             <button
               type="button"
               onClick={(e) => {

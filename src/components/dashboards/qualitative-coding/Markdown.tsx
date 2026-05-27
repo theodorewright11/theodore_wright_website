@@ -123,10 +123,19 @@ function inline(s: string): string {
   s = s.replace(/(^|[^\\])\*([^*]+)\*/g, '$1<em>$2</em>');
   s = s.replace(/(^|[^\\])_([^_]+)_/g, '$1<em>$2</em>');
   s = s.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_m, label, url) => {
+    if (/^qcanno:\/\//i.test(url)) {
+      // Internal annotation link: rendered as a pill button. The container
+      // intercepts clicks via event delegation (see MarkdownRendered).
+      return `<a href="${escapeAttr(url)}" data-qc-anchor="1" class="qc-anchor-link">${label}</a>`;
+    }
     const safeUrl = /^(https?:|\/)/i.test(url) ? url : '#';
-    return `<a href="${safeUrl}" target="_blank" rel="noopener noreferrer">${label}</a>`;
+    return `<a href="${escapeAttr(safeUrl)}" target="_blank" rel="noopener noreferrer">${label}</a>`;
   });
   return s;
+}
+
+function escapeAttr(s: string): string {
+  return s.replace(/"/g, '&quot;');
 }
 
 type EditorProps = {
@@ -134,6 +143,7 @@ type EditorProps = {
   onChange: (v: string) => void;
   placeholder?: string;
   minHeight?: number;
+  onQcLinkClick?: (href: string) => void;
 };
 
 export function MarkdownEditor({
@@ -141,6 +151,7 @@ export function MarkdownEditor({
   onChange,
   placeholder,
   minHeight = 240,
+  onQcLinkClick,
 }: EditorProps) {
   const [tab, setTab] = useState<'write' | 'preview'>('write');
   const taRef = useRef<HTMLTextAreaElement>(null);
@@ -279,6 +290,14 @@ export function MarkdownEditor({
         <div
           className="md-preview p-4 text-[14px] text-slate-800"
           style={{ minHeight }}
+          onClick={(e) => {
+            if (!onQcLinkClick) return;
+            const target = (e.target as HTMLElement).closest('a[data-qc-anchor]');
+            if (target instanceof HTMLAnchorElement) {
+              e.preventDefault();
+              onQcLinkClick(target.getAttribute('href') ?? '');
+            }
+          }}
           dangerouslySetInnerHTML={{
             __html:
               value.trim().length === 0
@@ -291,7 +310,15 @@ export function MarkdownEditor({
   );
 }
 
-export function MarkdownRendered({ text, className }: { text: string; className?: string }) {
+export function MarkdownRendered({
+  text,
+  className,
+  onQcLinkClick,
+}: {
+  text: string;
+  className?: string;
+  onQcLinkClick?: (href: string) => void;
+}) {
   if (!text || !text.trim()) {
     return (
       <div className={`md-preview text-slate-400 italic ${className ?? ''}`}>
@@ -302,6 +329,17 @@ export function MarkdownRendered({ text, className }: { text: string; className?
   return (
     <div
       className={`md-preview ${className ?? ''}`}
+      onClick={
+        onQcLinkClick
+          ? (e) => {
+              const target = (e.target as HTMLElement).closest('a[data-qc-anchor]');
+              if (target instanceof HTMLAnchorElement) {
+                e.preventDefault();
+                onQcLinkClick(target.getAttribute('href') ?? '');
+              }
+            }
+          : undefined
+      }
       dangerouslySetInnerHTML={{ __html: renderMarkdown(text) }}
     />
   );

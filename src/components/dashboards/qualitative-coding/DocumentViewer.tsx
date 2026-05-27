@@ -8,7 +8,7 @@ import {
   segmentText,
 } from './compute';
 import { MarkdownEditor } from './Markdown';
-import { ResizeHandle } from './Resizable';
+import { ResizeHandle, RowResizeHandle } from './Resizable';
 import { emDash } from './storage';
 import type { Annotation, Code, Document, MetadataField } from './types';
 
@@ -21,12 +21,20 @@ type Props = {
   showCodeDefinitions: boolean;
   codebookOpen: boolean;
   notesWidth: number;
+  annotationsPanelHeight: number;
+  annotationsPanelCollapsed: boolean;
+  metadataCollapsed: boolean;
   onResizeNotes: (n: number) => void;
+  onResizeAnnotationsPanel: (n: number) => void;
+  onToggleAnnotationsPanel: () => void;
+  onToggleMetadata: () => void;
   onToggleCodebook: () => void;
   onUpdateDoc: (patch: Partial<Document>) => void;
   onAddAnnotation: (start: number, end: number, codeId: string, note?: string) => void;
   onDeleteAnnotation: (id: string) => void;
   onUpdateAnnotation: (id: string, patch: Partial<Annotation>) => void;
+  onSendAnnotationToNote?: (annotationId: string) => void;
+  onJumpToQcLink?: (href: string) => void;
   onClose?: () => void;
   showPaneControls?: boolean;
   onPaneDragStart?: () => void;
@@ -48,17 +56,38 @@ export default function DocumentViewer({
   showCodeDefinitions,
   codebookOpen,
   notesWidth,
+  annotationsPanelHeight,
+  annotationsPanelCollapsed,
+  metadataCollapsed,
   onResizeNotes,
+  onResizeAnnotationsPanel,
+  onToggleAnnotationsPanel,
+  onToggleMetadata,
   onToggleCodebook,
   onUpdateDoc,
   onAddAnnotation,
   onDeleteAnnotation,
   onUpdateAnnotation,
+  onSendAnnotationToNote,
+  onJumpToQcLink,
   onClose,
   showPaneControls,
   onPaneDragStart,
   onPaneDragEnd,
 }: Props) {
+  if (doc.kind === 'note') {
+    return (
+      <NoteDocViewer
+        doc={doc}
+        onUpdateDoc={onUpdateDoc}
+        onJumpToQcLink={onJumpToQcLink}
+        onClose={onClose}
+        showPaneControls={showPaneControls}
+        onPaneDragStart={onPaneDragStart}
+        onPaneDragEnd={onPaneDragEnd}
+      />
+    );
+  }
   const [mode, setMode] = useState<'view' | 'edit'>(doc.text ? 'view' : 'edit');
   const [draftText, setDraftText] = useState(doc.text);
   const [pending, setPending] = useState<PendingSelection | null>(null);
@@ -216,7 +245,13 @@ export default function DocumentViewer({
           )}
         </div>
       )}
-      <DocHeader doc={doc} metadataSchema={metadataSchema} onUpdateDoc={onUpdateDoc} />
+      <DocHeader
+        doc={doc}
+        metadataSchema={metadataSchema}
+        metadataCollapsed={metadataCollapsed}
+        onToggleMetadata={onToggleMetadata}
+        onUpdateDoc={onUpdateDoc}
+      />
 
       <div className="px-6 py-3 flex items-center gap-2 border-b border-slate-200 bg-white sticky top-0 z-10">
         <ToggleBtn active={mode === 'view'} onClick={() => mode === 'edit' && commitEdit()}>
@@ -332,9 +367,14 @@ export default function DocumentViewer({
         annotations={docAnnotations}
         focusedAnnotationId={focusedAnnotationId}
         showDefinitions={showCodeDefinitions}
+        collapsed={annotationsPanelCollapsed}
+        height={annotationsPanelHeight}
+        onToggleCollapsed={onToggleAnnotationsPanel}
+        onResize={onResizeAnnotationsPanel}
         onFocus={setFocusedAnnotationId}
         onDelete={onDeleteAnnotation}
         onUpdate={onUpdateAnnotation}
+        onSendToNote={onSendAnnotationToNote}
       />
 
       {pending && (
@@ -400,10 +440,14 @@ export default function DocumentViewer({
 function DocHeader({
   doc,
   metadataSchema,
+  metadataCollapsed,
+  onToggleMetadata,
   onUpdateDoc,
 }: {
   doc: Document;
   metadataSchema: MetadataField[];
+  metadataCollapsed: boolean;
+  onToggleMetadata: () => void;
   onUpdateDoc: (patch: Partial<Document>) => void;
 }) {
   const [title, setTitle] = useState(doc.title);
@@ -447,19 +491,34 @@ function DocHeader({
         style={{ letterSpacing: '-0.02em' }}
       />
       {metadataSchema.length > 0 && (
-        <div className="max-w-[760px] mx-auto mt-3 flex flex-wrap gap-x-4 gap-y-2">
-          {metadataSchema.map((field) => (
-            <MetadataInput
-              key={field.key}
-              field={field}
-              value={doc.metadata[field.key] ?? null}
-              onChange={(v) =>
-                onUpdateDoc({
-                  metadata: { ...doc.metadata, [field.key]: v },
-                })
-              }
-            />
-          ))}
+        <div className="max-w-[760px] mx-auto mt-3">
+          <button
+            type="button"
+            onClick={onToggleMetadata}
+            className="flex items-center gap-1.5 text-[10px] uppercase tracking-wider font-semibold text-slate-500 hover:text-slate-800 transition-colors px-1 py-0.5 rounded hover:bg-slate-100"
+            title={metadataCollapsed ? 'show metadata' : 'hide metadata'}
+          >
+            <span className="text-[10px] text-slate-400 w-3">{metadataCollapsed ? '▸' : '▾'}</span>
+            <span>
+              Metadata · {metadataSchema.length} field{metadataSchema.length === 1 ? '' : 's'}
+            </span>
+          </button>
+          {!metadataCollapsed && (
+            <div className="mt-2 flex flex-wrap gap-x-4 gap-y-2">
+              {metadataSchema.map((field) => (
+                <MetadataInput
+                  key={field.key}
+                  field={field}
+                  value={doc.metadata[field.key] ?? null}
+                  onChange={(v) =>
+                    onUpdateDoc({
+                      metadata: { ...doc.metadata, [field.key]: v },
+                    })
+                  }
+                />
+              ))}
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -661,22 +720,32 @@ function AnnotationsPanel({
   annotations,
   focusedAnnotationId,
   showDefinitions,
+  collapsed,
+  height,
+  onToggleCollapsed,
+  onResize,
   onFocus,
   onDelete,
   onUpdate,
+  onSendToNote,
 }: {
   doc: Document;
   codes: Code[];
   annotations: Annotation[];
   focusedAnnotationId: string | null;
   showDefinitions: boolean;
+  collapsed: boolean;
+  height: number;
+  onToggleCollapsed: () => void;
+  onResize: (n: number) => void;
   onFocus: (id: string | null) => void;
   onDelete: (id: string) => void;
   onUpdate: (id: string, patch: Partial<Annotation>) => void;
+  onSendToNote?: (id: string) => void;
 }) {
   if (annotations.length === 0) {
     return (
-      <div className="border-t border-slate-200 bg-slate-50 px-8 py-4">
+      <div className="border-t border-slate-200 bg-slate-50 px-8 py-3">
         <div className="max-w-[760px] mx-auto text-[12px] text-slate-400 italic">
           No annotations yet. Select text above and pick a code from the popover to begin.
         </div>
@@ -684,11 +753,33 @@ function AnnotationsPanel({
     );
   }
   return (
-    <div className="border-t border-slate-200 bg-slate-50 px-8 py-4 max-h-[40vh] overflow-y-auto">
+    <div
+      className="border-t border-slate-200 bg-slate-50 relative flex flex-col"
+      style={{ height: collapsed ? 'auto' : `${height}px` }}
+    >
+      {!collapsed && (
+        <RowResizeHandle
+          edge="top"
+          height={height}
+          min={120}
+          max={800}
+          onChange={onResize}
+        />
+      )}
+      <div className="px-8 py-2 flex items-center gap-2 flex-shrink-0">
+        <button
+          type="button"
+          onClick={onToggleCollapsed}
+          className="flex items-center gap-1.5 text-[10px] uppercase font-semibold tracking-[0.12em] text-slate-500 hover:text-slate-800 transition-colors"
+          title={collapsed ? 'show annotations' : 'hide annotations'}
+        >
+          <span className="text-[10px] text-slate-400 w-3">{collapsed ? '▸' : '▾'}</span>
+          <span>Annotations · {annotations.length}</span>
+        </button>
+      </div>
+      {collapsed ? null : (
+      <div className="flex-1 min-h-0 overflow-y-auto px-8 pb-3">
       <div className="max-w-[760px] mx-auto">
-        <div className="text-[10px] uppercase font-semibold tracking-[0.12em] text-slate-500 mb-2">
-          Annotations · {annotations.length}
-        </div>
         <ul className="space-y-1.5">
           {annotations.map((a) => {
             const codeForA = codes.find((c) => c.id === a.codeId);
@@ -714,13 +805,26 @@ function AnnotationsPanel({
                   <span className="text-[10px] font-mono text-slate-400 tabular-nums ml-auto">
                     {a.start}–{a.end}
                   </span>
+                  {onSendToNote && (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onSendToNote(a.id);
+                      }}
+                      className="opacity-0 group-hover:opacity-100 text-amber-600 hover:text-amber-900 text-[10px] font-semibold uppercase tracking-wider transition-opacity px-1.5 py-0.5 rounded hover:bg-amber-50"
+                      title="send a link to the first open note pane"
+                    >
+                      → note
+                    </button>
+                  )}
                   <button
                     type="button"
                     onClick={(e) => {
                       e.stopPropagation();
                       onDelete(a.id);
                     }}
-                    className="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-red-600 text-[12px] transition-opacity"
+                    className="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-red-600 text-[14px] transition-opacity"
                     title="delete"
                   >
                     ×
@@ -750,6 +854,8 @@ function AnnotationsPanel({
           })}
         </ul>
       </div>
+      </div>
+      )}
     </div>
   );
 }
@@ -788,6 +894,90 @@ function rangeOffset(container: HTMLElement, node: Node, offset: number): number
     return -1;
   }
   return range.toString().length;
+}
+
+function NoteDocViewer({
+  doc,
+  onUpdateDoc,
+  onJumpToQcLink,
+  onClose,
+  showPaneControls,
+  onPaneDragStart,
+  onPaneDragEnd,
+}: {
+  doc: Document;
+  onUpdateDoc: (patch: Partial<Document>) => void;
+  onJumpToQcLink?: (href: string) => void;
+  onClose?: () => void;
+  showPaneControls?: boolean;
+  onPaneDragStart?: () => void;
+  onPaneDragEnd?: () => void;
+}) {
+  const [title, setTitle] = useState(doc.title);
+  useEffect(() => setTitle(doc.title), [doc.id]);
+
+  return (
+    <div className="flex-1 min-w-0 min-h-0 flex flex-col">
+      {showPaneControls && (
+        <div className="flex items-center px-3 py-1.5 border-b border-slate-100 bg-amber-50/60">
+          <span
+            draggable
+            onDragStart={(e) => {
+              e.dataTransfer.effectAllowed = 'move';
+              onPaneDragStart?.();
+            }}
+            onDragEnd={() => onPaneDragEnd?.()}
+            className="cursor-grab text-amber-700/60 hover:text-amber-900 text-[12px] select-none flex items-center gap-1.5 px-2 py-0.5 rounded hover:bg-white transition-colors"
+            title="drag to reorder this pane"
+          >
+            <span>⋮⋮</span>
+            <span className="text-[10px] uppercase tracking-wider font-semibold">drag</span>
+          </span>
+          <span className="ml-2 text-[10px] uppercase tracking-wider font-semibold text-amber-700">
+            note
+          </span>
+          {onClose && (
+            <button
+              type="button"
+              onClick={onClose}
+              title="close this note"
+              className="ml-auto w-7 h-7 rounded-md text-slate-400 hover:text-slate-900 hover:bg-white flex items-center justify-center text-[18px] transition-colors"
+            >
+              ×
+            </button>
+          )}
+        </div>
+      )}
+      <div className="px-6 pt-5 pb-3 border-b border-slate-200 bg-white">
+        <div className="text-[10px] uppercase tracking-[0.16em] font-semibold text-amber-700 mb-1">
+          Note
+        </div>
+        <input
+          value={title}
+          onChange={(e) => setTitle(emDash(e.target.value))}
+          onBlur={() => {
+            const v = title.trim() || 'Untitled note';
+            if (v !== doc.title) onUpdateDoc({ title: v });
+          }}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
+          }}
+          placeholder="Note title"
+          className="w-full font-sans font-bold text-[24px] leading-tight text-slate-900 placeholder-slate-300 border-none focus:outline-none focus:ring-0 bg-transparent"
+          style={{ letterSpacing: '-0.02em' }}
+        />
+      </div>
+      <div className="flex-1 min-h-0 overflow-y-auto p-4 bg-amber-50/30">
+        <MarkdownEditor
+          value={doc.text}
+          onChange={(v) => onUpdateDoc({ text: v })}
+          onQcLinkClick={onJumpToQcLink}
+          placeholder="Write commentary, link annotations from other docs, take running notes. Markdown supported."
+          minHeight={500}
+        />
+      </div>
+    </div>
+  );
 }
 
 function countWords(text: string): number {

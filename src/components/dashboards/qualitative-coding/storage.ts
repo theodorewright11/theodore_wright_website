@@ -34,6 +34,12 @@ export function loadState(): AppState {
         sidebarWidth: typeof parsed.sidebarWidth === 'number' ? parsed.sidebarWidth : undefined,
         notesWidth: typeof parsed.notesWidth === 'number' ? parsed.notesWidth : undefined,
         codebookWidth: typeof parsed.codebookWidth === 'number' ? parsed.codebookWidth : undefined,
+        annotationsPanelHeight:
+          typeof parsed.annotationsPanelHeight === 'number'
+            ? parsed.annotationsPanelHeight
+            : undefined,
+        annotationsPanelCollapsed: !!parsed.annotationsPanelCollapsed,
+        metadataCollapsed: !!parsed.metadataCollapsed,
         deletedProjectIds: Array.isArray(parsed.deletedProjectIds)
           ? parsed.deletedProjectIds.filter((s: any) => typeof s === 'string')
           : [],
@@ -61,6 +67,7 @@ export function coerceProject(p: any): Project {
     metadataSchema: Array.isArray(p.metadataSchema) ? p.metadataSchema : [],
     documents: docs.map((d: any) => ({
       ...d,
+      kind: d.kind === 'note' ? 'note' : 'document',
       folder: typeof d.folder === 'string' && d.folder.trim() ? d.folder : undefined,
       notes: typeof d.notes === 'string' ? d.notes : undefined,
       metadata: d.metadata && typeof d.metadata === 'object' ? d.metadata : {},

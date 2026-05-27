@@ -11,10 +11,13 @@ export type MetadataField = {
 
 export type MetadataValue = string | number | null;
 
+export type DocumentKind = 'document' | 'note';
+
 export type Document = {
   id: string;
   title: string;
   text: string;
+  kind?: DocumentKind;
   notes?: string;
   folder?: string;
   metadata: Record<string, MetadataValue>;
@@ -77,6 +80,9 @@ export type AppState = {
   sidebarWidth?: number;
   notesWidth?: number;
   codebookWidth?: number;
+  annotationsPanelHeight?: number;
+  annotationsPanelCollapsed?: boolean;
+  metadataCollapsed?: boolean;
   deletedProjectIds?: string[];
 };
 
