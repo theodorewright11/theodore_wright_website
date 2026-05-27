@@ -801,7 +801,7 @@ export default function QualitativeCodingDashboard() {
         onExportJSON={onExportJSON}
         onExportProjectMD={onExportProjectMD}
         onExportDocMD={onExportDocMD}
-        canExportDocMD={!!activeDoc}
+        canExportDocMD={openDocs.length > 0}
         onImport={() => importInputRef.current?.click()}
         driveConfigured={!!GOOGLE_CLIENT_ID}
         driveEmail={drive.token?.email}
