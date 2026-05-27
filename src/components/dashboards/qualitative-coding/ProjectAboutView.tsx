@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { countWords } from './compute';
 import { MarkdownEditor, MarkdownRendered } from './Markdown';
 import { emDash } from './storage';
 import type { Project } from './types';
@@ -161,22 +162,84 @@ export default function ProjectAboutView({ project, onUpdate }: Props) {
           </div>
         )}
 
-        <div className="mt-12 pt-6 border-t border-slate-200">
-          <div className="text-[10px] uppercase font-semibold tracking-[0.12em] text-slate-500 mb-3">
-            Project at a glance
-          </div>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <Stat label="Documents" value={project.documents.length} />
-            <Stat label="Codes" value={project.codes.length} />
-            <Stat label="Annotations" value={project.annotations.length} />
-            <Stat label="Metadata fields" value={project.metadataSchema.length} />
-          </div>
-          <div className="mt-4 text-[11px] text-slate-400 font-mono">
-            Created {new Date(project.created_at).toLocaleDateString()} · Updated{' '}
-            {new Date(project.updated_at).toLocaleDateString()}
-            {project.drive?.folderId && <> · synced to Drive</>}
-          </div>
-        </div>
+        <ProjectStats project={project} />
+      </div>
+    </div>
+  );
+}
+
+function ProjectStats({ project }: { project: Project }) {
+  const aggregate = useMemo(() => {
+    let totalChars = 0;
+    let totalWords = 0;
+    let docCount = 0;
+    let noteCount = 0;
+    for (const d of project.documents) {
+      if (d.kind === 'note') {
+        noteCount++;
+      } else {
+        docCount++;
+        totalChars += d.text.length;
+        totalWords += countWords(d.text);
+      }
+    }
+    return { totalChars, totalWords, docCount, noteCount };
+  }, [project.documents]);
+
+  return (
+    <div className="mt-12 pt-6 border-t border-slate-200">
+      <div className="text-[10px] uppercase font-semibold tracking-[0.12em] text-slate-500 mb-3">
+        Project at a glance
+      </div>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <Stat label="Documents" value={aggregate.docCount} />
+        <Stat label="Notes" value={aggregate.noteCount} />
+        <Stat label="Codes" value={project.codes.length} />
+        <Stat label="Annotations" value={project.annotations.length} />
+      </div>
+      <div className="mt-3 text-[10px] uppercase font-semibold tracking-[0.12em] text-slate-500 mb-2">
+        Corpus size (documents only)
+      </div>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <Stat label="Total words" value={aggregate.totalWords} />
+        <Stat label="Total chars" value={aggregate.totalChars} />
+        <Stat
+          label="Avg words / doc"
+          value={
+            aggregate.docCount > 0
+              ? Math.round(aggregate.totalWords / aggregate.docCount)
+              : 0
+          }
+        />
+        <Stat
+          label="Avg chars / doc"
+          value={
+            aggregate.docCount > 0
+              ? Math.round(aggregate.totalChars / aggregate.docCount)
+              : 0
+          }
+        />
+      </div>
+      <div className="mt-3 text-[10px] uppercase font-semibold tracking-[0.12em] text-slate-500 mb-2">
+        Schema
+      </div>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <Stat label="Metadata fields" value={project.metadataSchema.length} />
+        <Stat
+          label="Folders"
+          value={(() => {
+            const all = new Set<string>(project.folders ?? []);
+            for (const d of project.documents) {
+              if (d.folder) all.add(d.folder);
+            }
+            return all.size;
+          })()}
+        />
+      </div>
+      <div className="mt-4 text-[11px] text-slate-400 font-mono">
+        Created {new Date(project.created_at).toLocaleDateString()} · Updated{' '}
+        {new Date(project.updated_at).toLocaleDateString()}
+        {project.drive?.folderId && <> · synced to Drive</>}
       </div>
     </div>
   );
