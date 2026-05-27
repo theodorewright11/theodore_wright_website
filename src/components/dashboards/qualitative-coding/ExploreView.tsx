@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   buildCodeTree,
   codePathString,
@@ -30,6 +30,7 @@ export default function ExploreView({ projects, onJumpToAnnotation }: Props) {
   const [textQuery, setTextQuery] = useState('');
   const [selectedCodeIds, setSelectedCodeIds] = useState<Set<string>>(new Set());
   const [codePickerOpen, setCodePickerOpen] = useState(false);
+  const codePickerRef = useRef<HTMLDivElement>(null);
   const [metaFilters, setMetaFilters] = useState<Record<string, FieldFilter>>({});
   const [folderFilter, setFolderFilter] = useState<string>('');
   const [sort, setSort] = useState<SortKey>('created-desc');
@@ -86,10 +87,43 @@ export default function ExploreView({ projects, onJumpToAnnotation }: Props) {
     );
   }, [projects, expandedCodeIds, textQuery, metaFilters, folderFilter, sort, docCharsFilter, docWordsFilter, docAnnotsFilter]);
 
+  useEffect(() => {
+    if (!codePickerOpen) return;
+    const handler = (e: MouseEvent) => {
+      const t = e.target as Node;
+      if (codePickerRef.current && !codePickerRef.current.contains(t)) {
+        setCodePickerOpen(false);
+      }
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setCodePickerOpen(false);
+    };
+    document.addEventListener('mousedown', handler);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('mousedown', handler);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [codePickerOpen]);
+
   const coOccurrence = useMemo(() => {
     if (selectedCodeIds.size === 0) return null;
-    return coOccurringCodes(projects, selectedCodeIds);
-  }, [projects, selectedCodeIds]);
+    return coOccurringCodes(projects, selectedCodeIds, {
+      folder: folderFilter ? folderFilter : undefined,
+      metadataFilters: metaFilters,
+      docCharsFilter,
+      docWordsFilter,
+      docAnnotsFilter,
+    });
+  }, [
+    projects,
+    selectedCodeIds,
+    folderFilter,
+    metaFilters,
+    docCharsFilter,
+    docWordsFilter,
+    docAnnotsFilter,
+  ]);
 
   const stats = useMemo(() => {
     const uniqueCodes = new Set(rows.map((r) => r.annotation.codeId));
@@ -169,7 +203,7 @@ export default function ExploreView({ projects, onJumpToAnnotation }: Props) {
                 onClick={clearAllFilters}
                 className="text-[12px] font-medium text-slate-500 hover:text-slate-900 px-3 py-1.5 rounded hover:bg-slate-100 transition-colors"
               >
-                clear filters ×
+                Clear filters ×
               </button>
             )}
           </div>
@@ -185,7 +219,7 @@ export default function ExploreView({ projects, onJumpToAnnotation }: Props) {
               placeholder="Search span text or notes..."
               className="flex-1 min-w-[200px] px-3 py-2 text-[13px] border border-slate-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500"
             />
-            <div className="relative">
+            <div className="relative" ref={codePickerRef}>
               <button
                 type="button"
                 onClick={() => setCodePickerOpen((v) => !v)}
@@ -199,7 +233,33 @@ export default function ExploreView({ projects, onJumpToAnnotation }: Props) {
                 {selectedCodeIds.size > 0 ? ` · ${selectedCodeIds.size}` : ''}
               </button>
               {codePickerOpen && (
-                <div className="absolute left-0 top-full mt-1 w-[300px] max-h-[400px] overflow-y-auto bg-white border border-slate-200 rounded-lg shadow-xl z-30">
+                <div className="absolute left-0 top-full mt-1 w-[320px] max-h-[440px] bg-white border border-slate-200 rounded-lg shadow-xl z-30 flex flex-col">
+                  <div className="flex items-center px-3 py-2 border-b border-slate-100 bg-slate-50">
+                    <div className="flex-1 text-[11px] uppercase tracking-wider font-semibold text-slate-500">
+                      Select codes
+                      {selectedCodeIds.size > 0 && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedCodeIds(new Set());
+                          }}
+                          className="ml-2 text-[10px] font-medium text-blue-600 hover:text-blue-800 normal-case tracking-normal"
+                        >
+                          clear ({selectedCodeIds.size})
+                        </button>
+                      )}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setCodePickerOpen(false)}
+                      className="w-7 h-7 rounded text-slate-400 hover:text-slate-900 hover:bg-white flex items-center justify-center text-[16px] transition-colors"
+                      title="close (Esc)"
+                    >
+                      ×
+                    </button>
+                  </div>
+                  <div className="flex-1 overflow-y-auto">
                   {projects.map((p) => (
                     <div key={p.id}>
                       {showProjectChips && (
@@ -239,6 +299,7 @@ export default function ExploreView({ projects, onJumpToAnnotation }: Props) {
                       No codes in any project yet.
                     </div>
                   )}
+                  </div>
                 </div>
               )}
             </div>

@@ -203,9 +203,46 @@ export type CoOccurrenceResult = {
   docCount: number; // distinct docs containing both focal and this code
 };
 
+export type CoOccurrenceFilter = {
+  folder?: string | null;
+  metadataFilters?: Record<string, FieldFilter>;
+  docCharsFilter?: FieldFilter;
+  docWordsFilter?: FieldFilter;
+  docAnnotsFilter?: FieldFilter;
+};
+
+function docPassesFilter(
+  doc: Document,
+  annotCount: number,
+  filter: CoOccurrenceFilter,
+): boolean {
+  if (filter.folder !== undefined && filter.folder !== null) {
+    const f = doc.folder ?? '';
+    if (filter.folder === '' && f !== '') return false;
+    if (filter.folder !== '' && !f.startsWith(filter.folder)) return false;
+  }
+  if (filter.docCharsFilter && !matchesFieldFilter(doc.text.length, filter.docCharsFilter)) {
+    return false;
+  }
+  if (filter.docWordsFilter && !matchesFieldFilter(countWords(doc.text), filter.docWordsFilter)) {
+    return false;
+  }
+  if (filter.docAnnotsFilter && !matchesFieldFilter(annotCount, filter.docAnnotsFilter)) {
+    return false;
+  }
+  if (filter.metadataFilters) {
+    for (const [k, ff] of Object.entries(filter.metadataFilters)) {
+      if (!ff) continue;
+      if (!matchesFieldFilter(doc.metadata[k], ff)) return false;
+    }
+  }
+  return true;
+}
+
 export function coOccurringCodes(
   projects: Project[],
   focalCodeIds: Set<string>,
+  filter?: CoOccurrenceFilter,
 ): {
   focalDocCount: number;
   results: CoOccurrenceResult[];
@@ -214,6 +251,21 @@ export function coOccurringCodes(
   let focalDocCount = 0;
 
   for (const p of projects) {
+    // Pre-compute per-doc annotation counts (used by both the doc filter
+    // and by counting below).
+    const annotCountByDoc = new Map<string, number>();
+    for (const a of p.annotations) {
+      annotCountByDoc.set(a.docId, (annotCountByDoc.get(a.docId) ?? 0) + 1);
+    }
+    // Allowed docs = docs that pass the doc-level filter (metadata, folder,
+    // doc stats). If no filter, all docs are allowed.
+    const allowedDocs = new Set<string>();
+    for (const d of p.documents) {
+      if (!filter || docPassesFilter(d, annotCountByDoc.get(d.id) ?? 0, filter)) {
+        allowedDocs.add(d.id);
+      }
+    }
+    if (allowedDocs.size === 0) continue;
     // Build one "match group" per originally-selected code, each containing
     // that code id plus all its descendants. A doc is focal iff it has at
     // least one annotation in EVERY group (intersection across selected
@@ -233,9 +285,11 @@ export function coOccurringCodes(
     }
     if (groups.length === 0) continue;
 
-    // For each doc, track which groups it has hit.
+    // For each doc, track which groups it has hit. Skip annotations in
+    // docs the filter excluded — those docs can't be focal.
     const groupsHitByDoc = new Map<string, Set<number>>();
     for (const a of p.annotations) {
+      if (!allowedDocs.has(a.docId)) continue;
       for (let gi = 0; gi < groups.length; gi++) {
         if (groups[gi].has(a.codeId)) {
           let s = groupsHitByDoc.get(a.docId);
