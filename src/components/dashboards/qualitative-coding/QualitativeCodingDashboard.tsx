@@ -1524,9 +1524,23 @@ function Sidebar({
   onAddFolder: (path: string) => void;
   onDeleteFolder: (path: string) => void;
 }) {
+  const [docSearchQuery, setDocSearchQuery] = useState('');
+  const filteredDocs = useMemo(() => {
+    const q = docSearchQuery.trim().toLowerCase();
+    if (!q) return project.documents;
+    return project.documents.filter(
+      (d) =>
+        d.title.toLowerCase().includes(q) ||
+        (d.text ?? '').toLowerCase().includes(q),
+    );
+  }, [project.documents, docSearchQuery]);
   const { rootDocs, folders } = useMemo(
-    () => buildFolderTree(project.documents, project.folders ?? []),
-    [project.documents, project.folders],
+    () =>
+      buildFolderTree(
+        filteredDocs,
+        docSearchQuery.trim() ? [] : project.folders ?? [],
+      ),
+    [filteredDocs, project.folders, docSearchQuery],
   );
   const [dragOverFolder, setDragOverFolder] = useState<string | null>(null);
   const [rootDragOver, setRootDragOver] = useState(false);
@@ -1627,9 +1641,39 @@ function Sidebar({
               </button>
             </div>
           </div>
+          {project.documents.length > 0 && (
+            <div className="mb-2 relative">
+              <input
+                value={docSearchQuery}
+                onChange={(e) => setDocSearchQuery(e.target.value)}
+                placeholder="Search doc text + titles…"
+                className="w-full pl-2.5 pr-7 py-1.5 text-[12px] border border-slate-200 rounded bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500"
+              />
+              {docSearchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setDocSearchQuery('')}
+                  className="absolute top-1/2 -translate-y-1/2 right-1 w-5 h-5 rounded text-slate-400 hover:text-slate-900 hover:bg-slate-100 flex items-center justify-center text-[12px]"
+                  title="clear search"
+                >
+                  ×
+                </button>
+              )}
+              {docSearchQuery && (
+                <div className="mt-1 text-[10px] text-slate-500 font-mono px-1">
+                  {filteredDocs.length} / {project.documents.length} match
+                  {filteredDocs.length === 1 ? '' : 'es'}
+                </div>
+              )}
+            </div>
+          )}
           {project.documents.length === 0 && folders.length === 0 ? (
             <div className="text-[12px] text-slate-400 italic py-2">
               No documents yet. Drop one in or click + doc.
+            </div>
+          ) : docSearchQuery && filteredDocs.length === 0 ? (
+            <div className="text-[12px] text-slate-400 italic py-2">
+              No docs match “{docSearchQuery}”.
             </div>
           ) : (
             <div className="space-y-px">
