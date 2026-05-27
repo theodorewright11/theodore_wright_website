@@ -7,9 +7,9 @@ import {
   resolveColor,
   segmentText,
 } from './compute';
-import { MarkdownEditor } from './Markdown';
+import { MarkdownEditor, type QcLinkOptions } from './Markdown';
 import { ResizeHandle, RowResizeHandle } from './Resizable';
-import { emDash } from './storage';
+import { cryptoRandomId, emDash } from './storage';
 import type { Annotation, Code, Document, MetadataField } from './types';
 
 type Props = {
@@ -30,10 +30,12 @@ type Props = {
   onToggleMetadata: () => void;
   onToggleCodebook: () => void;
   onUpdateDoc: (patch: Partial<Document>) => void;
-  onAddAnnotation: (start: number, end: number, codeId: string, note?: string) => void;
+  onAddAnnotation: (start: number, end: number, codeId: string, note?: string, id?: string) => void;
   onDeleteAnnotation: (id: string) => void;
   onUpdateAnnotation: (id: string, patch: Partial<Annotation>) => void;
   onSendAnnotationToNote?: (annotationId: string) => void;
+  canSendToNote?: boolean;
+  qcLinkOptions?: QcLinkOptions;
   onJumpToQcLink?: (href: string) => void;
   onClose?: () => void;
   showPaneControls?: boolean;
@@ -69,6 +71,8 @@ export default function DocumentViewer({
   onDeleteAnnotation,
   onUpdateAnnotation,
   onSendAnnotationToNote,
+  canSendToNote,
+  qcLinkOptions,
   onJumpToQcLink,
   onClose,
   showPaneControls,
@@ -79,6 +83,7 @@ export default function DocumentViewer({
     return (
       <NoteDocViewer
         doc={doc}
+        qcLinkOptions={qcLinkOptions}
         onUpdateDoc={onUpdateDoc}
         onJumpToQcLink={onJumpToQcLink}
         onClose={onClose}
@@ -384,8 +389,13 @@ export default function DocumentViewer({
           codes={codes}
           text={doc.text}
           showDefinitions={showCodeDefinitions}
-          onPick={(codeId, note) => {
-            onAddAnnotation(pending.start, pending.end, codeId, note);
+          canSendToNote={!!canSendToNote && !!onSendAnnotationToNote}
+          onPick={(codeId, note, sendToNote) => {
+            const id = cryptoRandomId();
+            onAddAnnotation(pending.start, pending.end, codeId, note, id);
+            if (sendToNote && onSendAnnotationToNote) {
+              onSendAnnotationToNote(id);
+            }
             setPending(null);
             window.getSelection()?.removeAllRanges();
           }}
@@ -587,16 +597,18 @@ type PopoverProps = {
   codes: Code[];
   text: string;
   showDefinitions: boolean;
-  onPick: (codeId: string, note?: string) => void;
+  canSendToNote: boolean;
+  onPick: (codeId: string, note?: string, sendToNote?: boolean) => void;
   onCancel: () => void;
 };
 
 const SelectionPopover = forwardRef<HTMLDivElement, PopoverProps>(function SelectionPopover(
-  { pending, codes, text, showDefinitions, onPick, onCancel },
+  { pending, codes, text, showDefinitions, canSendToNote, onPick, onCancel },
   ref,
 ) {
   const [query, setQuery] = useState('');
   const [note, setNote] = useState('');
+  const [sendToNote, setSendToNote] = useState(false);
   const flat = useMemo(() => flattenTree(buildCodeTree(codes)), [codes]);
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -607,7 +619,8 @@ const SelectionPopover = forwardRef<HTMLDivElement, PopoverProps>(function Selec
   }, [flat, query, codes]);
 
   const preview = text.slice(pending.start, pending.end);
-  const commit = (codeId: string) => onPick(codeId, note.trim() || undefined);
+  const commit = (codeId: string) =>
+    onPick(codeId, note.trim() || undefined, sendToNote);
 
   return (
     <div
@@ -706,6 +719,17 @@ const SelectionPopover = forwardRef<HTMLDivElement, PopoverProps>(function Selec
           rows={2}
           className="w-full px-2.5 py-1.5 text-[12px] border border-slate-200 rounded bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 resize-y"
         />
+        {canSendToNote && (
+          <label className="mt-1.5 flex items-center gap-1.5 text-[11px] text-amber-900 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={sendToNote}
+              onChange={(e) => setSendToNote(e.target.checked)}
+              className="accent-amber-600"
+            />
+            Also link this annotation in the open note
+          </label>
+        )}
         <div className="mt-1 text-[10px] text-slate-400">
           Pick a code to commit. ⌘/Ctrl-Enter assigns the top match.
         </div>
@@ -898,6 +922,7 @@ function rangeOffset(container: HTMLElement, node: Node, offset: number): number
 
 function NoteDocViewer({
   doc,
+  qcLinkOptions,
   onUpdateDoc,
   onJumpToQcLink,
   onClose,
@@ -906,6 +931,7 @@ function NoteDocViewer({
   onPaneDragEnd,
 }: {
   doc: Document;
+  qcLinkOptions?: QcLinkOptions;
   onUpdateDoc: (patch: Partial<Document>) => void;
   onJumpToQcLink?: (href: string) => void;
   onClose?: () => void;
@@ -972,6 +998,7 @@ function NoteDocViewer({
           value={doc.text}
           onChange={(v) => onUpdateDoc({ text: v })}
           onQcLinkClick={onJumpToQcLink}
+          qcLinkOptions={qcLinkOptions}
           placeholder="Write commentary, link annotations from other docs, take running notes. Markdown supported."
           minHeight={500}
         />

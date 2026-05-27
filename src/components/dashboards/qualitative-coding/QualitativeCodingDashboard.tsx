@@ -672,11 +672,12 @@ export default function QualitativeCodingDashboard() {
     end: number,
     codeId: string,
     note?: string,
+    explicitId?: string,
   ) => {
     if (!activeProject) return;
     const projectId = activeProject.id;
     const a: Annotation = {
-      id: cryptoRandomId(),
+      id: explicitId ?? cryptoRandomId(),
       docId,
       start,
       end,
@@ -786,10 +787,36 @@ export default function QualitativeCodingDashboard() {
 
   const handleQcLinkClick = (href: string) => {
     // qcanno://<projectId>/<docId>/<annotationId>
-    const m = /^qcanno:\/\/([^/]+)\/([^/]+)\/(.+)$/i.exec(href);
-    if (!m) return;
-    const [, projectId, docId, annotationId] = m;
-    jumpToAnnotation(projectId, docId, annotationId);
+    const annoMatch = /^qcanno:\/\/([^/]+)\/([^/]+)\/(.+)$/i.exec(href);
+    if (annoMatch) {
+      const [, projectId, docId, annotationId] = annoMatch;
+      jumpToAnnotation(projectId, docId, annotationId);
+      return;
+    }
+    // qcdoc://<projectId>/<docId>
+    const docMatch = /^qcdoc:\/\/([^/]+)\/([^/]+)$/i.exec(href);
+    if (docMatch) {
+      const [, projectId, docId] = docMatch;
+      if (projectId !== state.activeProjectId) {
+        setState((s) => ({ ...s, activeProjectId: projectId, view: 'documents' }));
+      } else {
+        setView('documents');
+      }
+      setSelectedCodeId(null);
+      // Open as a compare pane if alongside the note; else replace.
+      // Heuristic: if there are open notes, open the linked doc as a compare pane
+      // so the note stays visible. Otherwise replace.
+      const hasOpenNote = openDocIds.some((id) => {
+        const d = activeProject?.documents.find((x) => x.id === id);
+        return d?.kind === 'note';
+      });
+      if (hasOpenNote && !openDocIds.includes(docId)) {
+        addCompareDoc(docId);
+      } else {
+        setActiveDocId(docId);
+      }
+      setFocusedAnnotationId(null);
+    }
   };
 
   const jumpToAnnotation = (projectId: string, docId: string, annotationId: string) => {
@@ -901,7 +928,7 @@ export default function QualitativeCodingDashboard() {
               setFocusedAnnotationId(null);
               if (view !== 'documents') setView('documents');
             }}
-            onAddDoc={(folder) => addDocument(folder)}
+            onAddDoc={(folder, kind) => addDocument(folder, kind)}
             onDeleteDoc={deleteDocument}
             onMoveDocToFolder={moveDocumentToFolder}
             onAddFolder={addFolder}
@@ -979,12 +1006,19 @@ export default function QualitativeCodingDashboard() {
                         onToggleMetadata={toggleMetadata}
                         onToggleCodebook={() => setCodebookPanelOpen((v) => !v)}
                         onUpdateDoc={(patch) => updateDocument(d.id, patch)}
-                        onAddAnnotation={(start, end, codeId, note) =>
-                          addAnnotation(d.id, start, end, codeId, note)
+                        onAddAnnotation={(start, end, codeId, note, id) =>
+                          addAnnotation(d.id, start, end, codeId, note, id)
                         }
                         onDeleteAnnotation={deleteAnnotation}
                         onUpdateAnnotation={updateAnnotation}
                         onSendAnnotationToNote={(annId) => sendAnnotationToNote(annId, d)}
+                        canSendToNote={openDocs.some((o) => o.kind === 'note')}
+                        qcLinkOptions={{
+                          projectId: activeProject.id,
+                          docs: activeProject.documents,
+                          annotations: activeProject.annotations,
+                          codes: activeProject.codes,
+                        }}
                         onJumpToQcLink={handleQcLinkClick}
                         onClose={() => closeDocPane(d.id)}
                         showPaneControls={openDocs.length > 1}
