@@ -102,16 +102,22 @@ export type Segment = {
   end: number;
   text: string;
   annotations: Annotation[];
+  pending?: boolean;
 };
 
-export function segmentText(text: string, annotations: Annotation[]): Segment[] {
-  if (annotations.length === 0) {
-    return [{ start: 0, end: text.length, text, annotations: [] }];
-  }
+export function segmentText(
+  text: string,
+  annotations: Annotation[],
+  pendingRange?: { start: number; end: number },
+): Segment[] {
   const boundaries = new Set<number>([0, text.length]);
   for (const a of annotations) {
     boundaries.add(Math.max(0, Math.min(text.length, a.start)));
     boundaries.add(Math.max(0, Math.min(text.length, a.end)));
+  }
+  if (pendingRange) {
+    boundaries.add(Math.max(0, Math.min(text.length, pendingRange.start)));
+    boundaries.add(Math.max(0, Math.min(text.length, pendingRange.end)));
   }
   const sorted = [...boundaries].sort((a, b) => a - b);
   const segs: Segment[] = [];
@@ -120,7 +126,16 @@ export function segmentText(text: string, annotations: Annotation[]): Segment[] 
     const end = sorted[i + 1];
     if (end <= start) continue;
     const covering = annotations.filter((a) => a.start <= start && a.end >= end);
-    segs.push({ start, end, text: text.slice(start, end), annotations: covering });
+    const isPending = !!(
+      pendingRange && start >= pendingRange.start && end <= pendingRange.end
+    );
+    segs.push({
+      start,
+      end,
+      text: text.slice(start, end),
+      annotations: covering,
+      pending: isPending,
+    });
   }
   return segs;
 }

@@ -102,6 +102,22 @@ export default function DocumentViewer({
   const [notesOpen, setNotesOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const popoverRef = useRef<HTMLDivElement>(null);
+  const bodyScrollRef = useRef<HTMLDivElement>(null);
+
+  // Slow wheel scrolling in the doc body for finer-grained navigation.
+  // Native onWheel in React is passive, so use a non-passive listener.
+  useEffect(() => {
+    const el = bodyScrollRef.current;
+    if (!el) return;
+    const onWheel = (e: WheelEvent) => {
+      if (e.ctrlKey || e.metaKey) return; // leave browser zoom alone
+      // Default deltaY is ~100px per tick on most setups; halve it.
+      e.preventDefault();
+      el.scrollTop += e.deltaY * 0.55;
+    };
+    el.addEventListener('wheel', onWheel, { passive: false });
+    return () => el.removeEventListener('wheel', onWheel);
+  }, []);
 
   useEffect(() => {
     setDraftText(doc.text);
@@ -116,8 +132,8 @@ export default function DocumentViewer({
   );
 
   const segments = useMemo(
-    () => segmentText(doc.text, docAnnotations),
-    [doc.text, docAnnotations],
+    () => segmentText(doc.text, docAnnotations, pending ?? undefined),
+    [doc.text, docAnnotations, pending],
   );
 
   useEffect(() => {
@@ -298,7 +314,7 @@ export default function DocumentViewer({
         </div>
       </div>
 
-      <div className="flex-1 overflow-auto bg-white">
+      <div ref={bodyScrollRef} className="flex-1 overflow-auto bg-white">
         {mode === 'edit' ? (
           <div className="max-w-[760px] mx-auto px-8 py-6">
             <textarea
@@ -330,6 +346,16 @@ export default function DocumentViewer({
               ) : (
                 segments.map((seg, i) => {
                   if (seg.annotations.length === 0) {
+                    if (seg.pending) {
+                      return (
+                        <span
+                          key={i}
+                          style={{ backgroundColor: 'rgba(254, 240, 138, 0.85)' }}
+                        >
+                          {seg.text}
+                        </span>
+                      );
+                    }
                     return <span key={i}>{seg.text}</span>;
                   }
                   const top = seg.annotations[seg.annotations.length - 1];
@@ -351,7 +377,9 @@ export default function DocumentViewer({
                         dim ? 'opacity-30' : ''
                       }`}
                       style={{
-                        backgroundColor: hexAlpha(color, isFocused ? 0.4 : 0.2),
+                        backgroundColor: seg.pending
+                          ? 'rgba(254, 240, 138, 0.85)'
+                          : hexAlpha(color, isFocused ? 0.4 : 0.2),
                         boxShadow: isFocused ? `inset 0 -2px 0 ${color}` : `inset 0 -1px 0 ${color}`,
                       }}
                       title={seg.annotations
@@ -677,7 +705,7 @@ const SelectionPopover = forwardRef<HTMLDivElement, PopoverProps>(function Selec
           if (e.key === 'Escape') onCancel();
         }}
       />
-      <div className="max-h-[380px] overflow-y-auto">
+      <div className="max-h-[420px] overflow-y-auto">
         {filtered.length === 0 ? (
           <div className="px-3 py-4 text-[12px] text-slate-400 italic text-center">
             No matching codes.
@@ -723,7 +751,7 @@ const SelectionPopover = forwardRef<HTMLDivElement, PopoverProps>(function Selec
             if (e.key === 'Escape') onCancel();
           }}
           placeholder="Optional note for this annotation…"
-          rows={3}
+          rows={2}
           className="w-full px-2.5 py-1.5 text-[12px] border border-slate-200 rounded bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 resize-y"
         />
         {canSendToNote && (
@@ -737,9 +765,6 @@ const SelectionPopover = forwardRef<HTMLDivElement, PopoverProps>(function Selec
             Also link this annotation in the open note
           </label>
         )}
-        <div className="mt-1 text-[10px] text-slate-400">
-          Pick a code to commit. ⌘/Ctrl-Enter assigns the top match.
-        </div>
       </div>
     </div>
   );
