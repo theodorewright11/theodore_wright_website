@@ -3,8 +3,15 @@ title: 'Build'
 description: 'A reader''s tool for the AI transition. Pick a life-situation (early-career exposed, mid-career default, self-automator, asymmetric exploiter, displaced expert, heavy companion user) and see the six-channel decomposition in plain language, the structural flags, named risks, and top moves. Plus the six channels demystified, the four motivated-reasoning traps, a ten-year trajectory under three atrophy regimes, the five robust moves, and an eight-bullet take-away. Translates the model formalization and data pipeline into something a non-specialist can use for actual decisions about career, education, relationships, and life architecture.'
 date: 2026-05-26
 status: complete
-refinementPass: 2
+refinementPass: 3
 refinementLog:
+  - pass: 3
+    date: '2026-05-26'
+    passes: ['internal consistency check', 'fresh-eyes audit', 'cross-stage sync']
+    why: 'The writeup pass 3 fixed a structural error in the channel-count framing (model has two gain channels and four loss channels, not "three positive / three negative" — ΔV_trap lives on the V side but is ≤0 by construction). I updated the writeup but missed that the explorer''s ChannelsView intro paragraph carried the same stale framing. A cold grep across the navigating-ai-world artifacts caught it. This is the kind of cross-artifact inconsistency a careful reviewer would flag, since the channels view is one of the explorer''s six tabs and the intro paragraph is the first thing a reader sees in that view.'
+    changes:
+      - 'AITransitionExplorer.tsx ChannelsView intro paragraph: "Three are typically positive (ΔV: value gained), three are typically negative (ΔM: meaning lost). The split is for ease of reading" → "Two produce gain (productivity / novice-skill compression and low-dose relational benefit); four produce loss (the self-automator penalty, telic absorption, competence erosion, and high-dose relational harm). The V/M labels group channels by their location in the formal equation, not by sign — ΔV_trap is on the V side but is ≤ 0 by construction." Matches writeup §3.1 corrected framing'
+      - 'No other changes. The Trap pushback fields, profile parameters, channel explainer cards, trajectory view, moves, and take-away view all stand'
   - pass: 2
     date: '2026-05-26'
     passes: ['adversarial + steelman', 'error check', 'cross-stage sync']

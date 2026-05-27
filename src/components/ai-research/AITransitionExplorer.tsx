@@ -580,9 +580,11 @@ function ChannelsView() {
     <div>
       <p className="text-ink-soft leading-relaxed mb-6">
         The model decomposes life-outcome change under the AI transition into six additive channels.
-        Three are typically positive (ΔV: value gained), three are typically negative (ΔM: meaning lost).
-        The split is for ease of reading — the substantive structure is the six channels and their
-        couplings, not the V/M cut.
+        Two produce gain (productivity / novice-skill compression and low-dose relational benefit);
+        four produce loss (the self-automator penalty, telic absorption, competence erosion, and
+        high-dose relational harm). The V/M labels group channels by their location in the formal
+        equation, not by sign — ΔV_trap is on the V side but is ≤ 0 by construction. The substantive
+        structure is the six channels and their couplings, not the V/M cut.
       </p>
       <div className="space-y-2">
         {CHANNEL_EXPLAINERS.map((ch) => (
