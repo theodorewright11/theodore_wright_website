@@ -1019,11 +1019,20 @@ export default function QualitativeCodingDashboard() {
                         setDragPaneId(null);
                         setDragOverPaneId(null);
                       }}
-                      className={`flex-1 min-w-[440px] min-h-0 flex transition-colors ${
+                      className={`flex-1 min-h-0 flex transition-colors ${
                         idx < openDocs.length - 1 ? 'border-r border-slate-200' : ''
                       } ${isBeingDragged ? 'opacity-40' : ''} ${
                         isDragOver ? 'bg-blue-50 ring-2 ring-blue-400 ring-inset' : ''
                       }`}
+                      style={{
+                        // Line view: 3 panes fit at once on a typical wide
+                        // monitor; more open → horizontal scroll. Non-line:
+                        // 4 panes fit. Falls back to fixed minimum on narrow
+                        // screens so panes never get crushed.
+                        minWidth: state.lineView
+                          ? 'max(540px, 32vw)'
+                          : 'max(420px, 24vw)',
+                      }}
                     >
                       <DocumentViewer
                         key={d.id + (idx === 0 && focusedAnnotationId ? ':' + focusedAnnotationId : '')}
@@ -1051,10 +1060,20 @@ export default function QualitativeCodingDashboard() {
                         onUpdateAnnotation={updateAnnotation}
                         onSendAnnotationToNote={(annData) => sendAnnotationToNote(d, annData)}
                         canSendToNote={openDocs.some((o) => o.kind === 'note')}
-                        onCreateCode={(name) => addCode(null, name)}
+                        onCreateCode={(name, parentId) =>
+                          addCode(parentId ?? null, name)
+                        }
                         lineView={!!state.lineView}
                         onToggleLineView={() =>
                           setState((s) => ({ ...s, lineView: !s.lineView }))
+                        }
+                        linesMode={state.linesMode ?? 'sentence'}
+                        linesCharsN={state.linesCharsN ?? 100}
+                        onSetLinesMode={(m) =>
+                          setState((s) => ({ ...s, linesMode: m }))
+                        }
+                        onSetLinesCharsN={(n) =>
+                          setState((s) => ({ ...s, linesCharsN: n }))
                         }
                         qcLinkOptions={{
                           projectId: activeProject.id,

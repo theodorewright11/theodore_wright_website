@@ -86,6 +86,8 @@ export type AppState = {
   exploreFiltersCollapsed?: boolean;
   exploreCoOccurrenceCollapsed?: boolean;
   lineView?: boolean;
+  linesMode?: 'sentence' | 'chars';
+  linesCharsN?: number;
   deletedProjectIds?: string[];
 };
 

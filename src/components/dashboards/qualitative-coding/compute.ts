@@ -176,6 +176,153 @@ export function findDoc(project: Project, docId: string | null): Document | null
   return project.documents.find((d) => d.id === docId) ?? null;
 }
 
+// ---------------------------------------------------------------------------
+// Line splitting for line-by-line view.
+// ---------------------------------------------------------------------------
+
+export type LinesMode = 'sentence' | 'chars';
+
+export type LineEntry = {
+  number: number;
+  start: number;
+  end: number;
+  text: string;
+  isBlank: boolean;
+};
+
+// Common English abbreviations that look like sentence enders but aren't.
+// Lowercased; matched against the word immediately preceding the period.
+const SENTENCE_ABBREVIATIONS = new Set([
+  'dr', 'mr', 'mrs', 'ms', 'jr', 'sr', 'prof', 'st', 'mt',
+  'inc', 'ltd', 'co', 'corp',
+  'etc', 'eg', 'ie', 'vs', 'no', 'cf', 'al', 'approx', 'ca',
+  'rev', 'hon', 'gen', 'col', 'capt', 'lt', 'sgt', 'cmdr', 'maj',
+  'rep', 'sen', 'gov', 'pres', 'sec',
+  'phd', 'md', 'ba', 'ma', 'bsc', 'msc', 'dds', 'do',
+  'fig', 'vol', 'pg', 'pp', 'ed', 'eds',
+  'am', 'pm',
+]);
+
+// Inside a single paragraph (no \n), find the END positions (exclusive) of
+// each sentence, where trailing inter-sentence whitespace is attached to the
+// sentence that just ended. So a sentence "owns" its trailing space.
+function findSentenceEnds(paragraph: string): number[] {
+  const ends: number[] = [];
+  let i = 0;
+  while (i < paragraph.length) {
+    const ch = paragraph[i];
+    if (ch === '.' || ch === '!' || ch === '?') {
+      // Skip duplicate punctuation (e.g., "!!!")
+      let punctEnd = i + 1;
+      while (
+        punctEnd < paragraph.length &&
+        (paragraph[punctEnd] === '.' ||
+          paragraph[punctEnd] === '!' ||
+          paragraph[punctEnd] === '?')
+      ) {
+        punctEnd++;
+      }
+      // Treat the punctuation run as a single sentence terminator.
+      const isLast = punctEnd >= paragraph.length;
+      let nextNonWs = punctEnd;
+      while (nextNonWs < paragraph.length && /\s/.test(paragraph[nextNonWs])) {
+        nextNonWs++;
+      }
+      const followsWithCap =
+        nextNonWs < paragraph.length &&
+        /[A-Z0-9"'(\[]/.test(paragraph[nextNonWs]);
+
+      if (!isLast && !followsWithCap) {
+        i = punctEnd;
+        continue;
+      }
+      // Abbreviation check (only meaningful for '.')
+      if (ch === '.' && punctEnd - i === 1) {
+        let wstart = i - 1;
+        while (wstart >= 0 && /[a-zA-Z]/.test(paragraph[wstart])) wstart--;
+        const word = paragraph.slice(wstart + 1, i).toLowerCase();
+        if (SENTENCE_ABBREVIATIONS.has(word)) {
+          i = punctEnd;
+          continue;
+        }
+        // Single-letter "initial" pattern: " J." in "T. J. Wright" — treat as
+        // abbreviation if word is a single uppercase letter.
+        if (word.length === 1 && /[A-Z]/.test(paragraph[wstart + 1])) {
+          i = punctEnd;
+          continue;
+        }
+      }
+      ends.push(nextNonWs);
+      i = nextNonWs;
+      continue;
+    }
+    i++;
+  }
+  return ends;
+}
+
+export function buildLines(
+  text: string,
+  mode: LinesMode,
+  charsPerLine = 100,
+): LineEntry[] {
+  const out: LineEntry[] = [];
+  let lineNum = 1;
+  let pos = 0;
+  const paragraphs = text.split('\n');
+  for (let pi = 0; pi < paragraphs.length; pi++) {
+    const para = paragraphs[pi];
+    const paraStart = pos;
+
+    if (para.length === 0) {
+      out.push({
+        number: lineNum++,
+        start: pos,
+        end: pos,
+        text: '',
+        isBlank: true,
+      });
+    } else if (mode === 'sentence') {
+      const ends = findSentenceEnds(para);
+      let prev = 0;
+      for (const e of ends) {
+        if (e <= prev) continue;
+        out.push({
+          number: lineNum++,
+          start: paraStart + prev,
+          end: paraStart + e,
+          text: para.slice(prev, e),
+          isBlank: false,
+        });
+        prev = e;
+      }
+      if (prev < para.length) {
+        out.push({
+          number: lineNum++,
+          start: paraStart + prev,
+          end: paraStart + para.length,
+          text: para.slice(prev),
+          isBlank: false,
+        });
+      }
+    } else {
+      // chars
+      for (let off = 0; off < para.length; off += charsPerLine) {
+        const end = Math.min(off + charsPerLine, para.length);
+        out.push({
+          number: lineNum++,
+          start: paraStart + off,
+          end: paraStart + end,
+          text: para.slice(off, end),
+          isBlank: false,
+        });
+      }
+    }
+    pos += para.length + 1; // +1 for the \n separator (not present after last paragraph)
+  }
+  return out;
+}
+
 export function countWords(text: string): number {
   if (!text) return 0;
   const m = text.trim().match(/\S+/g);

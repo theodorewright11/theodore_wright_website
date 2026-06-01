@@ -1,11 +1,13 @@
 import { forwardRef, useEffect, useMemo, useRef, useState } from 'react';
 import {
   annotationsForDoc,
+  buildCodeTree,
+  buildLines,
   codePathString,
   flattenTree,
-  buildCodeTree,
   resolveColor,
   segmentText,
+  type LinesMode,
 } from './compute';
 import { MarkdownEditor, type QcLinkOptions } from './Markdown';
 import { ResizeHandle, RowResizeHandle } from './Resizable';
@@ -38,9 +40,13 @@ type Props = {
   ) => void;
   canSendToNote?: boolean;
   qcLinkOptions?: QcLinkOptions;
-  onCreateCode?: (name: string) => string;
+  onCreateCode?: (name: string, parentId?: string | null) => string;
   lineView?: boolean;
   onToggleLineView?: () => void;
+  linesMode?: 'sentence' | 'chars';
+  linesCharsN?: number;
+  onSetLinesMode?: (m: 'sentence' | 'chars') => void;
+  onSetLinesCharsN?: (n: number) => void;
   onJumpToQcLink?: (href: string) => void;
   onClose?: () => void;
   showPaneControls?: boolean;
@@ -81,6 +87,10 @@ export default function DocumentViewer({
   onCreateCode,
   lineView,
   onToggleLineView,
+  linesMode,
+  linesCharsN,
+  onSetLinesMode,
+  onSetLinesCharsN,
   onJumpToQcLink,
   onClose,
   showPaneControls,
@@ -142,16 +152,10 @@ export default function DocumentViewer({
     [doc.text, docAnnotations, pending],
   );
 
-  const lines = useMemo(() => {
-    const out: { number: number; start: number; end: number; text: string }[] = [];
-    let pos = 0;
-    let n = 1;
-    for (const lineText of doc.text.split('\n')) {
-      out.push({ number: n++, start: pos, end: pos + lineText.length, text: lineText });
-      pos += lineText.length + 1;
-    }
-    return out;
-  }, [doc.text]);
+  const lines = useMemo(
+    () => buildLines(doc.text, linesMode ?? 'sentence', linesCharsN ?? 100),
+    [doc.text, linesMode, linesCharsN],
+  );
 
   const renderSegment = (seg: ReturnType<typeof segmentText>[number], key: React.Key) => {
     if (seg.annotations.length === 0) {
@@ -381,19 +385,19 @@ export default function DocumentViewer({
         onUpdateDoc={onUpdateDoc}
       />
 
-      <div className="px-6 py-3 flex items-center gap-2 border-b border-slate-200 bg-white sticky top-0 z-10">
+      <div className="px-4 py-3 flex items-center gap-2 border-b border-slate-200 bg-white sticky top-0 z-10 overflow-x-auto">
         <ToggleBtn active={mode === 'view'} onClick={() => mode === 'edit' && commitEdit()}>
           Read &amp; code
         </ToggleBtn>
         <ToggleBtn active={mode === 'edit'} onClick={() => setMode('edit')}>
           Edit text
         </ToggleBtn>
-        <div className="w-px h-5 bg-slate-200 mx-1" />
+        <div className="w-px h-5 bg-slate-200 mx-1 flex-shrink-0" />
         <button
           type="button"
           onClick={onToggleCodebook}
           title="open codebook side panel"
-          className={`px-3 py-1.5 text-[13px] font-medium rounded-md transition-colors ${
+          className={`flex-shrink-0 px-3 py-1.5 text-[13px] font-medium rounded-md transition-colors ${
             codebookOpen
               ? 'bg-blue-600 text-white shadow-sm'
               : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
@@ -404,7 +408,7 @@ export default function DocumentViewer({
         <button
           type="button"
           onClick={() => setNotesOpen((v) => !v)}
-          className={`px-3 py-1.5 text-[13px] font-medium rounded-md transition-colors ${
+          className={`flex-shrink-0 px-3 py-1.5 text-[13px] font-medium rounded-md transition-colors ${
             notesOpen
               ? 'bg-amber-100 text-amber-900'
               : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
@@ -421,7 +425,7 @@ export default function DocumentViewer({
                 ? 'switch to paragraph view'
                 : 'show line numbers + code margin'
             }
-            className={`px-3 py-1.5 text-[13px] font-medium rounded-md transition-colors ${
+            className={`flex-shrink-0 px-3 py-1.5 text-[13px] font-medium rounded-md transition-colors ${
               lineView
                 ? 'bg-emerald-100 text-emerald-900'
                 : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
@@ -429,6 +433,47 @@ export default function DocumentViewer({
           >
             Lines
           </button>
+        )}
+        {lineView && onSetLinesMode && (
+          <div className="flex items-center bg-slate-100 rounded-md p-0.5 flex-shrink-0">
+            <button
+              type="button"
+              onClick={() => onSetLinesMode('sentence')}
+              className={`px-2 py-1 text-[11px] font-semibold rounded transition-colors ${
+                (linesMode ?? 'sentence') === 'sentence'
+                  ? 'bg-white text-slate-900 shadow-sm'
+                  : 'text-slate-500 hover:text-slate-900'
+              }`}
+            >
+              Sentences
+            </button>
+            <button
+              type="button"
+              onClick={() => onSetLinesMode('chars')}
+              className={`px-2 py-1 text-[11px] font-semibold rounded transition-colors ${
+                linesMode === 'chars'
+                  ? 'bg-white text-slate-900 shadow-sm'
+                  : 'text-slate-500 hover:text-slate-900'
+              }`}
+            >
+              Chars
+            </button>
+            {linesMode === 'chars' && onSetLinesCharsN && (
+              <input
+                type="number"
+                value={linesCharsN ?? 100}
+                onChange={(e) => {
+                  const n = Number(e.target.value);
+                  if (n > 0 && n < 100000) onSetLinesCharsN(n);
+                }}
+                min={20}
+                max={2000}
+                step={10}
+                className="ml-1 w-[56px] px-1.5 py-0.5 text-[11px] border border-slate-200 rounded bg-white focus:outline-none focus:ring-1 focus:ring-blue-400"
+                title="chars per line"
+              />
+            )}
+          </div>
         )}
         <div className="ml-auto text-[12px] text-slate-400 font-mono tabular-nums">
           {doc.text.length.toLocaleString()} chars · {countWords(doc.text).toLocaleString()} words ·{' '}
@@ -501,7 +546,7 @@ export default function DocumentViewer({
                               renderSegment(seg, `${line.number}-${i}`),
                             )}
                       </div>
-                      <div className="w-[210px] flex-shrink-0 flex flex-wrap gap-1 mt-0.5 self-start">
+                      <div className="w-[260px] flex-shrink-0 flex flex-wrap gap-1 mt-0.5 self-start">
                         {annsHere.map((a) => {
                           const color = resolveColor(codes, a.codeId);
                           const path = codePathString(codes, a.codeId);
@@ -514,7 +559,7 @@ export default function DocumentViewer({
                                 e.stopPropagation();
                                 setFocusedAnnotationId(focused ? null : a.id);
                               }}
-                              className={`max-w-full text-[11px] px-1.5 py-0.5 rounded ring-1 transition-all ${
+                              className={`text-[11px] px-1.5 py-0.5 rounded ring-1 transition-all text-left leading-snug break-words ${
                                 focused
                                   ? 'ring-slate-700 shadow-sm'
                                   : 'ring-black/5 hover:ring-slate-400'
@@ -523,15 +568,9 @@ export default function DocumentViewer({
                                 backgroundColor: hexAlpha(color, focused ? 0.4 : 0.18),
                                 color: '#1e293b',
                               }}
-                              title={
-                                a.note
-                                  ? `${path} — ${a.note}`
-                                  : path
-                              }
+                              title={a.note ? `${path} — ${a.note}` : path}
                             >
-                              <span className="truncate inline-block max-w-[180px] align-middle">
-                                {path}
-                              </span>
+                              {path}
                             </button>
                           );
                         })}
@@ -805,7 +844,7 @@ type PopoverProps = {
   showDefinitions: boolean;
   canSendToNote: boolean;
   onPick: (codeIds: string[], note?: string, sendToNote?: boolean) => void;
-  onCreateCode?: (name: string) => string;
+  onCreateCode?: (name: string, parentId?: string | null) => string;
   onCancel: () => void;
 };
 
@@ -818,6 +857,7 @@ const SelectionPopover = forwardRef<HTMLDivElement, PopoverProps>(function Selec
   const [sendToNote, setSendToNote] = useState(false);
   const [multiMode, setMultiMode] = useState(false);
   const [pickedCodeIds, setPickedCodeIds] = useState<Set<string>>(new Set());
+  const [createParentId, setCreateParentId] = useState<string | null>(null);
   const flat = useMemo(() => flattenTree(buildCodeTree(codes)), [codes]);
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -863,7 +903,7 @@ const SelectionPopover = forwardRef<HTMLDivElement, PopoverProps>(function Selec
     if (!onCreateCode) return;
     const name = trimmedQuery;
     if (!name) return;
-    const id = onCreateCode(name);
+    const id = onCreateCode(name, createParentId);
     if (!id) return;
     if (multiMode) {
       setPickedCodeIds((prev) => {
@@ -937,19 +977,48 @@ const SelectionPopover = forwardRef<HTMLDivElement, PopoverProps>(function Selec
       </div>
       <div className="max-h-[380px] overflow-y-auto">
         {canCreate && (
-          <button
-            type="button"
-            onClick={createAndPick}
-            className="w-full flex items-center gap-2 px-3 py-2 text-left bg-emerald-50 hover:bg-emerald-100 border-b border-emerald-100 transition-colors"
-            title="create a new top-level code with this name"
-          >
-            <span className="w-4 h-4 rounded-sm bg-emerald-600 text-white text-[12px] font-bold flex items-center justify-center flex-shrink-0">
-              +
-            </span>
-            <span className="text-[13px] text-emerald-900">
-              Create code <span className="font-semibold">“{trimmedQuery}”</span>
-            </span>
-          </button>
+          <div className="bg-emerald-50 border-b border-emerald-100">
+            <button
+              type="button"
+              onClick={createAndPick}
+              className="w-full flex items-center gap-2 px-3 py-2 text-left hover:bg-emerald-100 transition-colors"
+              title="create a new code with this name"
+            >
+              <span className="w-4 h-4 rounded-sm bg-emerald-600 text-white text-[12px] font-bold flex items-center justify-center flex-shrink-0">
+                +
+              </span>
+              <span className="text-[13px] text-emerald-900 min-w-0 flex-1">
+                Create code{' '}
+                <span className="font-semibold">“{trimmedQuery}”</span>
+                {createParentId && (() => {
+                  const parent = codes.find((c) => c.id === createParentId);
+                  return parent ? (
+                    <span className="text-emerald-700">
+                      {' '}under <em className="font-medium">{parent.name}</em>
+                    </span>
+                  ) : null;
+                })()}
+              </span>
+            </button>
+            <div className="px-3 pb-2 -mt-1 flex items-center gap-2">
+              <span className="text-[10px] uppercase font-semibold tracking-wider text-emerald-700">
+                Parent
+              </span>
+              <select
+                value={createParentId ?? ''}
+                onChange={(e) => setCreateParentId(e.target.value || null)}
+                className="flex-1 min-w-0 px-2 py-1 text-[11px] border border-emerald-200 rounded bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-400/40 focus:border-emerald-400"
+              >
+                <option value="">(top level)</option>
+                {flat.map((n) => (
+                  <option key={n.code.id} value={n.code.id}>
+                    {'  '.repeat(n.depth)}
+                    {codePathString(codes, n.code.id)}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
         )}
         {filtered.length === 0 ? (
           <div className="px-3 py-4 text-[12px] text-slate-400 italic text-center">

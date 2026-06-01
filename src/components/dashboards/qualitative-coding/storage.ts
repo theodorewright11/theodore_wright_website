@@ -43,6 +43,11 @@ export function loadState(): AppState {
         exploreFiltersCollapsed: !!parsed.exploreFiltersCollapsed,
         exploreCoOccurrenceCollapsed: !!parsed.exploreCoOccurrenceCollapsed,
         lineView: !!parsed.lineView,
+        linesMode: parsed.linesMode === 'chars' ? 'chars' : 'sentence',
+        linesCharsN:
+          typeof parsed.linesCharsN === 'number' && parsed.linesCharsN > 0
+            ? parsed.linesCharsN
+            : undefined,
         deletedProjectIds: Array.isArray(parsed.deletedProjectIds)
           ? parsed.deletedProjectIds.filter((s: any) => typeof s === 'string')
           : [],
