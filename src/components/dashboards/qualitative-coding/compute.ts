@@ -545,9 +545,12 @@ export function buildFolderTree(
       else roots.push(node);
     }
   }
-  rootDocs.sort((a, b) => a.title.localeCompare(b.title));
+  // Natural sort: "comment 2" comes before "comment 11" instead of after it.
+  const cmp = (a: Document, b: Document) =>
+    a.title.localeCompare(b.title, undefined, { numeric: true, sensitivity: 'base' });
+  rootDocs.sort(cmp);
   for (const node of folderMap.values()) {
-    node.docs.sort((a, b) => a.title.localeCompare(b.title));
+    node.docs.sort(cmp);
   }
   return { rootDocs, folders: roots };
 }
