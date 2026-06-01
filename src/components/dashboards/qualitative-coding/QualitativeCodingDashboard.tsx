@@ -572,16 +572,26 @@ export default function QualitativeCodingDashboard() {
   };
 
   // ----- Code CRUD -----
-  const addCode = (parentId: string | null, name: string): string => {
+  const addCode = (
+    parentId: string | null,
+    name: string,
+    explicitColor?: string | null,
+  ): string => {
     if (!activeProject) return '';
     const projectId = activeProject.id;
     const id = cryptoRandomId();
     updateActiveProject((p) => {
+      const color =
+        explicitColor !== undefined
+          ? explicitColor
+          : parentId === null
+            ? nextPaletteColor(p.codes)
+            : null;
       const code: Code = {
         id,
         name,
         parentId,
-        color: parentId === null ? nextPaletteColor(p.codes) : null,
+        color,
         created_at: new Date().toISOString(),
       };
       return { ...p, codes: [...p.codes, code] };
@@ -1060,8 +1070,8 @@ export default function QualitativeCodingDashboard() {
                         onUpdateAnnotation={updateAnnotation}
                         onSendAnnotationToNote={(annData) => sendAnnotationToNote(d, annData)}
                         canSendToNote={openDocs.some((o) => o.kind === 'note')}
-                        onCreateCode={(name, parentId) =>
-                          addCode(parentId ?? null, name)
+                        onCreateCode={(name, parentId, color) =>
+                          addCode(parentId ?? null, name, color)
                         }
                         lineView={!!state.lineView}
                         onToggleLineView={() =>

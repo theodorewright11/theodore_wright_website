@@ -5,10 +5,12 @@ import {
   buildLines,
   codePathString,
   flattenTree,
+  nextPaletteColor,
   resolveColor,
   segmentText,
   type LinesMode,
 } from './compute';
+import ColorPicker from './ColorPicker';
 import { MarkdownEditor, type QcLinkOptions } from './Markdown';
 import { ResizeHandle, RowResizeHandle } from './Resizable';
 import { cryptoRandomId, emDash } from './storage';
@@ -40,7 +42,11 @@ type Props = {
   ) => void;
   canSendToNote?: boolean;
   qcLinkOptions?: QcLinkOptions;
-  onCreateCode?: (name: string, parentId?: string | null) => string;
+  onCreateCode?: (
+    name: string,
+    parentId?: string | null,
+    color?: string | null,
+  ) => string;
   lineView?: boolean;
   onToggleLineView?: () => void;
   linesMode?: 'sentence' | 'chars';
@@ -844,7 +850,11 @@ type PopoverProps = {
   showDefinitions: boolean;
   canSendToNote: boolean;
   onPick: (codeIds: string[], note?: string, sendToNote?: boolean) => void;
-  onCreateCode?: (name: string, parentId?: string | null) => string;
+  onCreateCode?: (
+    name: string,
+    parentId?: string | null,
+    color?: string | null,
+  ) => string;
   onCancel: () => void;
 };
 
@@ -858,6 +868,11 @@ const SelectionPopover = forwardRef<HTMLDivElement, PopoverProps>(function Selec
   const [multiMode, setMultiMode] = useState(false);
   const [pickedCodeIds, setPickedCodeIds] = useState<Set<string>>(new Set());
   const [createParentId, setCreateParentId] = useState<string | null>(null);
+  // Default to the next palette colour so root codes don't end up colourless.
+  // null = inherit from parent (only meaningful when createParentId is set).
+  const [createColor, setCreateColor] = useState<string | null>(() =>
+    nextPaletteColor(codes),
+  );
   const flat = useMemo(() => flattenTree(buildCodeTree(codes)), [codes]);
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -903,7 +918,9 @@ const SelectionPopover = forwardRef<HTMLDivElement, PopoverProps>(function Selec
     if (!onCreateCode) return;
     const name = trimmedQuery;
     if (!name) return;
-    const id = onCreateCode(name, createParentId);
+    // Pass undefined to let the root pick (next palette / inherit), pass the
+    // chosen hex to override.
+    const id = onCreateCode(name, createParentId, createColor ?? undefined);
     if (!id) return;
     if (multiMode) {
       setPickedCodeIds((prev) => {
@@ -1017,6 +1034,19 @@ const SelectionPopover = forwardRef<HTMLDivElement, PopoverProps>(function Selec
                   </option>
                 ))}
               </select>
+            </div>
+            <div className="px-3 pb-2 flex items-start gap-2">
+              <span className="text-[10px] uppercase font-semibold tracking-wider text-emerald-700 pt-0.5">
+                Color
+              </span>
+              <div className="flex-1 min-w-0">
+                <ColorPicker
+                  value={createColor}
+                  onChange={setCreateColor}
+                  allowInherit={createParentId !== null}
+                  size="sm"
+                />
+              </div>
             </div>
           </div>
         )}

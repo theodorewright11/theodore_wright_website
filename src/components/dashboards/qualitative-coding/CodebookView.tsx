@@ -1,7 +1,8 @@
 import { useState } from 'react';
+import ColorPicker from './ColorPicker';
 import { buildCodeTree, descendantIds, resolveColor, type CodeNode } from './compute';
 import { emDash } from './storage';
-import { PALETTE, type Code, type Project } from './types';
+import type { Code, Project } from './types';
 
 type DropPosition = 'before' | 'after' | 'inside';
 
@@ -387,37 +388,18 @@ function CodebookRow({
             rows={3}
             className="w-full px-3 py-2 text-[13px] border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 resize-y"
           />
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-[10px] uppercase font-semibold tracking-wider text-slate-400 mr-1">
+          <div className="flex items-start gap-3 flex-wrap">
+            <span className="text-[10px] uppercase font-semibold tracking-wider text-slate-400 mt-0.5">
               Color
             </span>
-            {PALETTE.map((c) => (
-              <button
-                key={c}
-                type="button"
-                onClick={() => onUpdateCode(code.id, { color: c })}
-                className={`w-5 h-5 rounded ring-1 transition-transform ${
-                  code.color === c
-                    ? 'ring-slate-700 scale-110'
-                    : 'ring-black/10 hover:scale-110'
-                }`}
-                style={{ background: c }}
+            <div className="flex-1 min-w-0">
+              <ColorPicker
+                value={code.color}
+                onChange={(c) => onUpdateCode(code.id, { color: c })}
+                allowInherit={code.parentId !== null}
               />
-            ))}
-            {code.parentId !== null && (
-              <button
-                type="button"
-                onClick={() => onUpdateCode(code.id, { color: null })}
-                className={`text-[11px] px-1 hover:text-slate-800 ${
-                  code.color === null
-                    ? 'text-slate-800 font-semibold'
-                    : 'text-slate-500'
-                }`}
-              >
-                inherit
-              </button>
-            )}
-            <div className="ml-auto flex items-center gap-2">
+            </div>
+            <div className="flex items-center gap-2">
               <button
                 type="button"
                 onClick={() => setEditing(false)}

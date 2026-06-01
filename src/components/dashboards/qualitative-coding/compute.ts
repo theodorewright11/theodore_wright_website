@@ -323,6 +323,74 @@ export function buildLines(
   return out;
 }
 
+// ---------------------------------------------------------------------------
+// Color helpers — convert hex ↔ HSL and generate a shade ramp from a base
+// color. Used by the code colour picker to expand each palette swatch into
+// a lighter→darker gradient.
+// ---------------------------------------------------------------------------
+
+export function hexToHsl(hex: string): { h: number; s: number; l: number } {
+  const m = hex.replace('#', '').match(/.{2}/g);
+  if (!m || m.length < 3) return { h: 0, s: 0, l: 50 };
+  const [r, g, b] = m.map((x) => parseInt(x, 16) / 255);
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  let h = 0;
+  let s = 0;
+  const l = (max + min) / 2;
+  if (max !== min) {
+    const d = max - min;
+    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+    switch (max) {
+      case r:
+        h = (g - b) / d + (g < b ? 6 : 0);
+        break;
+      case g:
+        h = (b - r) / d + 2;
+        break;
+      case b:
+        h = (r - g) / d + 4;
+        break;
+    }
+    h /= 6;
+  }
+  return { h: h * 360, s: s * 100, l: l * 100 };
+}
+
+export function hslToHex(h: number, s: number, l: number): string {
+  const sN = s / 100;
+  const lN = l / 100;
+  const k = (n: number) => (n + h / 30) % 12;
+  const a = sN * Math.min(lN, 1 - lN);
+  const f = (n: number) => {
+    const c = lN - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1)));
+    return Math.round(c * 255)
+      .toString(16)
+      .padStart(2, '0');
+  };
+  return `#${f(0)}${f(8)}${f(4)}`;
+}
+
+// Generate `count` shades for a base hex color, from lightest to darkest.
+// The base color is approximately at the middle index when count is odd.
+export function getShades(hex: string, count = 5): string[] {
+  const { h, s } = hexToHsl(hex);
+  const sat = Math.max(s, 45);
+  // 5-shade target lightness curve: very-light, light, base-ish, dark, very-dark
+  const lights = count === 5 ? [86, 70, 52, 36, 22] : null;
+  const out: string[] = [];
+  for (let i = 0; i < count; i++) {
+    const l =
+      lights && i < lights.length
+        ? lights[i]
+        : count === 1
+          ? 50
+          : 85 - (i / (count - 1)) * 65;
+    out.push(hslToHex(h, sat, l));
+  }
+  return out;
+}
+
 export function countWords(text: string): number {
   if (!text) return 0;
   const m = text.trim().match(/\S+/g);
