@@ -38,6 +38,9 @@ type Props = {
   ) => void;
   canSendToNote?: boolean;
   qcLinkOptions?: QcLinkOptions;
+  onCreateCode?: (name: string) => string;
+  lineView?: boolean;
+  onToggleLineView?: () => void;
   onJumpToQcLink?: (href: string) => void;
   onClose?: () => void;
   showPaneControls?: boolean;
@@ -75,6 +78,9 @@ export default function DocumentViewer({
   onSendAnnotationToNote,
   canSendToNote,
   qcLinkOptions,
+  onCreateCode,
+  lineView,
+  onToggleLineView,
   onJumpToQcLink,
   onClose,
   showPaneControls,
@@ -135,6 +141,76 @@ export default function DocumentViewer({
     () => segmentText(doc.text, docAnnotations, pending ?? undefined),
     [doc.text, docAnnotations, pending],
   );
+
+  const lines = useMemo(() => {
+    const out: { number: number; start: number; end: number; text: string }[] = [];
+    let pos = 0;
+    let n = 1;
+    for (const lineText of doc.text.split('\n')) {
+      out.push({ number: n++, start: pos, end: pos + lineText.length, text: lineText });
+      pos += lineText.length + 1;
+    }
+    return out;
+  }, [doc.text]);
+
+  const renderSegment = (seg: ReturnType<typeof segmentText>[number], key: React.Key) => {
+    if (seg.annotations.length === 0) {
+      if (seg.pending) {
+        return (
+          <span
+            key={key}
+            style={{ backgroundColor: 'rgba(254, 240, 138, 0.85)' }}
+          >
+            {seg.text}
+          </span>
+        );
+      }
+      return <span key={key}>{seg.text}</span>;
+    }
+    const top = seg.annotations[seg.annotations.length - 1];
+    const color = resolveColor(codes, top.codeId);
+    const dim =
+      selectedCodeId !== null &&
+      !seg.annotations.some((a) => a.codeId === selectedCodeId);
+    const isFocused =
+      focusedAnnotationId !== null &&
+      seg.annotations.some((a) => a.id === focusedAnnotationId);
+    return (
+      <span
+        key={key}
+        onClick={(e) => {
+          e.stopPropagation();
+          setFocusedAnnotationId(top.id);
+        }}
+        className={`cursor-pointer rounded-sm transition-opacity ${
+          dim ? 'opacity-30' : ''
+        }`}
+        style={{
+          backgroundColor: seg.pending
+            ? 'rgba(254, 240, 138, 0.85)'
+            : hexAlpha(color, isFocused ? 0.4 : 0.2),
+          boxShadow: isFocused ? `inset 0 -2px 0 ${color}` : `inset 0 -1px 0 ${color}`,
+        }}
+        title={seg.annotations
+          .map((a) => codePathString(codes, a.codeId))
+          .join(' · ')}
+      >
+        {seg.text}
+      </span>
+    );
+  };
+
+  const annotationsByLine = useMemo(() => {
+    const map = new Map<number, Annotation[]>();
+    for (const a of docAnnotations) {
+      const line = lines.find((l) => a.start >= l.start && a.start <= l.end);
+      if (!line) continue;
+      const arr = map.get(line.number) ?? [];
+      arr.push(a);
+      map.set(line.number, arr);
+    }
+    return map;
+  }, [lines, docAnnotations]);
 
   useEffect(() => {
     const onDocPointerDown = (e: PointerEvent) => {
@@ -336,6 +412,24 @@ export default function DocumentViewer({
         >
           Notes{doc.notes && doc.notes.length > 0 ? ' •' : ''}
         </button>
+        {onToggleLineView && (
+          <button
+            type="button"
+            onClick={onToggleLineView}
+            title={
+              lineView
+                ? 'switch to paragraph view'
+                : 'show line numbers + code margin'
+            }
+            className={`px-3 py-1.5 text-[13px] font-medium rounded-md transition-colors ${
+              lineView
+                ? 'bg-emerald-100 text-emerald-900'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+            }`}
+          >
+            Lines
+          </button>
+        )}
         <div className="ml-auto text-[12px] text-slate-400 font-mono tabular-nums">
           {doc.text.length.toLocaleString()} chars · {countWords(doc.text).toLocaleString()} words ·{' '}
           {docAnnotations.length} annotation
@@ -358,6 +452,96 @@ export default function DocumentViewer({
               whose spans fall outside the new length will be removed or clamped.
             </div>
           </div>
+        ) : lineView ? (
+          <div className="max-w-[1100px] mx-auto px-6 py-6">
+            <div
+              ref={containerRef}
+              onMouseUp={handleMouseUp}
+              onKeyUp={handleMouseUp}
+              className="font-sans text-[15px] text-slate-800 selection:bg-yellow-200"
+              style={{ tabSize: 4 }}
+            >
+              {doc.text.length === 0 ? (
+                <div className="text-slate-400 italic">
+                  This document is empty. Switch to{' '}
+                  <span className="font-semibold">Edit text</span> to add content.
+                </div>
+              ) : (
+                lines.map((line) => {
+                  const segsInLine = segments
+                    .filter((s) => s.start < line.end + 1 && s.end > line.start)
+                    .map((s) => ({
+                      ...s,
+                      start: Math.max(s.start, line.start),
+                      end: Math.min(s.end, line.end),
+                      text: doc.text.slice(
+                        Math.max(s.start, line.start),
+                        Math.min(s.end, line.end),
+                      ),
+                    }))
+                    .filter((s) => s.text.length > 0);
+                  const annsHere = annotationsByLine.get(line.number) ?? [];
+                  return (
+                    <div
+                      key={line.number}
+                      className="flex gap-3 py-0.5 border-l-2 border-transparent hover:border-slate-200"
+                    >
+                      <span className="w-10 text-right text-[11px] text-slate-300 select-none mt-1 font-mono flex-shrink-0">
+                        {line.number}
+                      </span>
+                      <div
+                        data-line-start={line.start}
+                        className="flex-1 min-w-0 leading-[1.65] whitespace-pre-wrap break-words"
+                      >
+                        {segsInLine.length === 0
+                          ? line.text.length === 0
+                            ? ' '
+                            : line.text
+                          : segsInLine.map((seg, i) =>
+                              renderSegment(seg, `${line.number}-${i}`),
+                            )}
+                      </div>
+                      <div className="w-[210px] flex-shrink-0 flex flex-wrap gap-1 mt-0.5 self-start">
+                        {annsHere.map((a) => {
+                          const color = resolveColor(codes, a.codeId);
+                          const path = codePathString(codes, a.codeId);
+                          const focused = focusedAnnotationId === a.id;
+                          return (
+                            <button
+                              key={a.id}
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setFocusedAnnotationId(focused ? null : a.id);
+                              }}
+                              className={`max-w-full text-[11px] px-1.5 py-0.5 rounded ring-1 transition-all ${
+                                focused
+                                  ? 'ring-slate-700 shadow-sm'
+                                  : 'ring-black/5 hover:ring-slate-400'
+                              }`}
+                              style={{
+                                backgroundColor: hexAlpha(color, focused ? 0.4 : 0.18),
+                                color: '#1e293b',
+                              }}
+                              title={
+                                a.note
+                                  ? `${path} — ${a.note}`
+                                  : path
+                              }
+                            >
+                              <span className="truncate inline-block max-w-[180px] align-middle">
+                                {path}
+                              </span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </div>
         ) : (
           <div className="max-w-[760px] mx-auto px-8 py-6">
             <div
@@ -373,52 +557,7 @@ export default function DocumentViewer({
                   content.
                 </div>
               ) : (
-                segments.map((seg, i) => {
-                  if (seg.annotations.length === 0) {
-                    if (seg.pending) {
-                      return (
-                        <span
-                          key={i}
-                          style={{ backgroundColor: 'rgba(254, 240, 138, 0.85)' }}
-                        >
-                          {seg.text}
-                        </span>
-                      );
-                    }
-                    return <span key={i}>{seg.text}</span>;
-                  }
-                  const top = seg.annotations[seg.annotations.length - 1];
-                  const color = resolveColor(codes, top.codeId);
-                  const dim =
-                    selectedCodeId !== null &&
-                    !seg.annotations.some((a) => a.codeId === selectedCodeId);
-                  const isFocused =
-                    focusedAnnotationId !== null &&
-                    seg.annotations.some((a) => a.id === focusedAnnotationId);
-                  return (
-                    <span
-                      key={i}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setFocusedAnnotationId(top.id);
-                      }}
-                      className={`cursor-pointer rounded-sm transition-opacity ${
-                        dim ? 'opacity-30' : ''
-                      }`}
-                      style={{
-                        backgroundColor: seg.pending
-                          ? 'rgba(254, 240, 138, 0.85)'
-                          : hexAlpha(color, isFocused ? 0.4 : 0.2),
-                        boxShadow: isFocused ? `inset 0 -2px 0 ${color}` : `inset 0 -1px 0 ${color}`,
-                      }}
-                      title={seg.annotations
-                        .map((a) => codePathString(codes, a.codeId))
-                        .join(' · ')}
-                    >
-                      {seg.text}
-                    </span>
-                  );
-                })
+                segments.map((seg, i) => renderSegment(seg, i))
               )}
             </div>
           </div>
@@ -449,6 +588,7 @@ export default function DocumentViewer({
           text={doc.text}
           showDefinitions={showCodeDefinitions}
           canSendToNote={!!canSendToNote && !!onSendAnnotationToNote}
+          onCreateCode={onCreateCode}
           onPick={(codeIds, note, sendToNote) => {
             for (const codeId of codeIds) {
               const id = cryptoRandomId();
@@ -665,11 +805,12 @@ type PopoverProps = {
   showDefinitions: boolean;
   canSendToNote: boolean;
   onPick: (codeIds: string[], note?: string, sendToNote?: boolean) => void;
+  onCreateCode?: (name: string) => string;
   onCancel: () => void;
 };
 
 const SelectionPopover = forwardRef<HTMLDivElement, PopoverProps>(function SelectionPopover(
-  { pending, codes, text, showDefinitions, canSendToNote, onPick, onCancel },
+  { pending, codes, text, showDefinitions, canSendToNote, onPick, onCreateCode, onCancel },
   ref,
 ) {
   const [query, setQuery] = useState('');
@@ -685,6 +826,14 @@ const SelectionPopover = forwardRef<HTMLDivElement, PopoverProps>(function Selec
       codePathString(codes, n.code.id).toLowerCase().includes(q),
     );
   }, [flat, query, codes]);
+  const trimmedQuery = query.trim();
+  const hasExactMatch = useMemo(
+    () =>
+      !!trimmedQuery &&
+      codes.some((c) => c.name.toLowerCase() === trimmedQuery.toLowerCase()),
+    [codes, trimmedQuery],
+  );
+  const canCreate = !!onCreateCode && trimmedQuery.length > 0 && !hasExactMatch;
 
   const commitOne = (codeId: string) =>
     onPick([codeId], note.trim() || undefined, sendToNote);
@@ -710,8 +859,29 @@ const SelectionPopover = forwardRef<HTMLDivElement, PopoverProps>(function Selec
     });
   };
 
+  const createAndPick = () => {
+    if (!onCreateCode) return;
+    const name = trimmedQuery;
+    if (!name) return;
+    const id = onCreateCode(name);
+    if (!id) return;
+    if (multiMode) {
+      setPickedCodeIds((prev) => {
+        const next = new Set(prev);
+        next.add(id);
+        return next;
+      });
+      setQuery('');
+    } else {
+      commitOne(id);
+    }
+  };
+
   const handleEnter = () => {
-    if (filtered.length === 0) return;
+    if (filtered.length === 0) {
+      if (canCreate) createAndPick();
+      return;
+    }
     if (multiMode) togglePick(filtered[0].code.id);
     else commitOne(filtered[0].code.id);
   };
@@ -766,9 +936,24 @@ const SelectionPopover = forwardRef<HTMLDivElement, PopoverProps>(function Selec
         </button>
       </div>
       <div className="max-h-[380px] overflow-y-auto">
+        {canCreate && (
+          <button
+            type="button"
+            onClick={createAndPick}
+            className="w-full flex items-center gap-2 px-3 py-2 text-left bg-emerald-50 hover:bg-emerald-100 border-b border-emerald-100 transition-colors"
+            title="create a new top-level code with this name"
+          >
+            <span className="w-4 h-4 rounded-sm bg-emerald-600 text-white text-[12px] font-bold flex items-center justify-center flex-shrink-0">
+              +
+            </span>
+            <span className="text-[13px] text-emerald-900">
+              Create code <span className="font-semibold">“{trimmedQuery}”</span>
+            </span>
+          </button>
+        )}
         {filtered.length === 0 ? (
           <div className="px-3 py-4 text-[12px] text-slate-400 italic text-center">
-            No matching codes.
+            {canCreate ? 'No matching codes — create one above.' : 'No matching codes.'}
           </div>
         ) : (
           filtered.map((n) => {
@@ -1040,6 +1225,30 @@ function ToggleBtn({
 }
 
 function rangeOffset(container: HTMLElement, node: Node, offset: number): number {
+  // Line-view: each line's content div has data-line-start. Find the nearest
+  // ancestor with that attribute and compute the offset within it, then add
+  // the line start. Avoids global concatenation losing track of newlines
+  // (which aren't in the DOM in line-view mode).
+  let el: Node | null = node;
+  while (el && el !== container) {
+    if (el instanceof HTMLElement && el.dataset.lineStart != null) {
+      const lineStart = Number(el.dataset.lineStart);
+      const sub = document.createRange();
+      sub.selectNodeContents(el);
+      try {
+        sub.setEnd(node, offset);
+      } catch {
+        return -1;
+      }
+      return lineStart + sub.toString().length;
+    }
+    el = el.parentNode;
+  }
+  // Inline view fallback below.
+  return rangeOffsetInline(container, node, offset);
+}
+
+function rangeOffsetInline(container: HTMLElement, node: Node, offset: number): number {
   if (!container.contains(node)) return -1;
   const range = document.createRange();
   range.selectNodeContents(container);

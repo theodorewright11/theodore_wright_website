@@ -85,6 +85,7 @@ export type AppState = {
   metadataCollapsed?: boolean;
   exploreFiltersCollapsed?: boolean;
   exploreCoOccurrenceCollapsed?: boolean;
+  lineView?: boolean;
   deletedProjectIds?: string[];
 };
 

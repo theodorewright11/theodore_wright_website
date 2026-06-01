@@ -42,6 +42,7 @@ export function loadState(): AppState {
         metadataCollapsed: !!parsed.metadataCollapsed,
         exploreFiltersCollapsed: !!parsed.exploreFiltersCollapsed,
         exploreCoOccurrenceCollapsed: !!parsed.exploreCoOccurrenceCollapsed,
+        lineView: !!parsed.lineView,
         deletedProjectIds: Array.isArray(parsed.deletedProjectIds)
           ? parsed.deletedProjectIds.filter((s: any) => typeof s === 'string')
           : [],
