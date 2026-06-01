@@ -10,7 +10,7 @@ import { sessionsToCsv, downloadFile } from './storage';
 import RatingRow from './RatingRow';
 import ActivityPicker from './ActivityPicker';
 import TimeStepper from './TimeStepper';
-import { NOTES_PLACEHOLDER, SegmentList } from './ClockTab';
+import { NOTES_PLACEHOLDER, SegmentList, ApplyToOtherSessions } from './ClockTab';
 import type { Break, Lap } from './types';
 
 type Props = {
@@ -398,12 +398,14 @@ export default function LogTab({
           key={edit.mode === 'edit' ? edit.session.id : 'new'}
           categories={categories}
           session={edit.mode === 'edit' ? edit.session : null}
+          allSessions={sessions}
           now={now}
           onCancel={() => setEdit(null)}
           onSave={s => {
             if (edit.mode === 'edit') onUpdateSession(s); else onAddSession(s);
             setEdit(null);
           }}
+          onApplyToOther={onUpdateSession}
         />
       )}
 
@@ -570,13 +572,15 @@ function Inline({ label, value }: { label: string; value: string }) {
 // shown read-only with an option to clear them (for fixing a stray break);
 // new sessions start with no breaks.
 function SessionForm({
-  categories, session, now, onCancel, onSave,
+  categories, session, allSessions, now, onCancel, onSave, onApplyToOther,
 }: {
   categories: string[];
   session: Session | null;
+  allSessions: Session[];
   now: number;
   onCancel: () => void;
   onSave: (s: Session) => void;
+  onApplyToOther: (s: Session) => void;
 }) {
   const [category, setCategory] = useState(session?.category ?? categories[0] ?? '');
   // Split clock-in/out into date + 24h time inputs — the native datetime-local
@@ -600,6 +604,29 @@ function SessionForm({
   const [breaks, setBreaks] = useState<Break[]>(session?.breaks ?? []);
   const [laps, setLaps] = useState<Lap[]>(session?.laps ?? []);
   const [err, setErr] = useState('');
+  // Apply-these-ratings-to-other-sessions selection, anchored to the day of
+  // the session being edited (and the day before). Only meaningful in edit
+  // mode — for a new "Add session" form we don't yet have an anchor day.
+  const [applyTo, setApplyTo] = useState<Set<string>>(new Set());
+  const candidates = useMemo(() => {
+    if (!session) return [];
+    const baseMs = Date.parse(session.clock_in);
+    if (!Number.isFinite(baseMs)) return [];
+    const baseKey = dayKey(baseMs);
+    const prevKey = dayKey(baseMs - 86_400_000);
+    return allSessions
+      .filter(s => s.id !== session.id
+                && s.category === category
+                && s.clock_out !== null
+                && (dayKey(Date.parse(s.clock_in)) === baseKey
+                  || dayKey(Date.parse(s.clock_in)) === prevKey))
+      .sort((a, b) => Date.parse(b.clock_in) - Date.parse(a.clock_in));
+  }, [session, allSessions, category]);
+  const toggleApply = (id: string) => setApplyTo(prev => {
+    const n = new Set(prev);
+    if (n.has(id)) n.delete(id); else n.add(id);
+    return n;
+  });
 
   const submit = () => {
     const niT = normalizeHHMM(inTime);
@@ -616,6 +643,17 @@ function SessionForm({
       setErr('Clock-out must be after clock-in.'); return;
     }
     const nowIso = new Date(now).toISOString();
+    // Copy the rating+activity fields to any candidates the user checked.
+    // Notes stay per session.
+    if (applyTo.size > 0) {
+      const ratings = { mood, productivity, enjoyment,
+                        activity1, activity2, activity1Pct, activity2Pct };
+      for (const id of applyTo) {
+        const c = candidates.find(x => x.id === id);
+        if (!c) continue;
+        onApplyToOther({ ...c, ...ratings, updated_at: nowIso });
+      }
+    }
     onSave({
       id: session?.id ?? crypto.randomUUID(),
       category,
@@ -726,6 +764,10 @@ function SessionForm({
             setBreaks(prev => prev.map(b => b.id === id ? { ...b, end: iso } : b))}
           onDelete={id => setBreaks(prev => prev.filter(b => b.id !== id))}
         />
+      )}
+      {candidates.length > 0 && (
+        <ApplyToOtherSessions
+          candidates={candidates} applyTo={applyTo} toggleApply={toggleApply} />
       )}
       {err && <p className="font-serif text-[13px] text-accent m-0">{err}</p>}
       <div className="flex gap-2">

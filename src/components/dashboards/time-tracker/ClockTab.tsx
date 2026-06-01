@@ -396,7 +396,7 @@ function ClockOutRating({ session, allSessions, onSave, onApplyToOther, onSkip, 
 // own. Skipping or leaving boxes unchecked is the default; nothing applies
 // unless the user opts in. Useful for days with several broken-up clock-ins
 // you want to rate as one.
-function ApplyToOtherSessions({ candidates, applyTo, toggleApply }: {
+export function ApplyToOtherSessions({ candidates, applyTo, toggleApply }: {
   candidates: Session[];
   applyTo: Set<string>;
   toggleApply: (id: string) => void;
