@@ -191,7 +191,9 @@ export default function ClockTab({
         <ClockOutRating
           key={ratingSession.id}
           session={ratingSession}
+          allSessions={sessions}
           onSave={s => { onUpdateSession(s); setRatingId(null); }}
+          onApplyToOther={onUpdateSession}
           onSkip={() => setRatingId(null)}
           onDiscard={() => {
             if (window.confirm("Discard this session? It won't be saved.")) {
@@ -274,9 +276,11 @@ export default function ClockTab({
 
 // Shown right after clock-out: rate the session that just ended. Skippable —
 // a missed rating just leaves the three values at 0 (unrated).
-function ClockOutRating({ session, onSave, onSkip, onDiscard }: {
+function ClockOutRating({ session, allSessions, onSave, onApplyToOther, onSkip, onDiscard }: {
   session: Session;
+  allSessions: Session[];
   onSave: (s: Session) => void;
+  onApplyToOther: (s: Session) => void;
   onSkip: () => void;
   onDiscard: () => void;
 }) {
@@ -288,6 +292,51 @@ function ClockOutRating({ session, onSave, onSkip, onDiscard }: {
   const [activity2, setActivity2] = useState(session.activity2);
   const [activity1Pct, setActivity1Pct] = useState(session.activity1Pct);
   const [activity2Pct, setActivity2Pct] = useState(session.activity2Pct);
+
+  // Other closed sessions in the same category from today or yesterday —
+  // candidates to copy these ratings to (for days with multiple clock-ins
+  // that should share one rating).
+  const candidates = (() => {
+    const now = Date.now();
+    const today = new Date(now);
+    const todayK = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+    const y = new Date(now - 86_400_000);
+    const yesterdayK = `${y.getFullYear()}-${String(y.getMonth() + 1).padStart(2, '0')}-${String(y.getDate()).padStart(2, '0')}`;
+    return allSessions
+      .filter(s => s.id !== session.id
+                && s.category === session.category
+                && s.clock_out !== null)
+      .filter(s => {
+        const d = new Date(Date.parse(s.clock_in));
+        const k = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+        return k === todayK || k === yesterdayK;
+      })
+      .sort((a, b) => Date.parse(b.clock_in) - Date.parse(a.clock_in));
+  })();
+  const [applyTo, setApplyTo] = useState<Set<string>>(new Set());
+  const toggleApply = (id: string) =>
+    setApplyTo(prev => {
+      const n = new Set(prev);
+      if (n.has(id)) n.delete(id); else n.add(id);
+      return n;
+    });
+
+  const handleSave = () => {
+    const ts = new Date().toISOString();
+    const ratings = { mood, productivity, enjoyment,
+                      activity1, activity2, activity1Pct, activity2Pct };
+    onSave({
+      ...session, ...ratings,
+      notes: notes.trim() || undefined,
+      updated_at: ts,
+    });
+    // Copy ratings (NOT notes) to any selected same-category sessions.
+    for (const id of applyTo) {
+      const c = candidates.find(x => x.id === id);
+      if (!c) continue;
+      onApplyToOther({ ...c, ...ratings, updated_at: ts });
+    }
+  };
 
   return (
     <div className="rounded-lg border border-accent/40 bg-paper p-6 space-y-4">
@@ -321,17 +370,14 @@ function ClockOutRating({ session, onSave, onSkip, onDiscard }: {
           className="mt-1 block w-full font-serif text-[14px] bg-paper border border-rule
                      rounded-sm px-3 py-2 text-ink focus:border-accent outline-none resize-y" />
       </label>
+
+      {candidates.length > 0 && (
+        <ApplyToOtherSessions
+          candidates={candidates} applyTo={applyTo} toggleApply={toggleApply} />
+      )}
+
       <div className="flex gap-2 items-center flex-wrap">
-        <button
-          className={btnAccent}
-          onClick={() => onSave({
-            ...session, mood, productivity, enjoyment,
-            activity1, activity2, activity1Pct, activity2Pct,
-            notes: notes.trim() || undefined,
-            updated_at: new Date().toISOString(),
-          })}>
-          Save
-        </button>
+        <button className={btnAccent} onClick={handleSave}>Save</button>
         <button className={btnMuted} onClick={onSkip}>Skip</button>
         <button
           className="font-mono text-[10px] uppercase tracking-[0.1em] text-muted
@@ -341,6 +387,61 @@ function ClockOutRating({ session, onSave, onSkip, onDiscard }: {
         </button>
       </div>
     </div>
+  );
+}
+
+// Collapsible list of same-category sessions from today / yesterday that the
+// rating panel can copy its ratings to (mood/productivity/enjoyment +
+// activity1/2 + percentages). Notes are NOT copied — each session keeps its
+// own. Skipping or leaving boxes unchecked is the default; nothing applies
+// unless the user opts in. Useful for days with several broken-up clock-ins
+// you want to rate as one.
+function ApplyToOtherSessions({ candidates, applyTo, toggleApply }: {
+  candidates: Session[];
+  applyTo: Set<string>;
+  toggleApply: (id: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const n = applyTo.size;
+  return (
+    <details open={open} onToggle={e => setOpen((e.target as HTMLDetailsElement).open)}
+             className="border-t border-rule-soft pt-3">
+      <summary className="font-mono text-[10px] uppercase tracking-[0.12em] text-muted
+                          cursor-pointer hover:text-accent transition-colors">
+        Apply these ratings to other {candidates.length === 1 ? 'session' : 'sessions'} today / yesterday
+        {n > 0 && <span className="text-accent ml-2">({n} selected)</span>}
+      </summary>
+      <div className="mt-2 space-y-1.5">
+        {candidates.map(c => {
+          const startMs = Date.parse(c.clock_in);
+          const endMs = Date.parse(c.clock_out!);
+          const dur = endMs - startMs;
+          const day = new Date(startMs).toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' });
+          const rated = (c.mood || c.productivity || c.enjoyment) > 0;
+          return (
+            <label key={c.id}
+                   className="flex items-center gap-2.5 font-serif text-[13px] text-ink-soft cursor-pointer">
+              <input type="checkbox" checked={applyTo.has(c.id)}
+                     onChange={() => toggleApply(c.id)} />
+              <span className="font-mono text-[11px] text-muted w-20 shrink-0">{day}</span>
+              <span className="font-mono text-[11px] text-muted w-32 shrink-0">
+                {fmtTimeOfDay(c.clock_in)} – {fmtTimeOfDay(c.clock_out!)}
+              </span>
+              <span className="font-mono text-[11px] text-ink-soft tabular-nums w-12 shrink-0">
+                {fmtHM(dur)}
+              </span>
+              <span className={'font-mono text-[10px] ' + (rated ? 'text-accent' : 'text-muted italic')}>
+                {rated ? `M${c.mood || '–'} P${c.productivity || '–'} E${c.enjoyment || '–'}` : 'unrated'}
+              </span>
+            </label>
+          );
+        })}
+      </div>
+      <p className="font-serif text-[11px] text-muted m-0 mt-2">
+        Copies mood / productivity / enjoyment + activity tags to checked sessions on Save.
+        Notes stay per-session.
+      </p>
+    </details>
   );
 }
 
