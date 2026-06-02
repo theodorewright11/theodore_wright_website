@@ -29,82 +29,161 @@ export default function CodebookView({
   onMoveCode,
   onClose,
 }: Props) {
-  const [dragCodeId, setDragCodeId] = useState<string | null>(null);
-  const [rootDragOver, setRootDragOver] = useState(false);
+  // Custom pointer-based drag (not native HTML5), so the wheel keeps working
+  // while the user is mid-drag. Chrome suppresses wheel events during native
+  // HTML5 drag, which is the only way to keep mouse-wheel scrolling alive.
+  type ActiveDrag = {
+    codeId: string;
+    startX: number;
+    startY: number;
+    curX: number;
+    curY: number;
+    active: boolean;
+    overCodeId: string | null;
+    overZone: DropPosition | null;
+    overRoot: boolean;
+  };
+  const [drag, setDrag] = useState<ActiveDrag | null>(null);
+  const dragCodeId = drag?.active ? drag.codeId : null;
+  const dropTarget =
+    drag?.active && drag.overCodeId && drag.overZone
+      ? { codeId: drag.overCodeId, zone: drag.overZone }
+      : null;
+  const rootDragOver = !!drag?.active && drag.overRoot;
   const tree = buildCodeTree(project.codes);
   const [addingRoot, setAddingRoot] = useState(false);
   const [draft, setDraft] = useState('');
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  // While a code is being dragged, native HTML5 drag suppresses normal
-  // wheel/scroll. Re-enable both: (1) auto-scroll when the cursor is near the
-  // top/bottom edge of the scroll container, and (2) honour the mouse wheel.
+  const startDrag = (codeId: string, e: React.PointerEvent) => {
+    if (e.button !== 0) return;
+    e.preventDefault();
+    setDrag({
+      codeId,
+      startX: e.clientX,
+      startY: e.clientY,
+      curX: e.clientX,
+      curY: e.clientY,
+      active: false,
+      overCodeId: null,
+      overZone: null,
+      overRoot: false,
+    });
+  };
+
+  // Drives the active drag: tracks cursor → finds the row under it → updates
+  // drop target + auto-scrolls when near the edges of the scroll container.
+  // pointerup commits the move.
   useEffect(() => {
-    if (!dragCodeId) return;
-    const el = scrollRef.current;
-    if (!el) return;
+    if (!drag) return;
+    const scroller = scrollRef.current;
+    const descendants = descendantIds(project.codes, drag.codeId);
     let dy = 0;
     let raf = 0;
     const step = () => {
-      if (dy === 0) {
+      if (!scroller || dy === 0) {
         raf = 0;
         return;
       }
-      el.scrollTop += dy;
+      scroller.scrollTop += dy;
       raf = requestAnimationFrame(step);
     };
-    const onDragOver = (e: DragEvent) => {
-      const rect = el.getBoundingClientRect();
-      if (
-        e.clientX < rect.left ||
-        e.clientX > rect.right ||
-        e.clientY < rect.top - 40 ||
-        e.clientY > rect.bottom + 40
-      ) {
-        dy = 0;
-        return;
-      }
+    const updateAutoScroll = (clientY: number) => {
+      if (!scroller) return;
+      const rect = scroller.getBoundingClientRect();
       const edge = 70;
       const maxSpeed = 18;
-      if (e.clientY < rect.top + edge) {
-        const t = Math.min(1, (rect.top + edge - e.clientY) / edge);
+      if (clientY < rect.top + edge && clientY > rect.top - 40) {
+        const t = Math.min(1, Math.max(0, (rect.top + edge - clientY) / edge));
         dy = -Math.ceil(maxSpeed * t);
-      } else if (e.clientY > rect.bottom - edge) {
-        const t = Math.min(1, (e.clientY - (rect.bottom - edge)) / edge);
+      } else if (clientY > rect.bottom - edge && clientY < rect.bottom + 40) {
+        const t = Math.min(1, Math.max(0, (clientY - (rect.bottom - edge)) / edge));
         dy = Math.ceil(maxSpeed * t);
       } else {
         dy = 0;
       }
       if (dy !== 0 && raf === 0) raf = requestAnimationFrame(step);
     };
-    // During native HTML5 drag the user is "holding the click" — they should
-    // still be able to scroll the codebook with the wheel. Listen in the
-    // capture phase so we beat any other scroll handlers, and don't bother
-    // gating by cursor position (the user is clearly trying to scroll the
-    // thing they're dragging within).
-    const onWheel = (e: WheelEvent) => {
-      e.preventDefault();
-      el.scrollTop += e.deltaY;
-    };
-    const stop = () => {
-      dy = 0;
-      if (raf) {
-        cancelAnimationFrame(raf);
-        raf = 0;
+    const computeOver = (x: number, y: number) => {
+      const el = document.elementFromPoint(x, y) as HTMLElement | null;
+      if (!el) return { overCodeId: null, overZone: null, overRoot: false };
+      if (el.closest('[data-codebook-root-zone]')) {
+        return { overCodeId: null, overZone: null, overRoot: true };
       }
+      const li = el.closest('[data-codebook-code-id]') as HTMLElement | null;
+      if (!li) return { overCodeId: null, overZone: null, overRoot: false };
+      const id = li.getAttribute('data-codebook-code-id');
+      if (!id || id === drag.codeId || descendants.has(id)) {
+        return { overCodeId: null, overZone: null, overRoot: false };
+      }
+      const header = li.querySelector('[data-codebook-header]') as HTMLElement | null;
+      const rect = (header ?? li).getBoundingClientRect();
+      const h = rect.height || 1;
+      const ry = Math.max(0, Math.min(h, y - rect.top));
+      const zone: DropPosition = ry < h * 0.3 ? 'before' : ry > h * 0.7 ? 'after' : 'inside';
+      return { overCodeId: id, overZone: zone, overRoot: false };
     };
-    window.addEventListener('dragover', onDragOver, { capture: true });
-    window.addEventListener('wheel', onWheel, { capture: true, passive: false });
-    window.addEventListener('dragend', stop, { capture: true });
-    window.addEventListener('drop', stop, { capture: true });
+    const onMove = (e: PointerEvent) => {
+      const dx = e.clientX - drag.startX;
+      const ddy = e.clientY - drag.startY;
+      const active = drag.active || dx * dx + ddy * ddy > 16; // ~4px threshold
+      const over = active
+        ? computeOver(e.clientX, e.clientY)
+        : { overCodeId: null, overZone: null, overRoot: false };
+      if (active) updateAutoScroll(e.clientY);
+      setDrag((d) =>
+        d
+          ? {
+              ...d,
+              curX: e.clientX,
+              curY: e.clientY,
+              active,
+              ...over,
+            }
+          : null,
+      );
+    };
+    const finish = () => {
+      if (dy !== 0 || raf) {
+        if (raf) cancelAnimationFrame(raf);
+        raf = 0;
+        dy = 0;
+      }
+      setDrag((d) => {
+        if (!d) return null;
+        if (d.active) {
+          if (d.overCodeId && d.overZone) {
+            onMoveCode(d.codeId, d.overCodeId, d.overZone);
+          } else if (d.overRoot) {
+            onMoveCode(d.codeId, null, 'inside');
+          }
+        }
+        return null;
+      });
+    };
+    const cancel = () => {
+      if (raf) cancelAnimationFrame(raf);
+      raf = 0;
+      dy = 0;
+      setDrag(null);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') cancel();
+    };
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', finish);
+    window.addEventListener('pointercancel', cancel);
+    window.addEventListener('keydown', onKey);
     return () => {
-      window.removeEventListener('dragover', onDragOver, { capture: true } as EventListenerOptions);
-      window.removeEventListener('wheel', onWheel as EventListener, { capture: true } as EventListenerOptions);
-      window.removeEventListener('dragend', stop, { capture: true } as EventListenerOptions);
-      window.removeEventListener('drop', stop, { capture: true } as EventListenerOptions);
-      stop();
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', finish);
+      window.removeEventListener('pointercancel', cancel);
+      window.removeEventListener('keydown', onKey);
+      if (raf) cancelAnimationFrame(raf);
     };
-  }, [dragCodeId]);
+  }, [drag?.codeId, drag?.startX, drag?.startY, onMoveCode, project.codes]);
+
+  const draggedCode = drag ? project.codes.find((c) => c.id === drag.codeId) : null;
 
   const counts = new Map<string, number>();
   for (const a of project.annotations) {
@@ -194,28 +273,16 @@ export default function CodebookView({
                   counts={counts}
                   isPanel={isPanel}
                   dragCodeId={dragCodeId}
-                  setDragCodeId={setDragCodeId}
+                  dropTarget={dropTarget}
+                  startDrag={startDrag}
                   onAddCode={onAddCode}
                   onUpdateCode={onUpdateCode}
                   onDeleteCode={onDeleteCode}
-                  onMoveCode={onMoveCode}
                 />
               ))}
             </ul>
             <div
-              onDragOver={(e) => {
-                if (dragCodeId && e.dataTransfer.types.includes('application/x-qc-code')) {
-                  e.preventDefault();
-                  setRootDragOver(true);
-                }
-              }}
-              onDragLeave={() => setRootDragOver(false)}
-              onDrop={(e) => {
-                e.preventDefault();
-                if (dragCodeId) onMoveCode(dragCodeId, null, 'inside');
-                setDragCodeId(null);
-                setRootDragOver(false);
-              }}
+              data-codebook-root-zone
               className={`mt-3 py-3 text-center text-[11px] italic rounded-md border-2 border-dashed transition-colors ${
                 rootDragOver
                   ? 'border-blue-400 bg-blue-50 text-blue-700'
@@ -290,6 +357,24 @@ export default function CodebookView({
           </div>
         )}
       </div>
+      {drag?.active && draggedCode && (
+        <div
+          style={{
+            position: 'fixed',
+            left: drag.curX + 12,
+            top: drag.curY + 12,
+            pointerEvents: 'none',
+            zIndex: 9999,
+          }}
+          className="bg-white border border-slate-300 rounded shadow-lg px-2 py-1 text-[12px] font-semibold text-slate-800 max-w-[280px] truncate"
+        >
+          <span
+            className="inline-block w-2 h-2 rounded-sm mr-1.5 align-middle ring-1 ring-black/10"
+            style={{ background: resolveColor(project.codes, draggedCode.id) }}
+          />
+          {draggedCode.name}
+        </div>
+      )}
     </div>
   );
 }
@@ -327,22 +412,22 @@ function CodebookRow({
   counts,
   isPanel,
   dragCodeId,
-  setDragCodeId,
+  dropTarget,
+  startDrag,
   onAddCode,
   onUpdateCode,
   onDeleteCode,
-  onMoveCode,
 }: {
   node: CodeNode;
   codes: Code[];
   counts: Map<string, number>;
   isPanel: boolean;
   dragCodeId: string | null;
-  setDragCodeId: (id: string | null) => void;
+  dropTarget: { codeId: string; zone: DropPosition } | null;
+  startDrag: (codeId: string, e: React.PointerEvent) => void;
   onAddCode: (parentId: string | null, name: string) => void;
   onUpdateCode: (codeId: string, patch: Partial<Code>) => void;
   onDeleteCode: (codeId: string) => void;
-  onMoveCode: (codeId: string, targetCodeId: string | null, position: DropPosition) => void;
 }) {
   const { code, depth, children } = node;
   const [editing, setEditing] = useState(false);
@@ -350,39 +435,11 @@ function CodebookRow({
   const [draftDesc, setDraftDesc] = useState(code.description ?? '');
   const [adding, setAdding] = useState(false);
   const [draftChild, setDraftChild] = useState('');
-  const [dropZone, setDropZone] = useState<DropPosition | null>(null);
-  const headerRef = useRef<HTMLDivElement>(null);
 
   const color = resolveColor(codes, code.id);
   const count = counts.get(code.id) ?? 0;
   const isBeingDragged = dragCodeId === code.id;
-
-  const handleDragOver = (e: React.DragEvent) => {
-    if (!dragCodeId || dragCodeId === code.id) return;
-    if (!e.dataTransfer.types.includes('application/x-qc-code')) return;
-    e.preventDefault();
-    e.stopPropagation();
-    e.dataTransfer.dropEffect = 'move';
-    // Use the header row's rect, not the whole <li>'s — when this row has
-    // children the <li> is much taller than the visible header, which pushes
-    // "before/inside/after" zones into the wrong areas.
-    const rect = (headerRef.current ?? (e.currentTarget as HTMLElement)).getBoundingClientRect();
-    const h = rect.height || 1;
-    const y = Math.max(0, Math.min(h, e.clientY - rect.top));
-    if (y < h * 0.3) setDropZone('before');
-    else if (y > h * 0.7) setDropZone('after');
-    else setDropZone('inside');
-  };
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (dragCodeId && dropZone) {
-      onMoveCode(dragCodeId, code.id, dropZone);
-    }
-    setDropZone(null);
-    setDragCodeId(null);
-  };
+  const dropZone = dropTarget?.codeId === code.id ? dropTarget.zone : null;
 
   const startEdit = () => {
     setDraftName(code.name);
@@ -421,13 +478,7 @@ function CodebookRow({
 
   return (
     <li
-      onDragOver={handleDragOver}
-      onDragLeave={(e) => {
-        const rt = e.relatedTarget as Node | null;
-        if (rt && (e.currentTarget as HTMLElement).contains(rt)) return;
-        setDropZone(null);
-      }}
-      onDrop={handleDrop}
+      data-codebook-code-id={code.id}
       className={`group rounded-lg p-3 transition-colors ${
         depth === 0 ? 'border border-slate-200 bg-white' : ''
       } ${isBeingDragged ? 'opacity-40' : ''} ${dropClass}`}
@@ -489,20 +540,11 @@ function CodebookRow({
         </div>
       ) : (
         <>
-          <div ref={headerRef} className="flex items-start gap-3">
+          <div data-codebook-header className="flex items-start gap-3">
             <span
-              draggable
-              onDragStart={(e) => {
-                e.dataTransfer.setData('application/x-qc-code', code.id);
-                e.dataTransfer.effectAllowed = 'move';
-                setDragCodeId(code.id);
-              }}
-              onDragEnd={() => {
-                setDragCodeId(null);
-                setDropZone(null);
-              }}
+              onPointerDown={(e) => startDrag(code.id, e)}
               title="drag to reorder / reparent"
-              className="flex-shrink-0 mt-1 cursor-grab text-slate-300 hover:text-slate-600 select-none text-[11px] leading-none px-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+              className="flex-shrink-0 mt-1 cursor-grab text-slate-300 hover:text-slate-600 select-none text-[11px] leading-none px-0.5 opacity-0 group-hover:opacity-100 transition-opacity touch-none"
             >
               ⋮⋮
             </span>
