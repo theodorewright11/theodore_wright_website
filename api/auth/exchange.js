@@ -56,6 +56,22 @@ export default async function handler(req, res) {
   }
 
   const email = emailFromIdToken(data.id_token);
+
+  // Allowlist: only the owner may complete sign-in. Strangers who consent get
+  // rejected here — their refresh token is discarded (never stored) and
+  // best-effort revoked, so no session is ever created for them. Override the
+  // default via the ALLOWED_EMAILS env var (comma-separated).
+  const allowed = (process.env.ALLOWED_EMAILS || 'teddyalanwright@gmail.com')
+    .split(',').map((s) => s.trim().toLowerCase()).filter(Boolean);
+  if (!email || !allowed.includes(email.toLowerCase())) {
+    fetch('https://oauth2.googleapis.com/revoke', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({ token: data.refresh_token }),
+    }).catch(() => {});
+    return res.status(403).json({ error: 'not_allowed', detail: 'This site is private to its owner.' });
+  }
+
   setSessionCookie(res, seal(JSON.stringify({ rt: data.refresh_token, email }), encKey));
 
   return res.status(200).json({

@@ -320,7 +320,7 @@ Backend lives in `api/auth/` (`_lib.js` = crypto/cookie/token helpers; `exchange
 
 **Scopes are unified** in `googleAuth.ts` (`openid email profile spreadsheets drive.file`) so one sign-in covers every dashboard. The access token lives only in memory + a sessionStorage cache (instant paint); the durable session is the cookie.
 
-**Required env vars** (Vercel project settings, all environments): `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `TOKEN_ENC_KEY` (base64url of 32 random bytes). The OAuth consent screen must be **Published / In production** for non-expiring refresh tokens (Testing mode expires them after 7 days).
+**Required env vars** (Vercel project settings, all environments): `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `TOKEN_ENC_KEY` (base64url of 32 random bytes). Optional `ALLOWED_EMAILS` (comma-separated) — the **owner allowlist**: `exchange` rejects any signed-in email not on it (default `teddyalanwright@gmail.com`), discarding+revoking the stranger's token so no session is created. The OAuth consent screen must be **Published / In production** for non-expiring refresh tokens (Testing mode expires them after 7 days). Sensitive scopes (Sheets) trigger Google's "unverified app" warning on first interactive sign-in — bypass via *Advanced → proceed*; formal verification is unnecessary for single-owner use.
 
 **COOP header** (`vercel.json` + `astro.config.mjs` dev/preview) is set to `same-origin-allow-popups` — good hygiene for the interactive sign-in popup. Do **not** add `Cross-Origin-Embedder-Policy`; it would block the GIS script and Google APIs.
 
