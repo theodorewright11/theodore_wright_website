@@ -38,11 +38,19 @@ export type Code = {
   created_at: string;
 };
 
+export type AnnotationRange = {
+  start: number;
+  end: number;
+};
+
 export type Annotation = {
   id: string;
   docId: string;
-  start: number;
-  end: number;
+  // One annotation can cover multiple disjoint spans of the document — e.g.
+  // two paragraphs that say similar things, grouped under one annotation
+  // entry. Legacy single-range annotations (with top-level start/end) are
+  // migrated to ranges: [{start, end}] on load (see storage.ts).
+  ranges: AnnotationRange[];
   codeId: string;
   note?: string;
   created_at: string;

@@ -819,13 +819,52 @@ export default function QualitativeCodingDashboard() {
     const a: Annotation = {
       id: explicitId ?? cryptoRandomId(),
       docId,
-      start,
-      end,
+      ranges: [{ start, end }],
       codeId,
       note,
       created_at: new Date().toISOString(),
     };
     updateActiveProject((p) => ({ ...p, annotations: [...p.annotations, a] }));
+    queueWrite(projectId);
+  };
+
+  // Append an additional disjoint range to an existing annotation, so one
+  // annotation entry can group N text segments. Idempotent (de-duped).
+  const addRangeToAnnotation = (
+    annotationId: string,
+    start: number,
+    end: number,
+  ) => {
+    if (!activeProject) return;
+    const projectId = activeProject.id;
+    updateActiveProject((p) => ({
+      ...p,
+      annotations: p.annotations.map((a) => {
+        if (a.id !== annotationId) return a;
+        if (a.ranges.some((r) => r.start === start && r.end === end)) return a;
+        return { ...a, ranges: [...a.ranges, { start, end }] };
+      }),
+    }));
+    queueWrite(projectId);
+  };
+
+  // Remove one specific range from an annotation. If it was the last range,
+  // delete the annotation entirely.
+  const removeRangeFromAnnotation = (
+    annotationId: string,
+    rangeIdx: number,
+  ) => {
+    if (!activeProject) return;
+    const projectId = activeProject.id;
+    updateActiveProject((p) => ({
+      ...p,
+      annotations: p.annotations.flatMap((a) => {
+        if (a.id !== annotationId) return [a];
+        const nextRanges = a.ranges.filter((_, i) => i !== rangeIdx);
+        if (nextRanges.length === 0) return [];
+        return [{ ...a, ranges: nextRanges }];
+      }),
+    }));
     queueWrite(projectId);
   };
 
@@ -906,7 +945,11 @@ export default function QualitativeCodingDashboard() {
   // that were just-created (state hasn't flushed yet) as well as existing ones.
   const sendAnnotationToNote = (
     fromDoc: Document,
-    annotationData: { id: string; start: number; end: number; codeId: string },
+    annotationData: {
+      id: string;
+      ranges: { start: number; end: number }[];
+      codeId: string;
+    },
   ) => {
     if (!activeProject) return;
     const openNotes = openDocIds
@@ -919,11 +962,12 @@ export default function QualitativeCodingDashboard() {
       return;
     }
     const note = openNotes[0];
-    const span = fromDoc.text
-      .slice(annotationData.start, annotationData.end)
-      .slice(0, 80)
-      .replace(/\s+/g, ' ');
-    const truncated = annotationData.end - annotationData.start > 80 ? '…' : '';
+    const fullText = annotationData.ranges
+      .map((r) => fromDoc.text.slice(r.start, r.end))
+      .filter((s) => s.length > 0)
+      .join(' … ');
+    const span = fullText.slice(0, 80).replace(/\s+/g, ' ');
+    const truncated = fullText.length > 80 ? '…' : '';
     const path = codePathString(activeProject.codes, annotationData.codeId);
     const label = `${fromDoc.title} · ${path} · "${span}${truncated}"`;
     const href = `qcanno://${activeProject.id}/${fromDoc.id}/${annotationData.id}`;
@@ -1192,6 +1236,8 @@ export default function QualitativeCodingDashboard() {
                         }
                         onDeleteAnnotation={deleteAnnotation}
                         onUpdateAnnotation={updateAnnotation}
+                        onAddRangeToAnnotation={addRangeToAnnotation}
+                        onRemoveRangeFromAnnotation={removeRangeFromAnnotation}
                         onSendAnnotationToNote={(annData) => sendAnnotationToNote(d, annData)}
                         canSendToNote={openDocs.some((o) => o.kind === 'note')}
                         onCreateCode={(name, parentId, color) =>

@@ -152,6 +152,30 @@ export type Segment = {
   pending?: boolean;
 };
 
+// Smallest start across an annotation's ranges. Useful for sort/position.
+export function annStart(a: Annotation): number {
+  if (a.ranges.length === 0) return 0;
+  let m = a.ranges[0].start;
+  for (const r of a.ranges) if (r.start < m) m = r.start;
+  return m;
+}
+
+// Largest end across an annotation's ranges.
+export function annEnd(a: Annotation): number {
+  if (a.ranges.length === 0) return 0;
+  let m = a.ranges[0].end;
+  for (const r of a.ranges) if (r.end > m) m = r.end;
+  return m;
+}
+
+// Concatenate every range's slice with " … " between, for compact preview.
+export function annText(a: Annotation, docText: string): string {
+  return a.ranges
+    .map((r) => docText.slice(r.start, r.end))
+    .filter((s) => s.length > 0)
+    .join(' … ');
+}
+
 export function segmentText(
   text: string,
   annotations: Annotation[],
@@ -159,8 +183,10 @@ export function segmentText(
 ): Segment[] {
   const boundaries = new Set<number>([0, text.length]);
   for (const a of annotations) {
-    boundaries.add(Math.max(0, Math.min(text.length, a.start)));
-    boundaries.add(Math.max(0, Math.min(text.length, a.end)));
+    for (const r of a.ranges) {
+      boundaries.add(Math.max(0, Math.min(text.length, r.start)));
+      boundaries.add(Math.max(0, Math.min(text.length, r.end)));
+    }
   }
   if (pendingRange) {
     boundaries.add(Math.max(0, Math.min(text.length, pendingRange.start)));
@@ -172,7 +198,10 @@ export function segmentText(
     const start = sorted[i];
     const end = sorted[i + 1];
     if (end <= start) continue;
-    const covering = annotations.filter((a) => a.start <= start && a.end >= end);
+    // An annotation covers this segment if ANY of its ranges contains it.
+    const covering = annotations.filter((a) =>
+      a.ranges.some((r) => r.start <= start && r.end >= end),
+    );
     const isPending = !!(
       pendingRange && start >= pendingRange.start && end <= pendingRange.end
     );
@@ -190,7 +219,7 @@ export function segmentText(
 export function annotationsForDoc(annotations: Annotation[], docId: string): Annotation[] {
   return annotations
     .filter((a) => a.docId === docId)
-    .sort((a, b) => a.start - b.start || a.end - b.end);
+    .sort((a, b) => annStart(a) - annStart(b) || annEnd(a) - annEnd(b));
 }
 
 export function annotationsByCode(annotations: Annotation[], codeIds: Set<string>): Annotation[] {
@@ -865,7 +894,7 @@ export function exploreRows(
         }
       }
       if (!metaOk) continue;
-      const span = doc.text.slice(a.start, a.end);
+      const span = annText(a, doc.text);
       const note = a.note ?? '';
       if (q && !span.toLowerCase().includes(q) && !note.toLowerCase().includes(q)) continue;
       out.push({

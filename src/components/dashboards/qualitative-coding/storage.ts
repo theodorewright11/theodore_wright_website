@@ -87,7 +87,7 @@ export function coerceProject(p: any): Project {
       metadata: d.metadata && typeof d.metadata === 'object' ? d.metadata : {},
     })),
     codes: Array.isArray(p.codes) ? p.codes.map(coerceCode) : [],
-    annotations: Array.isArray(p.annotations) ? p.annotations : [],
+    annotations: Array.isArray(p.annotations) ? p.annotations.map(coerceAnnotation) : [],
     folders: Array.isArray(p.folders) ? p.folders.filter((f: any) => typeof f === 'string') : [],
     created_at: p.created_at ?? new Date().toISOString(),
     updated_at: p.updated_at ?? new Date().toISOString(),
@@ -111,6 +111,27 @@ function coerceCode(c: any) {
   const parentIds = typeof legacy === 'string' && legacy.length > 0 ? [legacy] : [];
   const { parentId: _unused, ...rest } = c ?? {};
   return { ...rest, parentIds };
+}
+
+// Migrate legacy single-range annotations `{ start, end }` to the new shape
+// `{ ranges: [{ start, end }] }`. Idempotent.
+function coerceAnnotation(a: any) {
+  if (Array.isArray(a?.ranges) && a.ranges.length > 0) {
+    return {
+      ...a,
+      ranges: a.ranges
+        .filter(
+          (r: any) =>
+            r && typeof r.start === 'number' && typeof r.end === 'number',
+        )
+        .map((r: any) => ({ start: r.start, end: r.end })),
+    };
+  }
+  const { start, end, ...rest } = a ?? {};
+  if (typeof start === 'number' && typeof end === 'number') {
+    return { ...rest, ranges: [{ start, end }] };
+  }
+  return { ...rest, ranges: [] };
 }
 
 export function cryptoRandomId(): string {

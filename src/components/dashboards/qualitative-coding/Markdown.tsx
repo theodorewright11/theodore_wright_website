@@ -1,5 +1,5 @@
 import { useMemo, useRef, useState } from 'react';
-import { codePathString } from './compute';
+import { annText, codePathString } from './compute';
 import { emDash } from './storage';
 import type { Annotation, Code, Document } from './types';
 
@@ -456,7 +456,7 @@ function QcLinkPicker({
     const docById = new Map(options.docs.map((d) => [d.id, d]));
     const items = options.annotations.map((a) => {
       const doc = docById.get(a.docId);
-      const span = doc ? doc.text.slice(a.start, a.end).slice(0, 80) : '';
+      const span = doc ? annText(a, doc.text).slice(0, 80) : '';
       const path = codePathString(options.codes, a.codeId);
       return { a, doc, span, path };
     });
@@ -475,7 +475,11 @@ function QcLinkPicker({
   };
 
   const buildAnnoLink = (item: { a: Annotation; doc?: Document; span: string; path: string }) => {
-    const truncated = item.a.end - item.a.start > 80 ? '…' : '';
+    const totalLen = item.a.ranges.reduce(
+      (sum, r) => sum + (r.end - r.start),
+      0,
+    );
+    const truncated = totalLen > 80 ? '…' : '';
     const span = item.span.replace(/\s+/g, ' ');
     const docTitle = item.doc?.title ?? 'doc';
     const label = `${docTitle} · ${item.path} · "${span}${truncated}"`;
@@ -566,7 +570,7 @@ function QcLinkPicker({
               </div>
               <div className="text-[12px] text-slate-600 italic mt-0.5 line-clamp-2">
                 “{item.span}
-                {item.a.end - item.a.start > 80 ? '…' : ''}”
+                {item.a.ranges.reduce((s, r) => s + (r.end - r.start), 0) > 80 ? '…' : ''}”
               </div>
             </button>
           ))

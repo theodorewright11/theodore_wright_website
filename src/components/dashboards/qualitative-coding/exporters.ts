@@ -1,4 +1,5 @@
 import {
+  annText,
   annotationsForDoc,
   buildCodeTree,
   codePathString,
@@ -40,10 +41,11 @@ export function exportDocumentMarkdown(project: Project, doc: Document): string 
     lines.push('| # | Chars | Span | Code | Note |');
     lines.push('| - | ----- | ---- | ---- | ---- |');
     anns.forEach((a, i) => {
-      const span = doc.text.slice(a.start, a.end).replace(/\s+/g, ' ').slice(0, 80);
+      const span = annText(a, doc.text).replace(/\s+/g, ' ').slice(0, 80);
       const path = codePathString(project.codes, a.codeId);
       const note = (a.note ?? '').replace(/\|/g, '\\|').replace(/\n/g, ' ');
-      lines.push(`| ${i + 1} | ${a.start}–${a.end} | ${escapePipes(span)} | ${escapePipes(path)} | ${note} |`);
+      const chars = a.ranges.map((r) => `${r.start}–${r.end}`).join(', ');
+      lines.push(`| ${i + 1} | ${chars} | ${escapePipes(span)} | ${escapePipes(path)} | ${note} |`);
     });
     lines.push('');
   }

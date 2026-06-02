@@ -38,8 +38,14 @@ type Props = {
   onAddAnnotation: (start: number, end: number, codeId: string, note?: string, id?: string) => void;
   onDeleteAnnotation: (id: string) => void;
   onUpdateAnnotation: (id: string, patch: Partial<Annotation>) => void;
+  onAddRangeToAnnotation?: (id: string, start: number, end: number) => void;
+  onRemoveRangeFromAnnotation?: (id: string, rangeIdx: number) => void;
   onSendAnnotationToNote?: (
-    annData: { id: string; start: number; end: number; codeId: string },
+    annData: {
+      id: string;
+      ranges: { start: number; end: number }[];
+      codeId: string;
+    },
   ) => void;
   canSendToNote?: boolean;
   qcLinkOptions?: QcLinkOptions;
@@ -91,6 +97,8 @@ export default function DocumentViewer({
   onAddAnnotation,
   onDeleteAnnotation,
   onUpdateAnnotation,
+  onAddRangeToAnnotation,
+  onRemoveRangeFromAnnotation,
   onSendAnnotationToNote,
   canSendToNote,
   qcLinkOptions,
@@ -221,7 +229,12 @@ export default function DocumentViewer({
   const annotationsByLine = useMemo(() => {
     const map = new Map<number, Annotation[]>();
     for (const a of docAnnotations) {
-      const line = lines.find((l) => a.start >= l.start && a.start <= l.end);
+      // Place the annotation chip on the first line touched by any of its
+      // ranges. Multi-range annotations only get one chip — the panel below
+      // lists every range.
+      const firstStart =
+        a.ranges.length === 0 ? 0 : Math.min(...a.ranges.map((r) => r.start));
+      const line = lines.find((l) => firstStart >= l.start && firstStart <= l.end);
       if (!line) continue;
       const arr = map.get(line.number) ?? [];
       arr.push(a);
@@ -352,10 +365,18 @@ export default function DocumentViewer({
     const newLen = draftText.length;
     const docAnns = annotations.filter((a) => a.docId === doc.id);
     for (const a of docAnns) {
-      if (a.start >= newLen) {
+      // Truncate ranges that extend past the new doc length; drop any range
+      // that starts past the end. If no ranges remain, delete the annotation.
+      const clamped = a.ranges
+        .filter((r) => r.start < newLen)
+        .map((r) => ({ start: r.start, end: Math.min(r.end, newLen) }));
+      if (clamped.length === 0) {
         onDeleteAnnotation(a.id);
-      } else if (a.end > newLen) {
-        onUpdateAnnotation(a.id, { end: newLen });
+      } else if (
+        clamped.length !== a.ranges.length ||
+        clamped.some((r, i) => r.end !== a.ranges[i].end)
+      ) {
+        onUpdateAnnotation(a.id, { ranges: clamped });
       }
     }
     onUpdateDoc({ text: draftText });
@@ -660,6 +681,7 @@ export default function DocumentViewer({
         onDelete={onDeleteAnnotation}
         onUpdate={onUpdateAnnotation}
         onSendToNote={onSendAnnotationToNote}
+        onRemoveRange={onRemoveRangeFromAnnotation}
         onEditCode={onUpdateCode ? (codeId) => setEditingCodeId(codeId) : undefined}
       />
 
@@ -667,13 +689,18 @@ export default function DocumentViewer({
         const focusedAnn = focusedAnnotationId
           ? docAnnotations.find((a) => a.id === focusedAnnotationId)
           : null;
+        const alreadyHasRange =
+          !!focusedAnn &&
+          focusedAnn.ranges.some(
+            (r) => r.start === pending.start && r.end === pending.end,
+          );
         const popoverFocused = focusedAnn
           ? {
               id: focusedAnn.id,
               codePath: codePathString(codes, focusedAnn.codeId),
               color: resolveColor(codes, focusedAnn.codeId),
-              currentStart: focusedAnn.start,
-              currentEnd: focusedAnn.end,
+              ranges: focusedAnn.ranges,
+              alreadyHasRange,
             }
           : undefined;
         return (
@@ -687,12 +714,24 @@ export default function DocumentViewer({
           onCreateCode={onCreateCode}
           focusedAnnotation={popoverFocused}
           onMoveFocused={
-            popoverFocused
+            popoverFocused && !alreadyHasRange
               ? () => {
                   onUpdateAnnotation(popoverFocused.id, {
-                    start: pending.start,
-                    end: pending.end,
+                    ranges: [{ start: pending.start, end: pending.end }],
                   });
+                  setPending(null);
+                  window.getSelection()?.removeAllRanges();
+                }
+              : undefined
+          }
+          onAddRangeToFocused={
+            popoverFocused && !alreadyHasRange && onAddRangeToAnnotation
+              ? () => {
+                  onAddRangeToAnnotation(
+                    popoverFocused.id,
+                    pending.start,
+                    pending.end,
+                  );
                   setPending(null);
                   window.getSelection()?.removeAllRanges();
                 }
@@ -705,8 +744,7 @@ export default function DocumentViewer({
               if (sendToNote && onSendAnnotationToNote) {
                 onSendAnnotationToNote({
                   id,
-                  start: pending.start,
-                  end: pending.end,
+                  ranges: [{ start: pending.start, end: pending.end }],
                   codeId,
                 });
               }
@@ -939,10 +977,11 @@ type PopoverProps = {
     id: string;
     codePath: string;
     color: string;
-    currentStart: number;
-    currentEnd: number;
+    ranges: { start: number; end: number }[];
+    alreadyHasRange: boolean;
   };
   onMoveFocused?: () => void;
+  onAddRangeToFocused?: () => void;
 };
 
 const SelectionPopover = forwardRef<HTMLDivElement, PopoverProps>(function SelectionPopover(
@@ -956,6 +995,7 @@ const SelectionPopover = forwardRef<HTMLDivElement, PopoverProps>(function Selec
     onCreateCode,
     onCancel,
     focusedAnnotation,
+    onAddRangeToFocused,
     onMoveFocused,
   },
   ref,
@@ -1115,15 +1155,38 @@ const SelectionPopover = forwardRef<HTMLDivElement, PopoverProps>(function Selec
         </button>
       </div>
       <div className="max-h-[380px] overflow-y-auto">
-        {focusedAnnotation && onMoveFocused &&
-          (focusedAnnotation.currentStart !== pending.start ||
-            focusedAnnotation.currentEnd !== pending.end) && (
+        {focusedAnnotation && onAddRangeToFocused && (
           <div className="bg-blue-50 border-b border-blue-100">
+            <button
+              type="button"
+              onClick={onAddRangeToFocused}
+              className="w-full flex items-center gap-2 px-3 py-2 text-left hover:bg-blue-100 transition-colors"
+              title="add this selection as another range of the focused annotation"
+            >
+              <span
+                className="w-4 h-4 rounded-sm text-white text-[12px] font-bold flex items-center justify-center flex-shrink-0"
+                style={{ background: focusedAnnotation.color }}
+              >
+                +
+              </span>
+              <span className="text-[13px] text-blue-900 min-w-0 flex-1 leading-snug">
+                Add this selection to{' '}
+                <span className="font-semibold">“{focusedAnnotation.codePath}”</span>
+                <span className="block text-[10px] text-blue-700 font-mono tabular-nums mt-0.5">
+                  now {focusedAnnotation.ranges.length} range
+                  {focusedAnnotation.ranges.length === 1 ? '' : 's'} → {focusedAnnotation.ranges.length + 1}
+                </span>
+              </span>
+            </button>
+          </div>
+        )}
+        {focusedAnnotation && onMoveFocused && (
+          <div className="bg-blue-50/60 border-b border-blue-100">
             <button
               type="button"
               onClick={onMoveFocused}
               className="w-full flex items-center gap-2 px-3 py-2 text-left hover:bg-blue-100 transition-colors"
-              title="move the focused annotation's highlight to this selection"
+              title="replace ALL of the focused annotation's ranges with just this selection"
             >
               <span
                 className="w-4 h-4 rounded-sm text-white text-[12px] font-bold flex items-center justify-center flex-shrink-0"
@@ -1132,12 +1195,12 @@ const SelectionPopover = forwardRef<HTMLDivElement, PopoverProps>(function Selec
                 ↔
               </span>
               <span className="text-[13px] text-blue-900 min-w-0 flex-1 leading-snug">
-                Move{' '}
+                Replace{' '}
                 <span className="font-semibold">“{focusedAnnotation.codePath}”</span>{' '}
-                range to this selection
+                with just this selection
                 <span className="block text-[10px] text-blue-700 font-mono tabular-nums mt-0.5">
-                  {focusedAnnotation.currentStart}–{focusedAnnotation.currentEnd} →{' '}
-                  {pending.start}–{pending.end}
+                  drops {focusedAnnotation.ranges.length} existing range
+                  {focusedAnnotation.ranges.length === 1 ? '' : 's'}
                 </span>
               </span>
             </button>
@@ -1331,7 +1394,12 @@ function AnnotationsPanel({
   onFocus: (id: string | null) => void;
   onDelete: (id: string) => void;
   onUpdate: (id: string, patch: Partial<Annotation>) => void;
-  onSendToNote?: (annData: { id: string; start: number; end: number; codeId: string }) => void;
+  onSendToNote?: (annData: {
+    id: string;
+    ranges: { start: number; end: number }[];
+    codeId: string;
+  }) => void;
+  onRemoveRange?: (id: string, rangeIdx: number) => void;
   onEditCode?: (codeId: string) => void;
 }) {
   if (annotations.length === 0) {
@@ -1393,8 +1461,16 @@ function AnnotationsPanel({
                     style={{ background: color }}
                   />
                   <span className="text-[12px] font-semibold text-slate-700">{path}</span>
+                  {a.ranges.length > 1 && (
+                    <span
+                      className="text-[10px] font-semibold uppercase tracking-wider text-purple-700 bg-purple-100 rounded px-1.5 py-0.5"
+                      title={`This annotation spans ${a.ranges.length} disjoint ranges`}
+                    >
+                      {a.ranges.length} ranges
+                    </span>
+                  )}
                   <span className="text-[10px] font-mono text-slate-400 tabular-nums ml-auto">
-                    {a.start}–{a.end}
+                    {a.ranges.map((r) => `${r.start}–${r.end}`).join(', ')}
                   </span>
                   {onEditCode && (
                     <button
@@ -1416,8 +1492,7 @@ function AnnotationsPanel({
                         e.stopPropagation();
                         onSendToNote({
                           id: a.id,
-                          start: a.start,
-                          end: a.end,
+                          ranges: a.ranges,
                           codeId: a.codeId,
                         });
                       }}
@@ -1434,7 +1509,7 @@ function AnnotationsPanel({
                       onDelete(a.id);
                     }}
                     className="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-red-600 text-[14px] transition-opacity"
-                    title="delete"
+                    title="delete this whole annotation"
                   >
                     ×
                   </button>
@@ -1444,9 +1519,31 @@ function AnnotationsPanel({
                     {codeForA.description}
                   </div>
                 )}
-                <div className="mt-1 text-[13px] text-slate-700 italic">
-                  “{doc.text.slice(a.start, a.end).slice(0, 200)}
-                  {a.end - a.start > 200 ? '…' : ''}”
+                <div className="mt-1 space-y-1">
+                  {a.ranges.map((r, idx) => {
+                    const slice = doc.text.slice(r.start, r.end);
+                    return (
+                      <div key={idx} className="text-[13px] text-slate-700 italic flex items-start gap-1.5 group/range">
+                        <span className="flex-1 min-w-0">
+                          “{slice.slice(0, 200)}
+                          {slice.length > 200 ? '…' : ''}”
+                        </span>
+                        {onRemoveRange && a.ranges.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onRemoveRange(a.id, idx);
+                            }}
+                            className="opacity-0 group-hover/range:opacity-100 flex-shrink-0 text-slate-400 hover:text-red-600 text-[14px] leading-none transition-opacity"
+                            title="remove just this range"
+                          >
+                            ×
+                          </button>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
                 {focused && (
                   <textarea

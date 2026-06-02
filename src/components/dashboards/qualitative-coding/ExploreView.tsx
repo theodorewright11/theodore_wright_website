@@ -694,7 +694,7 @@ export default function ExploreView({
                       {r.doc.title}
                     </span>
                     <span className="text-[10px] font-mono text-slate-400 tabular-nums ml-auto">
-                      {r.annotation.start}–{r.annotation.end}
+                      {r.annotation.ranges.map((rr) => `${rr.start}–${rr.end}`).join(', ')}
                     </span>
                   </div>
                   <div className="mt-1.5 text-[13px] text-slate-700 italic leading-snug">
