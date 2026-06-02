@@ -303,7 +303,7 @@ function TreeRow({
                 aria-label={`color ${c}`}
               />
             ))}
-            {code.parentId !== null && (
+            {code.parentIds.length > 0 && (
               <button
                 type="button"
                 onClick={() => onUpdateCode(code.id, { color: null })}

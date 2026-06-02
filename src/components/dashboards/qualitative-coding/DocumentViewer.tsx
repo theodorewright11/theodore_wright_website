@@ -49,6 +49,8 @@ type Props = {
     color?: string | null,
   ) => string;
   onUpdateCode?: (codeId: string, patch: Partial<Code>) => void;
+  onAddParentLink?: (codeId: string, parentId: string) => void;
+  onRemoveParentLink?: (codeId: string, parentId: string) => void;
   lineView?: boolean;
   onToggleLineView?: () => void;
   linesMode?: 'sentence' | 'chars';
@@ -94,6 +96,8 @@ export default function DocumentViewer({
   qcLinkOptions,
   onCreateCode,
   onUpdateCode,
+  onAddParentLink,
+  onRemoveParentLink,
   lineView,
   onToggleLineView,
   linesMode,
@@ -750,7 +754,10 @@ export default function DocumentViewer({
       return (
         <CodeEditModal
           code={editingCode}
+          allCodes={codes}
           onSave={(patch) => onUpdateCode(editingCodeId, patch)}
+          onAddParent={onAddParentLink}
+          onRemoveParent={onRemoveParentLink}
           onClose={() => setEditingCodeId(null)}
         />
       );

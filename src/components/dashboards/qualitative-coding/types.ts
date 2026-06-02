@@ -28,7 +28,10 @@ export type Document = {
 export type Code = {
   id: string;
   name: string;
-  parentId: string | null;
+  // A code can live under multiple parents at once (multi-parent DAG). An
+  // empty array means it's a top-level / root code. Legacy projects with the
+  // single `parentId` field are migrated on load (see storage.ts).
+  parentIds: string[];
   color: string | null;
   description?: string;
   order?: number;

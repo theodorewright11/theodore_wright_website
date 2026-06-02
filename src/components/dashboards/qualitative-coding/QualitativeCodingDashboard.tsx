@@ -590,7 +590,7 @@ export default function QualitativeCodingDashboard() {
       const code: Code = {
         id,
         name,
-        parentId,
+        parentIds: parentId ? [parentId] : [],
         color,
         created_at: new Date().toISOString(),
       };
@@ -627,63 +627,122 @@ export default function QualitativeCodingDashboard() {
     queueWrite(projectId);
   };
 
-  // Move a code in the tree: relative to targetCodeId (before/after as sibling,
-  // or inside as last child). Prevents cycles. Renumbers the new sibling group.
+  // Move a code in the codebook DAG.
+  // - sourceParentId: which parent context the user grabbed it from (the row
+  //   instance under that parent in the tree). null means they dragged from a
+  //   root-level instance.
+  // - targetCodeId + position: where they dropped it. position 'inside' on a
+  //   code → new parent is that code; 'before/after' a code → new parent is
+  //   that code's first parent (i.e. drop alongside it). targetCodeId null +
+  //   position 'inside' = the root drop zone.
+  // - additive=true (Alt-drag): keep the source parent and add the new one.
+  //   additive=false (normal): remove the source parent and add the new one.
+  // Prevents cycles. Sibling order is renumbered within the new parent group.
   const moveCode = (
     codeId: string,
+    sourceParentId: string | null,
     targetCodeId: string | null,
     position: 'before' | 'after' | 'inside',
+    additive = false,
   ) => {
     if (!activeProject) return;
     const projectId = activeProject.id;
     if (codeId === targetCodeId) return;
-    // Cycle check: refuse to drop a code into its own descendant.
     if (targetCodeId && descendantIds(activeProject.codes, codeId).has(targetCodeId)) {
       return;
     }
     updateActiveProject((p) => {
+      const moved = p.codes.find((c) => c.id === codeId);
+      if (!moved) return p;
       const target = targetCodeId ? p.codes.find((c) => c.id === targetCodeId) : null;
-      // Determine the new parent id.
       let newParentId: string | null;
       if (position === 'inside') {
-        newParentId = targetCodeId; // null means root (drop on root zone)
+        newParentId = targetCodeId;
       } else if (target) {
-        newParentId = target.parentId;
+        newParentId = target.parentIds[0] ?? null;
       } else {
         newParentId = null;
       }
-      // Update parentId on the moved code
-      const moved = p.codes.find((c) => c.id === codeId);
-      if (!moved) return p;
-      const updatedCode: Code = { ...moved, parentId: newParentId };
-      // Sibling group of the new parent (excluding the moved code)
-      const siblings = p.codes
-        .filter((c) => c.parentId === newParentId && c.id !== codeId)
-        .sort((a, b) => {
-          const ao = a.order ?? Number.MAX_SAFE_INTEGER;
-          const bo = b.order ?? Number.MAX_SAFE_INTEGER;
-          if (ao !== bo) return ao - bo;
-          return a.created_at.localeCompare(b.created_at);
-        });
+      // Compute the next parentIds set.
+      let nextParentIds = [...moved.parentIds];
+      if (!additive && sourceParentId !== null) {
+        nextParentIds = nextParentIds.filter((p) => p !== sourceParentId);
+      } else if (!additive && sourceParentId === null) {
+        // Dragging a root instance to a real parent means it's no longer root
+        // in that slot — but root-ness is implicit (parentIds empty), so just
+        // proceed to add the new parent below; non-additive drag from root to
+        // root is a no-op.
+      }
+      if (newParentId !== null && !nextParentIds.includes(newParentId)) {
+        nextParentIds.push(newParentId);
+      }
+      // If non-additive drag to root from a real parent: just remove the
+      // source parent (above) and don't add anything. The code becomes root
+      // only if no parents remain.
+      const updatedCode: Code = { ...moved, parentIds: nextParentIds };
+      // Sibling group ordering. With multi-parent, "siblings under newParent"
+      // means codes that include newParentId in their parentIds (or, for root,
+      // codes whose parentIds is empty).
+      const isSibling = (c: Code) =>
+        c.id !== codeId &&
+        (newParentId === null ? c.parentIds.length === 0 : c.parentIds.includes(newParentId));
+      const siblings = p.codes.filter(isSibling).sort((a, b) => {
+        const ao = a.order ?? Number.MAX_SAFE_INTEGER;
+        const bo = b.order ?? Number.MAX_SAFE_INTEGER;
+        if (ao !== bo) return ao - bo;
+        return a.created_at.localeCompare(b.created_at);
+      });
       let insertIdx: number;
       if (position === 'inside' || !target) {
-        insertIdx = siblings.length; // last child
+        insertIdx = siblings.length;
       } else {
         const ti = siblings.findIndex((c) => c.id === targetCodeId);
         insertIdx = ti < 0 ? siblings.length : position === 'before' ? ti : ti + 1;
       }
       const reordered = [...siblings];
       reordered.splice(insertIdx, 0, updatedCode);
-      // Reassign sequential orders to the new sibling group
       const reorderedById = new Map(reordered.map((c, i) => [c.id, { ...c, order: i }]));
-      // Apply: every code stays if it's not in the affected sibling group;
-      // otherwise pull the reordered version.
       const nextCodes = p.codes.map((c) => {
         if (c.id === codeId) return reorderedById.get(c.id) ?? updatedCode;
         return reorderedById.get(c.id) ?? c;
       });
       return { ...p, codes: nextCodes };
     });
+    queueWrite(projectId);
+  };
+
+  // Remove a single parent link from a code without deleting the code (used
+  // by the edit modal's "× parent" buttons). If the code's last parent is
+  // removed, it becomes a root code.
+  const removeParentLink = (codeId: string, parentId: string) => {
+    if (!activeProject) return;
+    const projectId = activeProject.id;
+    updateActiveProject((p) => ({
+      ...p,
+      codes: p.codes.map((c) =>
+        c.id === codeId
+          ? { ...c, parentIds: c.parentIds.filter((pid) => pid !== parentId) }
+          : c,
+      ),
+    }));
+    queueWrite(projectId);
+  };
+
+  // Add a parent link to a code (idempotent — does nothing if already a
+  // parent, or if it would create a cycle).
+  const addParentLink = (codeId: string, parentId: string) => {
+    if (!activeProject) return;
+    const projectId = activeProject.id;
+    if (codeId === parentId) return;
+    if (descendantIds(activeProject.codes, codeId).has(parentId)) return;
+    updateActiveProject((p) => ({
+      ...p,
+      codes: p.codes.map((c) =>
+        c.id === codeId && !c.parentIds.includes(parentId)
+          ? { ...c, parentIds: [...c.parentIds, parentId] }
+          : c,
+      ),
+    }));
     queueWrite(projectId);
   };
 
@@ -975,6 +1034,8 @@ export default function QualitativeCodingDashboard() {
               onToggleDefinitions={toggleDefinitions}
               onAddCode={addCode}
               onUpdateCode={updateCode}
+              onAddParentLink={addParentLink}
+              onRemoveParentLink={removeParentLink}
               onDeleteCode={deleteCode}
               onMoveCode={moveCode}
             />
@@ -1074,6 +1135,8 @@ export default function QualitativeCodingDashboard() {
                           addCode(parentId ?? null, name, color)
                         }
                         onUpdateCode={updateCode}
+                        onAddParentLink={addParentLink}
+                        onRemoveParentLink={removeParentLink}
                         lineView={!!state.lineView}
                         onToggleLineView={() =>
                           setState((s) => ({ ...s, lineView: !s.lineView }))
@@ -1124,6 +1187,8 @@ export default function QualitativeCodingDashboard() {
                     onToggleDefinitions={toggleDefinitions}
                     onAddCode={addCode}
                     onUpdateCode={updateCode}
+                    onAddParentLink={addParentLink}
+                    onRemoveParentLink={removeParentLink}
                     onDeleteCode={deleteCode}
                     onMoveCode={moveCode}
                     onClose={() => setCodebookPanelOpen(false)}

@@ -1,6 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
 import ColorPicker from './ColorPicker';
-import { buildCodeTree, descendantIds, resolveColor, type CodeNode } from './compute';
+import {
+  buildCodeTree,
+  codePathString,
+  descendantIds,
+  flattenTree,
+  resolveColor,
+  type CodeNode,
+} from './compute';
 import { emDash } from './storage';
 import type { Code, Project } from './types';
 
@@ -14,7 +21,15 @@ type Props = {
   onAddCode: (parentId: string | null, name: string) => void;
   onUpdateCode: (codeId: string, patch: Partial<Code>) => void;
   onDeleteCode: (codeId: string) => void;
-  onMoveCode: (codeId: string, targetCodeId: string | null, position: DropPosition) => void;
+  onMoveCode: (
+    codeId: string,
+    sourceParentId: string | null,
+    targetCodeId: string | null,
+    position: DropPosition,
+    additive?: boolean,
+  ) => void;
+  onAddParentLink?: (codeId: string, parentId: string) => void;
+  onRemoveParentLink?: (codeId: string, parentId: string) => void;
   onClose?: () => void; // for panel variant
 };
 
@@ -27,6 +42,8 @@ export default function CodebookView({
   onUpdateCode,
   onDeleteCode,
   onMoveCode,
+  onAddParentLink,
+  onRemoveParentLink,
   onClose,
 }: Props) {
   // Custom pointer-based drag (not native HTML5), so the wheel keeps working
@@ -34,20 +51,23 @@ export default function CodebookView({
   // HTML5 drag, which is the only way to keep mouse-wheel scrolling alive.
   type ActiveDrag = {
     codeId: string;
+    sourceParentId: string | null; // which parent context the drag started from
     startX: number;
     startY: number;
     curX: number;
     curY: number;
     active: boolean;
+    altKey: boolean; // hold Alt/Ctrl while dragging to ADD a parent (keep old)
     overCodeId: string | null;
+    overPathKey: string | null;
     overZone: DropPosition | null;
     overRoot: boolean;
   };
   const [drag, setDrag] = useState<ActiveDrag | null>(null);
   const dragCodeId = drag?.active ? drag.codeId : null;
   const dropTarget =
-    drag?.active && drag.overCodeId && drag.overZone
-      ? { codeId: drag.overCodeId, zone: drag.overZone }
+    drag?.active && drag.overCodeId && drag.overPathKey && drag.overZone
+      ? { codeId: drag.overCodeId, pathKey: drag.overPathKey, zone: drag.overZone }
       : null;
   const rootDragOver = !!drag?.active && drag.overRoot;
   const tree = buildCodeTree(project.codes);
@@ -55,17 +75,24 @@ export default function CodebookView({
   const [draft, setDraft] = useState('');
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  const startDrag = (codeId: string, e: React.PointerEvent) => {
+  const startDrag = (
+    codeId: string,
+    sourceParentId: string | null,
+    e: React.PointerEvent,
+  ) => {
     if (e.button !== 0) return;
     e.preventDefault();
     setDrag({
       codeId,
+      sourceParentId,
       startX: e.clientX,
       startY: e.clientY,
       curX: e.clientX,
       curY: e.clientY,
       active: false,
+      altKey: e.altKey || e.ctrlKey || e.metaKey,
       overCodeId: null,
+      overPathKey: null,
       overZone: null,
       overRoot: false,
     });
@@ -105,23 +132,30 @@ export default function CodebookView({
       if (dy !== 0 && raf === 0) raf = requestAnimationFrame(step);
     };
     const computeOver = (x: number, y: number) => {
+      const empty = {
+        overCodeId: null,
+        overPathKey: null,
+        overZone: null,
+        overRoot: false,
+      };
       const el = document.elementFromPoint(x, y) as HTMLElement | null;
-      if (!el) return { overCodeId: null, overZone: null, overRoot: false };
+      if (!el) return empty;
       if (el.closest('[data-codebook-root-zone]')) {
-        return { overCodeId: null, overZone: null, overRoot: true };
+        return { ...empty, overRoot: true };
       }
       const li = el.closest('[data-codebook-code-id]') as HTMLElement | null;
-      if (!li) return { overCodeId: null, overZone: null, overRoot: false };
+      if (!li) return empty;
       const id = li.getAttribute('data-codebook-code-id');
-      if (!id || id === drag.codeId || descendants.has(id)) {
-        return { overCodeId: null, overZone: null, overRoot: false };
+      const pathKey = li.getAttribute('data-codebook-path');
+      if (!id || !pathKey || id === drag.codeId || descendants.has(id)) {
+        return empty;
       }
       const header = li.querySelector('[data-codebook-header]') as HTMLElement | null;
       const rect = (header ?? li).getBoundingClientRect();
       const h = rect.height || 1;
       const ry = Math.max(0, Math.min(h, y - rect.top));
       const zone: DropPosition = ry < h * 0.3 ? 'before' : ry > h * 0.7 ? 'after' : 'inside';
-      return { overCodeId: id, overZone: zone, overRoot: false };
+      return { overCodeId: id, overPathKey: pathKey, overZone: zone, overRoot: false };
     };
     const onMove = (e: PointerEvent) => {
       const dx = e.clientX - drag.startX;
@@ -138,6 +172,7 @@ export default function CodebookView({
               curX: e.clientX,
               curY: e.clientY,
               active,
+              altKey: e.altKey || e.ctrlKey || e.metaKey,
               ...over,
             }
           : null,
@@ -153,9 +188,9 @@ export default function CodebookView({
         if (!d) return null;
         if (d.active) {
           if (d.overCodeId && d.overZone) {
-            onMoveCode(d.codeId, d.overCodeId, d.overZone);
+            onMoveCode(d.codeId, d.sourceParentId, d.overCodeId, d.overZone, d.altKey);
           } else if (d.overRoot) {
-            onMoveCode(d.codeId, null, 'inside');
+            onMoveCode(d.codeId, d.sourceParentId, null, 'inside', d.altKey);
           }
         }
         return null;
@@ -267,7 +302,7 @@ export default function CodebookView({
             <ul className="space-y-3">
               {tree.map((node) => (
                 <CodebookRow
-                  key={node.code.id}
+                  key={node.pathKey}
                   node={node}
                   codes={project.codes}
                   counts={counts}
@@ -277,6 +312,8 @@ export default function CodebookView({
                   startDrag={startDrag}
                   onAddCode={onAddCode}
                   onUpdateCode={onUpdateCode}
+                  onAddParentLink={onAddParentLink}
+                  onRemoveParentLink={onRemoveParentLink}
                   onDeleteCode={onDeleteCode}
                 />
               ))}
@@ -416,6 +453,8 @@ function CodebookRow({
   startDrag,
   onAddCode,
   onUpdateCode,
+  onAddParentLink,
+  onRemoveParentLink,
   onDeleteCode,
 }: {
   node: CodeNode;
@@ -423,13 +462,15 @@ function CodebookRow({
   counts: Map<string, number>;
   isPanel: boolean;
   dragCodeId: string | null;
-  dropTarget: { codeId: string; zone: DropPosition } | null;
-  startDrag: (codeId: string, e: React.PointerEvent) => void;
+  dropTarget: { codeId: string; pathKey: string; zone: DropPosition } | null;
+  startDrag: (codeId: string, sourceParentId: string | null, e: React.PointerEvent) => void;
   onAddCode: (parentId: string | null, name: string) => void;
   onUpdateCode: (codeId: string, patch: Partial<Code>) => void;
+  onAddParentLink?: (codeId: string, parentId: string) => void;
+  onRemoveParentLink?: (codeId: string, parentId: string) => void;
   onDeleteCode: (codeId: string) => void;
 }) {
-  const { code, depth, children } = node;
+  const { code, depth, children, parentId: instanceParentId, pathKey } = node;
   const [editing, setEditing] = useState(false);
   const [draftName, setDraftName] = useState(code.name);
   const [draftDesc, setDraftDesc] = useState(code.description ?? '');
@@ -439,7 +480,7 @@ function CodebookRow({
   const color = resolveColor(codes, code.id);
   const count = counts.get(code.id) ?? 0;
   const isBeingDragged = dragCodeId === code.id;
-  const dropZone = dropTarget?.codeId === code.id ? dropTarget.zone : null;
+  const dropZone = dropTarget?.pathKey === pathKey ? dropTarget.zone : null;
 
   const startEdit = () => {
     setDraftName(code.name);
@@ -476,9 +517,14 @@ function CodebookRow({
           ? 'ring-2 ring-blue-400 bg-blue-50/40'
           : '';
 
+  const parentCount = code.parentIds.length;
+  const isShared = parentCount > 1;
+
   return (
     <li
       data-codebook-code-id={code.id}
+      data-codebook-instance-parent={instanceParentId ?? ''}
+      data-codebook-path={pathKey}
       className={`group rounded-lg p-3 transition-colors ${
         depth === 0 ? 'border border-slate-200 bg-white' : ''
       } ${isBeingDragged ? 'opacity-40' : ''} ${dropClass}`}
@@ -509,6 +555,67 @@ function CodebookRow({
             rows={3}
             className="w-full px-3 py-2 text-[13px] border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 resize-y"
           />
+          {(onAddParentLink || onRemoveParentLink) && (() => {
+            const banned = descendantIds(codes, code.id);
+            const flat = flattenTree(buildCodeTree(codes));
+            const addable = flat.filter(
+              (n) => !banned.has(n.code.id) && !code.parentIds.includes(n.code.id),
+            );
+            return (
+              <div className="flex items-start gap-3 flex-wrap">
+                <span className="text-[10px] uppercase font-semibold tracking-wider text-slate-400 mt-1.5">
+                  Parents
+                </span>
+                <div className="flex-1 min-w-0 flex flex-wrap items-center gap-1.5">
+                  {code.parentIds.length === 0 && (
+                    <span className="text-[11px] italic text-slate-400 py-1">
+                      Top-level · no parents
+                    </span>
+                  )}
+                  {code.parentIds.map((pid) => {
+                    const parent = codes.find((c) => c.id === pid);
+                    if (!parent) return null;
+                    return (
+                      <span
+                        key={pid}
+                        className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-slate-100 text-[12px] text-slate-700"
+                      >
+                        {codePathString(codes, pid)}
+                        {onRemoveParentLink && (
+                          <button
+                            type="button"
+                            onClick={() => onRemoveParentLink(code.id, pid)}
+                            className="text-slate-400 hover:text-red-600 text-[14px] leading-none"
+                            title="remove this parent"
+                          >
+                            ×
+                          </button>
+                        )}
+                      </span>
+                    );
+                  })}
+                  {onAddParentLink && addable.length > 0 && (
+                    <select
+                      value=""
+                      onChange={(e) => {
+                        const pid = e.target.value;
+                        if (pid) onAddParentLink(code.id, pid);
+                      }}
+                      className="px-2 py-1 text-[12px] border border-slate-300 rounded bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500"
+                    >
+                      <option value="">+ add parent</option>
+                      {addable.map((n) => (
+                        <option key={n.pathKey} value={n.code.id}>
+                          {'  '.repeat(n.depth)}
+                          {codePathString(codes, n.code.id)}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                </div>
+              </div>
+            );
+          })()}
           <div className="flex items-start gap-3 flex-wrap">
             <span className="text-[10px] uppercase font-semibold tracking-wider text-slate-400 mt-0.5">
               Color
@@ -517,7 +624,7 @@ function CodebookRow({
               <ColorPicker
                 value={code.color}
                 onChange={(c) => onUpdateCode(code.id, { color: c })}
-                allowInherit={code.parentId !== null}
+                allowInherit={code.parentIds.length > 0}
               />
             </div>
             <div className="flex items-center gap-2">
@@ -542,8 +649,8 @@ function CodebookRow({
         <>
           <div data-codebook-header className="flex items-start gap-3">
             <span
-              onPointerDown={(e) => startDrag(code.id, e)}
-              title="drag to reorder / reparent"
+              onPointerDown={(e) => startDrag(code.id, instanceParentId, e)}
+              title="drag to move (Alt/Ctrl to add a parent)"
               className="flex-shrink-0 mt-1 cursor-grab text-slate-300 hover:text-slate-600 select-none text-[11px] leading-none px-0.5 opacity-0 group-hover:opacity-100 transition-opacity touch-none"
             >
               ⋮⋮
@@ -561,6 +668,15 @@ function CodebookRow({
               >
                 {code.name}
               </HeadingTag>
+              {isShared && (
+                <span
+                  className="inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wider text-purple-700 bg-purple-100 rounded px-1.5 py-0.5 mt-1.5"
+                  title={`Same code, shown under ${parentCount} parents. Edit it once and all instances update.`}
+                >
+                  <span>⤴</span>
+                  shared · {parentCount}
+                </span>
+              )}
               {code.description && (
                 <p className="text-[13px] text-slate-600 leading-snug mt-1.5 m-0">
                   {code.description}
@@ -641,7 +757,7 @@ function CodebookRow({
         <ul className={`mt-3 space-y-3`}>
           {children.map((child) => (
             <CodebookRow
-              key={child.code.id}
+              key={child.pathKey}
               node={child}
               codes={codes}
               counts={counts}
@@ -651,6 +767,8 @@ function CodebookRow({
               startDrag={startDrag}
               onAddCode={onAddCode}
               onUpdateCode={onUpdateCode}
+              onAddParentLink={onAddParentLink}
+              onRemoveParentLink={onRemoveParentLink}
               onDeleteCode={onDeleteCode}
             />
           ))}

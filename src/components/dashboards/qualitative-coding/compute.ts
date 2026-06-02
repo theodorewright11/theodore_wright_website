@@ -1,34 +1,66 @@
 import type { Annotation, Code, Document, Project } from './types';
 import { PALETTE } from './types';
 
+// A code can have multiple parents, so the codebook view is a DAG flattened
+// into a tree by *duplicating* the code under each of its parents. Each
+// CodeNode records the parent context it's rendered under (parentId) and a
+// pathKey unique across instances, for stable React keys.
 export type CodeNode = {
   code: Code;
   depth: number;
+  parentId: string | null;
+  pathKey: string;
   children: CodeNode[];
 };
 
+const sortCodes = (a: Code, b: Code) => {
+  const ao = a.order ?? Number.MAX_SAFE_INTEGER;
+  const bo = b.order ?? Number.MAX_SAFE_INTEGER;
+  if (ao !== bo) return ao - bo;
+  return a.created_at.localeCompare(b.created_at);
+};
+
 export function buildCodeTree(codes: Code[]): CodeNode[] {
+  // childrenByParent[X] = codes that list X in their parentIds, OR — if X is
+  // null — codes whose parentIds is empty (top-level / roots).
   const byParent = new Map<string | null, Code[]>();
   for (const c of codes) {
-    const list = byParent.get(c.parentId) ?? [];
-    list.push(c);
-    byParent.set(c.parentId, list);
+    if (c.parentIds.length === 0) {
+      const list = byParent.get(null) ?? [];
+      list.push(c);
+      byParent.set(null, list);
+    } else {
+      for (const pid of c.parentIds) {
+        const list = byParent.get(pid) ?? [];
+        list.push(c);
+        byParent.set(pid, list);
+      }
+    }
   }
-  for (const list of byParent.values()) {
-    list.sort((a, b) => {
-      const ao = a.order ?? Number.MAX_SAFE_INTEGER;
-      const bo = b.order ?? Number.MAX_SAFE_INTEGER;
-      if (ao !== bo) return ao - bo;
-      return a.created_at.localeCompare(b.created_at);
+  for (const list of byParent.values()) list.sort(sortCodes);
+  const build = (
+    parentId: string | null,
+    depth: number,
+    seen: Set<string>,
+    pathPrefix: string,
+  ): CodeNode[] =>
+    (byParent.get(parentId) ?? []).map((code) => {
+      const pathKey = pathPrefix + '>' + code.id;
+      // Guard against accidental cycles in the DAG so we don't recurse forever.
+      const nextSeen = new Set(seen);
+      if (nextSeen.has(code.id)) {
+        return { code, depth, parentId, pathKey, children: [] };
+      }
+      nextSeen.add(code.id);
+      return {
+        code,
+        depth,
+        parentId,
+        pathKey,
+        children: build(code.id, depth + 1, nextSeen, pathKey),
+      };
     });
-  }
-  const build = (parentId: string | null, depth: number): CodeNode[] =>
-    (byParent.get(parentId) ?? []).map((code) => ({
-      code,
-      depth,
-      children: build(code.id, depth + 1),
-    }));
-  return build(null, 0);
+  return build(null, 0, new Set(), '');
 }
 
 export function flattenTree(nodes: CodeNode[]): CodeNode[] {
@@ -43,13 +75,19 @@ export function flattenTree(nodes: CodeNode[]): CodeNode[] {
   return out;
 }
 
+// First-parent path to the root. With multi-parent codes a code can have many
+// paths to root; this returns just the first one for display purposes
+// (annotations, popovers, breadcrumbs).
 export function codePath(codes: Code[], codeId: string): Code[] {
   const byId = new Map(codes.map((c) => [c.id, c]));
   const path: Code[] = [];
+  const seen = new Set<string>();
   let cur: Code | undefined = byId.get(codeId);
-  while (cur) {
+  while (cur && !seen.has(cur.id)) {
+    seen.add(cur.id);
     path.unshift(cur);
-    cur = cur.parentId ? byId.get(cur.parentId) : undefined;
+    const firstParent = cur.parentIds[0];
+    cur = firstParent ? byId.get(firstParent) : undefined;
   }
   return path;
 }
@@ -60,13 +98,17 @@ export function codePathString(codes: Code[], codeId: string, sep = ' / '): stri
     .join(sep);
 }
 
+// All codes reachable downward from codeId via parentIds → id edges. Includes
+// codeId itself. DAG-aware: a code reachable through multiple parents is only
+// counted once.
 export function descendantIds(codes: Code[], codeId: string): Set<string> {
   const out = new Set<string>([codeId]);
   let changed = true;
   while (changed) {
     changed = false;
     for (const c of codes) {
-      if (c.parentId && out.has(c.parentId) && !out.has(c.id)) {
+      if (out.has(c.id)) continue;
+      if (c.parentIds.some((p) => out.has(p))) {
         out.add(c.id);
         changed = true;
       }
@@ -75,12 +117,17 @@ export function descendantIds(codes: Code[], codeId: string): Set<string> {
   return out;
 }
 
+// Resolve a code's display color, walking up first-parent chain when the
+// code's own color is unset.
 export function resolveColor(codes: Code[], codeId: string): string {
   const byId = new Map(codes.map((c) => [c.id, c]));
+  const seen = new Set<string>();
   let cur: Code | undefined = byId.get(codeId);
-  while (cur) {
+  while (cur && !seen.has(cur.id)) {
     if (cur.color) return cur.color;
-    cur = cur.parentId ? byId.get(cur.parentId) : undefined;
+    seen.add(cur.id);
+    const firstParent = cur.parentIds[0];
+    cur = firstParent ? byId.get(firstParent) : undefined;
   }
   return '#64748b';
 }
@@ -88,7 +135,7 @@ export function resolveColor(codes: Code[], codeId: string): string {
 export function nextPaletteColor(codes: Code[]): string {
   const used = new Set(
     codes
-      .filter((c) => c.parentId === null && c.color)
+      .filter((c) => c.parentIds.length === 0 && c.color)
       .map((c) => c.color as string),
   );
   for (const c of PALETTE) {

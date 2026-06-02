@@ -80,7 +80,7 @@ export function coerceProject(p: any): Project {
       notes: typeof d.notes === 'string' ? d.notes : undefined,
       metadata: d.metadata && typeof d.metadata === 'object' ? d.metadata : {},
     })),
-    codes: Array.isArray(p.codes) ? p.codes : [],
+    codes: Array.isArray(p.codes) ? p.codes.map(coerceCode) : [],
     annotations: Array.isArray(p.annotations) ? p.annotations : [],
     folders: Array.isArray(p.folders) ? p.folders.filter((f: any) => typeof f === 'string') : [],
     created_at: p.created_at ?? new Date().toISOString(),
@@ -90,6 +90,21 @@ export function coerceProject(p: any): Project {
         ? p.drive
         : undefined,
   };
+}
+
+// Migrate legacy { parentId: string|null } codes to the multi-parent shape
+// { parentIds: string[] }. Idempotent — already-migrated codes pass through.
+function coerceCode(c: any) {
+  if (Array.isArray(c?.parentIds)) {
+    return {
+      ...c,
+      parentIds: c.parentIds.filter((p: any) => typeof p === 'string'),
+    };
+  }
+  const legacy = c?.parentId;
+  const parentIds = typeof legacy === 'string' && legacy.length > 0 ? [legacy] : [];
+  const { parentId: _unused, ...rest } = c ?? {};
+  return { ...rest, parentIds };
 }
 
 export function cryptoRandomId(): string {

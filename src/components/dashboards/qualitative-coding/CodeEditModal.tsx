@@ -1,18 +1,29 @@
 import { useEffect, useState } from 'react';
 import ColorPicker from './ColorPicker';
+import { buildCodeTree, codePathString, descendantIds, flattenTree } from './compute';
 import { emDash } from './storage';
 import type { Code } from './types';
 
 type Props = {
   code: Code;
+  allCodes: Code[];
   onSave: (patch: Partial<Code>) => void;
+  onAddParent?: (codeId: string, parentId: string) => void;
+  onRemoveParent?: (codeId: string, parentId: string) => void;
   onClose: () => void;
 };
 
 // Compact modal for quickly editing a code (name, description, color) from
 // anywhere that surfaces codes — e.g. the line-view margin chips and the
 // annotations panel rows. For parent / reorder, use the full Codebook view.
-export default function CodeEditModal({ code, onSave, onClose }: Props) {
+export default function CodeEditModal({
+  code,
+  allCodes,
+  onSave,
+  onAddParent,
+  onRemoveParent,
+  onClose,
+}: Props) {
   const [name, setName] = useState(code.name);
   const [description, setDescription] = useState(code.description ?? '');
   const [color, setColor] = useState<string | null>(code.color);
@@ -105,6 +116,73 @@ export default function CodeEditModal({ code, onSave, onClose }: Props) {
               className="w-full px-3 py-2 text-[13px] border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 resize-y"
             />
           </div>
+          {(onAddParent || onRemoveParent) && (() => {
+            const banned = descendantIds(allCodes, code.id);
+            const tree = buildCodeTree(allCodes);
+            const flat = flattenTree(tree);
+            const addable = flat.filter(
+              (n) => !banned.has(n.code.id) && !code.parentIds.includes(n.code.id),
+            );
+            return (
+              <div>
+                <label className="block text-[10px] uppercase tracking-wider font-semibold text-slate-500 mb-1">
+                  Parents
+                </label>
+                <div className="flex flex-wrap gap-1.5">
+                  {code.parentIds.length === 0 && (
+                    <span className="text-[11px] italic text-slate-400 py-1">
+                      Top-level code · no parents
+                    </span>
+                  )}
+                  {code.parentIds.map((pid) => {
+                    const parent = allCodes.find((c) => c.id === pid);
+                    if (!parent) return null;
+                    return (
+                      <span
+                        key={pid}
+                        className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-slate-100 text-[12px] text-slate-700"
+                      >
+                        {codePathString(allCodes, pid)}
+                        {onRemoveParent && (
+                          <button
+                            type="button"
+                            onClick={() => onRemoveParent(code.id, pid)}
+                            className="text-slate-400 hover:text-red-600 text-[14px] leading-none"
+                            title="remove this parent"
+                          >
+                            ×
+                          </button>
+                        )}
+                      </span>
+                    );
+                  })}
+                </div>
+                {onAddParent && addable.length > 0 && (
+                  <div className="mt-2 flex items-center gap-2">
+                    <span className="text-[10px] uppercase font-semibold tracking-wider text-slate-400">
+                      Add
+                    </span>
+                    <select
+                      value=""
+                      onChange={(e) => {
+                        const pid = e.target.value;
+                        if (pid) onAddParent(code.id, pid);
+                      }}
+                      className="flex-1 min-w-0 px-2 py-1 text-[12px] border border-slate-300 rounded bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500"
+                    >
+                      <option value="">— pick a parent —</option>
+                      {addable.map((n) => (
+                        <option key={n.pathKey} value={n.code.id}>
+                          {'  '.repeat(n.depth)}
+                          {codePathString(allCodes, n.code.id)}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+              </div>
+            );
+          })()}
           <div>
             <label className="block text-[10px] uppercase tracking-wider font-semibold text-slate-500 mb-1">
               Color
@@ -112,7 +190,7 @@ export default function CodeEditModal({ code, onSave, onClose }: Props) {
             <ColorPicker
               value={color}
               onChange={setColor}
-              allowInherit={code.parentId !== null}
+              allowInherit={code.parentIds.length > 0}
             />
           </div>
         </div>

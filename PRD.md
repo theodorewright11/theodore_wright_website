@@ -244,7 +244,9 @@ A personal qualitative-coding tool: organize text documents into projects, build
 
 - `Project` — `{ version: 1, id, name, description?, about?† (markdown), metadataSchema, documents, codes, annotations, drive?† ({ fileId, modifiedTime }), created_at, updated_at }`.
 - `Document` — `{ id, title, text, notes?† (markdown), folder?† (path string), metadata: Record<key, value>, created_at, updated_at }`. Body remains plain text — character offsets matter for annotations.
-- `Code`, `Annotation`, `MetadataField` — unchanged from v1.
+- `Code` — `{ id, name, parentIds: string[], color, description?, order?, created_at }`. **Multi-parent**: a code can live under more than one parent (e.g. a leaf like *"Criticizing risk-agreement policies"* shown under both *"risk agreement"* and *"criticism"* top-level codes). `parentIds = []` means top-level. Codebook renders one row per parent context — same code, multiple visual rows, marked with a `shared · N` badge. Drag-drop moves between parents (Alt-drag adds an additional parent without removing the old one). The edit form has a Parents chip list with × to remove and a `+ add parent` dropdown. Annotations stay attached to the single code id, so counts/colors don't double-count.
+- `Annotation`, `MetadataField` — unchanged from v1.
+- **Legacy `parentId`**: v1/v2 codes with a single `parentId: string | null` are auto-migrated to `parentIds: string[]` on load (`coerceCode` in `storage.ts`).
 - `AppState` — `{ version: 1, projects, activeProjectId, exploreProjectIds?† , view?† ('documents' | 'explore' | 'about'), showCodeDefinitions?† }`.
 
 **Persistence**: same `tw-qual-coding-v1` localStorage key; the blob now also serialises `exploreProjectIds`, `view`, and `showCodeDefinitions`. `Document.notes`, `Document.folder`, `Project.about`, and `Project.drive` ride inside their parent records.
