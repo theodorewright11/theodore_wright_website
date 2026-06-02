@@ -9,9 +9,7 @@ import {
   loadSettings, saveSettings, loadTimers, saveTimers,
 } from './storage';
 import {
-  readConfig, type StoredToken,
-  loadStoredToken, clearStoredToken,
-  signIn as gisSignIn, signOut as gisSignOut,
+  readConfig,
   ensureTabs,
   readSessions, writeSessions,
   readCategories, writeCategories,
@@ -19,6 +17,9 @@ import {
   readRewardSpends, writeRewardSpends,
   SheetsAuthError,
 } from './sheets';
+import {
+  type StoredToken, loadCachedToken, signIn, refresh, signOut,
+} from '../../../lib/googleAuth';
 import { activeSession, isOnBreak, isClockedInReal } from './compute';
 import { notifyIntervalComplete } from './notify';
 import ClockTab from './ClockTab';
@@ -105,8 +106,13 @@ export default function TimeTrackerDashboard() {
     setSettings(loadSettings());
     setTimers(loadTimers());
     setHydrated(true);
-    const stored = loadStoredToken();
-    if (stored) { mergePending.current = true; setToken(stored); }
+    // First pull after a token is acquired should fold in any signed-out edits.
+    mergePending.current = true;
+    // Instant paint from the cached access token, then confirm/renew silently
+    // from the server-side refresh-token cookie (no popup).
+    const cached = loadCachedToken();
+    if (cached) setToken(cached);
+    refresh().then((t) => { if (t) setToken(t); }).catch(() => {});
   }, []);
 
   // localStorage is the offline cache; the sheet is the source of truth when
@@ -127,9 +133,13 @@ export default function TimeTrackerDashboard() {
   const inflight = useRef<Record<Entity, boolean>>(
     { sessions: false, categories: false, pomodoros: false, rewardSpends: false });
 
-  const handleSyncError = useCallback((e: unknown) => {
+  const handleSyncError = useCallback(async (e: unknown) => {
     if (e instanceof SheetsAuthError) {
-      clearStoredToken();
+      // The token 401'd — try a popup-free refresh before forcing sign-in.
+      try {
+        const t = await refresh();
+        if (t) { setToken(t); setSync('idle'); setLastError(undefined); return; }
+      } catch { /* fall through to sign-out */ }
       setToken(null);
       setLastError('Session expired. Sign in again.');
     } else {
@@ -248,9 +258,9 @@ export default function TimeTrackerDashboard() {
     const wake = () => {
       if (!token || !config) return;
       if (token.expires_at - Date.now() < 5 * 60_000) {
-        gisSignIn({ clientId: config.clientId, prompt: 'none' })
-          .then(setToken)
-          .catch(() => pull());   // silent refresh failed — try anyway
+        refresh()
+          .then((t) => { if (t) setToken(t); else pull(); })
+          .catch(() => pull());   // refresh failed — pull with current token
       } else {
         pull();
       }
@@ -263,19 +273,18 @@ export default function TimeTrackerDashboard() {
     };
   }, [token, config, pull]);
 
-  // Silent token refresh ~1 minute before expiry. GIS reissues a new access
-  // token with no popup as long as the user is still signed into Google in
-  // any browser tab and previously consented to this app. If silent refresh
-  // fails (signed out of Google, consent revoked), the current token is left
-  // alone and dies at natural expiry, prompting normal manual sign-in.
+  // Silent token refresh ~1 minute before expiry, via the server-side
+  // refresh-token cookie (no popup, no GIS, immune to COOP). If it fails
+  // (refresh token revoked/expired), the token dies at natural expiry and the
+  // next API call prompts a normal manual sign-in.
   useEffect(() => {
     if (!token || !config) return;
     const delay = token.expires_at - 60_000 - Date.now();
     if (delay <= 0) return;
     const tid = window.setTimeout(async () => {
       try {
-        const fresh = await gisSignIn({ clientId: config.clientId, prompt: 'none' });
-        setToken(fresh);   // no mergePending — local is in sync mid-session
+        const fresh = await refresh();
+        if (fresh) setToken(fresh);   // no mergePending — local is in sync mid-session
       } catch { /* let the token die naturally */ }
     }, delay);
     return () => clearTimeout(tid);
@@ -286,7 +295,7 @@ export default function TimeTrackerDashboard() {
     if (!config) return;
     try {
       setSync('syncing');
-      const t = await gisSignIn({ clientId: config.clientId, prompt: 'consent' });
+      const t = await signIn(config.clientId);
       mergePending.current = true;   // fold any signed-out edits into the sheet
       setToken(t);
     } catch (e) {
@@ -295,7 +304,7 @@ export default function TimeTrackerDashboard() {
   }, [config, handleSyncError]);
 
   const handleSignOut = useCallback(() => {
-    if (token) gisSignOut(token.access_token);
+    signOut();
     setToken(null);
     setSync('idle');
     setLastError(undefined);

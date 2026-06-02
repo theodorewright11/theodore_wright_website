@@ -305,17 +305,26 @@ To attach a paper to a research entry, set `paperUrl: '/papers/<slug>.pdf'` in t
 - Static for everything public
 - `/dashboards/*` will be protected by **Cloudflare Access** when those routes get built. No server code required — Cloudflare sits in front of the static deploy and challenges visitors to authenticate.
 
-### Google sign-in / COOP (Finance, Time Tracker, Qual Coding)
+### Google sign-in (Time Tracker, Qual Coding; Finance pending)
 
-These dashboards authenticate browser-side via **Google Identity Services (GIS) implicit token flow** — no server, no client secret. Access tokens last ~1 hour; each dashboard silently refreshes ~1 minute before expiry (and on tab focus) by calling `requestAccessToken({ prompt: 'none' })`.
+Auth uses the **OAuth 2.0 authorization-code flow with a refresh token**, backed by three Vercel serverless functions. This replaced the old GIS *implicit token flow*, whose silent refresh (`requestAccessToken({ prompt: 'none' })`) was permanently broken: it opens a popup to `accounts.google.com`, which sends `COOP: same-origin`, severing the opener's `window.closed` handle (Chrome: *"Cross-Origin-Opener-Policy policy would block the window.closed call"* → GIS `popup_closed`). No site-side header fixes this, because the boundary is set by Google's popup, not us — so silent refresh failed and forced a manual re-sign-in every hour.
 
-Silent refresh opens a popup to `accounts.google.com` and polls `window.closed` on it. `accounts.google.com` sends `Cross-Origin-Opener-Policy: same-origin`, which puts the popup in a different browsing-context group and severs the opener's handle to it — Chrome logs *"Cross-Origin-Opener-Policy policy would block the window.closed call"* and GIS reports `popup_closed`, so silent refresh fails and the user is forced to re-sign-in every hour.
+**Current flow:**
 
-**Fix:** the site must send `Cross-Origin-Opener-Policy: same-origin-allow-popups` on its own pages, which preserves the opener↔popup channel GIS needs:
-- **Production (Vercel):** `vercel.json` → `headers` rule, applied to `/(.*)`.
-- **Dev / preview:** `astro.config.mjs` → `vite.server.headers` and `vite.preview.headers`.
+1. **One-time interactive sign-in** — `src/lib/googleAuth.ts` `signIn()` opens the GIS **code-client** popup (`initCodeClient`, `ux_mode: 'popup'`) and gets an auth code. Interactive popups work fine despite COOP; only the silent path was broken.
+2. **`POST /api/auth/exchange`** — swaps the code (with the client secret, `redirect_uri: 'postmessage'`) for an access token + **refresh token**. The refresh token is AES-256-GCM sealed into an `HttpOnly; SameSite=Lax; Secure` cookie scoped to `/api/auth`. Only the short-lived access token + email return to the browser.
+3. **`POST /api/auth/refresh`** — mints a fresh access token from the cookie. **No popup, no GIS, immune to COOP.** Dashboards call this on page load, ~1 min before token expiry, on tab focus, and on a 401. This is what makes sessions last weeks instead of an hour.
+4. **`POST /api/auth/signout`** — clears the cookie and revokes the refresh token.
 
-Do **not** add `Cross-Origin-Embedder-Policy` — it would block loading the GIS script and Google's APIs.
+Backend lives in `api/auth/` (`_lib.js` = crypto/cookie/token helpers; `exchange.js`, `refresh.js`, `signout.js`). Vercel serves a top-level `api/` directory as Node serverless functions alongside the static Astro build — no Astro SSR adapter needed.
+
+**Scopes are unified** in `googleAuth.ts` (`openid email profile spreadsheets drive.file`) so one sign-in covers every dashboard. The access token lives only in memory + a sessionStorage cache (instant paint); the durable session is the cookie.
+
+**Required env vars** (Vercel project settings, all environments): `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `TOKEN_ENC_KEY` (base64url of 32 random bytes). The OAuth consent screen must be **Published / In production** for non-expiring refresh tokens (Testing mode expires them after 7 days).
+
+**COOP header** (`vercel.json` + `astro.config.mjs` dev/preview) is set to `same-origin-allow-popups` — good hygiene for the interactive sign-in popup. Do **not** add `Cross-Origin-Embedder-Policy`; it would block the GIS script and Google APIs.
+
+**Finance** still uses the old implicit flow (`src/components/dashboards/finance/`) — migrate it to `googleAuth.ts` the same way as a follow-up. The dead GIS auth helpers in `time-tracker/sheets.ts` and `qualitative-coding/drive.ts` are unused and can be deleted.
 
 ### Dashboard data tiers
 

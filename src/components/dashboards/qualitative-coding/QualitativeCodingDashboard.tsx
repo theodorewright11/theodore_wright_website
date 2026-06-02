@@ -23,12 +23,15 @@ import {
 import {
   DriveAuthError,
   listAppFiles,
-  loadStoredToken,
-  signIn,
-  signOut,
   type DriveItem,
-  type StoredToken,
 } from './drive';
+import {
+  type StoredToken,
+  loadCachedToken,
+  signIn,
+  refresh,
+  signOut,
+} from '../../../lib/googleAuth';
 import {
   deleteProjectFromDrive,
   pullProjectFromDrive,
@@ -152,8 +155,13 @@ export default function QualitativeCodingDashboard() {
 
   useEffect(() => {
     setHydrated(true);
-    const t = loadStoredToken();
-    if (t) setDrive((d) => ({ ...d, token: t, syncStatus: 'idle' }));
+    // Instant paint from the cached access token, then confirm/renew silently
+    // from the server-side refresh-token cookie (no popup).
+    const cached = loadCachedToken();
+    if (cached) setDrive((d) => ({ ...d, token: cached, syncStatus: 'idle' }));
+    refresh()
+      .then((t) => { if (t) setDrive((d) => ({ ...d, token: t, syncStatus: 'idle', lastError: null })); })
+      .catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -259,7 +267,10 @@ export default function QualitativeCodingDashboard() {
       } catch (err) {
         inflightWrites.current.delete(projectId);
         if (err instanceof DriveAuthError) {
-          setDrive({ token: null, syncStatus: 'error', lastError: err.message });
+          // 401 — try a popup-free refresh before forcing sign-in.
+          const t = await refresh().catch(() => null);
+          if (t) setDrive({ token: t, syncStatus: 'idle', lastError: null });
+          else setDrive({ token: null, syncStatus: 'error', lastError: err.message });
         } else {
           setDrive((d) => ({
             ...d,
@@ -370,7 +381,10 @@ export default function QualitativeCodingDashboard() {
       setDrive((d) => ({ ...d, syncStatus: 'idle' }));
     } catch (err) {
       if (err instanceof DriveAuthError) {
-        setDrive({ token: null, syncStatus: 'error', lastError: err.message });
+        // 401 — try a popup-free refresh before forcing sign-in.
+        const t = await refresh().catch(() => null);
+        if (t) setDrive({ token: t, syncStatus: 'idle', lastError: null });
+        else setDrive({ token: null, syncStatus: 'error', lastError: err.message });
       } else {
         setDrive((d) => ({
           ...d,
@@ -397,9 +411,12 @@ export default function QualitativeCodingDashboard() {
     const wake = () => {
       if (!drive.token) return;
       if (drive.token.expires_at - Date.now() < 5 * 60_000) {
-        signIn({ clientId: GOOGLE_CLIENT_ID, prompt: 'none' })
-          .then((t) => setDrive({ token: t, syncStatus: 'idle', lastError: null }))
-          .catch(() => pullAllFromDrive()); // silent refresh failed — try pull anyway
+        refresh()
+          .then((t) => {
+            if (t) setDrive({ token: t, syncStatus: 'idle', lastError: null });
+            else pullAllFromDrive();
+          })
+          .catch(() => pullAllFromDrive()); // refresh failed — pull with current token
       } else {
         pullAllFromDrive();
       }
@@ -412,19 +429,18 @@ export default function QualitativeCodingDashboard() {
     };
   }, [drive.token, pullAllFromDrive]);
 
-  // Silent token refresh ~1 minute before expiry. GIS reissues a new access
-  // token with no popup as long as the user is still signed into Google in
-  // any browser tab and previously consented to this app. If silent refresh
-  // fails (signed out of Google, consent revoked), the current token is left
-  // alone and dies at natural expiry, prompting normal manual sign-in.
+  // Silent token refresh ~1 minute before expiry, via the server-side
+  // refresh-token cookie (no popup, no GIS, immune to COOP). If it fails
+  // (refresh token revoked/expired), the token dies at natural expiry and the
+  // next API call prompts a normal manual sign-in.
   useEffect(() => {
-    if (!drive.token || !GOOGLE_CLIENT_ID) return;
+    if (!drive.token) return;
     const delay = drive.token.expires_at - 60_000 - Date.now();
     if (delay <= 0) return;
     const tid = window.setTimeout(async () => {
       try {
-        const fresh = await signIn({ clientId: GOOGLE_CLIENT_ID, prompt: 'none' });
-        setDrive({ token: fresh, syncStatus: 'idle', lastError: null });
+        const fresh = await refresh();
+        if (fresh) setDrive({ token: fresh, syncStatus: 'idle', lastError: null });
       } catch {
         /* let the token die naturally */
       }
@@ -435,7 +451,7 @@ export default function QualitativeCodingDashboard() {
   const handleSignIn = async () => {
     if (!GOOGLE_CLIENT_ID) return;
     try {
-      const t = await signIn({ clientId: GOOGLE_CLIENT_ID, prompt: 'consent' });
+      const t = await signIn(GOOGLE_CLIENT_ID);
       setDrive({ token: t, syncStatus: 'idle', lastError: null });
     } catch (err) {
       setDrive((d) => ({
@@ -447,7 +463,7 @@ export default function QualitativeCodingDashboard() {
   };
 
   const handleSignOut = () => {
-    signOut(drive.token?.access_token);
+    signOut();
     setDrive({ token: null, syncStatus: 'offline', lastError: null });
   };
 

@@ -214,10 +214,11 @@ A **week strip** is pinned under the tab bar on every tab: this week's net worke
 **Data persistence**: two-mode, same pattern as Finance.
 
 - **Local-only** (no Sheets config in `.env`, or not signed in): `localStorage` key `tw-timetracker-v1`. Session-log CSV export for backup; "Reset all data" appears only in this mode.
-- **Sheets-synced** (signed in): a dedicated private Google Sheet (ID in `PUBLIC_TIMETRACKER_SHEET_ID`) with four tabs — `sessions`, `categories`, `pomodoros`, `reward_spends`. Missing tabs are auto-created on first sync. Same GIS browser-side OAuth, per-entity clear+write queue, focus re-pull, and 401 handling as Finance.
+- **Sheets-synced** (signed in): a dedicated private Google Sheet (ID in `PUBLIC_TIMETRACKER_SHEET_ID`) with four tabs — `sessions`, `categories`, `pomodoros`, `reward_spends`. Missing tabs are auto-created on first sync. Per-entity clear+write queue, focus re-pull, and 401 handling as Finance.
+- **Auth**: OAuth **authorization-code flow with a server-side refresh token** (shared `src/lib/googleAuth.ts` + `api/auth/*` Vercel functions) — sign in once, sessions last weeks. Replaced the old hourly-expiring implicit flow. See ARCHITECTURE.md "Google sign-in". Needs `GOOGLE_CLIENT_SECRET` + `TOKEN_ENC_KEY` env vars on Vercel.
 - Pomodoro preferences and live-timer state are device-local (`tw-timetracker-settings-v1`, `tw-timetracker-timers-v1`) and never synced.
 
-**Required env (when using Sheets sync)**: `PUBLIC_GOOGLE_CLIENT_ID` (the same OAuth client as Finance) and `PUBLIC_TIMETRACKER_SHEET_ID` (a separate spreadsheet).
+**Required env (when using Sheets sync)**: `PUBLIC_GOOGLE_CLIENT_ID` (the same OAuth client as Finance), `PUBLIC_TIMETRACKER_SHEET_ID` (a separate spreadsheet), plus the server-side `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` / `TOKEN_ENC_KEY`.
 
 #### Qualitative Coding
 
@@ -261,8 +262,8 @@ A personal qualitative-coding tool: organize text documents into projects, build
   - `documents/` — subfolder. Inside, each `Document` is rendered to its own `.md` file, with subfolders mirroring `Document.folder` (e.g. a doc with `folder: "Interviews/Round 1"` lives at `documents/Interviews/Round 1/<title>.md`).
 - Only `project.json` carries the `appProperties.tw_qual_coding=v1` tag — that's what `listAppFiles` uses to discover projects. The .md files are read-only exports (the dashboard never reads them).
 - **Legacy migration**: v2 wrote a single flat JSON per project directly in the configured folder (or root). On the first v3 sync, `syncProjectToDrive` detects a `drive.fileId` (or a `projectJsonId` whose parent is the configured root), creates a new project folder, moves the legacy file in, renames it to `project.json`, and writes the new derived files alongside.
-- Browser-side OAuth via Google Identity Services, scope `https://www.googleapis.com/auth/drive.file` (file-level scope — the app can only see files it created or the user explicitly opens with it; *not* full Drive access).
-- Token stored in `sessionStorage` (60s expiry safety margin). 401/403 from Drive drops the token and surfaces a "sign in again" prompt.
+- OAuth scope `https://www.googleapis.com/auth/drive.file` (file-level — the app only sees files it created or the user explicitly opens with it; *not* full Drive). Scopes are unified with Time Tracker so one sign-in covers both.
+- **Auth**: OAuth **authorization-code flow with a server-side refresh token** (shared `src/lib/googleAuth.ts` + `api/auth/*` Vercel functions) — sign in once, sessions last weeks. Replaced the old implicit flow whose silent refresh COOP-broke and forced hourly re-sign-in. See ARCHITECTURE.md "Google sign-in". 401/403 from Drive first attempts a silent refresh, then falls back to a "sign in again" prompt.
 - **Sync lifecycle**: on sign-in → `listAppFiles` finds all `project.json` files → pull each → merge into local state (server wins for existing project IDs, local projects without a Drive folder get pushed up). On every project mutation → debounce 800ms, then `syncProjectToDrive(token, project, rootFolderId)` writes the whole project tree to Drive (latest-wins per-project queue). On `window` focus → re-pull all (catches edits from another device). On project delete → delete the whole Drive folder.
 - AuthBar in the TopBar shows the current sync state: `local only` (no env var) / `Sign in to sync` (configured but not signed in) / signed-in pill with email + colored sync dot (`idle` green / `syncing` blue pulsing / `error` red / `offline` grey) and a dropdown with synced-project count, last error, **"Refresh from Drive"** (re-pull everything — use after editing on another device), and Sign out.
 
