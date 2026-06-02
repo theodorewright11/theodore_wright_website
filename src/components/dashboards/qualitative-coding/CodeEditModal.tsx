@@ -120,9 +120,19 @@ export default function CodeEditModal({
             const banned = descendantIds(allCodes, code.id);
             const tree = buildCodeTree(allCodes);
             const flat = flattenTree(tree);
-            const addable = flat.filter(
-              (n) => !banned.has(n.code.id) && !code.parentIds.includes(n.code.id),
-            );
+            // Dedupe by code id (a multi-parent code appears multiple times in
+            // flat), then sort alphabetically by name for an intuitive parent
+            // picker that doesn't depend on the codebook's manual order.
+            const seen = new Set<string>();
+            const addable = flat
+              .filter((n) => {
+                if (seen.has(n.code.id)) return false;
+                seen.add(n.code.id);
+                return !banned.has(n.code.id) && !code.parentIds.includes(n.code.id);
+              })
+              .sort((a, b) =>
+                a.code.name.localeCompare(b.code.name, undefined, { sensitivity: 'base' }),
+              );
             return (
               <div>
                 <label className="block text-[10px] uppercase tracking-wider font-semibold text-slate-500 mb-1">
@@ -172,8 +182,7 @@ export default function CodeEditModal({
                     >
                       <option value="">— pick a parent —</option>
                       {addable.map((n) => (
-                        <option key={n.pathKey} value={n.code.id}>
-                          {'  '.repeat(n.depth)}
+                        <option key={n.code.id} value={n.code.id}>
                           {codePathString(allCodes, n.code.id)}
                         </option>
                       ))}

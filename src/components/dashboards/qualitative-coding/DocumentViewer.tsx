@@ -1166,12 +1166,15 @@ const SelectionPopover = forwardRef<HTMLDivElement, PopoverProps>(function Selec
                 className="flex-1 min-w-0 px-2 py-1 text-[11px] border border-emerald-200 rounded bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-400/40 focus:border-emerald-400"
               >
                 <option value="">(top level)</option>
-                {flatUnique.map((n) => (
-                  <option key={n.pathKey} value={n.code.id}>
-                    {'  '.repeat(n.depth)}
-                    {codePathString(codes, n.code.id)}
-                  </option>
-                ))}
+                {[...flatUnique]
+                  .sort((a, b) =>
+                    a.code.name.localeCompare(b.code.name, undefined, { sensitivity: 'base' }),
+                  )
+                  .map((n) => (
+                    <option key={n.pathKey} value={n.code.id}>
+                      {codePathString(codes, n.code.id)}
+                    </option>
+                  ))}
               </select>
             </div>
             <div className="px-3 pb-2 flex items-start gap-2">

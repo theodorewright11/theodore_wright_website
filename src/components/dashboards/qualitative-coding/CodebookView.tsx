@@ -574,9 +574,18 @@ function CodebookRow({
           {(onAddParentLink || onRemoveParentLink) && (() => {
             const banned = descendantIds(codes, code.id);
             const flat = flattenTree(buildCodeTree(codes));
-            const addable = flat.filter(
-              (n) => !banned.has(n.code.id) && !code.parentIds.includes(n.code.id),
-            );
+            // Dedupe by code id, then sort alphabetically — the parent picker
+            // is name-search-friendly regardless of codebook drag order.
+            const seen = new Set<string>();
+            const addable = flat
+              .filter((n) => {
+                if (seen.has(n.code.id)) return false;
+                seen.add(n.code.id);
+                return !banned.has(n.code.id) && !code.parentIds.includes(n.code.id);
+              })
+              .sort((a, b) =>
+                a.code.name.localeCompare(b.code.name, undefined, { sensitivity: 'base' }),
+              );
             return (
               <div className="flex items-start gap-3 flex-wrap">
                 <span className="text-[10px] uppercase font-semibold tracking-wider text-slate-400 mt-1.5">
@@ -621,8 +630,7 @@ function CodebookRow({
                     >
                       <option value="">+ add parent</option>
                       {addable.map((n) => (
-                        <option key={n.pathKey} value={n.code.id}>
-                          {'  '.repeat(n.depth)}
+                        <option key={n.code.id} value={n.code.id}>
                           {codePathString(codes, n.code.id)}
                         </option>
                       ))}
