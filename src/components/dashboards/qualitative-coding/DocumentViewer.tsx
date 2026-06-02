@@ -960,14 +960,33 @@ const SelectionPopover = forwardRef<HTMLDivElement, PopoverProps>(function Selec
   const [createColor, setCreateColor] = useState<string | null>(() =>
     nextPaletteColor(codes),
   );
+  // Tree view (with duplicates for multi-parent codes) for browsing, plus a
+  // by-id-deduped variant so the search results show each code once.
   const flat = useMemo(() => flattenTree(buildCodeTree(codes)), [codes]);
+  const flatUnique = useMemo(() => {
+    const seen = new Set<string>();
+    return flat.filter((n) => {
+      if (seen.has(n.code.id)) return false;
+      seen.add(n.code.id);
+      return true;
+    });
+  }, [flat]);
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q) return flat;
-    return flat.filter((n) =>
-      codePathString(codes, n.code.id).toLowerCase().includes(q),
-    );
-  }, [flat, query, codes]);
+    // Search across the code's own name, every parent path it belongs to, and
+    // its description — so a code that's only the SECOND parent of a topic
+    // (e.g. "criticism") still surfaces when the user types that topic name.
+    const matchCode = (c: Code): boolean => {
+      if (c.name.toLowerCase().includes(q)) return true;
+      if (c.description && c.description.toLowerCase().includes(q)) return true;
+      for (const pid of c.parentIds) {
+        if (codePathString(codes, pid).toLowerCase().includes(q)) return true;
+      }
+      return false;
+    };
+    return flatUnique.filter((n) => matchCode(n.code));
+  }, [flat, flatUnique, query, codes]);
   const trimmedQuery = query.trim();
   const hasExactMatch = useMemo(
     () =>
