@@ -93,6 +93,7 @@ export type AppState = {
   linesCharsN?: number;
   deletedProjectIds?: string[];
   openDocIds?: string[];
+  collapsedCodeIds?: string[];
 };
 
 export const PALETTE = [

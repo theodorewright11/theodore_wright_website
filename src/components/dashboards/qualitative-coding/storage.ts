@@ -54,6 +54,9 @@ export function loadState(): AppState {
         openDocIds: Array.isArray(parsed.openDocIds)
           ? parsed.openDocIds.filter((s: any) => typeof s === 'string')
           : [],
+        collapsedCodeIds: Array.isArray(parsed.collapsedCodeIds)
+          ? parsed.collapsedCodeIds.filter((s: any) => typeof s === 'string')
+          : [],
       };
     }
   } catch {

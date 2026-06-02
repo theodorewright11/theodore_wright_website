@@ -31,6 +31,8 @@ type Props = {
   onAddParentLink?: (codeId: string, parentId: string) => void;
   onRemoveParentLink?: (codeId: string, parentId: string) => void;
   onSortAlphabetically?: () => void;
+  collapsedCodeIds?: Set<string>;
+  onToggleCodeCollapsed?: (codeId: string) => void;
   onClose?: () => void; // for panel variant
 };
 
@@ -46,6 +48,8 @@ export default function CodebookView({
   onAddParentLink,
   onRemoveParentLink,
   onSortAlphabetically,
+  collapsedCodeIds,
+  onToggleCodeCollapsed,
   onClose,
 }: Props) {
   // Custom pointer-based drag (not native HTML5), so the wheel keeps working
@@ -330,6 +334,8 @@ export default function CodebookView({
                   onUpdateCode={onUpdateCode}
                   onAddParentLink={onAddParentLink}
                   onRemoveParentLink={onRemoveParentLink}
+                  collapsedCodeIds={collapsedCodeIds}
+                  onToggleCodeCollapsed={onToggleCodeCollapsed}
                   onDeleteCode={onDeleteCode}
                 />
               ))}
@@ -471,6 +477,8 @@ function CodebookRow({
   onUpdateCode,
   onAddParentLink,
   onRemoveParentLink,
+  collapsedCodeIds,
+  onToggleCodeCollapsed,
   onDeleteCode,
 }: {
   node: CodeNode;
@@ -484,6 +492,8 @@ function CodebookRow({
   onUpdateCode: (codeId: string, patch: Partial<Code>) => void;
   onAddParentLink?: (codeId: string, parentId: string) => void;
   onRemoveParentLink?: (codeId: string, parentId: string) => void;
+  collapsedCodeIds?: Set<string>;
+  onToggleCodeCollapsed?: (codeId: string) => void;
   onDeleteCode: (codeId: string) => void;
 }) {
   const { code, depth, children, parentId: instanceParentId, pathKey } = node;
@@ -535,6 +545,8 @@ function CodebookRow({
 
   const parentCount = code.parentIds.length;
   const isShared = parentCount > 1;
+  const hasChildren = children.length > 0;
+  const isCollapsed = !!collapsedCodeIds?.has(code.id);
 
   return (
     <li
@@ -679,6 +691,19 @@ function CodebookRow({
             >
               ⋮⋮
             </span>
+            {hasChildren && onToggleCodeCollapsed ? (
+              <button
+                type="button"
+                onClick={() => onToggleCodeCollapsed(code.id)}
+                title={isCollapsed ? `show ${children.length} child code${children.length === 1 ? '' : 's'}` : 'hide child codes'}
+                className="flex-shrink-0 mt-1 w-4 h-4 flex items-center justify-center text-[11px] text-slate-400 hover:text-slate-800 hover:bg-slate-100 rounded transition-colors"
+                aria-label={isCollapsed ? 'expand children' : 'collapse children'}
+              >
+                {isCollapsed ? '▸' : '▾'}
+              </button>
+            ) : (
+              <span className="flex-shrink-0 w-4" aria-hidden />
+            )}
             <span
               className={`flex-shrink-0 rounded ring-1 ring-black/5 ${
                 depth === 0 ? 'w-3.5 h-3.5 mt-1.5' : 'w-2.5 h-2.5 mt-1.5'
@@ -777,7 +802,12 @@ function CodebookRow({
           )}
         </>
       )}
-      {children.length > 0 && (
+      {hasChildren && isCollapsed && (
+        <div className="mt-2 ml-9 text-[11px] italic text-slate-400">
+          {children.length} child code{children.length === 1 ? '' : 's'} hidden
+        </div>
+      )}
+      {hasChildren && !isCollapsed && (
         <ul className={`mt-3 space-y-3`}>
           {children.map((child) => (
             <CodebookRow
@@ -793,6 +823,8 @@ function CodebookRow({
               onUpdateCode={onUpdateCode}
               onAddParentLink={onAddParentLink}
               onRemoveParentLink={onRemoveParentLink}
+              collapsedCodeIds={collapsedCodeIds}
+              onToggleCodeCollapsed={onToggleCodeCollapsed}
               onDeleteCode={onDeleteCode}
             />
           ))}

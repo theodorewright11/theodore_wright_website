@@ -737,6 +737,20 @@ export default function QualitativeCodingDashboard() {
     queueWrite(projectId);
   };
 
+  const collapsedCodeIds = useMemo(
+    () => new Set(state.collapsedCodeIds ?? []),
+    [state.collapsedCodeIds],
+  );
+  const toggleCodeCollapsed = (codeId: string) => {
+    setState((s) => {
+      const cur = s.collapsedCodeIds ?? [];
+      const next = cur.includes(codeId)
+        ? cur.filter((id) => id !== codeId)
+        : [...cur, codeId];
+      return { ...s, collapsedCodeIds: next };
+    });
+  };
+
   // Sort all codes alphabetically by name (case-insensitive). Because `order`
   // is a single integer per code but a code can live under multiple parents
   // with multi-parent, we assign global alphabetical orders — within ANY
@@ -1066,6 +1080,8 @@ export default function QualitativeCodingDashboard() {
               onAddParentLink={addParentLink}
               onRemoveParentLink={removeParentLink}
               onSortAlphabetically={sortCodesAlphabetically}
+              collapsedCodeIds={collapsedCodeIds}
+              onToggleCodeCollapsed={toggleCodeCollapsed}
               onDeleteCode={deleteCode}
               onMoveCode={moveCode}
             />
@@ -1220,6 +1236,8 @@ export default function QualitativeCodingDashboard() {
                     onAddParentLink={addParentLink}
                     onRemoveParentLink={removeParentLink}
                     onSortAlphabetically={sortCodesAlphabetically}
+                    collapsedCodeIds={collapsedCodeIds}
+                    onToggleCodeCollapsed={toggleCodeCollapsed}
                     onDeleteCode={deleteCode}
                     onMoveCode={moveCode}
                     onClose={() => setCodebookPanelOpen(false)}
