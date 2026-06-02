@@ -647,11 +647,11 @@ function CodebookRow({
               counts={counts}
               isPanel={isPanel}
               dragCodeId={dragCodeId}
-              setDragCodeId={setDragCodeId}
+              dropTarget={dropTarget}
+              startDrag={startDrag}
               onAddCode={onAddCode}
               onUpdateCode={onUpdateCode}
               onDeleteCode={onDeleteCode}
-              onMoveCode={onMoveCode}
             />
           ))}
         </ul>
