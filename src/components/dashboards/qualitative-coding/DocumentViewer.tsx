@@ -1197,9 +1197,11 @@ const SelectionPopover = forwardRef<HTMLDivElement, PopoverProps>(function Selec
                   style={{ background: color }}
                 />
                 <span className="flex-1 min-w-0">
-                  <span className="block text-[13px] text-slate-800 truncate">{n.code.name}</span>
+                  <span className="block text-[13px] text-slate-800 leading-snug break-words">
+                    {n.code.name}
+                  </span>
                   {showDefinitions && n.code.description && (
-                    <span className="block text-[11px] text-slate-500 leading-tight line-clamp-2 mt-0.5">
+                    <span className="block text-[11px] text-slate-500 leading-tight mt-0.5 break-words">
                       {n.code.description}
                     </span>
                   )}
