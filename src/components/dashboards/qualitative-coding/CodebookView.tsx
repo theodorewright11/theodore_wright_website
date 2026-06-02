@@ -30,6 +30,7 @@ type Props = {
   ) => void;
   onAddParentLink?: (codeId: string, parentId: string) => void;
   onRemoveParentLink?: (codeId: string, parentId: string) => void;
+  onSortAlphabetically?: () => void;
   onClose?: () => void; // for panel variant
 };
 
@@ -44,6 +45,7 @@ export default function CodebookView({
   onMoveCode,
   onAddParentLink,
   onRemoveParentLink,
+  onSortAlphabetically,
   onClose,
 }: Props) {
   // Custom pointer-based drag (not native HTML5), so the wheel keeps working
@@ -262,6 +264,20 @@ export default function CodebookView({
           )}
         </div>
         <div className="flex items-center gap-2 flex-shrink-0">
+          {onSortAlphabetically && project.codes.length > 1 && (
+            <button
+              type="button"
+              onClick={() => {
+                if (window.confirm('Sort all codes alphabetically? This rewrites the order at every level.')) {
+                  onSortAlphabetically();
+                }
+              }}
+              title="sort every level alphabetically"
+              className="px-3 py-1.5 text-[12px] font-semibold rounded-md border border-slate-300 text-slate-600 hover:bg-slate-100 transition-colors"
+            >
+              Sort A→Z
+            </button>
+          )}
           <button
             type="button"
             onClick={onToggleDefinitions}

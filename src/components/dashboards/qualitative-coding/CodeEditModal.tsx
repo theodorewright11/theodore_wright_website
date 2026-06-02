@@ -206,10 +206,9 @@ export default function CodeEditModal({
           <button
             type="button"
             onClick={save}
-            disabled={!isDirty}
-            className="px-5 py-2 text-[13px] font-semibold text-white bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 rounded-md transition-colors"
+            className="px-5 py-2 text-[13px] font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-md transition-colors"
           >
-            Save
+            {isDirty ? 'Save' : 'Done'}
           </button>
         </div>
       </div>

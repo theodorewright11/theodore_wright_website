@@ -737,6 +737,26 @@ export default function QualitativeCodingDashboard() {
     queueWrite(projectId);
   };
 
+  // Sort all codes alphabetically by name (case-insensitive). Because `order`
+  // is a single integer per code but a code can live under multiple parents
+  // with multi-parent, we assign global alphabetical orders — within ANY
+  // sibling group, codes will appear in alphabetical order naturally.
+  const sortCodesAlphabetically = () => {
+    if (!activeProject) return;
+    const projectId = activeProject.id;
+    updateActiveProject((p) => {
+      const sorted = [...p.codes].sort((a, b) =>
+        a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }),
+      );
+      const orderById = new Map(sorted.map((c, i) => [c.id, i]));
+      return {
+        ...p,
+        codes: p.codes.map((c) => ({ ...c, order: orderById.get(c.id) ?? 0 })),
+      };
+    });
+    queueWrite(projectId);
+  };
+
   // Add a parent link to a code (idempotent — does nothing if already a
   // parent, or if it would create a cycle).
   const addParentLink = (codeId: string, parentId: string) => {
@@ -1045,6 +1065,7 @@ export default function QualitativeCodingDashboard() {
               onUpdateCode={updateCode}
               onAddParentLink={addParentLink}
               onRemoveParentLink={removeParentLink}
+              onSortAlphabetically={sortCodesAlphabetically}
               onDeleteCode={deleteCode}
               onMoveCode={moveCode}
             />
@@ -1198,6 +1219,7 @@ export default function QualitativeCodingDashboard() {
                     onUpdateCode={updateCode}
                     onAddParentLink={addParentLink}
                     onRemoveParentLink={removeParentLink}
+                    onSortAlphabetically={sortCodesAlphabetically}
                     onDeleteCode={deleteCode}
                     onMoveCode={moveCode}
                     onClose={() => setCodebookPanelOpen(false)}
