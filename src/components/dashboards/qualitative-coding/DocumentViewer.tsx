@@ -603,6 +603,17 @@ export default function DocumentViewer({
                                   ✎
                                 </button>
                               )}
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  onDeleteAnnotation(a.id);
+                                }}
+                                title="delete this annotation"
+                                className="opacity-0 group-hover/chip:opacity-100 text-[12px] text-slate-400 hover:text-red-600 hover:bg-slate-100 rounded w-4 h-4 flex items-center justify-center transition-opacity self-center leading-none"
+                              >
+                                ×
+                              </button>
                             </span>
                           );
                         })}
