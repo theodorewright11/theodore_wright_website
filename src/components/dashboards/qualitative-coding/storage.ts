@@ -51,6 +51,9 @@ export function loadState(): AppState {
         deletedProjectIds: Array.isArray(parsed.deletedProjectIds)
           ? parsed.deletedProjectIds.filter((s: any) => typeof s === 'string')
           : [],
+        openDocIds: Array.isArray(parsed.openDocIds)
+          ? parsed.openDocIds.filter((s: any) => typeof s === 'string')
+          : [],
       };
     }
   } catch {

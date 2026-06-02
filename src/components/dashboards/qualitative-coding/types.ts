@@ -92,6 +92,7 @@ export type AppState = {
   linesMode?: 'sentence' | 'chars';
   linesCharsN?: number;
   deletedProjectIds?: string[];
+  openDocIds?: string[];
 };
 
 export const PALETTE = [

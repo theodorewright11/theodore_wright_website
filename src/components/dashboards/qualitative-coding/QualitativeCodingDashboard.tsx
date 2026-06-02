@@ -69,7 +69,16 @@ const DRIVE_FOLDER_ID = (import.meta as any).env?.PUBLIC_QUAL_CODING_DRIVE_FOLDE
 export default function QualitativeCodingDashboard() {
   const [state, setState] = useState<AppState>(() => loadState());
   const [hydrated, setHydrated] = useState(false);
-  const [openDocIds, setOpenDocIds] = useState<string[]>([]);
+  const openDocIds = state.openDocIds ?? [];
+  const setOpenDocIds = (
+    next: string[] | ((prev: string[]) => string[]),
+  ) => {
+    setState((s) => ({
+      ...s,
+      openDocIds:
+        typeof next === 'function' ? next(s.openDocIds ?? []) : next,
+    }));
+  };
   const [dragPaneId, setDragPaneId] = useState<string | null>(null);
   const [dragOverPaneId, setDragOverPaneId] = useState<string | null>(null);
   const activeDocId = openDocIds[0] ?? null;
