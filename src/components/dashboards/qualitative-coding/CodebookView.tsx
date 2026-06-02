@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import ColorPicker from './ColorPicker';
 import { buildCodeTree, descendantIds, resolveColor, type CodeNode } from './compute';
 import { emDash } from './storage';
@@ -34,6 +34,81 @@ export default function CodebookView({
   const tree = buildCodeTree(project.codes);
   const [addingRoot, setAddingRoot] = useState(false);
   const [draft, setDraft] = useState('');
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  // While a code is being dragged, native HTML5 drag suppresses normal
+  // wheel/scroll. Re-enable both: (1) auto-scroll when the cursor is near the
+  // top/bottom edge of the scroll container, and (2) honour the mouse wheel.
+  useEffect(() => {
+    if (!dragCodeId) return;
+    const el = scrollRef.current;
+    if (!el) return;
+    let dy = 0;
+    let raf = 0;
+    const step = () => {
+      if (dy === 0) {
+        raf = 0;
+        return;
+      }
+      el.scrollTop += dy;
+      raf = requestAnimationFrame(step);
+    };
+    const onDragOver = (e: DragEvent) => {
+      const rect = el.getBoundingClientRect();
+      if (
+        e.clientX < rect.left ||
+        e.clientX > rect.right ||
+        e.clientY < rect.top - 40 ||
+        e.clientY > rect.bottom + 40
+      ) {
+        dy = 0;
+        return;
+      }
+      const edge = 70;
+      const maxSpeed = 18;
+      if (e.clientY < rect.top + edge) {
+        const t = Math.min(1, (rect.top + edge - e.clientY) / edge);
+        dy = -Math.ceil(maxSpeed * t);
+      } else if (e.clientY > rect.bottom - edge) {
+        const t = Math.min(1, (e.clientY - (rect.bottom - edge)) / edge);
+        dy = Math.ceil(maxSpeed * t);
+      } else {
+        dy = 0;
+      }
+      if (dy !== 0 && raf === 0) raf = requestAnimationFrame(step);
+    };
+    const onWheel = (e: WheelEvent) => {
+      const rect = el.getBoundingClientRect();
+      if (
+        e.clientX < rect.left ||
+        e.clientX > rect.right ||
+        e.clientY < rect.top ||
+        e.clientY > rect.bottom
+      ) {
+        return;
+      }
+      e.preventDefault();
+      el.scrollTop += e.deltaY;
+    };
+    const stop = () => {
+      dy = 0;
+      if (raf) {
+        cancelAnimationFrame(raf);
+        raf = 0;
+      }
+    };
+    document.addEventListener('dragover', onDragOver);
+    document.addEventListener('wheel', onWheel, { passive: false });
+    document.addEventListener('dragend', stop);
+    document.addEventListener('drop', stop);
+    return () => {
+      document.removeEventListener('dragover', onDragOver);
+      document.removeEventListener('wheel', onWheel as EventListener);
+      document.removeEventListener('dragend', stop);
+      document.removeEventListener('drop', stop);
+      stop();
+    };
+  }, [dragCodeId]);
 
   const counts = new Map<string, number>();
   for (const a of project.annotations) {
@@ -45,7 +120,10 @@ export default function CodebookView({
   const isPanel = variant === 'panel';
 
   return (
-    <div className={`${isPanel ? 'h-full flex flex-col bg-white' : 'flex-1 min-w-0 min-h-0 overflow-y-auto bg-white'}`}>
+    <div
+      ref={isPanel ? null : scrollRef}
+      className={`${isPanel ? 'h-full flex flex-col bg-white' : 'flex-1 min-w-0 min-h-0 overflow-y-auto bg-white'}`}
+    >
       <div
         className={
           isPanel
@@ -100,6 +178,7 @@ export default function CodebookView({
       </div>
 
       <div
+        ref={isPanel ? scrollRef : null}
         className={
           isPanel
             ? 'flex-1 overflow-y-auto px-4 py-3'
