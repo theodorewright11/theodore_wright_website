@@ -323,7 +323,8 @@ export default function DocumentViewer({
             bottom: r.bottom + scrollY,
           },
         });
-        setFocusedAnnotationId(null);
+        // Keep focusedAnnotationId so the popover can offer "Move range to
+        // this selection" for the focused annotation.
       });
     };
     document.addEventListener('mouseup', handler);
