@@ -140,14 +140,14 @@ export default function CodeEditModal({
                     return (
                       <span
                         key={pid}
-                        className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-slate-100 text-[12px] text-slate-700"
+                        className="inline-flex items-center gap-1 max-w-full px-2 py-1 rounded-full bg-slate-100 text-[12px] text-slate-700"
                       >
-                        {codePathString(allCodes, pid)}
+                        <span className="min-w-0 break-words">{codePathString(allCodes, pid)}</span>
                         {onRemoveParent && (
                           <button
                             type="button"
                             onClick={() => onRemoveParent(code.id, pid)}
-                            className="text-slate-400 hover:text-red-600 text-[14px] leading-none"
+                            className="flex-shrink-0 text-slate-400 hover:text-red-600 text-[14px] leading-none"
                             title="remove this parent"
                           >
                             ×
@@ -158,8 +158,8 @@ export default function CodeEditModal({
                   })}
                 </div>
                 {onAddParent && addable.length > 0 && (
-                  <div className="mt-2 flex items-center gap-2">
-                    <span className="text-[10px] uppercase font-semibold tracking-wider text-slate-400">
+                  <div className="mt-2 flex items-center gap-2 max-w-full">
+                    <span className="flex-shrink-0 text-[10px] uppercase font-semibold tracking-wider text-slate-400">
                       Add
                     </span>
                     <select
@@ -168,7 +168,7 @@ export default function CodeEditModal({
                         const pid = e.target.value;
                         if (pid) onAddParent(code.id, pid);
                       }}
-                      className="flex-1 min-w-0 px-2 py-1 text-[12px] border border-slate-300 rounded bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500"
+                      className="flex-1 min-w-0 max-w-full px-2 py-1 text-[12px] border border-slate-300 rounded bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500"
                     >
                       <option value="">— pick a parent —</option>
                       {addable.map((n) => (

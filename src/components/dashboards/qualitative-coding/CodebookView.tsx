@@ -578,14 +578,14 @@ function CodebookRow({
                     return (
                       <span
                         key={pid}
-                        className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-slate-100 text-[12px] text-slate-700"
+                        className="inline-flex items-center gap-1 max-w-full px-2 py-1 rounded-full bg-slate-100 text-[12px] text-slate-700"
                       >
-                        {codePathString(codes, pid)}
+                        <span className="min-w-0 break-words">{codePathString(codes, pid)}</span>
                         {onRemoveParentLink && (
                           <button
                             type="button"
                             onClick={() => onRemoveParentLink(code.id, pid)}
-                            className="text-slate-400 hover:text-red-600 text-[14px] leading-none"
+                            className="flex-shrink-0 text-slate-400 hover:text-red-600 text-[14px] leading-none"
                             title="remove this parent"
                           >
                             ×
@@ -601,7 +601,7 @@ function CodebookRow({
                         const pid = e.target.value;
                         if (pid) onAddParentLink(code.id, pid);
                       }}
-                      className="px-2 py-1 text-[12px] border border-slate-300 rounded bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500"
+                      className="max-w-full w-[150px] px-2 py-1 text-[12px] border border-slate-300 rounded bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500"
                     >
                       <option value="">+ add parent</option>
                       {addable.map((n) => (
