@@ -974,19 +974,17 @@ const SelectionPopover = forwardRef<HTMLDivElement, PopoverProps>(function Selec
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q) return flat;
-    // Search across the code's own name, every parent path it belongs to, and
-    // its description — so a code that's only the SECOND parent of a topic
-    // (e.g. "criticism") still surfaces when the user types that topic name.
-    const matchCode = (c: Code): boolean => {
-      if (c.name.toLowerCase().includes(q)) return true;
-      if (c.description && c.description.toLowerCase().includes(q)) return true;
-      for (const pid of c.parentIds) {
-        if (codePathString(codes, pid).toLowerCase().includes(q)) return true;
-      }
+    // Match the code's own text only (name + its description). Parent paths
+    // are NOT searched — a parent named "Reasons for X" shouldn't surface
+    // every child when the user types "reason". To find a code, type the
+    // code's actual name.
+    return flatUnique.filter((n) => {
+      if (n.code.name.toLowerCase().includes(q)) return true;
+      if (n.code.description && n.code.description.toLowerCase().includes(q))
+        return true;
       return false;
-    };
-    return flatUnique.filter((n) => matchCode(n.code));
-  }, [flat, flatUnique, query, codes]);
+    });
+  }, [flat, flatUnique, query]);
   const trimmedQuery = query.trim();
   const hasExactMatch = useMemo(
     () =>
