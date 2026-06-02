@@ -77,16 +77,12 @@ export default function CodebookView({
       }
       if (dy !== 0 && raf === 0) raf = requestAnimationFrame(step);
     };
+    // During native HTML5 drag the user is "holding the click" — they should
+    // still be able to scroll the codebook with the wheel. Listen in the
+    // capture phase so we beat any other scroll handlers, and don't bother
+    // gating by cursor position (the user is clearly trying to scroll the
+    // thing they're dragging within).
     const onWheel = (e: WheelEvent) => {
-      const rect = el.getBoundingClientRect();
-      if (
-        e.clientX < rect.left ||
-        e.clientX > rect.right ||
-        e.clientY < rect.top ||
-        e.clientY > rect.bottom
-      ) {
-        return;
-      }
       e.preventDefault();
       el.scrollTop += e.deltaY;
     };
@@ -97,15 +93,15 @@ export default function CodebookView({
         raf = 0;
       }
     };
-    document.addEventListener('dragover', onDragOver);
-    document.addEventListener('wheel', onWheel, { passive: false });
-    document.addEventListener('dragend', stop);
-    document.addEventListener('drop', stop);
+    window.addEventListener('dragover', onDragOver, { capture: true });
+    window.addEventListener('wheel', onWheel, { capture: true, passive: false });
+    window.addEventListener('dragend', stop, { capture: true });
+    window.addEventListener('drop', stop, { capture: true });
     return () => {
-      document.removeEventListener('dragover', onDragOver);
-      document.removeEventListener('wheel', onWheel as EventListener);
-      document.removeEventListener('dragend', stop);
-      document.removeEventListener('drop', stop);
+      window.removeEventListener('dragover', onDragOver, { capture: true } as EventListenerOptions);
+      window.removeEventListener('wheel', onWheel as EventListener, { capture: true } as EventListenerOptions);
+      window.removeEventListener('dragend', stop, { capture: true } as EventListenerOptions);
+      window.removeEventListener('drop', stop, { capture: true } as EventListenerOptions);
       stop();
     };
   }, [dragCodeId]);
