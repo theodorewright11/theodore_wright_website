@@ -1073,6 +1073,7 @@ export default function QualitativeCodingDashboard() {
                         onCreateCode={(name, parentId, color) =>
                           addCode(parentId ?? null, name, color)
                         }
+                        onUpdateCode={updateCode}
                         lineView={!!state.lineView}
                         onToggleLineView={() =>
                           setState((s) => ({ ...s, lineView: !s.lineView }))

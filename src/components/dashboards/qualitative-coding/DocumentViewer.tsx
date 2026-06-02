@@ -10,6 +10,7 @@ import {
   segmentText,
   type LinesMode,
 } from './compute';
+import CodeEditModal from './CodeEditModal';
 import ColorPicker from './ColorPicker';
 import { MarkdownEditor, type QcLinkOptions } from './Markdown';
 import { ResizeHandle, RowResizeHandle } from './Resizable';
@@ -47,6 +48,7 @@ type Props = {
     parentId?: string | null,
     color?: string | null,
   ) => string;
+  onUpdateCode?: (codeId: string, patch: Partial<Code>) => void;
   lineView?: boolean;
   onToggleLineView?: () => void;
   linesMode?: 'sentence' | 'chars';
@@ -91,6 +93,7 @@ export default function DocumentViewer({
   canSendToNote,
   qcLinkOptions,
   onCreateCode,
+  onUpdateCode,
   lineView,
   onToggleLineView,
   linesMode,
@@ -122,6 +125,7 @@ export default function DocumentViewer({
   const [pending, setPending] = useState<PendingSelection | null>(null);
   const [focusedAnnotationId, setFocusedAnnotationId] = useState<string | null>(null);
   const [notesOpen, setNotesOpen] = useState(false);
+  const [editingCodeId, setEditingCodeId] = useState<string | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const popoverRef = useRef<HTMLDivElement>(null);
   const bodyScrollRef = useRef<HTMLDivElement>(null);
@@ -558,26 +562,43 @@ export default function DocumentViewer({
                           const path = codePathString(codes, a.codeId);
                           const focused = focusedAnnotationId === a.id;
                           return (
-                            <button
+                            <span
                               key={a.id}
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setFocusedAnnotationId(focused ? null : a.id);
-                              }}
-                              className={`text-[11px] px-1.5 py-0.5 rounded ring-1 transition-all text-left leading-snug break-words ${
-                                focused
-                                  ? 'ring-slate-700 shadow-sm'
-                                  : 'ring-black/5 hover:ring-slate-400'
-                              }`}
-                              style={{
-                                backgroundColor: hexAlpha(color, focused ? 0.4 : 0.18),
-                                color: '#1e293b',
-                              }}
-                              title={a.note ? `${path} — ${a.note}` : path}
+                              className="group/chip inline-flex items-start gap-0.5 max-w-full"
                             >
-                              {path}
-                            </button>
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setFocusedAnnotationId(focused ? null : a.id);
+                                }}
+                                className={`text-[11px] px-1.5 py-0.5 rounded ring-1 transition-all text-left leading-snug break-words ${
+                                  focused
+                                    ? 'ring-slate-700 shadow-sm'
+                                    : 'ring-black/5 hover:ring-slate-400'
+                                }`}
+                                style={{
+                                  backgroundColor: hexAlpha(color, focused ? 0.4 : 0.18),
+                                  color: '#1e293b',
+                                }}
+                                title={a.note ? `${path} — ${a.note}` : path}
+                              >
+                                {path}
+                              </button>
+                              {onUpdateCode && (
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setEditingCodeId(a.codeId);
+                                  }}
+                                  title="edit this code"
+                                  className="opacity-0 group-hover/chip:opacity-100 text-[10px] text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded w-4 h-4 flex items-center justify-center transition-opacity self-center"
+                                >
+                                  ✎
+                                </button>
+                              )}
+                            </span>
                           );
                         })}
                       </div>
@@ -623,6 +644,7 @@ export default function DocumentViewer({
         onDelete={onDeleteAnnotation}
         onUpdate={onUpdateAnnotation}
         onSendToNote={onSendAnnotationToNote}
+        onEditCode={onUpdateCode ? (codeId) => setEditingCodeId(codeId) : undefined}
       />
 
       {pending && (
@@ -694,6 +716,17 @@ export default function DocumentViewer({
         </div>
       </aside>
     )}
+    {editingCodeId && onUpdateCode && (() => {
+      const editingCode = codes.find((c) => c.id === editingCodeId);
+      if (!editingCode) return null;
+      return (
+        <CodeEditModal
+          code={editingCode}
+          onSave={(patch) => onUpdateCode(editingCodeId, patch)}
+          onClose={() => setEditingCodeId(null)}
+        />
+      );
+    })()}
     </div>
   );
 }
@@ -1162,6 +1195,7 @@ function AnnotationsPanel({
   onDelete,
   onUpdate,
   onSendToNote,
+  onEditCode,
 }: {
   doc: Document;
   codes: Code[];
@@ -1176,6 +1210,7 @@ function AnnotationsPanel({
   onDelete: (id: string) => void;
   onUpdate: (id: string, patch: Partial<Annotation>) => void;
   onSendToNote?: (annData: { id: string; start: number; end: number; codeId: string }) => void;
+  onEditCode?: (codeId: string) => void;
 }) {
   if (annotations.length === 0) {
     return (
@@ -1239,6 +1274,19 @@ function AnnotationsPanel({
                   <span className="text-[10px] font-mono text-slate-400 tabular-nums ml-auto">
                     {a.start}–{a.end}
                   </span>
+                  {onEditCode && (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onEditCode(a.codeId);
+                      }}
+                      className="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-slate-900 text-[12px] transition-opacity px-1 py-0.5 rounded hover:bg-slate-100"
+                      title="edit this code (name, definition, color)"
+                    >
+                      ✎ code
+                    </button>
+                  )}
                   {onSendToNote && (
                     <button
                       type="button"

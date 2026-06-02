@@ -342,16 +342,6 @@ function CodebookRow({
 
   return (
     <li
-      draggable
-      onDragStart={(e) => {
-        e.dataTransfer.setData('application/x-qc-code', code.id);
-        e.dataTransfer.effectAllowed = 'move';
-        setDragCodeId(code.id);
-      }}
-      onDragEnd={() => {
-        setDragCodeId(null);
-        setDropZone(null);
-      }}
       onDragOver={handleDragOver}
       onDragLeave={(e) => {
         const rt = e.relatedTarget as Node | null;
@@ -366,16 +356,17 @@ function CodebookRow({
     >
       {editing ? (
         <div className="space-y-2">
-          <input
+          <textarea
             autoFocus
             value={draftName}
             onChange={(e) => setDraftName(emDash(e.target.value))}
             onKeyDown={(e) => {
-              if (e.key === 'Enter' && !e.shiftKey) saveEdit();
+              if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) saveEdit();
               if (e.key === 'Escape') setEditing(false);
             }}
             placeholder="Code name"
-            className="w-full px-3 py-2 text-[15px] font-semibold border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500"
+            rows={2}
+            className="w-full px-3 py-2 text-[15px] font-semibold leading-snug border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 resize-y"
           />
           <textarea
             value={draftDesc}
@@ -420,6 +411,22 @@ function CodebookRow({
       ) : (
         <>
           <div className="flex items-start gap-3">
+            <span
+              draggable
+              onDragStart={(e) => {
+                e.dataTransfer.setData('application/x-qc-code', code.id);
+                e.dataTransfer.effectAllowed = 'move';
+                setDragCodeId(code.id);
+              }}
+              onDragEnd={() => {
+                setDragCodeId(null);
+                setDropZone(null);
+              }}
+              title="drag to reorder / reparent"
+              className="flex-shrink-0 mt-1 cursor-grab text-slate-300 hover:text-slate-600 select-none text-[11px] leading-none px-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+            >
+              ⋮⋮
+            </span>
             <span
               className={`flex-shrink-0 rounded ring-1 ring-black/5 ${
                 depth === 0 ? 'w-3.5 h-3.5 mt-1.5' : 'w-2.5 h-2.5 mt-1.5'
