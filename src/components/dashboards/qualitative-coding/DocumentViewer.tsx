@@ -1030,13 +1030,25 @@ const SelectionPopover = forwardRef<HTMLDivElement, PopoverProps>(function Selec
     else commitOne(filtered[0].code.id);
   };
 
+  // Flip above the selection when there isn't enough room below. 480px is the
+  // popover's largest reasonable height (search + list capped at 380px +
+  // header + bottom note). If we'd overflow the viewport bottom, place above.
+  const POPOVER_EST_HEIGHT = 480;
+  const selBottom = pending.rect.bottom - window.scrollY;
+  const selTop = pending.rect.top - window.scrollY;
+  const flipAbove = selBottom + 8 + POPOVER_EST_HEIGHT > window.innerHeight - 8;
+  const topPx = flipAbove
+    ? Math.max(8, selTop - POPOVER_EST_HEIGHT - 8)
+    : selBottom + 8;
+
   return (
     <div
       ref={ref}
       role="dialog"
-      className="fixed z-50 w-[380px] bg-white border border-slate-200 rounded-lg shadow-xl overflow-hidden"
+      className="fixed z-50 w-[380px] bg-white border border-slate-200 rounded-lg shadow-xl overflow-hidden flex flex-col"
       style={{
-        top: pending.rect.bottom - window.scrollY + 8,
+        top: topPx,
+        maxHeight: `calc(100vh - 16px)`,
         left: Math.min(
           window.innerWidth - 400,
           Math.max(8, pending.rect.left - window.scrollX),
