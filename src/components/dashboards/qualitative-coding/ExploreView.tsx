@@ -102,6 +102,7 @@ export default function ExploreView({
   const setDocAnnotsFilter = (v: FieldFilter) => onChangeFilter({ docAnnotsFilter: v });
 
   const [codePickerOpen, setCodePickerOpen] = useState(false);
+  const [codePickerQuery, setCodePickerQuery] = useState('');
   const codePickerRef = useRef<HTMLDivElement>(null);
 
   const metadataFields = useMemo<MetadataField[]>(() => {
@@ -142,7 +143,10 @@ export default function ExploreView({
   }, [projects, selectedCodeIds, codeFilterMode, textQuery, metaFilters, folderFilter, sort, docCharsFilter, docWordsFilter, docAnnotsFilter]);
 
   useEffect(() => {
-    if (!codePickerOpen) return;
+    if (!codePickerOpen) {
+      setCodePickerQuery('');
+      return;
+    }
     const handler = (e: MouseEvent) => {
       const t = e.target as Node;
       if (codePickerRef.current && !codePickerRef.current.contains(t)) {
@@ -358,41 +362,83 @@ export default function ExploreView({
                       ×
                     </button>
                   </div>
+                  <div className="px-2 py-2 border-b border-slate-100 bg-white sticky top-0 z-10">
+                    <input
+                      type="text"
+                      autoFocus
+                      value={codePickerQuery}
+                      onChange={(e) => setCodePickerQuery(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Escape') {
+                          if (codePickerQuery) {
+                            setCodePickerQuery('');
+                          } else {
+                            setCodePickerOpen(false);
+                          }
+                        }
+                      }}
+                      placeholder="Search codes…"
+                      className="w-full px-2.5 py-1.5 text-[12px] border border-slate-200 rounded focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500"
+                    />
+                  </div>
                   <div className="flex-1 overflow-y-auto">
-                  {projects.map((p) => (
-                    <div key={p.id}>
-                      {showProjectChips && (
-                        <div className="px-3 py-1 text-[10px] uppercase tracking-wider font-semibold text-slate-500 bg-slate-100 sticky top-0">
-                          {p.name}
+                  {(() => {
+                    const q = codePickerQuery.trim().toLowerCase();
+                    let anyMatches = false;
+                    const rendered = projects.map((p) => {
+                      const seen = new Set<string>();
+                      const nodes = flattenTree(buildCodeTree(p.codes)).filter((n) => {
+                        if (seen.has(n.code.id)) return false;
+                        seen.add(n.code.id);
+                        if (!q) return true;
+                        return n.code.name.toLowerCase().includes(q);
+                      });
+                      if (nodes.length === 0) return null;
+                      anyMatches = true;
+                      return (
+                        <div key={p.id}>
+                          {showProjectChips && (
+                            <div className="px-3 py-1 text-[10px] uppercase tracking-wider font-semibold text-slate-500 bg-slate-100">
+                              {p.name}
+                            </div>
+                          )}
+                          {nodes.map((n) => {
+                            const checked = selectedCodeIds.has(n.code.id);
+                            const color = resolveColor(p.codes, n.code.id);
+                            return (
+                              <label
+                                key={`${p.id}-${n.code.id}`}
+                                className="flex items-center gap-2 px-3 py-1.5 cursor-pointer hover:bg-blue-50"
+                                style={{ paddingLeft: `${12 + (q ? 0 : n.depth * 12)}px` }}
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={checked}
+                                  onChange={() => toggleCode(n.code.id)}
+                                  className="accent-blue-600"
+                                />
+                                <span
+                                  className="w-2.5 h-2.5 rounded-sm ring-1 ring-black/5 flex-shrink-0"
+                                  style={{ background: color }}
+                                />
+                                <span className="text-[13px] text-slate-700 leading-snug break-words">
+                                  {n.code.name}
+                                </span>
+                              </label>
+                            );
+                          })}
                         </div>
-                      )}
-                      {flattenTree(buildCodeTree(p.codes)).map((n) => {
-                        const checked = selectedCodeIds.has(n.code.id);
-                        const color = resolveColor(p.codes, n.code.id);
-                        return (
-                          <label
-                            key={`${p.id}-${n.code.id}`}
-                            className="flex items-center gap-2 px-3 py-1.5 cursor-pointer hover:bg-blue-50"
-                            style={{ paddingLeft: `${12 + n.depth * 12}px` }}
-                          >
-                            <input
-                              type="checkbox"
-                              checked={checked}
-                              onChange={() => toggleCode(n.code.id)}
-                              className="accent-blue-600"
-                            />
-                            <span
-                              className="w-2.5 h-2.5 rounded-sm ring-1 ring-black/5 flex-shrink-0"
-                              style={{ background: color }}
-                            />
-                            <span className="text-[13px] text-slate-700 leading-snug break-words">
-                              {n.code.name}
-                            </span>
-                          </label>
-                        );
-                      })}
-                    </div>
-                  ))}
+                      );
+                    });
+                    if (q && !anyMatches) {
+                      return (
+                        <div className="px-3 py-4 text-[12px] text-slate-400 italic text-center">
+                          No codes match "{codePickerQuery}".
+                        </div>
+                      );
+                    }
+                    return rendered;
+                  })()}
                   {projects.every((p) => p.codes.length === 0) && (
                     <div className="px-3 py-3 text-[12px] text-slate-400 italic text-center">
                       No codes in any project yet.
