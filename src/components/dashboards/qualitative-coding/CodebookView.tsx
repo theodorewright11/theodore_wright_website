@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import ColorPicker from './ColorPicker';
 import { buildCodeTree, descendantIds, resolveColor, type CodeNode } from './compute';
 import { emDash } from './storage';
@@ -276,6 +276,7 @@ function CodebookRow({
   const [adding, setAdding] = useState(false);
   const [draftChild, setDraftChild] = useState('');
   const [dropZone, setDropZone] = useState<DropPosition | null>(null);
+  const headerRef = useRef<HTMLDivElement>(null);
 
   const color = resolveColor(codes, code.id);
   const count = counts.get(code.id) ?? 0;
@@ -287,11 +288,14 @@ function CodebookRow({
     e.preventDefault();
     e.stopPropagation();
     e.dataTransfer.dropEffect = 'move';
-    const rect = e.currentTarget.getBoundingClientRect();
-    const y = e.clientY - rect.top;
-    const h = rect.height;
-    if (y < h * 0.25) setDropZone('before');
-    else if (y > h * 0.75) setDropZone('after');
+    // Use the header row's rect, not the whole <li>'s — when this row has
+    // children the <li> is much taller than the visible header, which pushes
+    // "before/inside/after" zones into the wrong areas.
+    const rect = (headerRef.current ?? (e.currentTarget as HTMLElement)).getBoundingClientRect();
+    const h = rect.height || 1;
+    const y = Math.max(0, Math.min(h, e.clientY - rect.top));
+    if (y < h * 0.3) setDropZone('before');
+    else if (y > h * 0.7) setDropZone('after');
     else setDropZone('inside');
   };
 
@@ -410,7 +414,7 @@ function CodebookRow({
         </div>
       ) : (
         <>
-          <div className="flex items-start gap-3">
+          <div ref={headerRef} className="flex items-start gap-3">
             <span
               draggable
               onDragStart={(e) => {
