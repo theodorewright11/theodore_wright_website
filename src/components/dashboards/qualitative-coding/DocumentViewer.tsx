@@ -1382,6 +1382,7 @@ function AnnotationsPanel({
   onDelete,
   onUpdate,
   onSendToNote,
+  onRemoveRange,
   onEditCode,
 }: {
   doc: Document;
