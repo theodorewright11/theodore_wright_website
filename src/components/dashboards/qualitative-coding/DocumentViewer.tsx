@@ -1,5 +1,6 @@
 import { forwardRef, useEffect, useMemo, useRef, useState } from 'react';
 import {
+  annRanges,
   annotationsForDoc,
   buildCodeTree,
   buildLines,
@@ -232,8 +233,9 @@ export default function DocumentViewer({
       // Place the annotation chip on the first line touched by any of its
       // ranges. Multi-range annotations only get one chip — the panel below
       // lists every range.
+      const ranges = annRanges(a);
       const firstStart =
-        a.ranges.length === 0 ? 0 : Math.min(...a.ranges.map((r) => r.start));
+        ranges.length === 0 ? 0 : Math.min(...ranges.map((r) => r.start));
       const line = lines.find((l) => firstStart >= l.start && firstStart <= l.end);
       if (!line) continue;
       const arr = map.get(line.number) ?? [];
@@ -367,14 +369,15 @@ export default function DocumentViewer({
     for (const a of docAnns) {
       // Truncate ranges that extend past the new doc length; drop any range
       // that starts past the end. If no ranges remain, delete the annotation.
-      const clamped = a.ranges
+      const ranges = annRanges(a);
+      const clamped = ranges
         .filter((r) => r.start < newLen)
         .map((r) => ({ start: r.start, end: Math.min(r.end, newLen) }));
       if (clamped.length === 0) {
         onDeleteAnnotation(a.id);
       } else if (
-        clamped.length !== a.ranges.length ||
-        clamped.some((r, i) => r.end !== a.ranges[i].end)
+        clamped.length !== ranges.length ||
+        clamped.some((r, i) => r.end !== ranges[i].end)
       ) {
         onUpdateAnnotation(a.id, { ranges: clamped });
       }
@@ -689,17 +692,16 @@ export default function DocumentViewer({
         const focusedAnn = focusedAnnotationId
           ? docAnnotations.find((a) => a.id === focusedAnnotationId)
           : null;
-        const alreadyHasRange =
-          !!focusedAnn &&
-          focusedAnn.ranges.some(
-            (r) => r.start === pending.start && r.end === pending.end,
-          );
+        const focusedRanges = focusedAnn ? annRanges(focusedAnn) : [];
+        const alreadyHasRange = focusedRanges.some(
+          (r) => r.start === pending.start && r.end === pending.end,
+        );
         const popoverFocused = focusedAnn
           ? {
               id: focusedAnn.id,
               codePath: codePathString(codes, focusedAnn.codeId),
               color: resolveColor(codes, focusedAnn.codeId),
-              ranges: focusedAnn.ranges,
+              ranges: focusedRanges,
               alreadyHasRange,
             }
           : undefined;
@@ -1445,6 +1447,7 @@ function AnnotationsPanel({
             const color = resolveColor(codes, a.codeId);
             const path = codePathString(codes, a.codeId);
             const focused = focusedAnnotationId === a.id;
+            const ranges = annRanges(a);
             return (
               <li
                 key={a.id}
@@ -1461,16 +1464,16 @@ function AnnotationsPanel({
                     style={{ background: color }}
                   />
                   <span className="text-[12px] font-semibold text-slate-700">{path}</span>
-                  {a.ranges.length > 1 && (
+                  {ranges.length > 1 && (
                     <span
                       className="text-[10px] font-semibold uppercase tracking-wider text-purple-700 bg-purple-100 rounded px-1.5 py-0.5"
-                      title={`This annotation spans ${a.ranges.length} disjoint ranges`}
+                      title={`This annotation spans ${ranges.length} disjoint ranges`}
                     >
-                      {a.ranges.length} ranges
+                      {ranges.length} ranges
                     </span>
                   )}
                   <span className="text-[10px] font-mono text-slate-400 tabular-nums ml-auto">
-                    {a.ranges.map((r) => `${r.start}–${r.end}`).join(', ')}
+                    {ranges.map((r) => `${r.start}–${r.end}`).join(', ')}
                   </span>
                   {onEditCode && (
                     <button
@@ -1492,7 +1495,7 @@ function AnnotationsPanel({
                         e.stopPropagation();
                         onSendToNote({
                           id: a.id,
-                          ranges: a.ranges,
+                          ranges,
                           codeId: a.codeId,
                         });
                       }}
@@ -1520,7 +1523,12 @@ function AnnotationsPanel({
                   </div>
                 )}
                 <div className="mt-1 space-y-1">
-                  {a.ranges.map((r, idx) => {
+                  {ranges.length === 0 && (
+                    <div className="text-[12px] text-slate-400 italic">
+                      (no ranges — this annotation is empty)
+                    </div>
+                  )}
+                  {ranges.map((r, idx) => {
                     const slice = doc.text.slice(r.start, r.end);
                     return (
                       <div key={idx} className="text-[13px] text-slate-700 italic flex items-start gap-1.5 group/range">
@@ -1528,7 +1536,7 @@ function AnnotationsPanel({
                           “{slice.slice(0, 200)}
                           {slice.length > 200 ? '…' : ''}”
                         </span>
-                        {onRemoveRange && a.ranges.length > 1 && (
+                        {onRemoveRange && ranges.length > 1 && (
                           <button
                             type="button"
                             onClick={(e) => {

@@ -152,25 +152,34 @@ export type Segment = {
   pending?: boolean;
 };
 
+// Returns the annotation's ranges, defensively tolerating missing data.
+// Some in-memory annotations could lack ranges briefly (e.g. mid-migration);
+// helpers treat that as zero ranges.
+export function annRanges(a: Annotation): { start: number; end: number }[] {
+  return Array.isArray(a.ranges) ? a.ranges : [];
+}
+
 // Smallest start across an annotation's ranges. Useful for sort/position.
 export function annStart(a: Annotation): number {
-  if (a.ranges.length === 0) return 0;
-  let m = a.ranges[0].start;
-  for (const r of a.ranges) if (r.start < m) m = r.start;
+  const rs = annRanges(a);
+  if (rs.length === 0) return 0;
+  let m = rs[0].start;
+  for (const r of rs) if (r.start < m) m = r.start;
   return m;
 }
 
 // Largest end across an annotation's ranges.
 export function annEnd(a: Annotation): number {
-  if (a.ranges.length === 0) return 0;
-  let m = a.ranges[0].end;
-  for (const r of a.ranges) if (r.end > m) m = r.end;
+  const rs = annRanges(a);
+  if (rs.length === 0) return 0;
+  let m = rs[0].end;
+  for (const r of rs) if (r.end > m) m = r.end;
   return m;
 }
 
 // Concatenate every range's slice with " … " between, for compact preview.
 export function annText(a: Annotation, docText: string): string {
-  return a.ranges
+  return annRanges(a)
     .map((r) => docText.slice(r.start, r.end))
     .filter((s) => s.length > 0)
     .join(' … ');
@@ -183,7 +192,7 @@ export function segmentText(
 ): Segment[] {
   const boundaries = new Set<number>([0, text.length]);
   for (const a of annotations) {
-    for (const r of a.ranges) {
+    for (const r of annRanges(a)) {
       boundaries.add(Math.max(0, Math.min(text.length, r.start)));
       boundaries.add(Math.max(0, Math.min(text.length, r.end)));
     }
@@ -200,7 +209,7 @@ export function segmentText(
     if (end <= start) continue;
     // An annotation covers this segment if ANY of its ranges contains it.
     const covering = annotations.filter((a) =>
-      a.ranges.some((r) => r.start <= start && r.end >= end),
+      annRanges(a).some((r) => r.start <= start && r.end >= end),
     );
     const isPending = !!(
       pendingRange && start >= pendingRange.start && end <= pendingRange.end
