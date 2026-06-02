@@ -305,6 +305,18 @@ To attach a paper to a research entry, set `paperUrl: '/papers/<slug>.pdf'` in t
 - Static for everything public
 - `/dashboards/*` will be protected by **Cloudflare Access** when those routes get built. No server code required — Cloudflare sits in front of the static deploy and challenges visitors to authenticate.
 
+### Google sign-in / COOP (Finance, Time Tracker, Qual Coding)
+
+These dashboards authenticate browser-side via **Google Identity Services (GIS) implicit token flow** — no server, no client secret. Access tokens last ~1 hour; each dashboard silently refreshes ~1 minute before expiry (and on tab focus) by calling `requestAccessToken({ prompt: 'none' })`.
+
+Silent refresh opens a popup to `accounts.google.com` and polls `window.closed` on it. `accounts.google.com` sends `Cross-Origin-Opener-Policy: same-origin`, which puts the popup in a different browsing-context group and severs the opener's handle to it — Chrome logs *"Cross-Origin-Opener-Policy policy would block the window.closed call"* and GIS reports `popup_closed`, so silent refresh fails and the user is forced to re-sign-in every hour.
+
+**Fix:** the site must send `Cross-Origin-Opener-Policy: same-origin-allow-popups` on its own pages, which preserves the opener↔popup channel GIS needs:
+- **Production (Vercel):** `vercel.json` → `headers` rule, applied to `/(.*)`.
+- **Dev / preview:** `astro.config.mjs` → `vite.server.headers` and `vite.preview.headers`.
+
+Do **not** add `Cross-Origin-Embedder-Policy` — it would block loading the GIS script and Google's APIs.
+
 ### Dashboard data tiers
 
 Two tiers per dashboard:
