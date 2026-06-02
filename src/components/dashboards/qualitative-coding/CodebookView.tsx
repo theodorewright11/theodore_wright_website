@@ -33,6 +33,7 @@ type Props = {
   onSortAlphabetically?: () => void;
   collapsedCodeIds?: Set<string>;
   onToggleCodeCollapsed?: (codeId: string) => void;
+  onToggleAllCollapsed?: () => void;
   onClose?: () => void; // for panel variant
 };
 
@@ -50,6 +51,7 @@ export default function CodebookView({
   onSortAlphabetically,
   collapsedCodeIds,
   onToggleCodeCollapsed,
+  onToggleAllCollapsed,
   onClose,
 }: Props) {
   // Custom pointer-based drag (not native HTML5), so the wheel keeps working
@@ -268,6 +270,19 @@ export default function CodebookView({
           )}
         </div>
         <div className="flex items-center gap-2 flex-shrink-0">
+          {onToggleAllCollapsed && project.codes.length > 1 && (() => {
+            const anyCollapsed = !!collapsedCodeIds && collapsedCodeIds.size > 0;
+            return (
+              <button
+                type="button"
+                onClick={onToggleAllCollapsed}
+                title={anyCollapsed ? 'expand every code' : 'collapse every parent code'}
+                className="px-3 py-1.5 text-[12px] font-semibold rounded-md border border-slate-300 text-slate-600 hover:bg-slate-100 transition-colors"
+              >
+                {anyCollapsed ? 'Expand all' : 'Collapse all'}
+              </button>
+            );
+          })()}
           {onSortAlphabetically && project.codes.length > 1 && (
             <button
               type="button"

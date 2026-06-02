@@ -750,6 +750,22 @@ export default function QualitativeCodingDashboard() {
       return { ...s, collapsedCodeIds: next };
     });
   };
+  const toggleAllCodesCollapsed = () => {
+    if (!activeProject) return;
+    setState((s) => {
+      const cur = s.collapsedCodeIds ?? [];
+      if (cur.length > 0) {
+        return { ...s, collapsedCodeIds: [] };
+      }
+      // Collapse every code that has at least one child (i.e. is a parent).
+      const parentIds = activeProject.codes
+        .filter((c) =>
+          activeProject.codes.some((other) => other.parentIds.includes(c.id)),
+        )
+        .map((c) => c.id);
+      return { ...s, collapsedCodeIds: parentIds };
+    });
+  };
 
   // Sort all codes alphabetically by name (case-insensitive). Because `order`
   // is a single integer per code but a code can live under multiple parents
@@ -1082,6 +1098,7 @@ export default function QualitativeCodingDashboard() {
               onSortAlphabetically={sortCodesAlphabetically}
               collapsedCodeIds={collapsedCodeIds}
               onToggleCodeCollapsed={toggleCodeCollapsed}
+              onToggleAllCollapsed={toggleAllCodesCollapsed}
               onDeleteCode={deleteCode}
               onMoveCode={moveCode}
             />
@@ -1238,6 +1255,7 @@ export default function QualitativeCodingDashboard() {
                     onSortAlphabetically={sortCodesAlphabetically}
                     collapsedCodeIds={collapsedCodeIds}
                     onToggleCodeCollapsed={toggleCodeCollapsed}
+                    onToggleAllCollapsed={toggleAllCodesCollapsed}
                     onDeleteCode={deleteCode}
                     onMoveCode={moveCode}
                     onClose={() => setCodebookPanelOpen(false)}
