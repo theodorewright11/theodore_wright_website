@@ -973,11 +973,13 @@ const SelectionPopover = forwardRef<HTMLDivElement, PopoverProps>(function Selec
   }, [flat]);
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return flat;
-    // Match the code's own name only — not descriptions, not parent paths.
-    // Type what you'd call the code; only codes whose title contains it show.
+    // Always use the deduped list — same code shouldn't appear twice in the
+    // popover even when it has multiple parents. Also avoids the duplicate
+    // React-key bug that caused ghost rows to persist when typing into the
+    // search box.
+    if (!q) return flatUnique;
     return flatUnique.filter((n) => n.code.name.toLowerCase().includes(q));
-  }, [flat, flatUnique, query]);
+  }, [flatUnique, query]);
   const trimmedQuery = query.trim();
   const hasExactMatch = useMemo(
     () =>
@@ -1164,8 +1166,8 @@ const SelectionPopover = forwardRef<HTMLDivElement, PopoverProps>(function Selec
                 className="flex-1 min-w-0 px-2 py-1 text-[11px] border border-emerald-200 rounded bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-400/40 focus:border-emerald-400"
               >
                 <option value="">(top level)</option>
-                {flat.map((n) => (
-                  <option key={n.code.id} value={n.code.id}>
+                {flatUnique.map((n) => (
+                  <option key={n.pathKey} value={n.code.id}>
                     {'  '.repeat(n.depth)}
                     {codePathString(codes, n.code.id)}
                   </option>
@@ -1197,7 +1199,7 @@ const SelectionPopover = forwardRef<HTMLDivElement, PopoverProps>(function Selec
             const picked = pickedCodeIds.has(n.code.id);
             return (
               <button
-                key={n.code.id}
+                key={n.pathKey}
                 type="button"
                 onClick={() =>
                   multiMode ? togglePick(n.code.id) : commitOne(n.code.id)
