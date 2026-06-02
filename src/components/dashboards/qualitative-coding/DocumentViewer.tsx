@@ -974,16 +974,9 @@ const SelectionPopover = forwardRef<HTMLDivElement, PopoverProps>(function Selec
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q) return flat;
-    // Match the code's own text only (name + its description). Parent paths
-    // are NOT searched — a parent named "Reasons for X" shouldn't surface
-    // every child when the user types "reason". To find a code, type the
-    // code's actual name.
-    return flatUnique.filter((n) => {
-      if (n.code.name.toLowerCase().includes(q)) return true;
-      if (n.code.description && n.code.description.toLowerCase().includes(q))
-        return true;
-      return false;
-    });
+    // Match the code's own name only — not descriptions, not parent paths.
+    // Type what you'd call the code; only codes whose title contains it show.
+    return flatUnique.filter((n) => n.code.name.toLowerCase().includes(q));
   }, [flat, flatUnique, query]);
   const trimmedQuery = query.trim();
   const hasExactMatch = useMemo(
