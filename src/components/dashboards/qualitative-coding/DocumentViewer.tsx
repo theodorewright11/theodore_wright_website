@@ -647,7 +647,20 @@ export default function DocumentViewer({
         onEditCode={onUpdateCode ? (codeId) => setEditingCodeId(codeId) : undefined}
       />
 
-      {pending && (
+      {pending && (() => {
+        const focusedAnn = focusedAnnotationId
+          ? docAnnotations.find((a) => a.id === focusedAnnotationId)
+          : null;
+        const popoverFocused = focusedAnn
+          ? {
+              id: focusedAnn.id,
+              codePath: codePathString(codes, focusedAnn.codeId),
+              color: resolveColor(codes, focusedAnn.codeId),
+              currentStart: focusedAnn.start,
+              currentEnd: focusedAnn.end,
+            }
+          : undefined;
+        return (
         <SelectionPopover
           ref={popoverRef}
           pending={pending}
@@ -656,6 +669,19 @@ export default function DocumentViewer({
           showDefinitions={showCodeDefinitions}
           canSendToNote={!!canSendToNote && !!onSendAnnotationToNote}
           onCreateCode={onCreateCode}
+          focusedAnnotation={popoverFocused}
+          onMoveFocused={
+            popoverFocused
+              ? () => {
+                  onUpdateAnnotation(popoverFocused.id, {
+                    start: pending.start,
+                    end: pending.end,
+                  });
+                  setPending(null);
+                  window.getSelection()?.removeAllRanges();
+                }
+              : undefined
+          }
           onPick={(codeIds, note, sendToNote) => {
             for (const codeId of codeIds) {
               const id = cryptoRandomId();
@@ -674,7 +700,8 @@ export default function DocumentViewer({
           }}
           onCancel={() => setPending(null)}
         />
-      )}
+        );
+      })()}
     </div>
     {notesOpen && (
       <aside
@@ -889,10 +916,29 @@ type PopoverProps = {
     color?: string | null,
   ) => string;
   onCancel: () => void;
+  focusedAnnotation?: {
+    id: string;
+    codePath: string;
+    color: string;
+    currentStart: number;
+    currentEnd: number;
+  };
+  onMoveFocused?: () => void;
 };
 
 const SelectionPopover = forwardRef<HTMLDivElement, PopoverProps>(function SelectionPopover(
-  { pending, codes, text, showDefinitions, canSendToNote, onPick, onCreateCode, onCancel },
+  {
+    pending,
+    codes,
+    text,
+    showDefinitions,
+    canSendToNote,
+    onPick,
+    onCreateCode,
+    onCancel,
+    focusedAnnotation,
+    onMoveFocused,
+  },
   ref,
 ) {
   const [query, setQuery] = useState('');
@@ -1026,6 +1072,34 @@ const SelectionPopover = forwardRef<HTMLDivElement, PopoverProps>(function Selec
         </button>
       </div>
       <div className="max-h-[380px] overflow-y-auto">
+        {focusedAnnotation && onMoveFocused &&
+          (focusedAnnotation.currentStart !== pending.start ||
+            focusedAnnotation.currentEnd !== pending.end) && (
+          <div className="bg-blue-50 border-b border-blue-100">
+            <button
+              type="button"
+              onClick={onMoveFocused}
+              className="w-full flex items-center gap-2 px-3 py-2 text-left hover:bg-blue-100 transition-colors"
+              title="move the focused annotation's highlight to this selection"
+            >
+              <span
+                className="w-4 h-4 rounded-sm text-white text-[12px] font-bold flex items-center justify-center flex-shrink-0"
+                style={{ background: focusedAnnotation.color }}
+              >
+                ↔
+              </span>
+              <span className="text-[13px] text-blue-900 min-w-0 flex-1 leading-snug">
+                Move{' '}
+                <span className="font-semibold">“{focusedAnnotation.codePath}”</span>{' '}
+                range to this selection
+                <span className="block text-[10px] text-blue-700 font-mono tabular-nums mt-0.5">
+                  {focusedAnnotation.currentStart}–{focusedAnnotation.currentEnd} →{' '}
+                  {pending.start}–{pending.end}
+                </span>
+              </span>
+            </button>
+          </div>
+        )}
         {canCreate && (
           <div className="bg-emerald-50 border-b border-emerald-100">
             <button
