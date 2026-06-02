@@ -385,7 +385,7 @@ export default function ExploreView({
                               className="w-2.5 h-2.5 rounded-sm ring-1 ring-black/5 flex-shrink-0"
                               style={{ background: color }}
                             />
-                            <span className="text-[13px] text-slate-700 truncate">
+                            <span className="text-[13px] text-slate-700 leading-snug break-words">
                               {n.code.name}
                             </span>
                           </label>
