@@ -315,48 +315,8 @@ export default function CodebookView({
             : 'px-8 pb-16 max-w-[820px] mx-auto'
         }
       >
-        {tree.length === 0 ? (
-          <EmptyState onAdd={() => setAddingRoot(true)} addingRoot={addingRoot} />
-        ) : (
-          <>
-            <ul className="space-y-3">
-              {tree.map((node) => (
-                <CodebookRow
-                  key={node.pathKey}
-                  node={node}
-                  codes={project.codes}
-                  counts={counts}
-                  isPanel={isPanel}
-                  dragCodeId={dragCodeId}
-                  dropTarget={dropTarget}
-                  startDrag={startDrag}
-                  onAddCode={onAddCode}
-                  onUpdateCode={onUpdateCode}
-                  onAddParentLink={onAddParentLink}
-                  onRemoveParentLink={onRemoveParentLink}
-                  collapsedCodeIds={collapsedCodeIds}
-                  onToggleCodeCollapsed={onToggleCodeCollapsed}
-                  onDeleteCode={onDeleteCode}
-                />
-              ))}
-            </ul>
-            <div
-              data-codebook-root-zone
-              className={`mt-3 py-3 text-center text-[11px] italic rounded-md border-2 border-dashed transition-colors ${
-                rootDragOver
-                  ? 'border-blue-400 bg-blue-50 text-blue-700'
-                  : dragCodeId
-                    ? 'border-slate-300 text-slate-500'
-                    : 'border-transparent text-transparent'
-              }`}
-            >
-              Drop here to make a top-level code
-            </div>
-          </>
-        )}
-
         {(addingRoot || tree.length > 0) && (
-          <div className={`mt-${isPanel ? '4' : '8'} pt-4 border-t border-slate-200`}>
+          <div className={`mb-${isPanel ? '4' : '6'} pb-3 border-b border-slate-200`}>
             {addingRoot ? (
               <div className="flex gap-2">
                 <input
@@ -414,6 +374,45 @@ export default function CodebookView({
               </button>
             )}
           </div>
+        )}
+        {tree.length === 0 ? (
+          <EmptyState onAdd={() => setAddingRoot(true)} addingRoot={addingRoot} />
+        ) : (
+          <>
+            <ul className="space-y-3">
+              {tree.map((node) => (
+                <CodebookRow
+                  key={node.pathKey}
+                  node={node}
+                  codes={project.codes}
+                  counts={counts}
+                  isPanel={isPanel}
+                  dragCodeId={dragCodeId}
+                  dropTarget={dropTarget}
+                  startDrag={startDrag}
+                  onAddCode={onAddCode}
+                  onUpdateCode={onUpdateCode}
+                  onAddParentLink={onAddParentLink}
+                  onRemoveParentLink={onRemoveParentLink}
+                  collapsedCodeIds={collapsedCodeIds}
+                  onToggleCodeCollapsed={onToggleCodeCollapsed}
+                  onDeleteCode={onDeleteCode}
+                />
+              ))}
+            </ul>
+            <div
+              data-codebook-root-zone
+              className={`mt-3 py-3 text-center text-[11px] italic rounded-md border-2 border-dashed transition-colors ${
+                rootDragOver
+                  ? 'border-blue-400 bg-blue-50 text-blue-700'
+                  : dragCodeId
+                    ? 'border-slate-300 text-slate-500'
+                    : 'border-transparent text-transparent'
+              }`}
+            >
+              Drop here to make a top-level code
+            </div>
+          </>
         )}
       </div>
       {drag?.active && draggedCode && (
