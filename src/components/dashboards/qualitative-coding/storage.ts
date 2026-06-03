@@ -57,6 +57,10 @@ export function loadState(): AppState {
         collapsedCodeIds: Array.isArray(parsed.collapsedCodeIds)
           ? parsed.collapsedCodeIds.filter((s: any) => typeof s === 'string')
           : [],
+        exploreViewMode:
+          parsed.exploreViewMode === 'by-code' ? 'by-code' : 'flat',
+        exploreShowMeta: parsed.exploreShowMeta !== false,
+        exploreShowNotes: parsed.exploreShowNotes !== false,
       };
     }
   } catch {

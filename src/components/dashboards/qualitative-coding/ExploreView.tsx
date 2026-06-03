@@ -45,6 +45,12 @@ type Props = {
   onChangeFilter: (patch: Partial<ExploreFilterState>) => void;
   onToggleFilters: () => void;
   onToggleCoOccurrence: () => void;
+  viewMode?: 'flat' | 'by-code';
+  showMeta?: boolean;
+  showNotes?: boolean;
+  onSetViewMode?: (m: 'flat' | 'by-code') => void;
+  onToggleShowMeta?: () => void;
+  onToggleShowNotes?: () => void;
   onJumpToAnnotation: (projectId: string, docId: string, annotationId: string) => void;
 };
 
@@ -64,6 +70,12 @@ export default function ExploreView({
   onChangeFilter,
   onToggleFilters,
   onToggleCoOccurrence,
+  viewMode = 'flat',
+  showMeta = true,
+  showNotes = true,
+  onSetViewMode,
+  onToggleShowMeta,
+  onToggleShowNotes,
   onJumpToAnnotation,
 }: Props) {
   const {
@@ -657,8 +669,67 @@ export default function ExploreView({
             </div>
           )}
 
-          <div className="text-[11px] uppercase font-semibold tracking-[0.12em] text-slate-500 mb-2">
-            Annotations · {rows.length}
+          <div className="flex items-center justify-between gap-4 mb-3 flex-wrap">
+            <div className="text-[11px] uppercase font-semibold tracking-[0.12em] text-slate-500">
+              {viewMode === 'by-code' ? 'Codes' : 'Annotations'} · {rows.length}
+            </div>
+            <div className="flex items-center gap-2 flex-wrap">
+              {onSetViewMode && (
+                <div className="inline-flex rounded-md border border-slate-300 overflow-hidden">
+                  <button
+                    type="button"
+                    onClick={() => onSetViewMode('flat')}
+                    className={`px-2.5 py-1 text-[11px] font-semibold ${
+                      viewMode === 'flat'
+                        ? 'bg-slate-900 text-white'
+                        : 'text-slate-600 hover:bg-slate-100'
+                    }`}
+                  >
+                    Flat
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => onSetViewMode('by-code')}
+                    className={`px-2.5 py-1 text-[11px] font-semibold border-l border-slate-300 ${
+                      viewMode === 'by-code'
+                        ? 'bg-slate-900 text-white'
+                        : 'text-slate-600 hover:bg-slate-100'
+                    }`}
+                    title="group quotes under their code"
+                  >
+                    By code
+                  </button>
+                </div>
+              )}
+              {onToggleShowNotes && (
+                <button
+                  type="button"
+                  onClick={onToggleShowNotes}
+                  className={`px-2.5 py-1 text-[11px] font-semibold rounded-md border ${
+                    showNotes
+                      ? 'border-amber-300 bg-amber-50 text-amber-800'
+                      : 'border-slate-300 text-slate-500 hover:bg-slate-100'
+                  }`}
+                  title={showNotes ? 'hide notes' : 'show notes'}
+                >
+                  Notes {showNotes ? 'on' : 'off'}
+                </button>
+              )}
+              {onToggleShowMeta && (
+                <button
+                  type="button"
+                  onClick={onToggleShowMeta}
+                  className={`px-2.5 py-1 text-[11px] font-semibold rounded-md border ${
+                    showMeta
+                      ? 'border-blue-300 bg-blue-50 text-blue-800'
+                      : 'border-slate-300 text-slate-500 hover:bg-slate-100'
+                  }`}
+                  title={showMeta ? 'hide doc metadata' : 'show doc metadata'}
+                >
+                  Metadata {showMeta ? 'on' : 'off'}
+                </button>
+              )}
+            </div>
           </div>
           {rows.length === 0 ? (
             <div className="text-[13px] text-slate-400 italic border border-slate-200 rounded-lg p-8 text-center">
@@ -666,22 +737,30 @@ export default function ExploreView({
                 ? 'No annotations match these filters.'
                 : 'No annotations yet. Code some text in Documents view to populate this.'}
             </div>
+          ) : viewMode === 'by-code' ? (
+            <ByCodeView
+              rows={rows}
+              showProjectChips={showProjectChips}
+              showMeta={showMeta}
+              showNotes={showNotes}
+              onJump={onJumpToAnnotation}
+            />
           ) : (
-            <ul className="space-y-2">
+            <ul className="space-y-3">
               {rows.map((r) => (
                 <li
                   key={`${r.projectId}::${r.annotation.id}`}
-                  className="border border-slate-200 rounded-lg p-3 bg-white hover:border-slate-400 hover:shadow-sm transition-all cursor-pointer"
+                  className="border border-slate-200 rounded-lg p-4 bg-white hover:border-slate-400 hover:shadow-sm transition-all cursor-pointer"
                   onClick={() =>
                     onJumpToAnnotation(r.projectId, r.doc.id, r.annotation.id)
                   }
                 >
-                  <div className="flex items-center gap-2 flex-wrap">
+                  <div className="flex items-center gap-2 flex-wrap mb-2">
                     <span
                       className="w-2.5 h-2.5 rounded-sm ring-1 ring-black/5 flex-shrink-0"
                       style={{ background: r.codeColor }}
                     />
-                    <span className="text-[12px] font-semibold text-slate-700">
+                    <span className="text-[13px] font-semibold text-slate-800 leading-snug">
                       {r.codePath}
                     </span>
                     {showProjectChips && (
@@ -689,25 +768,24 @@ export default function ExploreView({
                         {r.projectName}
                       </span>
                     )}
-                    <span className="text-[11px] text-slate-500 truncate">
+                    <span className="text-[11px] text-slate-500 leading-snug ml-auto">
                       {r.doc.folder ? `${r.doc.folder} / ` : ''}
                       {r.doc.title}
                     </span>
-                    <span className="text-[10px] font-mono text-slate-400 tabular-nums ml-auto">
-                      {(r.annotation.ranges ?? []).map((rr) => `${rr.start}–${rr.end}`).join(', ')}
-                    </span>
                   </div>
-                  <div className="mt-1.5 text-[13px] text-slate-700 italic leading-snug">
-                    “{r.span.slice(0, 240)}
-                    {r.span.length > 240 ? '…' : ''}”
-                  </div>
-                  {r.annotation.note && (
-                    <div className="mt-1.5 text-[12px] text-slate-600 border-l-2 border-amber-300 pl-2">
+                  <blockquote
+                    className="text-[15px] text-slate-800 leading-relaxed border-l-2 border-slate-300 pl-3 whitespace-pre-wrap break-words"
+                    style={{ fontFamily: 'Georgia, Cambria, "Times New Roman", serif' }}
+                  >
+                    {r.span}
+                  </blockquote>
+                  {showNotes && r.annotation.note && (
+                    <div className="mt-2 text-[12px] text-amber-900 bg-amber-50 border-l-2 border-amber-300 pl-3 py-1.5 leading-snug whitespace-pre-wrap">
                       {r.annotation.note}
                     </div>
                   )}
-                  {Object.keys(r.doc.metadata).length > 0 && (
-                    <div className="mt-1.5 flex flex-wrap gap-x-3 gap-y-0.5 text-[10px] text-slate-500 font-mono">
+                  {showMeta && Object.keys(r.doc.metadata).length > 0 && (
+                    <div className="mt-2 flex flex-wrap gap-x-3 gap-y-0.5 text-[10px] text-slate-500 font-mono">
                       {Object.entries(r.doc.metadata)
                         .filter(([_, v]) => v !== null && v !== undefined && v !== '')
                         .map(([k, v]) => (
@@ -937,6 +1015,141 @@ function StatCard({
       >
         {value.toLocaleString()}
       </div>
+    </div>
+  );
+}
+
+// "By code" view: collect rows by their codeId, render one section per code
+// with all quotes underneath. Sections are collapsible.
+function ByCodeView({
+  rows,
+  showProjectChips,
+  showMeta,
+  showNotes,
+  onJump,
+}: {
+  rows: ExploreRow[];
+  showProjectChips: boolean;
+  showMeta: boolean;
+  showNotes: boolean;
+  onJump: (projectId: string, docId: string, annotationId: string) => void;
+}) {
+  type Group = {
+    key: string;
+    codePath: string;
+    color: string;
+    projectName: string;
+    rows: ExploreRow[];
+  };
+  const groups = useMemo<Group[]>(() => {
+    const m = new Map<string, Group>();
+    for (const r of rows) {
+      const key = `${r.projectId}::${r.annotation.codeId}`;
+      let g = m.get(key);
+      if (!g) {
+        g = {
+          key,
+          codePath: r.codePath,
+          color: r.codeColor,
+          projectName: r.projectName,
+          rows: [],
+        };
+        m.set(key, g);
+      }
+      g.rows.push(r);
+    }
+    return [...m.values()].sort(
+      (a, b) =>
+        b.rows.length - a.rows.length || a.codePath.localeCompare(b.codePath),
+    );
+  }, [rows]);
+
+  const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
+  const toggle = (key: string) =>
+    setCollapsed((s) => {
+      const n = new Set(s);
+      if (n.has(key)) n.delete(key);
+      else n.add(key);
+      return n;
+    });
+
+  return (
+    <div className="space-y-6">
+      {groups.map((g) => {
+        const isCollapsed = collapsed.has(g.key);
+        return (
+          <section key={g.key} className="border border-slate-200 rounded-lg bg-white overflow-hidden">
+            <header
+              onClick={() => toggle(g.key)}
+              className="px-4 py-3 flex items-center gap-3 cursor-pointer hover:bg-slate-50 transition-colors border-b border-slate-100 sticky top-0 bg-white z-10"
+              style={{ boxShadow: `inset 4px 0 0 0 ${g.color}` }}
+            >
+              <span className="text-[11px] text-slate-400 w-3">
+                {isCollapsed ? '▸' : '▾'}
+              </span>
+              <span
+                className="w-3 h-3 rounded-sm ring-1 ring-black/5 flex-shrink-0"
+                style={{ background: g.color }}
+              />
+              <h2 className="text-[15px] font-semibold text-slate-900 leading-snug flex-1 min-w-0">
+                {g.codePath}
+              </h2>
+              {showProjectChips && (
+                <span className="text-[10px] uppercase font-semibold tracking-wider text-blue-600 px-1.5 py-0.5 rounded bg-blue-50 flex-shrink-0">
+                  {g.projectName}
+                </span>
+              )}
+              <span className="text-[11px] font-mono tabular-nums text-slate-500 bg-slate-100 px-2 py-0.5 rounded flex-shrink-0">
+                {g.rows.length} quote{g.rows.length === 1 ? '' : 's'}
+              </span>
+            </header>
+            {!isCollapsed && (
+              <ol className="divide-y divide-slate-100">
+                {g.rows.map((r, i) => (
+                  <li
+                    key={`${r.projectId}::${r.annotation.id}`}
+                    className="px-4 py-3 hover:bg-slate-50/60 transition-colors cursor-pointer"
+                    onClick={() => onJump(r.projectId, r.doc.id, r.annotation.id)}
+                  >
+                    <div className="flex items-baseline gap-2 mb-1.5 flex-wrap">
+                      <span className="text-[10px] font-mono text-slate-400 tabular-nums w-6 flex-shrink-0">
+                        {String(i + 1).padStart(2, '0')}
+                      </span>
+                      <span className="text-[11px] font-medium text-slate-600">
+                        {r.doc.folder ? `${r.doc.folder} / ` : ''}
+                        <span className="text-slate-800">{r.doc.title}</span>
+                      </span>
+                    </div>
+                    <blockquote
+                      className="text-[15px] text-slate-800 leading-relaxed border-l-2 border-slate-300 pl-3 ml-8 whitespace-pre-wrap break-words"
+                      style={{ fontFamily: 'Georgia, Cambria, "Times New Roman", serif' }}
+                    >
+                      {r.span}
+                    </blockquote>
+                    {showNotes && r.annotation.note && (
+                      <div className="mt-2 ml-8 text-[12px] text-amber-900 bg-amber-50 border-l-2 border-amber-300 pl-3 py-1.5 leading-snug whitespace-pre-wrap">
+                        {r.annotation.note}
+                      </div>
+                    )}
+                    {showMeta && Object.keys(r.doc.metadata).length > 0 && (
+                      <div className="mt-2 ml-8 flex flex-wrap gap-x-3 gap-y-0.5 text-[10px] text-slate-500 font-mono">
+                        {Object.entries(r.doc.metadata)
+                          .filter(([_, v]) => v !== null && v !== undefined && v !== '')
+                          .map(([k, v]) => (
+                            <span key={k}>
+                              <span className="text-slate-400">{k}:</span>{' '}
+                              {String(v)}
+                            </span>
+                          ))}
+                      </div>
+                    )}
+                  </li>
+                ))}
+              </ol>
+            )}
+          </section>
+        );
+      })}
     </div>
   );
 }

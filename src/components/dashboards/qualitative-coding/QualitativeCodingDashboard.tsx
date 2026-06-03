@@ -1181,6 +1181,16 @@ export default function QualitativeCodingDashboard() {
                   exploreCoOccurrenceCollapsed: !s.exploreCoOccurrenceCollapsed,
                 }))
               }
+              viewMode={state.exploreViewMode ?? 'flat'}
+              showMeta={state.exploreShowMeta !== false}
+              showNotes={state.exploreShowNotes !== false}
+              onSetViewMode={(m) => setState((s) => ({ ...s, exploreViewMode: m }))}
+              onToggleShowMeta={() =>
+                setState((s) => ({ ...s, exploreShowMeta: !(s.exploreShowMeta !== false) }))
+              }
+              onToggleShowNotes={() =>
+                setState((s) => ({ ...s, exploreShowNotes: !(s.exploreShowNotes !== false) }))
+              }
               onJumpToAnnotation={jumpToAnnotation}
             />
           ) : openDocs.length > 0 ? (

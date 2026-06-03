@@ -102,6 +102,9 @@ export type AppState = {
   deletedProjectIds?: string[];
   openDocIds?: string[];
   collapsedCodeIds?: string[];
+  exploreViewMode?: 'flat' | 'by-code';
+  exploreShowMeta?: boolean;
+  exploreShowNotes?: boolean;
 };
 
 export const PALETTE = [
