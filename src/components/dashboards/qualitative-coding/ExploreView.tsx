@@ -178,16 +178,22 @@ export default function ExploreView({
 
   const coOccurrence = useMemo(() => {
     if (selectedCodeIds.size === 0) return null;
-    return coOccurringCodes(projects, selectedCodeIds, {
-      folder: folderFilter ? folderFilter : undefined,
-      metadataFilters: metaFilters,
-      docCharsFilter,
-      docWordsFilter,
-      docAnnotsFilter,
-    });
+    return coOccurringCodes(
+      projects,
+      selectedCodeIds,
+      {
+        folder: folderFilter ? folderFilter : undefined,
+        metadataFilters: metaFilters,
+        docCharsFilter,
+        docWordsFilter,
+        docAnnotsFilter,
+      },
+      codeFilterMode,
+    );
   }, [
     projects,
     selectedCodeIds,
+    codeFilterMode,
     folderFilter,
     metaFilters,
     docCharsFilter,
@@ -605,7 +611,9 @@ export default function ExploreView({
                 {coOccurrence.focalDocCount === 1 ? 's' : ''}{' '}
                 {selectedCodeIds.size === 1
                   ? 'the selected code'
-                  : `all ${selectedCodeIds.size} selected codes`}
+                  : codeFilterMode === 'and'
+                    ? `all ${selectedCodeIds.size} selected codes`
+                    : `any of the ${selectedCodeIds.size} selected codes`}
                 . Other codes ranked by how many of those docs they also show up in:
               </p>
               {coOccurrence.results.length === 0 ? (

@@ -543,6 +543,10 @@ export function coOccurringCodes(
   projects: Project[],
   focalCodeIds: Set<string>,
   filter?: CoOccurrenceFilter,
+  // 'and' = focal docs must contain ALL selected codes (intersection).
+  // 'or'  = focal docs contain ANY selected code (union). Defaults to 'and'
+  // to preserve the original behavior.
+  mode: CodeFilterMode = 'and',
 ): {
   focalDocCount: number;
   results: CoOccurrenceResult[];
@@ -603,7 +607,10 @@ export function coOccurringCodes(
     }
     const focalDocs = new Set<string>();
     for (const [docId, hit] of groupsHitByDoc) {
-      if (hit.size === groups.length) focalDocs.add(docId);
+      // AND: must hit every group. OR: hitting at least one group is enough.
+      if (mode === 'and' ? hit.size === groups.length : hit.size > 0) {
+        focalDocs.add(docId);
+      }
     }
     if (focalDocs.size === 0) continue;
     focalDocCount += focalDocs.size;
