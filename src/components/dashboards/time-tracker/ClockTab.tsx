@@ -293,24 +293,16 @@ function ClockOutRating({ session, allSessions, onSave, onApplyToOther, onSkip, 
   const [activity1Pct, setActivity1Pct] = useState(session.activity1Pct);
   const [activity2Pct, setActivity2Pct] = useState(session.activity2Pct);
 
-  // Other closed sessions in the same category from today or yesterday —
-  // candidates to copy these ratings to (for days with multiple clock-ins
-  // that should share one rating).
+  // Other closed sessions in the same category from the past 7 days —
+  // candidates to copy these ratings to (for days with broken-up clock-ins
+  // that should share one rating, or for catching up on past days).
   const candidates = (() => {
-    const now = Date.now();
-    const today = new Date(now);
-    const todayK = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
-    const y = new Date(now - 86_400_000);
-    const yesterdayK = `${y.getFullYear()}-${String(y.getMonth() + 1).padStart(2, '0')}-${String(y.getDate()).padStart(2, '0')}`;
+    const cutoff = Date.now() - 7 * 86_400_000;
     return allSessions
       .filter(s => s.id !== session.id
                 && s.category === session.category
-                && s.clock_out !== null)
-      .filter(s => {
-        const d = new Date(Date.parse(s.clock_in));
-        const k = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-        return k === todayK || k === yesterdayK;
-      })
+                && s.clock_out !== null
+                && Date.parse(s.clock_in) >= cutoff)
       .sort((a, b) => Date.parse(b.clock_in) - Date.parse(a.clock_in));
   })();
   const [applyTo, setApplyTo] = useState<Set<string>>(new Set());
@@ -408,7 +400,7 @@ export function ApplyToOtherSessions({ candidates, applyTo, toggleApply }: {
              className="border-t border-rule-soft pt-3">
       <summary className="font-mono text-[10px] uppercase tracking-[0.12em] text-muted
                           cursor-pointer hover:text-accent transition-colors">
-        Apply these ratings to other {candidates.length === 1 ? 'session' : 'sessions'} today / yesterday
+        Apply these ratings to other {candidates.length === 1 ? 'session' : 'sessions'} (past 7 days)
         {n > 0 && <span className="text-accent ml-2">({n} selected)</span>}
       </summary>
       <div className="mt-2 space-y-1.5">
