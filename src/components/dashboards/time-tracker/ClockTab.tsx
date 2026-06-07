@@ -323,18 +323,17 @@ function ClockOutRating({ session, allSessions, onSave, onApplyToOther, onSkip, 
 
   const handleSave = () => {
     const ts = new Date().toISOString();
-    const ratings = { mood, productivity, enjoyment,
-                      activity1, activity2, activity1Pct, activity2Pct };
-    onSave({
-      ...session, ...ratings,
+    const patch = {
+      mood, productivity, enjoyment,
+      activity1, activity2, activity1Pct, activity2Pct,
       notes: notes.trim() || undefined,
-      updated_at: ts,
-    });
-    // Copy ratings (NOT notes) to any selected same-category sessions.
+    };
+    onSave({ ...session, ...patch, updated_at: ts });
+    // Copy the same ratings + notes to any selected same-category sessions.
     for (const id of applyTo) {
       const c = candidates.find(x => x.id === id);
       if (!c) continue;
-      onApplyToOther({ ...c, ...ratings, updated_at: ts });
+      onApplyToOther({ ...c, ...patch, updated_at: ts });
     }
   };
 
@@ -438,8 +437,7 @@ export function ApplyToOtherSessions({ candidates, applyTo, toggleApply }: {
         })}
       </div>
       <p className="font-serif text-[11px] text-muted m-0 mt-2">
-        Copies mood / productivity / enjoyment + activity tags to checked sessions on Save.
-        Notes stay per-session.
+        Copies mood / productivity / enjoyment + activity tags + notes to checked sessions on Save.
       </p>
     </details>
   );

@@ -643,15 +643,18 @@ function SessionForm({
       setErr('Clock-out must be after clock-in.'); return;
     }
     const nowIso = new Date(now).toISOString();
-    // Copy the rating+activity fields to any candidates the user checked.
-    // Notes stay per session.
+    // Copy the rating + activity + notes fields to any candidates the user
+    // checked. Each candidate gets the same patch applied.
     if (applyTo.size > 0) {
-      const ratings = { mood, productivity, enjoyment,
-                        activity1, activity2, activity1Pct, activity2Pct };
+      const patch = {
+        mood, productivity, enjoyment,
+        activity1, activity2, activity1Pct, activity2Pct,
+        notes: notes.trim() || undefined,
+      };
       for (const id of applyTo) {
         const c = candidates.find(x => x.id === id);
         if (!c) continue;
-        onApplyToOther({ ...c, ...ratings, updated_at: nowIso });
+        onApplyToOther({ ...c, ...patch, updated_at: nowIso });
       }
     }
     onSave({
