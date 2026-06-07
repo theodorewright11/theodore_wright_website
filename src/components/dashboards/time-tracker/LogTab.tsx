@@ -605,21 +605,21 @@ function SessionForm({
   const [laps, setLaps] = useState<Lap[]>(session?.laps ?? []);
   const [err, setErr] = useState('');
   // Apply-these-ratings-to-other-sessions selection, anchored to the day of
-  // the session being edited, going back 6 more days (7-day window total).
-  // Only meaningful in edit mode — for a new "Add session" form we don't
-  // yet have an anchor day.
+  // the session being edited (and the day before). Only meaningful in edit
+  // mode — for a new "Add session" form we don't yet have an anchor day.
   const [applyTo, setApplyTo] = useState<Set<string>>(new Set());
   const candidates = useMemo(() => {
     if (!session) return [];
     const baseMs = Date.parse(session.clock_in);
     if (!Number.isFinite(baseMs)) return [];
-    const cutoff = baseMs - 7 * 86_400_000;
+    const baseKey = dayKey(baseMs);
+    const prevKey = dayKey(baseMs - 86_400_000);
     return allSessions
       .filter(s => s.id !== session.id
                 && s.category === category
                 && s.clock_out !== null
-                && Date.parse(s.clock_in) >= cutoff
-                && Date.parse(s.clock_in) <= baseMs + 86_400_000)
+                && (dayKey(Date.parse(s.clock_in)) === baseKey
+                  || dayKey(Date.parse(s.clock_in)) === prevKey))
       .sort((a, b) => Date.parse(b.clock_in) - Date.parse(a.clock_in));
   }, [session, allSessions, category]);
   const toggleApply = (id: string) => setApplyTo(prev => {

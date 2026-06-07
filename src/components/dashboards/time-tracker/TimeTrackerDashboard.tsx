@@ -323,6 +323,20 @@ export default function TimeTrackerDashboard() {
     push('sessions', next);
   };
 
+  // Functional variant: each call reads the *current* sessions (not the
+  // render-time closure). Required when multiple updates fire back-to-back
+  // in the same tick — e.g. the rating panel applying the same ratings to
+  // several past sessions. Without this, each call's `state.sessions.map`
+  // started from the same stale snapshot and the last write wiped the
+  // earlier ones.
+  const updateSessions = (fn: (curr: Session[]) => Session[]) => {
+    setState(curr => {
+      const next = fn(curr.sessions);
+      push('sessions', next);
+      return { ...curr, sessions: next };
+    });
+  };
+
   // Pomodoro coupling for settings.autoRunWhenClockedIn: the focus timer
   // tracks the clocked-in-for-real state. Functional updaters so concurrent
   // session mutations can't read a stale `timers`.
@@ -438,10 +452,11 @@ export default function TimeTrackerDashboard() {
   };
 
   const onUpdateSession = (u: Session) =>
-    setSessions(state.sessions.map(s => s.id === u.id ? u : s));
-  const onAddSession = (u: Session) => setSessions([...state.sessions, u]);
+    updateSessions(curr => curr.map(s => s.id === u.id ? u : s));
+  const onAddSession = (u: Session) =>
+    updateSessions(curr => [...curr, u]);
   const onDeleteSession = (id: string) =>
-    setSessions(state.sessions.filter(s => s.id !== id));
+    updateSessions(curr => curr.filter(s => s.id !== id));
 
   const onAddCategory = (name: string) => {
     if (state.categories.includes(name)) return;
