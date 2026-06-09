@@ -1332,6 +1332,32 @@ export default function QualitativeCodingDashboard() {
               onToggleShowFullDoc={() =>
                 setState((s) => ({ ...s, exploreShowFullDoc: !s.exploreShowFullDoc }))
               }
+              onLinkAnnotationToTheme={(projectId, themeId, annotationId, weight) => {
+                // Must run against the project that owns the theme — if
+                // Explore is showing multiple projects, switch active first
+                // so the existing CRUD callback writes to the right one.
+                if (projectId !== state.activeProjectId) {
+                  setState((s) => ({ ...s, activeProjectId: projectId }));
+                  // schedule the link after activeProject changes
+                  setTimeout(
+                    () => linkAnnotationToTheme(themeId, annotationId, weight),
+                    0,
+                  );
+                } else {
+                  linkAnnotationToTheme(themeId, annotationId, weight);
+                }
+              }}
+              onUnlinkAnnotationFromTheme={(projectId, themeId, annotationId) => {
+                if (projectId !== state.activeProjectId) {
+                  setState((s) => ({ ...s, activeProjectId: projectId }));
+                  setTimeout(
+                    () => unlinkAnnotationFromTheme(themeId, annotationId),
+                    0,
+                  );
+                } else {
+                  unlinkAnnotationFromTheme(themeId, annotationId);
+                }
+              }}
               onJumpToAnnotation={jumpToAnnotation}
             />
           ) : view === 'themes' ? (
@@ -1439,8 +1465,9 @@ export default function QualitativeCodingDashboard() {
                         onAddRangeToAnnotation={addRangeToAnnotation}
                         onRemoveRangeFromAnnotation={removeRangeFromAnnotation}
                         onSendAnnotationToNote={(annData) => sendAnnotationToNote(d, annData)}
-                        themes={(activeProject.themes ?? []).map((t) => ({ id: t.id, name: t.name }))}
+                        themes={activeProject.themes ?? []}
                         onLinkAnnotationToTheme={linkAnnotationToTheme}
+                        onUnlinkAnnotationFromTheme={unlinkAnnotationFromTheme}
                         canSendToNote={openDocs.some((o) => o.kind === 'note')}
                         onCreateCode={(name, parentId, color) =>
                           addCode(parentId ?? null, name, color)

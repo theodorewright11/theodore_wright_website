@@ -12,6 +12,7 @@ import {
   type SortKey,
 } from './compute';
 import HierarchicalCodePicker from './HierarchicalCodePicker';
+import ThemeMembershipEditor from './ThemeMembershipEditor';
 import type { MetadataField, Project } from './types';
 
 export type ExploreFilterState = {
@@ -63,6 +64,20 @@ type Props = {
   onToggleShowMeta?: () => void;
   onToggleShowNotes?: () => void;
   onToggleShowFullDoc?: () => void;
+  // Theme membership editing — when present, each annotation card shows the
+  // shared <ThemeMembershipEditor>. The themes arg is per-project so that
+  // multi-project Explore views still attach to the right project's themes.
+  onLinkAnnotationToTheme?: (
+    projectId: string,
+    themeId: string,
+    annotationId: string,
+    weight: 'core' | 'supporting',
+  ) => void;
+  onUnlinkAnnotationFromTheme?: (
+    projectId: string,
+    themeId: string,
+    annotationId: string,
+  ) => void;
   onJumpToAnnotation: (projectId: string, docId: string, annotationId: string) => void;
 };
 
@@ -90,6 +105,8 @@ export default function ExploreView({
   onToggleShowMeta,
   onToggleShowNotes,
   onToggleShowFullDoc,
+  onLinkAnnotationToTheme,
+  onUnlinkAnnotationFromTheme,
   onJumpToAnnotation,
 }: Props) {
   const {
@@ -800,10 +817,13 @@ export default function ExploreView({
           ) : viewMode === 'by-code' ? (
             <ByCodeView
               rows={rows}
+              projects={projects}
               showProjectChips={showProjectChips}
               showMeta={showMeta}
               showNotes={showNotes}
               showFullDoc={showFullDoc}
+              onLinkAnnotationToTheme={onLinkAnnotationToTheme}
+              onUnlinkAnnotationFromTheme={onUnlinkAnnotationFromTheme}
               onJump={onJumpToAnnotation}
             />
           ) : (
@@ -857,6 +877,36 @@ export default function ExploreView({
                         ))}
                     </div>
                   )}
+                  {onLinkAnnotationToTheme && onUnlinkAnnotationFromTheme && (() => {
+                    const proj = projects.find((p) => p.id === r.projectId);
+                    const themes = proj?.themes ?? [];
+                    if (themes.length === 0) return null;
+                    const m = new Map<string, 'core' | 'supporting'>();
+                    for (const t of themes) {
+                      const link = t.annotationLinks.find(
+                        (l) => l.annotationId === r.annotation.id,
+                      );
+                      if (link) m.set(t.id, link.weight);
+                    }
+                    return (
+                      <div
+                        className="mt-2"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <ThemeMembershipEditor
+                          themes={themes}
+                          currentLinks={m}
+                          onLink={(themeId, w) =>
+                            onLinkAnnotationToTheme(r.projectId, themeId, r.annotation.id, w)
+                          }
+                          onUnlink={(themeId) =>
+                            onUnlinkAnnotationFromTheme(r.projectId, themeId, r.annotation.id)
+                          }
+                          compact
+                        />
+                      </div>
+                    );
+                  })()}
                 </li>
               ))}
             </ul>
@@ -1085,17 +1135,32 @@ function StatCard({
 // with all quotes underneath. Sections are collapsible.
 function ByCodeView({
   rows,
+  projects,
   showProjectChips,
   showMeta,
   showNotes,
   showFullDoc,
+  onLinkAnnotationToTheme,
+  onUnlinkAnnotationFromTheme,
   onJump,
 }: {
   rows: ExploreRow[];
+  projects: Project[];
   showProjectChips: boolean;
   showMeta: boolean;
   showNotes: boolean;
   showFullDoc: boolean;
+  onLinkAnnotationToTheme?: (
+    projectId: string,
+    themeId: string,
+    annotationId: string,
+    weight: 'core' | 'supporting',
+  ) => void;
+  onUnlinkAnnotationFromTheme?: (
+    projectId: string,
+    themeId: string,
+    annotationId: string,
+  ) => void;
   onJump: (projectId: string, docId: string, annotationId: string) => void;
 }) {
   type Group = {
@@ -1210,6 +1275,36 @@ function ByCodeView({
                           ))}
                       </div>
                     )}
+                    {onLinkAnnotationToTheme && onUnlinkAnnotationFromTheme && (() => {
+                      const proj = projects.find((p) => p.id === r.projectId);
+                      const themes = proj?.themes ?? [];
+                      if (themes.length === 0) return null;
+                      const m = new Map<string, 'core' | 'supporting'>();
+                      for (const t of themes) {
+                        const link = t.annotationLinks.find(
+                          (l) => l.annotationId === r.annotation.id,
+                        );
+                        if (link) m.set(t.id, link.weight);
+                      }
+                      return (
+                        <div
+                          className="mt-2 ml-8"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <ThemeMembershipEditor
+                            themes={themes}
+                            currentLinks={m}
+                            onLink={(themeId, w) =>
+                              onLinkAnnotationToTheme(r.projectId, themeId, r.annotation.id, w)
+                            }
+                            onUnlink={(themeId) =>
+                              onUnlinkAnnotationFromTheme(r.projectId, themeId, r.annotation.id)
+                            }
+                            compact
+                          />
+                        </div>
+                      );
+                    })()}
                   </li>
                 ))}
               </ol>
