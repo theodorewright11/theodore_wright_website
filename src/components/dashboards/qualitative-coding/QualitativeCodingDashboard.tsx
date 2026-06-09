@@ -1568,6 +1568,9 @@ export default function QualitativeCodingDashboard() {
                         onHideThemeAddInPopover={() =>
                           setState((s) => ({ ...s, popoverShowThemeAdd: false }))
                         }
+                        onShowThemeAddInPopover={() =>
+                          setState((s) => ({ ...s, popoverShowThemeAdd: true }))
+                        }
                         onLinkAnnotationToTheme={linkAnnotationToTheme}
                         onUnlinkAnnotationFromTheme={unlinkAnnotationFromTheme}
                         onAddThemeFromSelection={(themeId, selStart, selEnd, weight) =>

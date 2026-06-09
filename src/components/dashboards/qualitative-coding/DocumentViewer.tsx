@@ -79,6 +79,7 @@ type Props = {
   ) => { linkedCount: number; uncodedAdded: boolean };
   showThemeAddInPopover?: boolean;
   onHideThemeAddInPopover?: () => void;
+  onShowThemeAddInPopover?: () => void;
   canSendToNote?: boolean;
   qcLinkOptions?: QcLinkOptions;
   onCreateCode?: (
@@ -138,6 +139,7 @@ export default function DocumentViewer({
   onAddThemeFromSelection,
   showThemeAddInPopover = true,
   onHideThemeAddInPopover,
+  onShowThemeAddInPopover,
   canSendToNote,
   qcLinkOptions,
   onCreateCode,
@@ -829,6 +831,7 @@ export default function DocumentViewer({
           themes={themesProp}
           showThemeAdd={showThemeAddInPopover}
           onHideThemeAdd={onHideThemeAddInPopover}
+          onShowThemeAdd={onShowThemeAddInPopover}
           onAddToTheme={
             onAddThemeFromSelection
               ? (themeId, weight) =>
@@ -1121,6 +1124,7 @@ type PopoverProps = {
   onAfterThemeAdd?: () => void;
   showThemeAdd?: boolean;
   onHideThemeAdd?: () => void;
+  onShowThemeAdd?: () => void;
 };
 
 const SelectionPopover = forwardRef<HTMLDivElement, PopoverProps>(function SelectionPopover(
@@ -1141,6 +1145,7 @@ const SelectionPopover = forwardRef<HTMLDivElement, PopoverProps>(function Selec
     onAfterThemeAdd,
     showThemeAdd = true,
     onHideThemeAdd,
+    onShowThemeAdd,
   },
   ref,
 ) {
@@ -1306,6 +1311,18 @@ const SelectionPopover = forwardRef<HTMLDivElement, PopoverProps>(function Selec
             onAfterAdd={onAfterThemeAdd}
             onHide={onHideThemeAdd}
           />
+        )}
+        {!showThemeAdd && popoverThemes && popoverThemes.length > 0 && onShowThemeAdd && (
+          <div className="bg-violet-50/60 border-b border-violet-100 px-3 py-1.5 flex items-center justify-between text-[11px]">
+            <span className="text-violet-700">Theme picker hidden</span>
+            <button
+              type="button"
+              onClick={onShowThemeAdd}
+              className="text-violet-700 hover:text-violet-900 font-semibold underline"
+            >
+              show
+            </button>
+          </div>
         )}
         {focusedAnnotation && onAddRangeToFocused && (
           <div className="bg-blue-50 border-b border-blue-100">
