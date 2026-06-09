@@ -340,10 +340,13 @@ function ThemeDetail({
   const [codePickerOpen, setCodePickerOpen] = useState(false);
   const [annPickerOpen, setAnnPickerOpen] = useState(false);
   // Display toggles for the Evidence section.
-  const [evViewMode, setEvViewMode] = useState<'flat' | 'by-code'>('by-code');
+  const [evViewMode, setEvViewMode] = useState<'flat' | 'by-code' | 'doc'>('by-code');
   const [evShowFullDoc, setEvShowFullDoc] = useState(false);
   const [evShowNotes, setEvShowNotes] = useState(true);
   const [evShowMeta, setEvShowMeta] = useState(false);
+  // Doc-view extras
+  const [docCodeMargin, setDocCodeMargin] = useState<'off' | 'on'>('on');
+  const [docCodeLevel, setDocCodeLevel] = useState<'all' | 'top' | 'mid' | 'leaf'>('all');
 
   // Build the evidence list: direct links (with their weight) + auto-include
   // annotations from includeCodeIds (as 'supporting' unless they're also in
@@ -541,29 +544,53 @@ function ThemeDetail({
           </div>
           <div className="flex items-center gap-1.5 flex-wrap">
             <div className="inline-flex rounded-md border border-slate-300 overflow-hidden text-[11px]">
-              <button
-                type="button"
-                onClick={() => setEvViewMode('flat')}
-                className={`px-2 py-1 font-semibold ${
-                  evViewMode === 'flat'
-                    ? 'bg-slate-900 text-white'
-                    : 'text-slate-600 hover:bg-slate-100 border-r border-slate-300'
-                }`}
-              >
-                Flat
-              </button>
-              <button
-                type="button"
-                onClick={() => setEvViewMode('by-code')}
-                className={`px-2 py-1 font-semibold ${
-                  evViewMode === 'by-code'
-                    ? 'bg-slate-900 text-white'
-                    : 'text-slate-600 hover:bg-slate-100'
-                }`}
-              >
-                By code
-              </button>
+              {(['flat', 'by-code', 'doc'] as const).map((m, i) => (
+                <button
+                  key={m}
+                  type="button"
+                  onClick={() => setEvViewMode(m)}
+                  className={`px-2 py-1 font-semibold capitalize ${
+                    evViewMode === m
+                      ? 'bg-slate-900 text-white'
+                      : `text-slate-600 hover:bg-slate-100 ${i > 0 ? 'border-l border-slate-300' : ''}`
+                  }`}
+                >
+                  {m === 'by-code' ? 'By code' : m === 'doc' ? 'Doc' : 'Flat'}
+                </button>
+              ))}
             </div>
+            {evViewMode === 'doc' && (
+              <>
+                <button
+                  type="button"
+                  onClick={() => setDocCodeMargin((v) => (v === 'on' ? 'off' : 'on'))}
+                  className={`px-2 py-1 text-[11px] font-semibold rounded-md border ${
+                    docCodeMargin === 'on'
+                      ? 'border-violet-300 bg-violet-50 text-violet-800'
+                      : 'border-slate-300 text-slate-500 hover:bg-slate-100'
+                  }`}
+                >
+                  Code margin {docCodeMargin}
+                </button>
+                <div className="inline-flex rounded-md border border-slate-300 overflow-hidden text-[11px]">
+                  {(['all', 'top', 'mid', 'leaf'] as const).map((lvl, i) => (
+                    <button
+                      key={lvl}
+                      type="button"
+                      onClick={() => setDocCodeLevel(lvl)}
+                      className={`px-2 py-1 font-semibold capitalize ${
+                        docCodeLevel === lvl
+                          ? 'bg-slate-900 text-white'
+                          : `text-slate-600 hover:bg-slate-100 ${i > 0 ? 'border-l border-slate-300' : ''}`
+                      }`}
+                      title={`show only ${lvl}-level codes in the margin`}
+                    >
+                      {lvl}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
             <button
               type="button"
               onClick={() => setEvShowFullDoc((v) => !v)}
@@ -621,6 +648,13 @@ function ThemeDetail({
           <div className="text-[13px] text-slate-400 italic border border-dashed border-slate-200 rounded-lg p-8 text-center">
             No evidence yet. From the doc viewer or Explore, send annotations into this theme — or auto-include a code above.
           </div>
+        ) : evViewMode === 'doc' ? (
+          <DocsView
+            evidence={evidence}
+            project={project}
+            codeMargin={docCodeMargin}
+            codeLevel={docCodeLevel}
+          />
         ) : evViewMode === 'flat' ? (
           <ul className="space-y-3">
             {evidence.map(({ annotation: a, weight, source }) => (
@@ -1080,4 +1114,258 @@ function hexToRgba(hex: string, alpha: number): string {
   const g = parseInt(h.slice(2, 4), 16);
   const b = parseInt(h.slice(4, 6), 16);
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
+type EvidenceItem = {
+  annotation: Annotation;
+  weight: 'core' | 'supporting';
+  source: 'direct' | 'auto';
+};
+
+// Doc-grouped view of theme evidence. For each document with theme-linked
+// annotations, render the full doc text with theme spans highlighted in
+// place (adjacent ranges flow as one continuous block). An optional side
+// margin lists every code that covers each highlighted block — including
+// codes from OTHER annotations on the same doc that share the highlighted
+// text. The level filter restricts margin codes to top-level / mid / leaves.
+function DocsView({
+  evidence,
+  project,
+  codeMargin,
+  codeLevel,
+}: {
+  evidence: EvidenceItem[];
+  project: Project;
+  codeMargin: 'on' | 'off';
+  codeLevel: 'all' | 'top' | 'mid' | 'leaf';
+}) {
+  // Group evidence by docId; only docs that actually exist.
+  const docs = useMemo(() => {
+    const byDoc = new Map<string, EvidenceItem[]>();
+    for (const e of evidence) {
+      const arr = byDoc.get(e.annotation.docId) ?? [];
+      arr.push(e);
+      byDoc.set(e.annotation.docId, arr);
+    }
+    return project.documents
+      .filter((d) => byDoc.has(d.id))
+      .map((d) => ({ doc: d, items: byDoc.get(d.id)! }))
+      .sort((a, b) =>
+        (a.doc.folder ?? '').localeCompare(b.doc.folder ?? '') ||
+        a.doc.title.localeCompare(b.doc.title),
+      );
+  }, [evidence, project.documents]);
+
+  // Cache for which codes are leaves (no child in project.codes references this id as parent).
+  const codeLevelOf = useMemo(() => {
+    const isParent = new Set<string>();
+    for (const c of project.codes) {
+      for (const pid of c.parentIds) isParent.add(pid);
+    }
+    return (codeId: string): 'top' | 'mid' | 'leaf' => {
+      const c = project.codes.find((x) => x.id === codeId);
+      if (!c) return 'leaf';
+      const isTop = c.parentIds.length === 0;
+      const isLeaf = !isParent.has(codeId);
+      if (isTop && isLeaf) return 'top'; // singleton — treat as top
+      if (isTop) return 'top';
+      if (isLeaf) return 'leaf';
+      return 'mid';
+    };
+  }, [project.codes]);
+
+  const passLevel = (codeId: string) =>
+    codeLevel === 'all' ? true : codeLevelOf(codeId) === codeLevel;
+
+  return (
+    <div className="space-y-6">
+      {docs.map(({ doc, items }) => (
+        <DocBlock
+          key={doc.id}
+          doc={doc}
+          items={items}
+          project={project}
+          codeMargin={codeMargin}
+          passLevel={passLevel}
+        />
+      ))}
+    </div>
+  );
+}
+
+// Render one doc: the full text with merged theme ranges highlighted, plus
+// (optionally) a side margin with the codes that cover each highlighted band.
+function DocBlock({
+  doc,
+  items,
+  project,
+  codeMargin,
+  passLevel,
+}: {
+  doc: Project['documents'][number];
+  items: EvidenceItem[];
+  project: Project;
+  codeMargin: 'on' | 'off';
+  passLevel: (codeId: string) => boolean;
+}) {
+  // Step 1: merge all theme ranges into non-overlapping bands (adjacent ranges
+  // become continuous so two annotations one after the other read as one).
+  type Band = { start: number; end: number; items: EvidenceItem[] };
+  const bands: Band[] = useMemo(() => {
+    type R = { start: number; end: number; item: EvidenceItem };
+    const flat: R[] = [];
+    for (const it of items) {
+      for (const r of it.annotation.ranges ?? []) {
+        flat.push({ start: r.start, end: r.end, item: it });
+      }
+    }
+    flat.sort((a, b) => a.start - b.start || a.end - b.end);
+    const out: Band[] = [];
+    for (const r of flat) {
+      const last = out[out.length - 1];
+      // Merge if overlapping OR touching (adjacent reads as one continuous span).
+      if (last && r.start <= last.end) {
+        last.end = Math.max(last.end, r.end);
+        if (!last.items.includes(r.item)) last.items.push(r.item);
+      } else {
+        out.push({ start: r.start, end: r.end, items: [r.item] });
+      }
+    }
+    return out;
+  }, [items]);
+
+  // Step 2: for each band, find every annotation (in the whole doc) whose
+  // ranges overlap the band — that's the source for the side margin.
+  // Theme-linked annotations are highlighted differently in the margin too.
+  const themeAnnIds = useMemo(
+    () => new Set(items.map((i) => i.annotation.id)),
+    [items],
+  );
+  const allDocAnns = useMemo(
+    () => project.annotations.filter((a) => a.docId === doc.id),
+    [project.annotations, doc.id],
+  );
+  const bandMeta = bands.map((band) => {
+    // Codes covering this band (from every annotation, deduped).
+    const codeSet = new Set<string>();
+    const inThemeCodes = new Set<string>();
+    for (const a of allDocAnns) {
+      const overlaps = (a.ranges ?? []).some(
+        (r) => r.start < band.end && r.end > band.start,
+      );
+      if (!overlaps) continue;
+      if (!passLevel(a.codeId)) continue;
+      codeSet.add(a.codeId);
+      if (themeAnnIds.has(a.id)) inThemeCodes.add(a.codeId);
+    }
+    return { codes: [...codeSet], inTheme: inThemeCodes };
+  });
+
+  // Pick a representative color for each band (first theme item's code).
+  const bandColors = bands.map(
+    (b) => resolveColor(project.codes, b.items[0].annotation.codeId),
+  );
+
+  // Render the doc text split by band boundaries, with highlighted bands.
+  const pieces: React.ReactNode[] = [];
+  let cursor = 0;
+  let key = 0;
+  bands.forEach((band, i) => {
+    if (band.start > cursor) {
+      pieces.push(<span key={key++}>{doc.text.slice(cursor, band.start)}</span>);
+    }
+    const color = bandColors[i];
+    pieces.push(
+      <mark
+        key={key++}
+        className="rounded-sm px-0.5"
+        style={{
+          backgroundColor: hexToRgba(color, 0.32),
+          boxShadow: `inset 0 -2px 0 ${color}`,
+          color: '#0f172a',
+        }}
+        title={
+          band.items.length > 1
+            ? `${band.items.length} annotations merged`
+            : undefined
+        }
+      >
+        {doc.text.slice(band.start, band.end)}
+      </mark>,
+    );
+    cursor = band.end;
+  });
+  if (cursor < doc.text.length) {
+    pieces.push(<span key={key++}>{doc.text.slice(cursor)}</span>);
+  }
+
+  return (
+    <article className="border border-slate-200 rounded-lg bg-white overflow-hidden">
+      <header className="px-4 py-2 border-b border-slate-100 bg-slate-50 sticky top-0 z-10">
+        <div className="text-[13px] font-bold text-slate-800">{doc.title}</div>
+        <div className="text-[10px] text-slate-500 mt-0.5">
+          {doc.folder ? `${doc.folder} · ` : ''}
+          {items.length} annotation{items.length === 1 ? '' : 's'} · {bands.length} highlight
+          {bands.length === 1 ? '' : 's'}
+        </div>
+      </header>
+      <div className="flex gap-4 px-4 py-3">
+        <div className="flex-1 min-w-0">
+          <div
+            className="text-[14px] text-slate-800 leading-relaxed whitespace-pre-wrap break-words"
+            style={{ fontFamily: 'Georgia, Cambria, "Times New Roman", serif' }}
+          >
+            {pieces}
+          </div>
+        </div>
+        {codeMargin === 'on' && (
+          <aside className="w-[200px] flex-shrink-0 border-l border-slate-100 pl-3 space-y-3">
+            {bands.map((b, i) => {
+              const meta = bandMeta[i];
+              return (
+                <div key={i} className="text-[10px]">
+                  <div className="text-slate-400 font-mono mb-1">
+                    {b.start}–{b.end}
+                  </div>
+                  {meta.codes.length === 0 ? (
+                    <div className="italic text-slate-300">
+                      (no codes at this level)
+                    </div>
+                  ) : (
+                    <div className="flex flex-wrap gap-1">
+                      {meta.codes.map((cid) => (
+                        <span
+                          key={cid}
+                          className={`inline-flex items-center gap-0.5 px-1 py-0.5 rounded text-[10px] leading-snug ${
+                            meta.inTheme.has(cid)
+                              ? 'bg-amber-100 text-amber-900 ring-1 ring-amber-300'
+                              : 'bg-slate-100 text-slate-700'
+                          }`}
+                          title={
+                            meta.inTheme.has(cid)
+                              ? 'linked to this theme via an annotation here'
+                              : 'present on this text but not in the theme'
+                          }
+                        >
+                          <span
+                            className="w-1.5 h-1.5 rounded-sm flex-shrink-0"
+                            style={{
+                              background: resolveColor(project.codes, cid),
+                            }}
+                          />
+                          <span className="break-words">
+                            {project.codes.find((c) => c.id === cid)?.name ?? cid}
+                          </span>
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </aside>
+        )}
+      </div>
+    </article>
+  );
 }
