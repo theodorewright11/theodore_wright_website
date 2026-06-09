@@ -11,6 +11,7 @@ import {
   segmentText,
   type LinesMode,
 } from './compute';
+import AnnotationEditModal from './AnnotationEditModal';
 import CodeEditModal from './CodeEditModal';
 import ColorPicker from './ColorPicker';
 import { MarkdownEditor, type QcLinkOptions } from './Markdown';
@@ -161,6 +162,7 @@ export default function DocumentViewer({
   const [focusedAnnotationId, setFocusedAnnotationId] = useState<string | null>(null);
   const [notesOpen, setNotesOpen] = useState(false);
   const [editingCodeId, setEditingCodeId] = useState<string | null>(null);
+  const [editingAnnotationId, setEditingAnnotationId] = useState<string | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const popoverRef = useRef<HTMLDivElement>(null);
   const bodyScrollRef = useRef<HTMLDivElement>(null);
@@ -636,19 +638,17 @@ export default function DocumentViewer({
                               >
                                 {path}
                               </button>
-                              {onUpdateCode && (
-                                <button
-                                  type="button"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setEditingCodeId(a.codeId);
-                                  }}
-                                  title="edit this code"
-                                  className="opacity-0 group-hover/chip:opacity-100 text-[10px] text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded w-4 h-4 flex items-center justify-center transition-opacity self-center"
-                                >
-                                  ✎
-                                </button>
-                              )}
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setEditingAnnotationId(a.id);
+                                }}
+                                title="edit this annotation (accuracy, note, themes)"
+                                className="opacity-0 group-hover/chip:opacity-100 text-[10px] text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded w-4 h-4 flex items-center justify-center transition-opacity self-center"
+                              >
+                                ✎
+                              </button>
                               <button
                                 type="button"
                                 onClick={(e) => {
@@ -710,7 +710,7 @@ export default function DocumentViewer({
         onLinkToTheme={onLinkAnnotationToTheme}
         onUnlinkFromTheme={onUnlinkAnnotationFromTheme}
         onRemoveRange={onRemoveRangeFromAnnotation}
-        onEditCode={onUpdateCode ? (codeId) => setEditingCodeId(codeId) : undefined}
+        onEditAnnotation={(annId) => setEditingAnnotationId(annId)}
       />
 
       {pending && (() => {
@@ -835,6 +835,26 @@ export default function DocumentViewer({
           onAddParent={onAddParentLink}
           onRemoveParent={onRemoveParentLink}
           onClose={() => setEditingCodeId(null)}
+        />
+      );
+    })()}
+    {editingAnnotationId && (() => {
+      const annBeingEdited = docAnnotations.find((a) => a.id === editingAnnotationId);
+      if (!annBeingEdited) return null;
+      return (
+        <AnnotationEditModal
+          annotation={annBeingEdited}
+          codes={codes}
+          themes={themesProp ?? []}
+          onUpdate={(patch) => onUpdateAnnotation(editingAnnotationId, patch)}
+          onLinkToTheme={(themeId, w) =>
+            onLinkAnnotationToTheme?.(themeId, editingAnnotationId, w)
+          }
+          onUnlinkFromTheme={(themeId) =>
+            onUnlinkAnnotationFromTheme?.(themeId, editingAnnotationId)
+          }
+          onDelete={() => onDeleteAnnotation(editingAnnotationId)}
+          onClose={() => setEditingAnnotationId(null)}
         />
       );
     })()}
@@ -1413,7 +1433,7 @@ function AnnotationsPanel({
   onLinkToTheme,
   onUnlinkFromTheme,
   onRemoveRange,
-  onEditCode,
+  onEditAnnotation,
 }: {
   doc: Document;
   codes: Code[];
@@ -1440,7 +1460,7 @@ function AnnotationsPanel({
   ) => void;
   onUnlinkFromTheme?: (themeId: string, annotationId: string) => void;
   onRemoveRange?: (id: string, rangeIdx: number) => void;
-  onEditCode?: (codeId: string) => void;
+  onEditAnnotation?: (annotationId: string) => void;
 }) {
   if (annotations.length === 0) {
     return (
@@ -1521,17 +1541,17 @@ function AnnotationsPanel({
                   <span className="text-[10px] font-mono text-slate-400 tabular-nums ml-auto">
                     {ranges.map((r) => `${r.start}–${r.end}`).join(', ')}
                   </span>
-                  {onEditCode && (
+                  {onEditAnnotation && (
                     <button
                       type="button"
                       onClick={(e) => {
                         e.stopPropagation();
-                        onEditCode(a.codeId);
+                        onEditAnnotation(a.id);
                       }}
                       className="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-slate-900 text-[12px] transition-opacity px-1 py-0.5 rounded hover:bg-slate-100"
-                      title="edit this code (name, definition, color)"
+                      title="edit this annotation (accuracy, note, themes)"
                     >
-                      ✎ code
+                      ✎
                     </button>
                   )}
                   {onSendToNote && (
@@ -1599,75 +1619,9 @@ function AnnotationsPanel({
                     );
                   })}
                 </div>
-                {focused && (
-                  <div className="mt-2 space-y-2" onClick={(e) => e.stopPropagation()}>
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="text-[10px] uppercase font-semibold tracking-wider text-slate-500">
-                        Accuracy
-                      </span>
-                      {[1, 2, 3, 4, 5].map((n) => (
-                        <button
-                          key={n}
-                          type="button"
-                          onClick={() =>
-                            onUpdate(a.id, {
-                              accuracy: a.accuracy === n
-                                ? undefined
-                                : (n as 1 | 2 | 3 | 4 | 5),
-                            })
-                          }
-                          title={ACCURACY_RUBRIC[n - 1]}
-                          className={`w-7 h-7 rounded border text-[12px] font-semibold transition-colors ${
-                            a.accuracy === n
-                              ? 'bg-blue-600 border-blue-600 text-white'
-                              : 'border-slate-300 text-slate-600 hover:bg-slate-100'
-                          }`}
-                        >
-                          {n}
-                        </button>
-                      ))}
-                      {a.accuracy && (
-                        <button
-                          type="button"
-                          onClick={() => onUpdate(a.id, { accuracy: undefined })}
-                          className="text-[10px] text-slate-400 hover:text-slate-700"
-                          title="clear rating"
-                        >
-                          clear
-                        </button>
-                      )}
-                    </div>
-                    <textarea
-                      value={a.accuracyNotes ?? ''}
-                      onChange={(e) =>
-                        onUpdate(a.id, { accuracyNotes: emDash(e.target.value) || undefined })
-                      }
-                      placeholder="Why this score? (optional)"
-                      rows={1}
-                      className="w-full px-2 py-1 text-[11px] border border-slate-200 rounded bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 resize-y"
-                    />
-                    <textarea
-                      value={a.note ?? ''}
-                      onChange={(e) => onUpdate(a.id, { note: emDash(e.target.value) })}
-                      placeholder="Add a note..."
-                      rows={2}
-                      className="w-full px-2 py-1 text-[12px] border border-slate-200 rounded focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 resize-y"
-                    />
-                    {themes && themes.length > 0 && onLinkToTheme && onUnlinkFromTheme && (
-                      <ThemeMembershipEditor
-                        themes={themes}
-                        currentLinks={(() => {
-                          const m = new Map<string, 'core' | 'supporting'>();
-                          for (const t of themes) {
-                            const link = t.annotationLinks.find((l) => l.annotationId === a.id);
-                            if (link) m.set(t.id, link.weight);
-                          }
-                          return m;
-                        })()}
-                        onLink={(themeId, w) => onLinkToTheme(themeId, a.id, w)}
-                        onUnlink={(themeId) => onUnlinkFromTheme(themeId, a.id)}
-                      />
-                    )}
+                {focused && a.note && (
+                  <div className="mt-1 text-[12px] text-amber-900 bg-amber-50 border-l-2 border-amber-300 pl-3 py-1.5 leading-snug whitespace-pre-wrap">
+                    {a.note}
                   </div>
                 )}
               </li>
