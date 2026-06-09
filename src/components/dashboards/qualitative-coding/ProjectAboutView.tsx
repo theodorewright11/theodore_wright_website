@@ -193,6 +193,23 @@ function ProjectStats({ project }: { project: Project }) {
         <Stat label="Notes" value={aggregate.noteCount} />
         <Stat label="Codes" value={project.codes.length} />
         <Stat label="Annotations" value={project.annotations.length} />
+        <Stat
+          label="Leaf codes"
+          value={
+            project.codes.filter(
+              (c) => !project.codes.some((other) => other.parentIds.includes(c.id)),
+            ).length
+          }
+        />
+        <Stat
+          label="Top-level codes"
+          value={project.codes.filter((c) => c.parentIds.length === 0).length}
+        />
+        <Stat label="Themes" value={(project.themes ?? []).length} />
+        <Stat
+          label="Top-level themes"
+          value={(project.themes ?? []).filter((t) => t.parentIds.length === 0).length}
+        />
       </div>
       <div className="mt-3 text-[10px] uppercase font-semibold tracking-[0.12em] text-slate-500 mb-2">
         Corpus size (documents only)

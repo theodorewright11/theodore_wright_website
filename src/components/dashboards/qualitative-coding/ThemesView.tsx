@@ -6,6 +6,7 @@ import {
   descendantIds,
   resolveColor,
 } from './compute';
+import HierarchicalCodePicker from './HierarchicalCodePicker';
 import { MarkdownEditor } from './Markdown';
 import { emDash } from './storage';
 import type { Annotation, Code, Project, Theme, ThemeRating } from './types';
@@ -509,43 +510,13 @@ function ThemeDetail({
           ))}
         </div>
         {codePickerOpen && (
-          <div className="mt-2 border border-slate-200 rounded p-2 bg-slate-50">
-            <input
-              autoFocus
-              value={pickerQuery}
-              onChange={(e) => setPickerQuery(e.target.value)}
-              placeholder="Search codes…"
-              className="w-full px-2 py-1 text-[12px] border border-slate-200 rounded mb-2 focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500"
+          <div className="mt-2 border border-slate-200 rounded bg-white overflow-hidden">
+            <HierarchicalCodePicker
+              codes={project.codes}
+              selectedIds={new Set(theme.includeCodeIds)}
+              onToggle={(codeId) => onToggleIncludeCode(theme.id, codeId)}
+              maxHeight="280px"
             />
-            <div className="max-h-[200px] overflow-y-auto">
-              {project.codes
-                .filter((c) =>
-                  pickerQuery
-                    ? c.name.toLowerCase().includes(pickerQuery.toLowerCase())
-                    : true,
-                )
-                .slice(0, 40)
-                .map((c) => {
-                  const picked = theme.includeCodeIds.includes(c.id);
-                  return (
-                    <button
-                      key={c.id}
-                      type="button"
-                      onClick={() => onToggleIncludeCode(theme.id, c.id)}
-                      className={`w-full flex items-center gap-2 px-2 py-1 text-left text-[12px] rounded ${
-                        picked ? 'bg-blue-100' : 'hover:bg-blue-50'
-                      }`}
-                    >
-                      <span
-                        className="w-2.5 h-2.5 rounded-sm flex-shrink-0 ring-1 ring-black/5"
-                        style={{ background: resolveColor(project.codes, c.id) }}
-                      />
-                      <span className="flex-1 min-w-0 break-words">{c.name}</span>
-                      {picked && <span className="text-blue-700 text-[11px]">✓</span>}
-                    </button>
-                  );
-                })}
-            </div>
           </div>
         )}
       </section>
