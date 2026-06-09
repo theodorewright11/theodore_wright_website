@@ -1426,10 +1426,10 @@ function DocBlock({
         key={key++}
         className="rounded-sm px-0.5"
         style={{
-          backgroundColor: hexToRgba(color, isCore ? 0.38 : 0.18),
+          backgroundColor: hexToRgba(color, isCore ? 0.38 : 0.16),
           boxShadow: isCore
             ? `inset 0 -3px 0 ${color}`
-            : `inset 0 -2px 0 ${color}, inset 0 -3px 0 white, inset 0 -4px 0 ${color}`,
+            : `inset 0 -1px 0 ${hexToRgba(color, 0.55)}`,
           color: '#0f172a',
         }}
         title={
@@ -1478,9 +1478,8 @@ function DocBlock({
               <span
                 className="inline-block w-4 h-3 rounded-sm"
                 style={{
-                  background: 'rgba(245, 158, 11, 0.18)',
-                  boxShadow:
-                    'inset 0 -2px 0 #f59e0b, inset 0 -3px 0 white, inset 0 -4px 0 #f59e0b',
+                  background: 'rgba(245, 158, 11, 0.16)',
+                  boxShadow: 'inset 0 -1px 0 rgba(245, 158, 11, 0.55)',
                 }}
               />
               Supporting
