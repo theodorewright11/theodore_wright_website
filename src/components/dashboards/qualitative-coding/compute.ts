@@ -767,6 +767,11 @@ export type ExploreFilter = {
   docCharsFilter?: FieldFilter;
   docWordsFilter?: FieldFilter;
   docAnnotsFilter?: FieldFilter;
+  // Phase 4a rating + theme filters. All optional.
+  codeSpecificityMin?: number;
+  annotationAccuracyMin?: number;
+  themeId?: string;
+  themeWeight?: 'all' | 'core' | 'supporting';
 };
 
 export type SortKey =
@@ -883,12 +888,35 @@ export function exploreRows(
 
   for (const p of projects) {
     const docById = new Map(p.documents.map((d) => [d.id, d]));
+    const codeById = new Map(p.codes.map((c) => [c.id, c]));
     const annotCountByDoc = new Map<string, number>();
     for (const a of p.annotations) {
       annotCountByDoc.set(a.docId, (annotCountByDoc.get(a.docId) ?? 0) + 1);
     }
     const expanded = expandedByProject.get(p.id);
     const focalDocs = focalDocsByProject.get(p.id);
+    // Phase 4a: precompute the theme link map for the selected theme.
+    // themeLinks[annotationId] => weight, or undefined if not in theme.
+    const themeLinks = new Map<string, 'core' | 'supporting'>();
+    if (filter.themeId) {
+      const theme = (p.themes ?? []).find((t) => t.id === filter.themeId);
+      if (theme) {
+        for (const link of theme.annotationLinks) {
+          themeLinks.set(link.annotationId, link.weight);
+        }
+        // Auto-include codes contribute 'supporting' weight implicitly.
+        if (theme.includeCodeIds.length > 0) {
+          const codeIdSet = new Set<string>();
+          for (const cid of theme.includeCodeIds) {
+            for (const d of descendantIds(p.codes, cid)) codeIdSet.add(d);
+          }
+          for (const a of p.annotations) {
+            if (themeLinks.has(a.id)) continue;
+            if (codeIdSet.has(a.codeId)) themeLinks.set(a.id, 'supporting');
+          }
+        }
+      }
+    }
     for (const a of p.annotations) {
       const doc = docById.get(a.docId);
       if (!doc) continue;
@@ -929,6 +957,26 @@ export function exploreRows(
         }
       }
       if (!metaOk) continue;
+      // Phase 4a: rating-min filters.
+      if (
+        typeof filter.codeSpecificityMin === 'number' &&
+        filter.codeSpecificityMin > 0
+      ) {
+        const c = codeById.get(a.codeId);
+        if (!c || !c.specificity || c.specificity < filter.codeSpecificityMin) continue;
+      }
+      if (
+        typeof filter.annotationAccuracyMin === 'number' &&
+        filter.annotationAccuracyMin > 0
+      ) {
+        if (!a.accuracy || a.accuracy < filter.annotationAccuracyMin) continue;
+      }
+      // Phase 4a: theme filter.
+      if (filter.themeId) {
+        const w = themeLinks.get(a.id);
+        if (!w) continue;
+        if (filter.themeWeight && filter.themeWeight !== 'all' && w !== filter.themeWeight) continue;
+      }
       const span = annText(a, doc.text);
       const note = a.note ?? '';
       if (q && !span.toLowerCase().includes(q) && !note.toLowerCase().includes(q)) continue;

@@ -23,6 +23,13 @@ export type ExploreFilterState = {
   docCharsFilter: FieldFilter;
   docWordsFilter: FieldFilter;
   docAnnotsFilter: FieldFilter;
+  // Rating filters (Phase 4a). null/undefined = off; otherwise minimum 1-5.
+  codeSpecificityMin?: number;
+  annotationAccuracyMin?: number;
+  // Theme filter: limit rows to annotations linked to this theme. Optional
+  // weightFilter restricts to a single weight.
+  themeId?: string;
+  themeWeight?: 'all' | 'core' | 'supporting';
 };
 
 export const defaultExploreFilterState = (): ExploreFilterState => ({
@@ -88,6 +95,10 @@ export default function ExploreView({
     docCharsFilter,
     docWordsFilter,
     docAnnotsFilter,
+    codeSpecificityMin,
+    annotationAccuracyMin,
+    themeId,
+    themeWeight,
   } = filterState;
   const setTextQuery = (v: string) => onChangeFilter({ textQuery: v });
   const setSelectedCodeIds = (
@@ -112,6 +123,10 @@ export default function ExploreView({
   const setDocCharsFilter = (v: FieldFilter) => onChangeFilter({ docCharsFilter: v });
   const setDocWordsFilter = (v: FieldFilter) => onChangeFilter({ docWordsFilter: v });
   const setDocAnnotsFilter = (v: FieldFilter) => onChangeFilter({ docAnnotsFilter: v });
+  const setCodeSpecificityMin = (v?: number) => onChangeFilter({ codeSpecificityMin: v });
+  const setAnnotationAccuracyMin = (v?: number) => onChangeFilter({ annotationAccuracyMin: v });
+  const setThemeId = (v?: string) => onChangeFilter({ themeId: v });
+  const setThemeWeight = (v?: 'all' | 'core' | 'supporting') => onChangeFilter({ themeWeight: v });
 
   const [codePickerOpen, setCodePickerOpen] = useState(false);
   const [codePickerQuery, setCodePickerQuery] = useState('');
@@ -149,10 +164,14 @@ export default function ExploreView({
         docCharsFilter,
         docWordsFilter,
         docAnnotsFilter,
+        codeSpecificityMin,
+        annotationAccuracyMin,
+        themeId,
+        themeWeight,
       },
       sort,
     );
-  }, [projects, selectedCodeIds, codeFilterMode, textQuery, metaFilters, folderFilter, sort, docCharsFilter, docWordsFilter, docAnnotsFilter]);
+  }, [projects, selectedCodeIds, codeFilterMode, textQuery, metaFilters, folderFilter, sort, docCharsFilter, docWordsFilter, docAnnotsFilter, codeSpecificityMin, annotationAccuracyMin, themeId, themeWeight]);
 
   useEffect(() => {
     if (!codePickerOpen) {
@@ -238,6 +257,10 @@ export default function ExploreView({
       docCharsFilter: {},
       docWordsFilter: {},
       docAnnotsFilter: {},
+      codeSpecificityMin: undefined,
+      annotationAccuracyMin: undefined,
+      themeId: undefined,
+      themeWeight: undefined,
     });
   };
 
@@ -248,7 +271,21 @@ export default function ExploreView({
     Object.values(metaFilters).some(hasAnyFilter) ||
     hasAnyFilter(docCharsFilter) ||
     hasAnyFilter(docWordsFilter) ||
-    hasAnyFilter(docAnnotsFilter);
+    hasAnyFilter(docAnnotsFilter) ||
+    !!codeSpecificityMin ||
+    !!annotationAccuracyMin ||
+    !!themeId;
+
+  // Themes across all projects in view, for the theme-filter picker.
+  const allThemes = useMemo(() => {
+    const out: { projectId: string; projectName: string; id: string; name: string }[] = [];
+    for (const p of projects) {
+      for (const t of p.themes ?? []) {
+        out.push({ projectId: p.id, projectName: p.name, id: t.id, name: t.name });
+      }
+    }
+    return out.sort((a, b) => a.name.localeCompare(b.name));
+  }, [projects]);
 
   const showProjectChips = projects.length > 1;
 
@@ -536,6 +573,89 @@ export default function ExploreView({
                   }
                 />
               ))}
+            </div>
+          )}
+
+          <div className="mt-3 flex items-center gap-3 flex-wrap">
+            <span className="text-[10px] uppercase tracking-wider font-semibold text-slate-500">
+              Ratings
+            </span>
+            <div className="flex items-center gap-1.5 text-[11px] text-slate-600">
+              <span>Spec ≥</span>
+              <select
+                value={codeSpecificityMin ?? 0}
+                onChange={(e) => {
+                  const v = Number(e.target.value);
+                  setCodeSpecificityMin(v > 0 ? v : undefined);
+                }}
+                className="px-1.5 py-1 text-[11px] border border-slate-200 rounded bg-white"
+              >
+                <option value={0}>any</option>
+                <option value={1}>1</option>
+                <option value={2}>2</option>
+                <option value={3}>3</option>
+                <option value={4}>4</option>
+                <option value={5}>5</option>
+              </select>
+            </div>
+            <div className="flex items-center gap-1.5 text-[11px] text-slate-600">
+              <span>Acc ≥</span>
+              <select
+                value={annotationAccuracyMin ?? 0}
+                onChange={(e) => {
+                  const v = Number(e.target.value);
+                  setAnnotationAccuracyMin(v > 0 ? v : undefined);
+                }}
+                className="px-1.5 py-1 text-[11px] border border-slate-200 rounded bg-white"
+              >
+                <option value={0}>any</option>
+                <option value={1}>1</option>
+                <option value={2}>2</option>
+                <option value={3}>3</option>
+                <option value={4}>4</option>
+                <option value={5}>5</option>
+              </select>
+            </div>
+          </div>
+
+          {allThemes.length > 0 && (
+            <div className="mt-3 flex items-center gap-3 flex-wrap">
+              <span className="text-[10px] uppercase tracking-wider font-semibold text-slate-500">
+                Theme
+              </span>
+              <select
+                value={themeId ?? ''}
+                onChange={(e) => {
+                  setThemeId(e.target.value || undefined);
+                  if (!e.target.value) setThemeWeight(undefined);
+                }}
+                className="px-2 py-1 text-[11px] border border-slate-200 rounded bg-white text-slate-700 min-w-0 max-w-[260px]"
+              >
+                <option value="">(any)</option>
+                {allThemes.map((t) => (
+                  <option key={t.id} value={t.id}>
+                    {showProjectChips ? `${t.projectName} · ${t.name}` : t.name}
+                  </option>
+                ))}
+              </select>
+              {themeId && (
+                <div className="inline-flex rounded border border-slate-300 overflow-hidden text-[11px]">
+                  {(['all', 'core', 'supporting'] as const).map((w) => (
+                    <button
+                      key={w}
+                      type="button"
+                      onClick={() => setThemeWeight(w)}
+                      className={`px-2 py-1 font-semibold ${
+                        (themeWeight ?? 'all') === w
+                          ? 'bg-violet-600 text-white'
+                          : 'text-slate-600 hover:bg-slate-100 border-l border-slate-200 first:border-l-0'
+                      }`}
+                    >
+                      {w}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           )}
         </div>
