@@ -77,6 +77,8 @@ type Props = {
     selEnd: number,
     weight: 'core' | 'supporting',
   ) => { linkedCount: number; uncodedAdded: boolean };
+  showThemeAddInPopover?: boolean;
+  onHideThemeAddInPopover?: () => void;
   canSendToNote?: boolean;
   qcLinkOptions?: QcLinkOptions;
   onCreateCode?: (
@@ -134,6 +136,8 @@ export default function DocumentViewer({
   onLinkAnnotationToTheme,
   onUnlinkAnnotationFromTheme,
   onAddThemeFromSelection,
+  showThemeAddInPopover = true,
+  onHideThemeAddInPopover,
   canSendToNote,
   qcLinkOptions,
   onCreateCode,
@@ -204,9 +208,28 @@ export default function DocumentViewer({
     [annotations, doc.id],
   );
 
+  // Theme uncoded highlights for THIS doc — raw spans added directly to
+  // themes (no annotation). Rendered as a separate visual layer so the
+  // analyst can see what's been pulled into themes even without a code.
+  const themeUncodedRanges = useMemo(() => {
+    const out: { start: number; end: number }[] = [];
+    for (const t of themesProp ?? []) {
+      for (const h of t.uncodedHighlights ?? []) {
+        if (h.docId !== doc.id) continue;
+        for (const r of h.ranges ?? []) out.push({ start: r.start, end: r.end });
+      }
+    }
+    return out;
+  }, [themesProp, doc.id]);
   const segments = useMemo(
-    () => segmentText(doc.text, docAnnotations, pending ?? undefined),
-    [doc.text, docAnnotations, pending],
+    () =>
+      segmentText(
+        doc.text,
+        docAnnotations,
+        pending ?? undefined,
+        themeUncodedRanges,
+      ),
+    [doc.text, docAnnotations, pending, themeUncodedRanges],
   );
 
   const lines = useMemo(
@@ -215,12 +238,31 @@ export default function DocumentViewer({
   );
 
   const renderSegment = (seg: ReturnType<typeof segmentText>[number], key: React.Key) => {
+    // Theme-uncoded highlight (raw text added directly to a theme, no code).
+    // Render the same way as an annotation highlight but with violet tint
+    // and a dashed underline so it's visually distinct from coded spans.
+    const themeOnlyShadow =
+      'inset 0 -2px 0 #8b5cf6, inset 0 -3px 0 white, inset 0 -4px 0 #8b5cf6';
     if (seg.annotations.length === 0) {
       if (seg.pending) {
         return (
           <span
             key={key}
             style={{ backgroundColor: 'rgba(254, 240, 138, 0.85)' }}
+          >
+            {seg.text}
+          </span>
+        );
+      }
+      if (seg.themeHighlight) {
+        return (
+          <span
+            key={key}
+            style={{
+              backgroundColor: 'rgba(139, 92, 246, 0.16)',
+              boxShadow: themeOnlyShadow,
+            }}
+            title="In a theme (uncoded highlight)"
           >
             {seg.text}
           </span>
@@ -236,6 +278,15 @@ export default function DocumentViewer({
     const isFocused =
       focusedAnnotationId !== null &&
       seg.annotations.some((a) => a.id === focusedAnnotationId);
+    // When a coded segment ALSO falls in a theme uncoded highlight (rare —
+    // happens if you highlight overlapping spans), layer the violet underline
+    // on top of the code one.
+    const baseShadow = isFocused
+      ? `inset 0 -2px 0 ${color}`
+      : `inset 0 -1px 0 ${color}`;
+    const themeOverlay = seg.themeHighlight
+      ? `, inset 0 -3px 0 white, inset 0 -4px 0 #8b5cf6`
+      : '';
     return (
       <span
         key={key}
@@ -250,11 +301,12 @@ export default function DocumentViewer({
           backgroundColor: seg.pending
             ? 'rgba(254, 240, 138, 0.85)'
             : hexAlpha(color, isFocused ? 0.4 : 0.2),
-          boxShadow: isFocused ? `inset 0 -2px 0 ${color}` : `inset 0 -1px 0 ${color}`,
+          boxShadow: baseShadow + themeOverlay,
         }}
-        title={seg.annotations
-          .map((a) => codePathString(codes, a.codeId))
-          .join(' · ')}
+        title={
+          seg.annotations.map((a) => codePathString(codes, a.codeId)).join(' · ') +
+          (seg.themeHighlight ? ' · also in a theme (uncoded)' : '')
+        }
       >
         {seg.text}
       </span>
@@ -775,21 +827,23 @@ export default function DocumentViewer({
               : undefined
           }
           themes={themesProp}
+          showThemeAdd={showThemeAddInPopover}
+          onHideThemeAdd={onHideThemeAddInPopover}
           onAddToTheme={
             onAddThemeFromSelection
-              ? (themeId, weight) => {
-                  const r = onAddThemeFromSelection(
+              ? (themeId, weight) =>
+                  onAddThemeFromSelection(
                     themeId,
                     pending.start,
                     pending.end,
                     weight,
-                  );
-                  setPending(null);
-                  window.getSelection()?.removeAllRanges();
-                  return r;
-                }
+                  )
               : undefined
           }
+          onAfterThemeAdd={() => {
+            setPending(null);
+            window.getSelection()?.removeAllRanges();
+          }}
           onPick={(codeIds, note, sendToNote) => {
             for (const codeId of codeIds) {
               const id = cryptoRandomId();
@@ -1063,6 +1117,10 @@ type PopoverProps = {
     themeId: string,
     weight: 'core' | 'supporting',
   ) => { linkedCount: number; uncodedAdded: boolean };
+  // Called once after the user commits a (possibly multi) theme-add batch.
+  onAfterThemeAdd?: () => void;
+  showThemeAdd?: boolean;
+  onHideThemeAdd?: () => void;
 };
 
 const SelectionPopover = forwardRef<HTMLDivElement, PopoverProps>(function SelectionPopover(
@@ -1080,6 +1138,9 @@ const SelectionPopover = forwardRef<HTMLDivElement, PopoverProps>(function Selec
     onMoveFocused,
     themes: popoverThemes,
     onAddToTheme,
+    onAfterThemeAdd,
+    showThemeAdd = true,
+    onHideThemeAdd,
   },
   ref,
 ) {
@@ -1238,10 +1299,12 @@ const SelectionPopover = forwardRef<HTMLDivElement, PopoverProps>(function Selec
         </button>
       </div>
       <div className="max-h-[380px] overflow-y-auto">
-        {popoverThemes && popoverThemes.length > 0 && onAddToTheme && (
+        {showThemeAdd && popoverThemes && popoverThemes.length > 0 && onAddToTheme && (
           <AddToThemeBlock
             themes={popoverThemes}
             onAddToTheme={onAddToTheme}
+            onAfterAdd={onAfterThemeAdd}
+            onHide={onHideThemeAdd}
           />
         )}
         {focusedAnnotation && onAddRangeToFocused && (
@@ -1683,60 +1746,97 @@ function AnnotationsPanel({
 function AddToThemeBlock({
   themes,
   onAddToTheme,
+  onAfterAdd,
+  onHide,
 }: {
   themes: import('./types').Theme[];
   onAddToTheme: (
     themeId: string,
     weight: 'core' | 'supporting',
   ) => { linkedCount: number; uncodedAdded: boolean };
+  onAfterAdd?: () => void;
+  onHide?: () => void;
 }) {
-  const [pickedId, setPickedId] = useState('');
-  const handle = (weight: 'core' | 'supporting') => {
-    if (!pickedId) return;
-    onAddToTheme(pickedId, weight);
-    setPickedId('');
+  const [picks, setPicks] = useState<Map<string, 'core' | 'supporting'>>(new Map());
+  const apply = () => {
+    for (const [tid, w] of picks) onAddToTheme(tid, w);
+    setPicks(new Map());
+    onAfterAdd?.();
+  };
+  const setWeight = (themeId: string, weight: 'core' | 'supporting') => {
+    setPicks((prev) => {
+      const next = new Map(prev);
+      if (next.get(themeId) === weight) next.delete(themeId);
+      else next.set(themeId, weight);
+      return next;
+    });
   };
   return (
     <div className="bg-violet-50 border-b border-violet-100 px-3 py-2">
-      <div className="flex items-center gap-1.5 mb-1.5">
-        <span className="w-4 h-4 rounded-sm bg-violet-600 text-white text-[12px] font-bold flex items-center justify-center flex-shrink-0">
-          ⌘
-        </span>
+      <div className="flex items-center justify-between gap-2 mb-1.5">
         <span className="text-[12px] text-violet-900 font-semibold">
-          Add this selection to a theme
+          Add this selection to themes
         </span>
+        <div className="flex items-center gap-1">
+          {picks.size > 0 && (
+            <button
+              type="button"
+              onClick={apply}
+              className="px-2 py-1 text-[10px] uppercase font-semibold tracking-wider bg-violet-700 text-white hover:bg-violet-800 rounded"
+            >
+              Add to {picks.size}
+            </button>
+          )}
+          {onHide && (
+            <button
+              type="button"
+              onClick={onHide}
+              className="text-[10px] text-violet-500 hover:text-violet-800 px-1.5 py-0.5"
+              title="hide this block (re-enable on the Info page)"
+            >
+              hide
+            </button>
+          )}
+        </div>
       </div>
-      <div className="flex items-center gap-1.5 flex-wrap">
-        <select
-          value={pickedId}
-          onChange={(e) => setPickedId(e.target.value)}
-          className="flex-1 min-w-[140px] max-w-[260px] px-1.5 py-1 text-[11px] border border-violet-300 rounded bg-white text-slate-700"
-        >
-          <option value="">Pick a theme…</option>
-          {themes.map((t) => (
-            <option key={t.id} value={t.id}>
-              {t.name}
-            </option>
-          ))}
-        </select>
-        <button
-          type="button"
-          disabled={!pickedId}
-          onClick={() => handle('core')}
-          className="px-2 py-1 text-[10px] uppercase font-semibold tracking-wider bg-amber-500 text-white hover:bg-amber-600 disabled:bg-slate-200 disabled:text-slate-400 rounded"
-        >
-          + Core
-        </button>
-        <button
-          type="button"
-          disabled={!pickedId}
-          onClick={() => handle('supporting')}
-          className="px-2 py-1 text-[10px] uppercase font-semibold tracking-wider bg-violet-200 text-violet-800 hover:bg-violet-300 disabled:bg-slate-100 disabled:text-slate-400 rounded"
-        >
-          + Supporting
-        </button>
+      <div className="max-h-[140px] overflow-y-auto space-y-0.5">
+        {themes.map((t) => {
+          const cur = picks.get(t.id);
+          return (
+            <div
+              key={t.id}
+              className="flex items-center gap-1.5 text-[11px] py-0.5"
+            >
+              <span className="flex-1 min-w-0 text-violet-900 break-words">
+                {t.name}
+              </span>
+              <button
+                type="button"
+                onClick={() => setWeight(t.id, 'core')}
+                className={`px-1.5 py-0.5 text-[10px] uppercase font-semibold tracking-wider rounded ${
+                  cur === 'core'
+                    ? 'bg-amber-500 text-white'
+                    : 'bg-amber-100 text-amber-800 hover:bg-amber-200'
+                }`}
+              >
+                Core
+              </button>
+              <button
+                type="button"
+                onClick={() => setWeight(t.id, 'supporting')}
+                className={`px-1.5 py-0.5 text-[10px] uppercase font-semibold tracking-wider rounded ${
+                  cur === 'supporting'
+                    ? 'bg-violet-700 text-white'
+                    : 'bg-violet-100 text-violet-800 hover:bg-violet-200'
+                }`}
+              >
+                Supporting
+              </button>
+            </div>
+          );
+        })}
       </div>
-      <div className="text-[10px] text-violet-700 mt-1 italic">
+      <div className="text-[10px] text-violet-700 mt-1.5 italic">
         Subsumed annotations link individually; otherwise the raw span is added uncoded.
       </div>
     </div>

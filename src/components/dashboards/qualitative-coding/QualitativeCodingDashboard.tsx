@@ -1368,7 +1368,17 @@ export default function QualitativeCodingDashboard() {
         )}
         <main className="flex-1 min-w-0 min-h-0 flex flex-col bg-white">
           {view === 'about' ? (
-            <ProjectAboutView project={activeProject} onUpdate={updateProjectMeta} />
+            <ProjectAboutView
+              project={activeProject}
+              onUpdate={updateProjectMeta}
+              popoverShowThemeAdd={state.popoverShowThemeAdd !== false}
+              onTogglePopoverShowThemeAdd={() =>
+                setState((s) => ({
+                  ...s,
+                  popoverShowThemeAdd: !(s.popoverShowThemeAdd !== false),
+                }))
+              }
+            />
           ) : view === 'codebook' ? (
             <CodebookView
               project={activeProject}
@@ -1554,6 +1564,10 @@ export default function QualitativeCodingDashboard() {
                         onRemoveRangeFromAnnotation={removeRangeFromAnnotation}
                         onSendAnnotationToNote={(annData) => sendAnnotationToNote(d, annData)}
                         themes={activeProject.themes ?? []}
+                        showThemeAddInPopover={state.popoverShowThemeAdd !== false}
+                        onHideThemeAddInPopover={() =>
+                          setState((s) => ({ ...s, popoverShowThemeAdd: false }))
+                        }
                         onLinkAnnotationToTheme={linkAnnotationToTheme}
                         onUnlinkAnnotationFromTheme={unlinkAnnotationFromTheme}
                         onAddThemeFromSelection={(themeId, selStart, selEnd, weight) =>

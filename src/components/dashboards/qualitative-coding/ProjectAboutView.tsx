@@ -7,9 +7,16 @@ import type { Project } from './types';
 type Props = {
   project: Project;
   onUpdate: (patch: Partial<Project>) => void;
+  popoverShowThemeAdd?: boolean;
+  onTogglePopoverShowThemeAdd?: () => void;
 };
 
-export default function ProjectAboutView({ project, onUpdate }: Props) {
+export default function ProjectAboutView({
+  project,
+  onUpdate,
+  popoverShowThemeAdd = true,
+  onTogglePopoverShowThemeAdd,
+}: Props) {
   const [name, setName] = useState(project.name);
   const [description, setDescription] = useState(project.description ?? '');
   const [aboutDraft, setAboutDraft] = useState(project.about ?? '');
@@ -255,6 +262,28 @@ function ProjectStats({ project }: { project: Project }) {
         {new Date(project.updated_at).toLocaleDateString()}
         {project.drive?.folderId && <> · synced to Drive</>}
       </div>
+
+      {onTogglePopoverShowThemeAdd && (
+        <div className="mt-8 pt-5 border-t border-slate-200">
+          <div className="text-[10px] uppercase font-semibold tracking-[0.12em] text-slate-500 mb-2">
+            Coding workflow
+          </div>
+          <label className="flex items-start gap-2 text-[13px] text-slate-700 cursor-pointer max-w-[640px]">
+            <input
+              type="checkbox"
+              checked={popoverShowThemeAdd}
+              onChange={onTogglePopoverShowThemeAdd}
+              className="mt-1 accent-blue-600"
+            />
+            <span>
+              <span className="font-semibold">Show theme picker in the selection popover</span>
+              <span className="block text-[11px] text-slate-500 mt-0.5">
+                When off, the "Add this selection to themes" block is hidden so you can focus on plain coding. The selection popover keeps the code-pick and create-code flow.
+              </span>
+            </span>
+          </label>
+        </div>
+      )}
 
       <RubricSection />
     </div>

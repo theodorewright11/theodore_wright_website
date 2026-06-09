@@ -170,6 +170,9 @@ export type AppState = {
   exploreShowMeta?: boolean;
   exploreShowNotes?: boolean;
   exploreShowFullDoc?: boolean;
+  // When false, the "Add this selection to themes" block at the top of the
+  // selection popover is hidden. Defaults to true.
+  popoverShowThemeAdd?: boolean;
   activeThemeId?: string | null;
 };
 

@@ -169,6 +169,9 @@ export type Segment = {
   text: string;
   annotations: Annotation[];
   pending?: boolean;
+  // True if this segment falls inside one or more theme uncoded highlights
+  // (raw spans added to a theme that don't have an underlying annotation).
+  themeHighlight?: boolean;
 };
 
 // Returns the annotation's ranges, defensively tolerating missing data.
@@ -208,8 +211,15 @@ export function segmentText(
   text: string,
   annotations: Annotation[],
   pendingRange?: { start: number; end: number },
+  themeHighlightRanges?: { start: number; end: number }[],
 ): Segment[] {
   const boundaries = new Set<number>([0, text.length]);
+  if (themeHighlightRanges) {
+    for (const r of themeHighlightRanges) {
+      boundaries.add(Math.max(0, Math.min(text.length, r.start)));
+      boundaries.add(Math.max(0, Math.min(text.length, r.end)));
+    }
+  }
   for (const a of annotations) {
     for (const r of annRanges(a)) {
       boundaries.add(Math.max(0, Math.min(text.length, r.start)));
@@ -233,12 +243,16 @@ export function segmentText(
     const isPending = !!(
       pendingRange && start >= pendingRange.start && end <= pendingRange.end
     );
+    const isThemeHighlighted =
+      !!themeHighlightRanges &&
+      themeHighlightRanges.some((r) => r.start <= start && r.end >= end);
     segs.push({
       start,
       end,
       text: text.slice(start, end),
       annotations: covering,
       pending: isPending,
+      themeHighlight: isThemeHighlighted,
     });
   }
   return segs;

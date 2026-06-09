@@ -1395,14 +1395,18 @@ function DocBlock({
     return { codes: [...codeSet], inTheme: inThemeCodes };
   });
 
-  // Pick a representative color for each band. Use the first contributing
-  // annotation's code color; uncoded-only bands get violet to signal they
-  // carry no code attribution.
-  const bandColors = bands.map((b) =>
-    b.items[0]
+  // Per-band color + weight. Weight is "core" if any contributing item is
+  // core; otherwise "supporting". Color comes from the first annotation's
+  // code; uncoded-only bands use violet.
+  const bandInfo = bands.map((b) => {
+    const color = b.items[0]
       ? resolveColor(project.codes, b.items[0].annotation.codeId)
-      : '#8b5cf6', // violet-500
-  );
+      : '#8b5cf6';
+    const hasCore =
+      b.items.some((it) => it.weight === 'core') ||
+      b.uncoded.some((u) => u.weight === 'core');
+    return { color, weight: hasCore ? 'core' : 'supporting' };
+  });
 
   // Render the doc text split by band boundaries, with highlighted bands.
   const pieces: React.ReactNode[] = [];
@@ -1412,22 +1416,29 @@ function DocBlock({
     if (band.start > cursor) {
       pieces.push(<span key={key++}>{doc.text.slice(cursor, band.start)}</span>);
     }
-    const color = bandColors[i];
+    const { color, weight } = bandInfo[i];
+    // Core: stronger fill + solid underline. Supporting: lighter fill +
+    // dashed underline. Both still use the code color so you can tell which
+    // code anchors the band.
+    const isCore = weight === 'core';
     pieces.push(
       <mark
         key={key++}
         className="rounded-sm px-0.5"
         style={{
-          backgroundColor: hexToRgba(color, 0.32),
-          boxShadow: `inset 0 -2px 0 ${color}`,
+          backgroundColor: hexToRgba(color, isCore ? 0.38 : 0.18),
+          boxShadow: isCore
+            ? `inset 0 -3px 0 ${color}`
+            : `inset 0 -2px 0 ${color}, inset 0 -3px 0 white, inset 0 -4px 0 ${color}`,
           color: '#0f172a',
         }}
         title={
-          band.uncoded.length > 0 && band.items.length === 0
-            ? 'Uncoded text (added directly to theme)'
+          (isCore ? 'Core' : 'Supporting') +
+          (band.uncoded.length > 0 && band.items.length === 0
+            ? ' · uncoded (added directly to theme)'
             : band.items.length + band.uncoded.length > 1
-              ? `${band.items.length} annotation${band.items.length === 1 ? '' : 's'}${band.uncoded.length > 0 ? ' + ' + band.uncoded.length + ' uncoded' : ''} merged`
-              : undefined
+              ? ` · ${band.items.length} annotation${band.items.length === 1 ? '' : 's'}${band.uncoded.length > 0 ? ' + ' + band.uncoded.length + ' uncoded' : ''} merged`
+              : '')
         }
       >
         {doc.text.slice(band.start, band.end)}
@@ -1442,12 +1453,39 @@ function DocBlock({
   return (
     <article className="border border-slate-200 rounded-lg bg-white overflow-hidden">
       <header className="px-4 py-2 border-b border-slate-100 bg-slate-50 sticky top-0 z-10">
-        <div className="text-[13px] font-bold text-slate-800">{doc.title}</div>
-        <div className="text-[10px] text-slate-500 mt-0.5">
-          {doc.folder ? `${doc.folder} · ` : ''}
-          {items.length} annotation{items.length === 1 ? '' : 's'}
-          {uncoded.length > 0 && ` · ${uncoded.length} uncoded`}
-          {' · '}{bands.length} highlight{bands.length === 1 ? '' : 's'}
+        <div className="flex items-center justify-between gap-2 flex-wrap">
+          <div className="min-w-0">
+            <div className="text-[13px] font-bold text-slate-800 truncate">{doc.title}</div>
+            <div className="text-[10px] text-slate-500 mt-0.5">
+              {doc.folder ? `${doc.folder} · ` : ''}
+              {items.length} annotation{items.length === 1 ? '' : 's'}
+              {uncoded.length > 0 && ` · ${uncoded.length} uncoded`}
+              {' · '}{bands.length} highlight{bands.length === 1 ? '' : 's'}
+            </div>
+          </div>
+          <div className="flex items-center gap-3 text-[10px] text-slate-500 flex-shrink-0">
+            <span className="flex items-center gap-1">
+              <span
+                className="inline-block w-4 h-3 rounded-sm"
+                style={{
+                  background: 'rgba(245, 158, 11, 0.38)',
+                  boxShadow: 'inset 0 -3px 0 #f59e0b',
+                }}
+              />
+              Core
+            </span>
+            <span className="flex items-center gap-1">
+              <span
+                className="inline-block w-4 h-3 rounded-sm"
+                style={{
+                  background: 'rgba(245, 158, 11, 0.18)',
+                  boxShadow:
+                    'inset 0 -2px 0 #f59e0b, inset 0 -3px 0 white, inset 0 -4px 0 #f59e0b',
+                }}
+              />
+              Supporting
+            </span>
+          </div>
         </div>
       </header>
       <div className="flex gap-4 px-4 py-3">
