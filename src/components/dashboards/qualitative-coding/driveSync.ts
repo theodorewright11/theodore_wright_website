@@ -23,7 +23,13 @@ import {
   updateFile,
   type DriveItem,
 } from './drive';
-import { codebookMarkdown, exportDocumentMarkdown, exportProjectJSON, exportProjectMarkdown } from './exporters';
+import {
+  codebookMarkdown,
+  exportDocumentMarkdown,
+  exportProjectJSON,
+  exportProjectMarkdown,
+  themesMarkdown,
+} from './exporters';
 import type { Document, DriveLink, Project } from './types';
 
 // ---------------------------------------------------------------------------
@@ -73,6 +79,9 @@ export async function syncProjectToDrive(
   );
   const existingCodebookMd = folderListing.find(
     (f) => f.mimeType !== MIME.folder && f.name === 'codebook.md',
+  );
+  const existingThemesMd = folderListing.find(
+    (f) => f.mimeType !== MIME.folder && f.name === 'themes.md',
   );
   const existingDocumentsFolder = folderListing.find(
     (f) => f.mimeType === MIME.folder && f.name === 'documents',
@@ -129,6 +138,23 @@ export async function syncProjectToDrive(
       parentId: folderId,
       mimeType: MIME.md,
       content: codebookContent,
+    });
+  }
+
+  // 5b. Write themes.md (always; harmless when empty).
+  const themesContent = themesMarkdown(project);
+  if (existingThemesMd) {
+    await updateFile(token, {
+      fileId: existingThemesMd.id,
+      content: themesContent,
+      mimeType: MIME.md,
+    });
+  } else {
+    await createFile(token, {
+      name: 'themes.md',
+      parentId: folderId,
+      mimeType: MIME.md,
+      content: themesContent,
     });
   }
 
