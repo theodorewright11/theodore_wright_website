@@ -3,6 +3,7 @@ import AuthBar, { type SyncStatus } from './AuthBar';
 import CodeTree from './CodeTree';
 import CodebookView from './CodebookView';
 import DocumentViewer from './DocumentViewer';
+import ThemesView from './ThemesView';
 import ExploreView, {
   defaultExploreFilterState,
   type ExploreFilterState,
@@ -1317,6 +1318,19 @@ export default function QualitativeCodingDashboard() {
               }
               onJumpToAnnotation={jumpToAnnotation}
             />
+          ) : view === 'themes' ? (
+            <ThemesView
+              project={activeProject}
+              activeThemeId={state.activeThemeId ?? null}
+              onSetActiveThemeId={setActiveThemeId}
+              onAddTheme={addTheme}
+              onUpdateTheme={updateTheme}
+              onDeleteTheme={deleteTheme}
+              onLinkAnnotation={linkAnnotationToTheme}
+              onUnlinkAnnotation={unlinkAnnotationFromTheme}
+              onToggleIncludeCode={toggleThemeIncludeCode}
+              onJumpToAnnotation={jumpToAnnotation}
+            />
           ) : openDocs.length > 0 ? (
             <div className="flex-1 min-w-0 min-h-0 flex">
               <div className="flex-1 min-w-0 min-h-0 flex overflow-x-auto">
@@ -1389,6 +1403,8 @@ export default function QualitativeCodingDashboard() {
                         onAddRangeToAnnotation={addRangeToAnnotation}
                         onRemoveRangeFromAnnotation={removeRangeFromAnnotation}
                         onSendAnnotationToNote={(annData) => sendAnnotationToNote(d, annData)}
+                        themes={(activeProject.themes ?? []).map((t) => ({ id: t.id, name: t.name }))}
+                        onLinkAnnotationToTheme={linkAnnotationToTheme}
                         canSendToNote={openDocs.some((o) => o.kind === 'note')}
                         onCreateCode={(name, parentId, color) =>
                           addCode(parentId ?? null, name, color)
@@ -1693,6 +1709,9 @@ function TopBar({
         </ViewBtn>
         <ViewBtn active={view === 'codebook'} onClick={() => onSetView('codebook')}>
           Codebook
+        </ViewBtn>
+        <ViewBtn active={view === 'themes'} onClick={() => onSetView('themes')}>
+          Themes
         </ViewBtn>
         <ViewBtn active={view === 'explore'} onClick={() => onSetView('explore')}>
           Explore{exploreCount > 1 ? ` · ${exploreCount}` : ''}

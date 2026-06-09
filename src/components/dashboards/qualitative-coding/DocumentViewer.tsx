@@ -57,6 +57,13 @@ type Props = {
       codeId: string;
     },
   ) => void;
+  // Themes the project has; each takes the annotation id + a 'core'|'supporting' weight.
+  themes?: { id: string; name: string }[];
+  onLinkAnnotationToTheme?: (
+    themeId: string,
+    annotationId: string,
+    weight: 'core' | 'supporting',
+  ) => void;
   canSendToNote?: boolean;
   qcLinkOptions?: QcLinkOptions;
   onCreateCode?: (
@@ -110,6 +117,8 @@ export default function DocumentViewer({
   onAddRangeToAnnotation,
   onRemoveRangeFromAnnotation,
   onSendAnnotationToNote,
+  themes: themesProp,
+  onLinkAnnotationToTheme,
   canSendToNote,
   qcLinkOptions,
   onCreateCode,
@@ -693,6 +702,8 @@ export default function DocumentViewer({
         onDelete={onDeleteAnnotation}
         onUpdate={onUpdateAnnotation}
         onSendToNote={onSendAnnotationToNote}
+        themes={themesProp}
+        onLinkToTheme={onLinkAnnotationToTheme}
         onRemoveRange={onRemoveRangeFromAnnotation}
         onEditCode={onUpdateCode ? (codeId) => setEditingCodeId(codeId) : undefined}
       />
@@ -1393,6 +1404,8 @@ function AnnotationsPanel({
   onDelete,
   onUpdate,
   onSendToNote,
+  themes,
+  onLinkToTheme,
   onRemoveRange,
   onEditCode,
 }: {
@@ -1413,6 +1426,12 @@ function AnnotationsPanel({
     ranges: { start: number; end: number }[];
     codeId: string;
   }) => void;
+  themes?: { id: string; name: string }[];
+  onLinkToTheme?: (
+    themeId: string,
+    annotationId: string,
+    weight: 'core' | 'supporting',
+  ) => void;
   onRemoveRange?: (id: string, rangeIdx: number) => void;
   onEditCode?: (codeId: string) => void;
 }) {
@@ -1524,6 +1543,29 @@ function AnnotationsPanel({
                     >
                       → note
                     </button>
+                  )}
+                  {onLinkToTheme && themes && themes.length > 0 && (
+                    <select
+                      value=""
+                      onClick={(e) => e.stopPropagation()}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        if (!val) return;
+                        const [tid, w] = val.split('::');
+                        onLinkToTheme(tid, a.id, w as 'core' | 'supporting');
+                        e.currentTarget.value = '';
+                      }}
+                      className="opacity-0 group-hover:opacity-100 text-[10px] font-semibold uppercase tracking-wider text-violet-700 bg-white border border-violet-200 hover:bg-violet-50 rounded px-1 py-0.5 transition-opacity"
+                      title="add to a theme as core or supporting evidence"
+                    >
+                      <option value="">→ theme</option>
+                      {themes.map((t) => (
+                        <optgroup key={t.id} label={t.name}>
+                          <option value={`${t.id}::core`}>{t.name} (core)</option>
+                          <option value={`${t.id}::supporting`}>{t.name} (supporting)</option>
+                        </optgroup>
+                      ))}
+                    </select>
                   )}
                   <button
                     type="button"
