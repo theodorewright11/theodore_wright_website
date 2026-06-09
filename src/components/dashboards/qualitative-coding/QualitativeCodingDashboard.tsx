@@ -1321,12 +1321,16 @@ export default function QualitativeCodingDashboard() {
               viewMode={state.exploreViewMode ?? 'flat'}
               showMeta={state.exploreShowMeta !== false}
               showNotes={state.exploreShowNotes !== false}
+              showFullDoc={!!state.exploreShowFullDoc}
               onSetViewMode={(m) => setState((s) => ({ ...s, exploreViewMode: m }))}
               onToggleShowMeta={() =>
                 setState((s) => ({ ...s, exploreShowMeta: !(s.exploreShowMeta !== false) }))
               }
               onToggleShowNotes={() =>
                 setState((s) => ({ ...s, exploreShowNotes: !(s.exploreShowNotes !== false) }))
+              }
+              onToggleShowFullDoc={() =>
+                setState((s) => ({ ...s, exploreShowFullDoc: !s.exploreShowFullDoc }))
               }
               onJumpToAnnotation={jumpToAnnotation}
             />

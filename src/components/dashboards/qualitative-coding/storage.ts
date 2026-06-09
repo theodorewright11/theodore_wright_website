@@ -65,6 +65,7 @@ export function loadState(): AppState {
           parsed.exploreViewMode === 'by-code' ? 'by-code' : 'flat',
         exploreShowMeta: parsed.exploreShowMeta !== false,
         exploreShowNotes: parsed.exploreShowNotes !== false,
+        exploreShowFullDoc: !!parsed.exploreShowFullDoc,
         activeThemeId:
           typeof parsed.activeThemeId === 'string' ? parsed.activeThemeId : null,
       };

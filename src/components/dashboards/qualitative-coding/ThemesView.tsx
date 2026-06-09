@@ -338,6 +338,7 @@ function ThemeDetail({
   const [draftName, setDraftName] = useState(theme.name);
   const [pickerQuery, setPickerQuery] = useState('');
   const [codePickerOpen, setCodePickerOpen] = useState(false);
+  const [annPickerOpen, setAnnPickerOpen] = useState(false);
 
   // Build the evidence list: direct links (with their weight) + auto-include
   // annotations from includeCodeIds (as 'supporting' unless they're also in
@@ -522,9 +523,28 @@ function ThemeDetail({
       </section>
 
       <section>
-        <div className="text-[10px] uppercase tracking-wider font-semibold text-slate-500 mb-2">
-          Evidence · {evidence.length}
+        <div className="flex items-center justify-between gap-2 mb-2">
+          <div className="text-[10px] uppercase tracking-wider font-semibold text-slate-500">
+            Evidence · {evidence.length}
+          </div>
+          <button
+            type="button"
+            onClick={() => setAnnPickerOpen((v) => !v)}
+            className="text-[11px] font-semibold text-blue-600 hover:bg-blue-50 px-2 py-1 rounded"
+          >
+            {annPickerOpen ? 'Done' : '+ add annotation'}
+          </button>
         </div>
+        {annPickerOpen && (
+          <AnnotationPicker
+            project={project}
+            currentLinks={new Set(theme.annotationLinks.map((l) => l.annotationId))}
+            onAdd={(annotationId, weight) =>
+              onLinkAnnotation(theme.id, annotationId, weight)
+            }
+            onRemove={(annotationId) => onUnlinkAnnotation(theme.id, annotationId)}
+          />
+        )}
         {evidence.length === 0 ? (
           <div className="text-[13px] text-slate-400 italic border border-dashed border-slate-200 rounded-lg p-8 text-center">
             No evidence yet. From the doc viewer or Explore, send annotations into this theme — or auto-include a code above.
@@ -693,6 +713,140 @@ function RatingsCard({
           rows={2}
           className="w-full px-2 py-1 text-[12px] border border-slate-200 rounded focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 resize-y"
         />
+      </div>
+    </div>
+  );
+}
+
+// Inline annotation search-and-add for the theme detail view. Lists every
+// annotation in the project (newest first), filtered by free-text on the
+// code path / quote / doc title. Each row shows the existing weight (if
+// linked) and Core / Supporting toggle buttons that add or change the weight.
+function AnnotationPicker({
+  project,
+  currentLinks,
+  onAdd,
+  onRemove,
+}: {
+  project: Project;
+  currentLinks: Set<string>;
+  onAdd: (annotationId: string, weight: 'core' | 'supporting') => void;
+  onRemove: (annotationId: string) => void;
+}) {
+  const [query, setQuery] = useState('');
+  const [showLinkedOnly, setShowLinkedOnly] = useState(false);
+
+  const items = useMemo(() => {
+    const docById = new Map(project.documents.map((d) => [d.id, d]));
+    return project.annotations
+      .map((a) => {
+        const doc = docById.get(a.docId);
+        const text = doc ? annText(a, doc.text) : '';
+        const codePath = codePathString(project.codes, a.codeId);
+        const docLabel = doc ? `${doc.folder ? doc.folder + ' / ' : ''}${doc.title}` : '';
+        return { a, doc, text, codePath, docLabel };
+      })
+      .sort((x, y) => y.a.created_at.localeCompare(x.a.created_at));
+  }, [project.annotations, project.documents, project.codes]);
+
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return items
+      .filter((it) => (showLinkedOnly ? currentLinks.has(it.a.id) : true))
+      .filter((it) => {
+        if (!q) return true;
+        return (
+          it.codePath.toLowerCase().includes(q) ||
+          it.text.toLowerCase().includes(q) ||
+          it.docLabel.toLowerCase().includes(q)
+        );
+      })
+      .slice(0, 100);
+  }, [items, query, showLinkedOnly, currentLinks]);
+
+  return (
+    <div className="mb-3 border border-slate-200 rounded-lg bg-white overflow-hidden">
+      <div className="flex items-center gap-2 px-3 py-2 border-b border-slate-100 bg-slate-50">
+        <input
+          autoFocus
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Search annotations by code, quote, or doc…"
+          className="flex-1 min-w-0 px-2 py-1 text-[12px] border border-slate-200 rounded bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500"
+        />
+        <label className="flex items-center gap-1 text-[11px] text-slate-600 cursor-pointer flex-shrink-0">
+          <input
+            type="checkbox"
+            checked={showLinkedOnly}
+            onChange={(e) => setShowLinkedOnly(e.target.checked)}
+          />
+          Already in theme
+        </label>
+      </div>
+      <div className="max-h-[340px] overflow-y-auto divide-y divide-slate-100">
+        {filtered.length === 0 ? (
+          <div className="px-3 py-4 text-[12px] text-slate-400 italic text-center">
+            No annotations match.
+          </div>
+        ) : (
+          filtered.map(({ a, doc, text, codePath, docLabel }) => {
+            const linked = currentLinks.has(a.id);
+            const color = resolveColor(project.codes, a.codeId);
+            const preview = text.slice(0, 160).replace(/\s+/g, ' ');
+            return (
+              <div key={a.id} className="px-3 py-2">
+                <div className="flex items-center gap-2 flex-wrap text-[11px]">
+                  <span
+                    className="w-2.5 h-2.5 rounded-sm ring-1 ring-black/5 flex-shrink-0"
+                    style={{ background: color }}
+                  />
+                  <span className="font-semibold text-slate-700">{codePath}</span>
+                  {doc && (
+                    <span className="text-slate-500 truncate ml-auto max-w-[200px]">
+                      {docLabel}
+                    </span>
+                  )}
+                </div>
+                <div className="mt-1 text-[12px] text-slate-700 italic break-words">
+                  “{preview}{text.length > 160 ? '…' : ''}”
+                </div>
+                <div className="mt-1.5 flex items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={() => onAdd(a.id, 'core')}
+                    className={`px-2 py-0.5 text-[10px] uppercase font-semibold tracking-wider rounded ${
+                      linked
+                        ? 'bg-amber-500 text-white hover:bg-amber-600'
+                        : 'bg-amber-100 text-amber-800 hover:bg-amber-200'
+                    }`}
+                  >
+                    {linked ? '↻' : '+'} Core
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => onAdd(a.id, 'supporting')}
+                    className={`px-2 py-0.5 text-[10px] uppercase font-semibold tracking-wider rounded ${
+                      linked
+                        ? 'bg-slate-400 text-white hover:bg-slate-500'
+                        : 'bg-slate-200 text-slate-700 hover:bg-slate-300'
+                    }`}
+                  >
+                    {linked ? '↻' : '+'} Supporting
+                  </button>
+                  {linked && (
+                    <button
+                      type="button"
+                      onClick={() => onRemove(a.id)}
+                      className="ml-auto text-[10px] text-slate-400 hover:text-red-600 px-1.5 py-0.5"
+                    >
+                      remove
+                    </button>
+                  )}
+                </div>
+              </div>
+            );
+          })
+        )}
       </div>
     </div>
   );

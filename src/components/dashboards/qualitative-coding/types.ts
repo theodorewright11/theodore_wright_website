@@ -152,6 +152,7 @@ export type AppState = {
   exploreViewMode?: 'flat' | 'by-code';
   exploreShowMeta?: boolean;
   exploreShowNotes?: boolean;
+  exploreShowFullDoc?: boolean;
   activeThemeId?: string | null;
 };
 

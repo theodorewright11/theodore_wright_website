@@ -58,9 +58,11 @@ type Props = {
   viewMode?: 'flat' | 'by-code';
   showMeta?: boolean;
   showNotes?: boolean;
+  showFullDoc?: boolean;
   onSetViewMode?: (m: 'flat' | 'by-code') => void;
   onToggleShowMeta?: () => void;
   onToggleShowNotes?: () => void;
+  onToggleShowFullDoc?: () => void;
   onJumpToAnnotation: (projectId: string, docId: string, annotationId: string) => void;
 };
 
@@ -83,9 +85,11 @@ export default function ExploreView({
   viewMode = 'flat',
   showMeta = true,
   showNotes = true,
+  showFullDoc = false,
   onSetViewMode,
   onToggleShowMeta,
   onToggleShowNotes,
+  onToggleShowFullDoc,
   onJumpToAnnotation,
 }: Props) {
   const {
@@ -771,6 +775,20 @@ export default function ExploreView({
                   Metadata {showMeta ? 'on' : 'off'}
                 </button>
               )}
+              {onToggleShowFullDoc && (
+                <button
+                  type="button"
+                  onClick={onToggleShowFullDoc}
+                  className={`px-2.5 py-1 text-[11px] font-semibold rounded-md border ${
+                    showFullDoc
+                      ? 'border-emerald-300 bg-emerald-50 text-emerald-800'
+                      : 'border-slate-300 text-slate-500 hover:bg-slate-100'
+                  }`}
+                  title={showFullDoc ? 'show only the annotated quote' : 'show the full doc with the annotation highlighted'}
+                >
+                  Full doc {showFullDoc ? 'on' : 'off'}
+                </button>
+              )}
             </div>
           </div>
           {rows.length === 0 ? (
@@ -785,6 +803,7 @@ export default function ExploreView({
               showProjectChips={showProjectChips}
               showMeta={showMeta}
               showNotes={showNotes}
+              showFullDoc={showFullDoc}
               onJump={onJumpToAnnotation}
             />
           ) : (
@@ -815,12 +834,13 @@ export default function ExploreView({
                       {r.doc.title}
                     </span>
                   </div>
-                  <blockquote
-                    className="text-[15px] text-slate-800 leading-relaxed border-l-2 border-slate-300 pl-3 whitespace-pre-wrap break-words"
-                    style={{ fontFamily: 'Georgia, Cambria, "Times New Roman", serif' }}
-                  >
-                    {r.span}
-                  </blockquote>
+                  <QuoteBlock
+                    fullDoc={showFullDoc}
+                    docText={r.doc.text}
+                    ranges={r.annotation.ranges ?? []}
+                    color={r.codeColor}
+                    span={r.span}
+                  />
                   {showNotes && r.annotation.note && (
                     <div className="mt-2 text-[12px] text-amber-900 bg-amber-50 border-l-2 border-amber-300 pl-3 py-1.5 leading-snug whitespace-pre-wrap">
                       {r.annotation.note}
@@ -1068,12 +1088,14 @@ function ByCodeView({
   showProjectChips,
   showMeta,
   showNotes,
+  showFullDoc,
   onJump,
 }: {
   rows: ExploreRow[];
   showProjectChips: boolean;
   showMeta: boolean;
   showNotes: boolean;
+  showFullDoc: boolean;
   onJump: (projectId: string, docId: string, annotationId: string) => void;
 }) {
   type Group = {
@@ -1162,12 +1184,15 @@ function ByCodeView({
                         <span className="text-slate-800">{r.doc.title}</span>
                       </span>
                     </div>
-                    <blockquote
-                      className="text-[15px] text-slate-800 leading-relaxed border-l-2 border-slate-300 pl-3 ml-8 whitespace-pre-wrap break-words"
-                      style={{ fontFamily: 'Georgia, Cambria, "Times New Roman", serif' }}
-                    >
-                      {r.span}
-                    </blockquote>
+                    <div className="ml-8">
+                      <QuoteBlock
+                        fullDoc={showFullDoc}
+                        docText={r.doc.text}
+                        ranges={r.annotation.ranges ?? []}
+                        color={r.codeColor}
+                        span={r.span}
+                      />
+                    </div>
                     {showNotes && r.annotation.note && (
                       <div className="mt-2 ml-8 text-[12px] text-amber-900 bg-amber-50 border-l-2 border-amber-300 pl-3 py-1.5 leading-snug whitespace-pre-wrap">
                         {r.annotation.note}
@@ -1194,6 +1219,83 @@ function ByCodeView({
       })}
     </div>
   );
+}
+
+// Render the annotation either as just the quoted span, or as the whole
+// doc text with the annotation's range(s) highlighted in their code color.
+// When `fullDoc` is true, the doc text is shown in full and only the bytes
+// inside `ranges` are tinted.
+function QuoteBlock({
+  fullDoc,
+  docText,
+  ranges,
+  color,
+  span,
+}: {
+  fullDoc: boolean;
+  docText: string;
+  ranges: { start: number; end: number }[];
+  color: string;
+  span: string;
+}) {
+  if (!fullDoc) {
+    return (
+      <blockquote
+        className="text-[15px] text-slate-800 leading-relaxed border-l-2 border-slate-300 pl-3 whitespace-pre-wrap break-words"
+        style={{ fontFamily: 'Georgia, Cambria, "Times New Roman", serif' }}
+      >
+        {span}
+      </blockquote>
+    );
+  }
+  // Build sorted, non-overlapping highlight segments.
+  const sorted = [...ranges].sort((a, b) => a.start - b.start);
+  const pieces: React.ReactNode[] = [];
+  let cursor = 0;
+  let key = 0;
+  for (const r of sorted) {
+    const s = Math.max(0, Math.min(docText.length, r.start));
+    const e = Math.max(s, Math.min(docText.length, r.end));
+    if (s > cursor) {
+      pieces.push(
+        <span key={key++}>{docText.slice(cursor, s)}</span>,
+      );
+    }
+    pieces.push(
+      <mark
+        key={key++}
+        className="rounded-sm px-0.5"
+        style={{
+          backgroundColor: hexAlpha(color, 0.35),
+          boxShadow: `inset 0 -2px 0 ${color}`,
+          color: '#0f172a',
+        }}
+      >
+        {docText.slice(s, e)}
+      </mark>,
+    );
+    cursor = e;
+  }
+  if (cursor < docText.length) {
+    pieces.push(<span key={key++}>{docText.slice(cursor)}</span>);
+  }
+  return (
+    <blockquote
+      className="text-[14px] text-slate-700 leading-relaxed border-l-2 border-slate-300 pl-3 whitespace-pre-wrap break-words max-h-[420px] overflow-y-auto"
+      style={{ fontFamily: 'Georgia, Cambria, "Times New Roman", serif' }}
+    >
+      {pieces}
+    </blockquote>
+  );
+}
+
+// Tiny hex → rgba helper for highlight backgrounds.
+function hexAlpha(hex: string, alpha: number): string {
+  const h = hex.replace('#', '');
+  const r = parseInt(h.slice(0, 2), 16);
+  const g = parseInt(h.slice(2, 4), 16);
+  const b = parseInt(h.slice(4, 6), 16);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
 // Multi-select 1–5 rating filter. Click numbers to toggle them. "Any" clears.
