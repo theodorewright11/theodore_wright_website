@@ -339,6 +339,11 @@ function ThemeDetail({
   const [pickerQuery, setPickerQuery] = useState('');
   const [codePickerOpen, setCodePickerOpen] = useState(false);
   const [annPickerOpen, setAnnPickerOpen] = useState(false);
+  // Display toggles for the Evidence section.
+  const [evViewMode, setEvViewMode] = useState<'flat' | 'by-code'>('by-code');
+  const [evShowFullDoc, setEvShowFullDoc] = useState(false);
+  const [evShowNotes, setEvShowNotes] = useState(true);
+  const [evShowMeta, setEvShowMeta] = useState(false);
 
   // Build the evidence list: direct links (with their weight) + auto-include
   // annotations from includeCodeIds (as 'supporting' unless they're also in
@@ -379,7 +384,9 @@ function ThemeDetail({
     return out;
   }, [theme, project.annotations, project.codes]);
 
-  // Group evidence by code for cleaner display.
+  // Group evidence by code. Groups with any core annotation come first; within
+  // each group, core items also appear before supporting (since `evidence` was
+  // already core-first-sorted upstream).
   const evidenceByCode = useMemo(() => {
     const m = new Map<string, typeof evidence>();
     for (const e of evidence) {
@@ -387,9 +394,14 @@ function ThemeDetail({
       arr.push(e);
       m.set(e.annotation.codeId, arr);
     }
-    return [...m.entries()].sort((a, b) =>
-      codePathString(project.codes, a[0]).localeCompare(codePathString(project.codes, b[0])),
-    );
+    return [...m.entries()].sort((a, b) => {
+      const aHasCore = a[1].some((x) => x.weight === 'core');
+      const bHasCore = b[1].some((x) => x.weight === 'core');
+      if (aHasCore !== bHasCore) return aHasCore ? -1 : 1;
+      return codePathString(project.codes, a[0]).localeCompare(
+        codePathString(project.codes, b[0]),
+      );
+    });
   }, [evidence, project.codes]);
 
   const coreCount = evidence.filter((e) => e.weight === 'core').length;
@@ -523,17 +535,77 @@ function ThemeDetail({
       </section>
 
       <section>
-        <div className="flex items-center justify-between gap-2 mb-2">
+        <div className="flex items-center justify-between gap-2 mb-2 flex-wrap">
           <div className="text-[10px] uppercase tracking-wider font-semibold text-slate-500">
             Evidence · {evidence.length}
           </div>
-          <button
-            type="button"
-            onClick={() => setAnnPickerOpen((v) => !v)}
-            className="text-[11px] font-semibold text-blue-600 hover:bg-blue-50 px-2 py-1 rounded"
-          >
-            {annPickerOpen ? 'Done' : '+ add annotation'}
-          </button>
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <div className="inline-flex rounded-md border border-slate-300 overflow-hidden text-[11px]">
+              <button
+                type="button"
+                onClick={() => setEvViewMode('flat')}
+                className={`px-2 py-1 font-semibold ${
+                  evViewMode === 'flat'
+                    ? 'bg-slate-900 text-white'
+                    : 'text-slate-600 hover:bg-slate-100 border-r border-slate-300'
+                }`}
+              >
+                Flat
+              </button>
+              <button
+                type="button"
+                onClick={() => setEvViewMode('by-code')}
+                className={`px-2 py-1 font-semibold ${
+                  evViewMode === 'by-code'
+                    ? 'bg-slate-900 text-white'
+                    : 'text-slate-600 hover:bg-slate-100'
+                }`}
+              >
+                By code
+              </button>
+            </div>
+            <button
+              type="button"
+              onClick={() => setEvShowFullDoc((v) => !v)}
+              className={`px-2 py-1 text-[11px] font-semibold rounded-md border ${
+                evShowFullDoc
+                  ? 'border-emerald-300 bg-emerald-50 text-emerald-800'
+                  : 'border-slate-300 text-slate-500 hover:bg-slate-100'
+              }`}
+              title={evShowFullDoc ? 'show only the quoted span' : 'show full doc with annotation highlighted'}
+            >
+              Full doc {evShowFullDoc ? 'on' : 'off'}
+            </button>
+            <button
+              type="button"
+              onClick={() => setEvShowNotes((v) => !v)}
+              className={`px-2 py-1 text-[11px] font-semibold rounded-md border ${
+                evShowNotes
+                  ? 'border-amber-300 bg-amber-50 text-amber-800'
+                  : 'border-slate-300 text-slate-500 hover:bg-slate-100'
+              }`}
+            >
+              Notes {evShowNotes ? 'on' : 'off'}
+            </button>
+            <button
+              type="button"
+              onClick={() => setEvShowMeta((v) => !v)}
+              className={`px-2 py-1 text-[11px] font-semibold rounded-md border ${
+                evShowMeta
+                  ? 'border-blue-300 bg-blue-50 text-blue-800'
+                  : 'border-slate-300 text-slate-500 hover:bg-slate-100'
+              }`}
+            >
+              Metadata {evShowMeta ? 'on' : 'off'}
+            </button>
+            <button
+              type="button"
+              onClick={() => setAnnPickerOpen((v) => !v)}
+              className="text-[11px] font-semibold text-blue-600 hover:bg-blue-50 px-2 py-1 rounded"
+            >
+              {annPickerOpen ? 'Done' : '+ add annotation'}
+            </button>
+          </div>
         </div>
         {annPickerOpen && (
           <AnnotationPicker
@@ -549,15 +621,47 @@ function ThemeDetail({
           <div className="text-[13px] text-slate-400 italic border border-dashed border-slate-200 rounded-lg p-8 text-center">
             No evidence yet. From the doc viewer or Explore, send annotations into this theme — or auto-include a code above.
           </div>
+        ) : evViewMode === 'flat' ? (
+          <ul className="space-y-3">
+            {evidence.map(({ annotation: a, weight, source }) => (
+              <li
+                key={a.id}
+                className="border border-slate-200 rounded-lg p-3 bg-white"
+              >
+                <EvidenceRow
+                  annotation={a}
+                  weight={weight}
+                  source={source}
+                  project={project}
+                  themeId={theme.id}
+                  onToggleWeight={() =>
+                    onLinkAnnotation(theme.id, a.id, weight === 'core' ? 'supporting' : 'core')
+                  }
+                  onUnlink={
+                    source === 'direct' ? () => onUnlinkAnnotation(theme.id, a.id) : undefined
+                  }
+                  onJump={() => onJumpToAnnotation(project.id, a.docId, a.id)}
+                  showFullDoc={evShowFullDoc}
+                  showNotes={evShowNotes}
+                  showMeta={evShowMeta}
+                  showCodePath
+                />
+              </li>
+            ))}
+          </ul>
         ) : (
           <div className="space-y-6">
             {evidenceByCode.map(([codeId, items]) => {
               const color = resolveColor(project.codes, codeId);
               const path = codePathString(project.codes, codeId);
+              const coreFirst = [...items].sort((x, y) => {
+                if (x.weight !== y.weight) return x.weight === 'core' ? -1 : 1;
+                return 0;
+              });
               return (
                 <div key={codeId} className="border border-slate-200 rounded-lg bg-white overflow-hidden">
                   <header
-                    className="px-3 py-2 flex items-center gap-2 border-b border-slate-100 sticky top-0 bg-white"
+                    className="px-3 py-2 flex items-center gap-2 border-b border-slate-100 sticky top-0 bg-white z-10"
                     style={{ boxShadow: `inset 3px 0 0 0 ${color}` }}
                   >
                     <span
@@ -568,86 +672,32 @@ function ThemeDetail({
                       {path}
                     </span>
                     <span className="text-[10px] font-mono text-slate-500">
-                      {items.length}
+                      {items.filter((x) => x.weight === 'core').length} core ·{' '}
+                      {items.length} total
                     </span>
                   </header>
                   <ol className="divide-y divide-slate-100">
-                    {items.map(({ annotation: a, weight, source }) => {
-                      const doc = project.documents.find((d) => d.id === a.docId);
-                      const text = annText(a, doc?.text ?? '');
-                      const ranges = annRanges(a);
-                      const isCore = weight === 'core';
-                      return (
-                        <li
-                          key={a.id}
-                          className="px-3 py-2 hover:bg-slate-50/60 group/ev"
-                        >
-                          <div className="flex items-center gap-2 mb-1 flex-wrap">
-                            <button
-                              type="button"
-                              onClick={() => {
-                                onLinkAnnotation(
-                                  theme.id,
-                                  a.id,
-                                  isCore ? 'supporting' : 'core',
-                                );
-                              }}
-                              className={`px-1.5 py-0.5 rounded text-[10px] uppercase font-semibold tracking-wider transition-colors ${
-                                isCore
-                                  ? 'bg-amber-500 text-white hover:bg-amber-600'
-                                  : 'bg-slate-200 text-slate-700 hover:bg-slate-300'
-                              }`}
-                              title="toggle core / supporting"
-                            >
-                              {isCore ? 'Core' : 'Supporting'}
-                            </button>
-                            {source === 'auto' && (
-                              <span
-                                className="text-[10px] uppercase font-semibold tracking-wider text-slate-400"
-                                title="auto-included via the code above"
-                              >
-                                auto
-                              </span>
-                            )}
-                            <span className="text-[11px] text-slate-500 ml-auto">
-                              {doc?.folder ? `${doc.folder} / ` : ''}
-                              {doc?.title}
-                            </span>
-                            <button
-                              type="button"
-                              onClick={() =>
-                                onJumpToAnnotation(project.id, a.docId, a.id)
-                              }
-                              className="text-[10px] text-slate-400 hover:text-blue-600 px-1"
-                              title="jump to the doc"
-                            >
-                              ↗
-                            </button>
-                            {source === 'direct' && (
-                              <button
-                                type="button"
-                                onClick={() => onUnlinkAnnotation(theme.id, a.id)}
-                                className="text-[12px] text-slate-400 hover:text-red-600 leading-none px-1 opacity-0 group-hover/ev:opacity-100"
-                                title="remove from theme"
-                              >
-                                ×
-                              </button>
-                            )}
-                          </div>
-                          <blockquote
-                            className="text-[14px] text-slate-800 leading-relaxed border-l-2 border-slate-300 pl-3 whitespace-pre-wrap break-words"
-                            style={{ fontFamily: 'Georgia, Cambria, "Times New Roman", serif' }}
-                          >
-                            {text}
-                          </blockquote>
-                          {ranges.length > 1 && (
-                            <span className="block mt-1 text-[10px] font-mono text-slate-400">
-                              {ranges.length} ranges
-                            </span>
-                          )}
-                        </li>
-                      );
-                    })}
+                    {coreFirst.map(({ annotation: a, weight, source }) => (
+                      <li key={a.id} className="px-3 py-2">
+                        <EvidenceRow
+                          annotation={a}
+                          weight={weight}
+                          source={source}
+                          project={project}
+                          themeId={theme.id}
+                          onToggleWeight={() =>
+                            onLinkAnnotation(theme.id, a.id, weight === 'core' ? 'supporting' : 'core')
+                          }
+                          onUnlink={
+                            source === 'direct' ? () => onUnlinkAnnotation(theme.id, a.id) : undefined
+                          }
+                          onJump={() => onJumpToAnnotation(project.id, a.docId, a.id)}
+                          showFullDoc={evShowFullDoc}
+                          showNotes={evShowNotes}
+                          showMeta={evShowMeta}
+                        />
+                      </li>
+                    ))}
                   </ol>
                 </div>
               );
@@ -850,4 +900,184 @@ function AnnotationPicker({
       </div>
     </div>
   );
+}
+
+// Renders a single evidence row used by both flat and by-code modes.
+function EvidenceRow({
+  annotation: a,
+  weight,
+  source,
+  project,
+  themeId,
+  onToggleWeight,
+  onUnlink,
+  onJump,
+  showFullDoc,
+  showNotes,
+  showMeta,
+  showCodePath = false,
+}: {
+  annotation: Annotation;
+  weight: 'core' | 'supporting';
+  source: 'direct' | 'auto';
+  project: Project;
+  themeId: string;
+  onToggleWeight: () => void;
+  onUnlink?: () => void;
+  onJump: () => void;
+  showFullDoc: boolean;
+  showNotes: boolean;
+  showMeta: boolean;
+  showCodePath?: boolean;
+}) {
+  const doc = project.documents.find((d) => d.id === a.docId);
+  const text = annText(a, doc?.text ?? '');
+  const ranges = annRanges(a);
+  const isCore = weight === 'core';
+  const codeColor = resolveColor(project.codes, a.codeId);
+  const codePath = codePathString(project.codes, a.codeId);
+  return (
+    <div className="group/ev">
+      <div className="flex items-center gap-2 mb-1 flex-wrap">
+        <button
+          type="button"
+          onClick={onToggleWeight}
+          className={`px-1.5 py-0.5 rounded text-[10px] uppercase font-semibold tracking-wider transition-colors ${
+            isCore
+              ? 'bg-amber-500 text-white hover:bg-amber-600'
+              : 'bg-slate-200 text-slate-700 hover:bg-slate-300'
+          }`}
+          title="toggle core / supporting"
+        >
+          {isCore ? 'Core' : 'Supporting'}
+        </button>
+        {source === 'auto' && (
+          <span
+            className="text-[10px] uppercase font-semibold tracking-wider text-slate-400"
+            title="auto-included via the code"
+          >
+            auto
+          </span>
+        )}
+        {showCodePath && (
+          <span className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-700 min-w-0">
+            <span
+              className="w-2 h-2 rounded-sm ring-1 ring-black/5 flex-shrink-0"
+              style={{ background: codeColor }}
+            />
+            <span className="truncate">{codePath}</span>
+          </span>
+        )}
+        <span className="text-[11px] text-slate-500 ml-auto truncate max-w-[300px]">
+          {doc?.folder ? `${doc.folder} / ` : ''}
+          {doc?.title}
+        </span>
+        <button
+          type="button"
+          onClick={onJump}
+          className="text-[10px] text-slate-400 hover:text-blue-600 px-1"
+          title="jump to the doc"
+        >
+          ↗
+        </button>
+        {onUnlink && (
+          <button
+            type="button"
+            onClick={onUnlink}
+            className="text-[12px] text-slate-400 hover:text-red-600 leading-none px-1 opacity-0 group-hover/ev:opacity-100"
+            title="remove from theme"
+          >
+            ×
+          </button>
+        )}
+      </div>
+      {!showFullDoc ? (
+        <blockquote
+          className="text-[14px] text-slate-800 leading-relaxed border-l-2 border-slate-300 pl-3 whitespace-pre-wrap break-words"
+          style={{ fontFamily: 'Georgia, Cambria, "Times New Roman", serif' }}
+        >
+          {text}
+        </blockquote>
+      ) : (
+        <HighlightedDocBlock
+          docText={doc?.text ?? ''}
+          ranges={ranges}
+          color={codeColor}
+        />
+      )}
+      {showNotes && a.note && (
+        <div className="mt-1.5 text-[12px] text-amber-900 bg-amber-50 border-l-2 border-amber-300 pl-3 py-1 leading-snug whitespace-pre-wrap">
+          {a.note}
+        </div>
+      )}
+      {showMeta && doc && Object.keys(doc.metadata).length > 0 && (
+        <div className="mt-1.5 flex flex-wrap gap-x-3 gap-y-0.5 text-[10px] text-slate-500 font-mono">
+          {Object.entries(doc.metadata)
+            .filter(([_, v]) => v !== null && v !== undefined && v !== '')
+            .map(([k, v]) => (
+              <span key={k}>
+                <span className="text-slate-400">{k}:</span> {String(v)}
+              </span>
+            ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Full doc text with the annotation's range(s) highlighted in the code color.
+function HighlightedDocBlock({
+  docText,
+  ranges,
+  color,
+}: {
+  docText: string;
+  ranges: { start: number; end: number }[];
+  color: string;
+}) {
+  const sorted = [...ranges].sort((a, b) => a.start - b.start);
+  const pieces: React.ReactNode[] = [];
+  let cursor = 0;
+  let key = 0;
+  const rgba = hexToRgba(color, 0.35);
+  for (const r of sorted) {
+    const s = Math.max(0, Math.min(docText.length, r.start));
+    const e = Math.max(s, Math.min(docText.length, r.end));
+    if (s > cursor) {
+      pieces.push(<span key={key++}>{docText.slice(cursor, s)}</span>);
+    }
+    pieces.push(
+      <mark
+        key={key++}
+        className="rounded-sm px-0.5"
+        style={{
+          backgroundColor: rgba,
+          boxShadow: `inset 0 -2px 0 ${color}`,
+          color: '#0f172a',
+        }}
+      >
+        {docText.slice(s, e)}
+      </mark>,
+    );
+    cursor = e;
+  }
+  if (cursor < docText.length) {
+    pieces.push(<span key={key++}>{docText.slice(cursor)}</span>);
+  }
+  return (
+    <blockquote
+      className="text-[13px] text-slate-700 leading-relaxed border-l-2 border-slate-300 pl-3 whitespace-pre-wrap break-words max-h-[360px] overflow-y-auto"
+      style={{ fontFamily: 'Georgia, Cambria, "Times New Roman", serif' }}
+    >
+      {pieces}
+    </blockquote>
+  );
+}
+
+function hexToRgba(hex: string, alpha: number): string {
+  const h = hex.replace('#', '');
+  const r = parseInt(h.slice(0, 2), 16);
+  const g = parseInt(h.slice(2, 4), 16);
+  const b = parseInt(h.slice(4, 6), 16);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
