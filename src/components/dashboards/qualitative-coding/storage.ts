@@ -26,7 +26,10 @@ export function loadState(): AppState {
         activeProjectId: parsed.activeProjectId ?? null,
         exploreProjectIds: Array.isArray(parsed.exploreProjectIds) ? parsed.exploreProjectIds : [],
         view:
-          parsed.view === 'explore' || parsed.view === 'about' || parsed.view === 'codebook'
+          parsed.view === 'explore' ||
+          parsed.view === 'about' ||
+          parsed.view === 'codebook' ||
+          parsed.view === 'themes'
             ? parsed.view
             : 'documents',
         showCodeDefinitions: !!parsed.showCodeDefinitions,
@@ -61,6 +64,8 @@ export function loadState(): AppState {
           parsed.exploreViewMode === 'by-code' ? 'by-code' : 'flat',
         exploreShowMeta: parsed.exploreShowMeta !== false,
         exploreShowNotes: parsed.exploreShowNotes !== false,
+        activeThemeId:
+          typeof parsed.activeThemeId === 'string' ? parsed.activeThemeId : null,
       };
     }
   } catch {
@@ -92,6 +97,7 @@ export function coerceProject(p: any): Project {
     })),
     codes: Array.isArray(p.codes) ? p.codes.map(coerceCode) : [],
     annotations: Array.isArray(p.annotations) ? p.annotations.map(coerceAnnotation) : [],
+    themes: Array.isArray(p.themes) ? p.themes.map(coerceTheme) : [],
     folders: Array.isArray(p.folders) ? p.folders.filter((f: any) => typeof f === 'string') : [],
     created_at: p.created_at ?? new Date().toISOString(),
     updated_at: p.updated_at ?? new Date().toISOString(),
@@ -136,6 +142,52 @@ function coerceAnnotation(a: any) {
     return { ...rest, ranges: [{ start, end }] };
   }
   return { ...rest, ranges: [] };
+}
+
+// Tolerant theme migration. Empty arrays for missing collections; weights
+// constrained to 'core' | 'supporting' with 'supporting' as the default.
+function coerceTheme(t: any) {
+  const links = Array.isArray(t?.annotationLinks) ? t.annotationLinks : [];
+  return {
+    id: typeof t?.id === 'string' ? t.id : cryptoRandomId(),
+    name: typeof t?.name === 'string' ? t.name : 'Untitled theme',
+    description: typeof t?.description === 'string' ? t.description : undefined,
+    parentIds: Array.isArray(t?.parentIds)
+      ? t.parentIds.filter((s: any) => typeof s === 'string')
+      : [],
+    color: typeof t?.color === 'string' ? t.color : null,
+    order: typeof t?.order === 'number' ? t.order : undefined,
+    annotationLinks: links
+      .filter((l: any) => l && typeof l.annotationId === 'string')
+      .map((l: any) => ({
+        annotationId: l.annotationId,
+        weight: l.weight === 'core' ? 'core' : 'supporting',
+      })),
+    includeCodeIds: Array.isArray(t?.includeCodeIds)
+      ? t.includeCodeIds.filter((s: any) => typeof s === 'string')
+      : [],
+    rating:
+      t?.rating && typeof t.rating === 'object'
+        ? {
+            grounding: clampRating(t.rating.grounding),
+            usefulness: clampRating(t.rating.usefulness),
+            independence: clampRating(t.rating.independence),
+            interpretationLevel: clampRating(t.rating.interpretationLevel),
+            prevalence: clampRating(t.rating.prevalence),
+            notes:
+              typeof t.rating.notes === 'string' ? t.rating.notes : undefined,
+          }
+        : undefined,
+    created_at:
+      typeof t?.created_at === 'string'
+        ? t.created_at
+        : new Date().toISOString(),
+  };
+}
+
+function clampRating(v: any): 1 | 2 | 3 | 4 | 5 | undefined {
+  if (v === 1 || v === 2 || v === 3 || v === 4 || v === 5) return v;
+  return undefined;
 }
 
 export function cryptoRandomId(): string {

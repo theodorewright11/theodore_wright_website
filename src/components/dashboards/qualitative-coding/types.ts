@@ -70,6 +70,44 @@ export type DriveLink = {
   modifiedTime?: string;
 };
 
+// A theme is an analyst-level grouping of evidence (annotations) under a
+// short label + interpretive narrative. Themes nest like codes (parentIds
+// can be empty for top-level). Each annotation link carries a `weight`:
+//   'core'       — the annotation directly demonstrates the theme.
+//   'supporting' — the annotation supports / illustrates the theme adjacently.
+export type ThemeAnnotationLink = {
+  annotationId: string;
+  weight: 'core' | 'supporting';
+};
+
+export type ThemeRating = {
+  grounding?: 1 | 2 | 3 | 4 | 5;
+  usefulness?: 1 | 2 | 3 | 4 | 5;
+  independence?: 1 | 2 | 3 | 4 | 5;
+  interpretationLevel?: 1 | 2 | 3 | 4 | 5;
+  prevalence?: 1 | 2 | 3 | 4 | 5;
+  notes?: string;
+};
+
+export type Theme = {
+  id: string;
+  name: string;
+  // Markdown narrative — your written-up interpretation of the theme.
+  description?: string;
+  parentIds: string[];
+  color: string | null;
+  order?: number;
+  // Direct annotation links with core/supporting weight. One annotation can
+  // appear in multiple themes (and across themes via this list).
+  annotationLinks: ThemeAnnotationLink[];
+  // Codes whose annotations are auto-included as 'supporting' evidence.
+  // The Themes view shows all annotations of these codes alongside the
+  // direct links, deduped by annotation id (direct links win).
+  includeCodeIds: string[];
+  rating?: ThemeRating;
+  created_at: string;
+};
+
 export type Project = {
   version: SchemaVersion;
   id: string;
@@ -80,13 +118,14 @@ export type Project = {
   documents: Document[];
   codes: Code[];
   annotations: Annotation[];
+  themes?: Theme[];
   folders?: string[];
   created_at: string;
   updated_at: string;
   drive?: DriveLink;
 };
 
-export type View = 'documents' | 'explore' | 'about' | 'codebook';
+export type View = 'documents' | 'explore' | 'about' | 'codebook' | 'themes';
 
 export type AppState = {
   version: SchemaVersion;
@@ -113,6 +152,7 @@ export type AppState = {
   exploreViewMode?: 'flat' | 'by-code';
   exploreShowMeta?: boolean;
   exploreShowNotes?: boolean;
+  activeThemeId?: string | null;
 };
 
 export const PALETTE = [

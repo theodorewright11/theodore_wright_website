@@ -55,6 +55,7 @@ import type {
   Document,
   MetadataField,
   Project,
+  Theme,
   View,
 } from './types';
 
@@ -900,9 +901,132 @@ export default function QualitativeCodingDashboard() {
     updateActiveProject((p) => ({
       ...p,
       annotations: p.annotations.filter((a) => a.id !== id),
+      // Strip any theme link pointing at this annotation.
+      themes: (p.themes ?? []).map((t) => ({
+        ...t,
+        annotationLinks: t.annotationLinks.filter((l) => l.annotationId !== id),
+      })),
     }));
     queueWrite(projectId);
   };
+
+  // ----- Theme CRUD -----
+  const addTheme = (name: string, parentId: string | null = null): string => {
+    if (!activeProject) return '';
+    const projectId = activeProject.id;
+    const id = cryptoRandomId();
+    updateActiveProject((p) => {
+      const theme: Theme = {
+        id,
+        name: name.trim() || 'Untitled theme',
+        parentIds: parentId ? [parentId] : [],
+        color: null,
+        annotationLinks: [],
+        includeCodeIds: [],
+        created_at: new Date().toISOString(),
+      };
+      return { ...p, themes: [...(p.themes ?? []), theme] };
+    });
+    queueWrite(projectId);
+    return id;
+  };
+
+  const updateTheme = (id: string, patch: Partial<Theme>) => {
+    if (!activeProject) return;
+    const projectId = activeProject.id;
+    updateActiveProject((p) => ({
+      ...p,
+      themes: (p.themes ?? []).map((t) => (t.id === id ? { ...t, ...patch } : t)),
+    }));
+    queueWrite(projectId);
+  };
+
+  const deleteTheme = (id: string) => {
+    if (!activeProject) return;
+    const projectId = activeProject.id;
+    updateActiveProject((p) => ({
+      ...p,
+      themes: (p.themes ?? []).filter((t) => t.id !== id),
+    }));
+    if (state.activeThemeId === id) {
+      setState((s) => ({ ...s, activeThemeId: null }));
+    }
+    queueWrite(projectId);
+  };
+
+  // Link / unlink an annotation to a theme with a 'core' | 'supporting'
+  // weight. Idempotent: re-adding flips the weight.
+  const linkAnnotationToTheme = (
+    themeId: string,
+    annotationId: string,
+    weight: 'core' | 'supporting' = 'supporting',
+  ) => {
+    if (!activeProject) return;
+    const projectId = activeProject.id;
+    updateActiveProject((p) => ({
+      ...p,
+      themes: (p.themes ?? []).map((t) => {
+        if (t.id !== themeId) return t;
+        const existing = t.annotationLinks.find((l) => l.annotationId === annotationId);
+        if (existing) {
+          // Re-link with same weight is no-op; with different weight, update.
+          if (existing.weight === weight) return t;
+          return {
+            ...t,
+            annotationLinks: t.annotationLinks.map((l) =>
+              l.annotationId === annotationId ? { ...l, weight } : l,
+            ),
+          };
+        }
+        return {
+          ...t,
+          annotationLinks: [...t.annotationLinks, { annotationId, weight }],
+        };
+      }),
+    }));
+    queueWrite(projectId);
+  };
+
+  const unlinkAnnotationFromTheme = (themeId: string, annotationId: string) => {
+    if (!activeProject) return;
+    const projectId = activeProject.id;
+    updateActiveProject((p) => ({
+      ...p,
+      themes: (p.themes ?? []).map((t) =>
+        t.id === themeId
+          ? {
+              ...t,
+              annotationLinks: t.annotationLinks.filter(
+                (l) => l.annotationId !== annotationId,
+              ),
+            }
+          : t,
+      ),
+    }));
+    queueWrite(projectId);
+  };
+
+  // Bulk include / exclude a code (its annotations auto-flow as supporting
+  // evidence in the theme view).
+  const toggleThemeIncludeCode = (themeId: string, codeId: string) => {
+    if (!activeProject) return;
+    const projectId = activeProject.id;
+    updateActiveProject((p) => ({
+      ...p,
+      themes: (p.themes ?? []).map((t) => {
+        if (t.id !== themeId) return t;
+        const cur = t.includeCodeIds ?? [];
+        const next = cur.includes(codeId)
+          ? cur.filter((id) => id !== codeId)
+          : [...cur, codeId];
+        return { ...t, includeCodeIds: next };
+      }),
+    }));
+    queueWrite(projectId);
+  };
+
+  const setActiveThemeId = (id: string | null) =>
+    setState((s) => ({ ...s, activeThemeId: id }));
 
   const handleSchemaChange = (next: MetadataField[]) => {
     if (!activeProject) return;
