@@ -255,6 +255,182 @@ function ProjectStats({ project }: { project: Project }) {
         {new Date(project.updated_at).toLocaleDateString()}
         {project.drive?.folderId && <> · synced to Drive</>}
       </div>
+
+      <RubricSection />
+    </div>
+  );
+}
+
+function RubricSection() {
+  const [open, setOpen] = useState(true);
+  return (
+    <div className="mt-10 pt-6 border-t border-slate-200">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="flex items-center gap-1.5 text-[10px] uppercase font-semibold tracking-[0.12em] text-slate-500 hover:text-slate-800 mb-2"
+      >
+        <span className="text-[10px] text-slate-400 w-3">{open ? '▾' : '▸'}</span>
+        Grading rubrics — reference
+      </button>
+      {open && (
+        <div className="space-y-6 max-w-[860px]">
+          <RubricBlock
+            title="Code rubric"
+            intro={
+              <>
+                Codes are rated on two criteria. <strong>Specificity</strong> is set once per code (intrinsic to how it’s defined). <strong>Accuracy</strong> is set per annotation — how well that code fits a particular text segment. A code’s aggregate accuracy is the mean of all its annotation-level ratings.
+              </>
+            }
+            rows={[
+              {
+                criterion: 'Specificity',
+                question: 'Is the code at an appropriate level of detail?',
+                anchors: [
+                  '5 · precise level of detail; meaningfully compresses while preserving what matters',
+                  '4 · mostly appropriate; slight over- or under-compression',
+                  '3 · somewhat mismatched; noticeably over- or under-compresses',
+                  '2 · poorly matched; too broad to distinguish or too narrow to add value',
+                  '1 · unhelpful; applies to nearly anything OR just repeats the segment',
+                ],
+              },
+              {
+                criterion: 'Accuracy (per annotation)',
+                question: 'Does the code correctly and clearly label the text segment it’s applied to?',
+                anchors: [
+                  '5 · precisely captures the segment; clear, informative shorthand',
+                  '4 · mostly captures with minor ambiguity',
+                  '3 · partially captures with some ambiguity',
+                  '2 · loosely captures with notable ambiguity',
+                  '1 · does not capture the segment; unclear or unrelated label',
+                ],
+              },
+            ]}
+          />
+
+          <RubricBlock
+            title="Theme rubric — evaluative"
+            intro={
+              <>
+                Themes are rated on three evaluative criteria. Subthemes use the same scale — independence is scoped to siblings under the same parent.
+              </>
+            }
+            rows={[
+              {
+                criterion: 'Grounding',
+                question: 'Does this theme accurately reflect patterns present in the data?',
+                anchors: [
+                  '5 · clearly reflects patterns; extracts demonstrate it; interpretation specific and traceable',
+                  '4 · mostly reflects with minor mismatches; mostly traceable',
+                  '3 · partially reflects; some extracts loose; interpretation vague',
+                  '2 · loosely connects; few extracts demonstrate the pattern',
+                  '1 · does not reflect; extracts don’t demonstrate; interpretation unconvincing',
+                ],
+              },
+              {
+                criterion: 'Usefulness',
+                question: 'Does this theme contribute to answering the research question?',
+                anchors: [
+                  '5 · directly addresses at appropriate depth; meaningfully advances the analysis',
+                  '4 · mostly addresses with minor depth/specificity issues',
+                  '3 · partially addresses at somewhat mismatched depth',
+                  '2 · tangentially addresses at mismatched depth',
+                  '1 · does not address the research question',
+                ],
+              },
+              {
+                criterion: 'Independence',
+                question: 'Is this theme distinct from other themes in the set?',
+                anchors: [
+                  '5 · clearly distinct; captures a unique pattern',
+                  '4 · mostly distinct with minor overlap with one other theme',
+                  '3 · partially distinct; moderate overlap with another theme',
+                  '2 · substantial overlap with another theme',
+                  '1 · redundant; captures no unique pattern',
+                ],
+              },
+            ]}
+          />
+
+          <RubricBlock
+            title="Theme rubric — descriptive"
+            intro={
+              <>
+                These two criteria describe the theme without judging it. Lower or higher isn’t worse — appropriateness depends on the research question.
+              </>
+            }
+            rows={[
+              {
+                criterion: 'Interpretation level',
+                question: 'How far beyond the surface text does this theme go?',
+                anchors: [
+                  '5 · substantial; ties pattern to underlying dynamics or frameworks',
+                  '4 · considerable inference; broader-context framing',
+                  '3 · moderate inference; pattern not explicit in any extract',
+                  '2 · slightly beyond surface; minimal inference',
+                  '1 · surface; restates / summarises the text',
+                ],
+              },
+              {
+                criterion: 'Prevalence',
+                question: 'How often does this theme appear in the data?',
+                anchors: [
+                  '5 · nearly all data items; pervasive',
+                  '4 · majority of data items; common',
+                  '3 · notable portion; moderate',
+                  '2 · small minority; uncommon',
+                  '1 · very few items; rare',
+                ],
+              },
+            ]}
+          />
+
+          <div className="text-[12px] text-slate-500 leading-relaxed border-l-2 border-slate-300 pl-3">
+            <strong className="text-slate-700">Why theme independence matters:</strong> no information redundancy (each theme captures unique variance — the PCA argument), stable data-to-theme mapping (comments can be unambiguously assigned), and interpretive clarity (when themes are orthogonal, the relationship between them becomes meaningful).
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function RubricBlock({
+  title,
+  intro,
+  rows,
+}: {
+  title: string;
+  intro: React.ReactNode;
+  rows: { criterion: string; question: string; anchors: string[] }[];
+}) {
+  return (
+    <div className="border border-slate-200 rounded-lg bg-white overflow-hidden">
+      <div className="px-4 py-3 border-b border-slate-100 bg-slate-50">
+        <div className="text-[13px] font-bold text-slate-800">{title}</div>
+        <p className="text-[12px] text-slate-600 mt-1 leading-snug">{intro}</p>
+      </div>
+      <div className="divide-y divide-slate-100">
+        {rows.map((r) => (
+          <div key={r.criterion} className="px-4 py-3">
+            <div className="text-[12px] font-semibold text-slate-700">
+              {r.criterion}
+            </div>
+            <div className="text-[11px] text-slate-500 italic mt-0.5">
+              {r.question}
+            </div>
+            <ul className="mt-2 space-y-1">
+              {r.anchors.map((a, i) => (
+                <li
+                  key={i}
+                  className="text-[12px] text-slate-700 leading-snug pl-3 border-l border-slate-200"
+                >
+                  {a}
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

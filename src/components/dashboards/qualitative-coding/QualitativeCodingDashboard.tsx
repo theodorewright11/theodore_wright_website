@@ -1779,7 +1779,7 @@ function TopBar({
           Themes
         </ViewBtn>
         <ViewBtn active={view === 'grading'} onClick={() => onSetView('grading')}>
-          Grading
+          Code grading
         </ViewBtn>
         <ViewBtn active={view === 'explore'} onClick={() => onSetView('explore')}>
           Explore{exploreCount > 1 ? ` · ${exploreCount}` : ''}

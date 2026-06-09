@@ -36,7 +36,7 @@ export default function GradingView({
             className="font-bold text-[20px] text-slate-900 leading-tight"
             style={{ letterSpacing: '-0.015em' }}
           >
-            Grading · {project.name}
+            Code grading · {project.name}
           </h1>
           <div className="ml-auto inline-flex rounded-md border border-slate-300 overflow-hidden">
             {(['codes', 'themes', 'annotations'] as const).map((t) => (
@@ -128,9 +128,9 @@ function CodesTable({
   }, [rows, sortKey, sortDesc]);
 
   const headers: { key: CodeSortKey; label: string; width?: string; align?: 'left' | 'right' }[] = [
-    { key: 'name', label: 'Code', width: 'w-[260px]', align: 'left' },
+    { key: 'name', label: 'Code', width: 'w-[320px]', align: 'left' },
     { key: 'count', label: 'Annotations', width: 'w-[110px]', align: 'right' },
-    { key: 'specificity', label: 'Specificity', width: 'w-[280px]', align: 'left' },
+    { key: 'specificity', label: 'Specificity', width: 'w-[300px]', align: 'left' },
     { key: 'accuracy', label: 'Mean accuracy', width: 'w-[150px]', align: 'right' },
   ];
 
@@ -159,9 +159,6 @@ function CodesTable({
                 )}
               </th>
             ))}
-            <th className="px-3 py-2 text-[10px] uppercase tracking-wider font-semibold text-slate-600 text-left">
-              Description
-            </th>
           </tr>
         </thead>
         <tbody>
@@ -185,9 +182,6 @@ function CodesTable({
               </td>
               <td className="px-3 py-2 text-right font-mono text-slate-500">
                 {r.meanAccuracy !== null ? `${r.meanAccuracy.toFixed(2)} (${r.ratedAccCount})` : '—'}
-              </td>
-              <td className="px-3 py-2 text-[12px] text-slate-500 break-words">
-                {r.code.description || <span className="italic text-slate-300">—</span>}
               </td>
             </tr>
           ))}
