@@ -1245,8 +1245,31 @@ function DocBlock({
     () => project.annotations.filter((a) => a.docId === doc.id),
     [project.annotations, doc.id],
   );
+  // For each band, collect every code that applies to it — including ancestor
+  // codes of any directly-applied code. You typically annotate with leaves,
+  // and a leaf implies its parent chain; filtering by 'top' / 'mid' should
+  // surface those even though no annotation is literally on the parent.
+  const codeById = useMemo(
+    () => new Map(project.codes.map((c) => [c.id, c])),
+    [project.codes],
+  );
+  const ancestorsOf = (codeId: string): string[] => {
+    const out: string[] = [];
+    const seen = new Set<string>();
+    const walk = (id: string) => {
+      const c = codeById.get(id);
+      if (!c) return;
+      for (const pid of c.parentIds) {
+        if (seen.has(pid)) continue;
+        seen.add(pid);
+        out.push(pid);
+        walk(pid);
+      }
+    };
+    walk(codeId);
+    return out;
+  };
   const bandMeta = bands.map((band) => {
-    // Codes covering this band (from every annotation, deduped).
     const codeSet = new Set<string>();
     const inThemeCodes = new Set<string>();
     for (const a of allDocAnns) {
@@ -1254,9 +1277,15 @@ function DocBlock({
         (r) => r.start < band.end && r.end > band.start,
       );
       if (!overlaps) continue;
-      if (!passLevel(a.codeId)) continue;
-      codeSet.add(a.codeId);
-      if (themeAnnIds.has(a.id)) inThemeCodes.add(a.codeId);
+      const isThemeAnn = themeAnnIds.has(a.id);
+      // Build the chain: the annotated code + every ancestor (multi-parent
+      // safe). Then filter that chain by the level toggle.
+      const chain = [a.codeId, ...ancestorsOf(a.codeId)];
+      for (const cid of chain) {
+        if (!passLevel(cid)) continue;
+        codeSet.add(cid);
+        if (isThemeAnn) inThemeCodes.add(cid);
+      }
     }
     return { codes: [...codeSet], inTheme: inThemeCodes };
   });
