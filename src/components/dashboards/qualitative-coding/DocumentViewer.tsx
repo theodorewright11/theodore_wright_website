@@ -838,40 +838,42 @@ function DocHeader({
   }, [doc.id]);
 
   return (
-    <div className="px-8 pt-6 pb-4 border-b border-slate-200 bg-white">
-      <div className="max-w-[760px] mx-auto mb-2 flex items-center gap-1.5 text-[11px] text-slate-400">
-        <span className="text-slate-300">📁</span>
+    <div className="px-8 pt-3 pb-2 border-b border-slate-200 bg-white">
+      <div className="max-w-[760px] mx-auto flex items-baseline gap-2 flex-wrap">
         <input
-          value={folder}
-          onChange={(e) => setFolder(e.target.value)}
+          value={title}
+          onChange={(e) => setTitle(emDash(e.target.value))}
           onBlur={() => {
-            const v = folder.trim();
-            const next = v || undefined;
-            if (next !== doc.folder) onUpdateDoc({ folder: next });
+            const v = title.trim() || 'Untitled document';
+            if (v !== doc.title) onUpdateDoc({ title: v });
           }}
           onKeyDown={(e) => {
             if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
           }}
-          placeholder="folder (use / for nesting, e.g. Interviews/Round 1)"
-          className="flex-1 px-1 py-0.5 text-[12px] text-slate-600 placeholder-slate-300 bg-transparent border-none focus:outline-none focus:bg-slate-50 rounded"
+          placeholder="Document title"
+          className="flex-1 min-w-[200px] px-0 py-0 font-sans font-bold text-[20px] leading-tight text-slate-900 placeholder-slate-300 border-none focus:outline-none focus:ring-0 bg-transparent"
+          style={{ letterSpacing: '-0.015em' }}
         />
+        <div className="flex items-center gap-1 text-[11px] text-slate-400">
+          <span className="text-slate-300">📁</span>
+          <input
+            value={folder}
+            onChange={(e) => setFolder(e.target.value)}
+            onBlur={() => {
+              const v = folder.trim();
+              const next = v || undefined;
+              if (next !== doc.folder) onUpdateDoc({ folder: next });
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
+            }}
+            placeholder="folder"
+            className="w-[180px] px-1 py-0.5 text-[11px] text-slate-600 placeholder-slate-300 bg-transparent border-none focus:outline-none focus:bg-slate-50 rounded"
+          />
+        </div>
       </div>
-      <input
-        value={title}
-        onChange={(e) => setTitle(emDash(e.target.value))}
-        onBlur={() => {
-          const v = title.trim() || 'Untitled document';
-          if (v !== doc.title) onUpdateDoc({ title: v });
-        }}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
-        }}
-        placeholder="Document title"
-        className="w-full max-w-[760px] mx-auto block px-0 py-0 font-sans font-bold text-[28px] leading-tight text-slate-900 placeholder-slate-300 border-none focus:outline-none focus:ring-0 bg-transparent"
-        style={{ letterSpacing: '-0.02em' }}
-      />
       {metadataSchema.length > 0 && (
-        <div className="max-w-[760px] mx-auto mt-3">
+        <div className="max-w-[760px] mx-auto mt-1.5">
           <button
             type="button"
             onClick={onToggleMetadata}
@@ -1428,7 +1430,7 @@ function AnnotationsPanel({
           onChange={onResize}
         />
       )}
-      <div className="px-8 py-2 flex items-center gap-2 flex-shrink-0">
+      <div className="px-8 py-1 flex items-center gap-2 flex-shrink-0">
         <button
           type="button"
           onClick={onToggleCollapsed}

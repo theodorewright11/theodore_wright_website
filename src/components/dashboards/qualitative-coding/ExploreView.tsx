@@ -254,25 +254,22 @@ export default function ExploreView({
 
   return (
     <div className="flex-1 min-w-0 min-h-0 flex flex-col bg-white">
-      <div className="px-8 pt-6 pb-3 border-b border-slate-200 bg-white">
+      <div className="px-8 py-2.5 border-b border-slate-200 bg-white">
         <div className="max-w-[1200px] mx-auto">
-          <div className="flex items-end justify-between gap-4">
-            <div>
-              <div className="text-[11px] uppercase tracking-[0.16em] font-semibold text-blue-600 mb-1">
-                Explore
-              </div>
+          <div className="flex items-center justify-between gap-4 flex-wrap">
+            <div className="flex items-baseline gap-3 min-w-0">
               <h1
-                className="font-bold text-[32px] text-slate-900 leading-tight"
-                style={{ letterSpacing: '-0.025em' }}
+                className="font-bold text-[20px] text-slate-900 leading-tight truncate"
+                style={{ letterSpacing: '-0.02em' }}
               >
                 {projects.length === 1
-                  ? `Annotations · ${projects[0].name}`
-                  : `Annotations across ${projects.length} projects`}
+                  ? `Explore · ${projects[0].name}`
+                  : `Explore · ${projects.length} projects`}
               </h1>
               {showProjectChips && (
-                <div className="text-[12px] text-slate-500 mt-1">
+                <span className="text-[11px] text-slate-500 truncate">
                   {projects.map((p) => p.name).join(' · ')}
-                </div>
+                </span>
               )}
             </div>
             {hasFilters && (

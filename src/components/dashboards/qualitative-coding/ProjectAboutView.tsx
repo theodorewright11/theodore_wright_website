@@ -79,20 +79,17 @@ export default function ProjectAboutView({ project, onUpdate }: Props) {
           onKeyDown={(e) => {
             if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
           }}
-          className="w-full font-bold text-[36px] leading-tight text-slate-900 placeholder-slate-300 border-none focus:outline-none bg-transparent mb-3"
-          style={{ letterSpacing: '-0.025em' }}
+          className="w-full font-bold text-[22px] leading-tight text-slate-900 placeholder-slate-300 border-none focus:outline-none bg-transparent mb-2"
+          style={{ letterSpacing: '-0.015em' }}
           placeholder="Project name"
         />
 
-        <div className="mb-8">
-          <label className="block text-[10px] uppercase font-semibold tracking-[0.12em] text-slate-500 mb-1">
-            Short description
-          </label>
+        <div className="mb-5">
           <input
             value={description}
             onChange={(e) => setDescription(emDash(e.target.value))}
             placeholder="One-line summary of what this project is about"
-            className="w-full px-3 py-2 text-[15px] text-slate-700 border border-slate-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500"
+            className="w-full px-3 py-1.5 text-[13px] text-slate-700 border border-slate-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500"
           />
         </div>
 

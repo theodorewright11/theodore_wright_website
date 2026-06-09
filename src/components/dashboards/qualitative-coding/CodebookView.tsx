@@ -245,24 +245,26 @@ export default function CodebookView({
       <div
         className={
           isPanel
-            ? 'px-4 py-3 border-b border-slate-200 flex items-start justify-between bg-white gap-2'
-            : 'px-8 pt-8 pb-4 max-w-[820px] mx-auto'
+            ? 'px-4 py-2 border-b border-slate-200 flex items-center justify-between bg-white gap-2'
+            : 'px-8 pt-3 pb-2 max-w-[820px] mx-auto border-b border-slate-200'
         }
       >
         <div className="flex-1 min-w-0">
-          <div className="text-[11px] uppercase tracking-[0.16em] font-semibold text-blue-600 mb-1">
-            Codebook
-          </div>
           {!isPanel && (
             <h1
-              className="font-bold text-[34px] text-slate-900 leading-tight mb-2"
-              style={{ letterSpacing: '-0.025em' }}
+              className="font-bold text-[20px] text-slate-900 leading-tight"
+              style={{ letterSpacing: '-0.015em' }}
             >
-              {project.name}
+              Codebook · {project.name}
             </h1>
           )}
+          {isPanel && (
+            <div className="text-[12px] uppercase tracking-wider font-semibold text-slate-600">
+              Codebook
+            </div>
+          )}
           {!isPanel && (
-            <p className="text-[14px] text-slate-500">
+            <p className="text-[12px] text-slate-500">
               {project.codes.length} code{project.codes.length === 1 ? '' : 's'} ·{' '}
               {project.annotations.length} annotation
               {project.annotations.length === 1 ? '' : 's'}
