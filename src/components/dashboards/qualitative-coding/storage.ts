@@ -168,6 +168,32 @@ function coerceTheme(t: any) {
     includeCodeIds: Array.isArray(t?.includeCodeIds)
       ? t.includeCodeIds.filter((s: any) => typeof s === 'string')
       : [],
+    uncodedHighlights: Array.isArray(t?.uncodedHighlights)
+      ? t.uncodedHighlights
+          .filter(
+            (h: any) =>
+              h &&
+              typeof h.docId === 'string' &&
+              Array.isArray(h.ranges) &&
+              h.ranges.length > 0,
+          )
+          .map((h: any) => ({
+            id: typeof h.id === 'string' ? h.id : cryptoRandomId(),
+            docId: h.docId,
+            ranges: h.ranges
+              .filter(
+                (r: any) =>
+                  r && typeof r.start === 'number' && typeof r.end === 'number',
+              )
+              .map((r: any) => ({ start: r.start, end: r.end })),
+            weight: h.weight === 'core' ? 'core' : 'supporting',
+            note: typeof h.note === 'string' ? h.note : undefined,
+            created_at:
+              typeof h.created_at === 'string'
+                ? h.created_at
+                : new Date().toISOString(),
+          }))
+      : [],
     rating:
       t?.rating && typeof t.rating === 'object'
         ? {

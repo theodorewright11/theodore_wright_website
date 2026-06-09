@@ -68,6 +68,15 @@ type Props = {
     weight: 'core' | 'supporting',
   ) => void;
   onUnlinkAnnotationFromTheme?: (themeId: string, annotationId: string) => void;
+  // Add the current selection to a theme directly. Subsumed annotations get
+  // linked individually; if none, the raw span is stored as an uncoded
+  // highlight on the theme. Returns counts for the optional toast.
+  onAddThemeFromSelection?: (
+    themeId: string,
+    selStart: number,
+    selEnd: number,
+    weight: 'core' | 'supporting',
+  ) => { linkedCount: number; uncodedAdded: boolean };
   canSendToNote?: boolean;
   qcLinkOptions?: QcLinkOptions;
   onCreateCode?: (
@@ -124,6 +133,7 @@ export default function DocumentViewer({
   themes: themesProp,
   onLinkAnnotationToTheme,
   onUnlinkAnnotationFromTheme,
+  onAddThemeFromSelection,
   canSendToNote,
   qcLinkOptions,
   onCreateCode,
@@ -764,6 +774,22 @@ export default function DocumentViewer({
                 }
               : undefined
           }
+          themes={themesProp}
+          onAddToTheme={
+            onAddThemeFromSelection
+              ? (themeId, weight) => {
+                  const r = onAddThemeFromSelection(
+                    themeId,
+                    pending.start,
+                    pending.end,
+                    weight,
+                  );
+                  setPending(null);
+                  window.getSelection()?.removeAllRanges();
+                  return r;
+                }
+              : undefined
+          }
           onPick={(codeIds, note, sendToNote) => {
             for (const codeId of codeIds) {
               const id = cryptoRandomId();
@@ -1031,6 +1057,12 @@ type PopoverProps = {
   };
   onMoveFocused?: () => void;
   onAddRangeToFocused?: () => void;
+  themes?: import('./types').Theme[];
+  // When invoked, applies the subsume-or-uncode rule against the selection.
+  onAddToTheme?: (
+    themeId: string,
+    weight: 'core' | 'supporting',
+  ) => { linkedCount: number; uncodedAdded: boolean };
 };
 
 const SelectionPopover = forwardRef<HTMLDivElement, PopoverProps>(function SelectionPopover(
@@ -1046,6 +1078,8 @@ const SelectionPopover = forwardRef<HTMLDivElement, PopoverProps>(function Selec
     focusedAnnotation,
     onAddRangeToFocused,
     onMoveFocused,
+    themes: popoverThemes,
+    onAddToTheme,
   },
   ref,
 ) {
@@ -1204,6 +1238,12 @@ const SelectionPopover = forwardRef<HTMLDivElement, PopoverProps>(function Selec
         </button>
       </div>
       <div className="max-h-[380px] overflow-y-auto">
+        {popoverThemes && popoverThemes.length > 0 && onAddToTheme && (
+          <AddToThemeBlock
+            themes={popoverThemes}
+            onAddToTheme={onAddToTheme}
+          />
+        )}
         {focusedAnnotation && onAddRangeToFocused && (
           <div className="bg-blue-50 border-b border-blue-100">
             <button
@@ -1631,6 +1671,74 @@ function AnnotationsPanel({
       </div>
       </div>
       )}
+    </div>
+  );
+}
+
+// Compact theme-picker shown at the very top of the selection popover. Lets
+// you add the current selection to any theme as Core or Supporting without
+// going through the code-pick flow. If existing annotations are fully
+// subsumed by the selection, each gets linked individually; otherwise the
+// raw span is stored as an uncoded highlight on the theme.
+function AddToThemeBlock({
+  themes,
+  onAddToTheme,
+}: {
+  themes: import('./types').Theme[];
+  onAddToTheme: (
+    themeId: string,
+    weight: 'core' | 'supporting',
+  ) => { linkedCount: number; uncodedAdded: boolean };
+}) {
+  const [pickedId, setPickedId] = useState('');
+  const handle = (weight: 'core' | 'supporting') => {
+    if (!pickedId) return;
+    onAddToTheme(pickedId, weight);
+    setPickedId('');
+  };
+  return (
+    <div className="bg-violet-50 border-b border-violet-100 px-3 py-2">
+      <div className="flex items-center gap-1.5 mb-1.5">
+        <span className="w-4 h-4 rounded-sm bg-violet-600 text-white text-[12px] font-bold flex items-center justify-center flex-shrink-0">
+          ⌘
+        </span>
+        <span className="text-[12px] text-violet-900 font-semibold">
+          Add this selection to a theme
+        </span>
+      </div>
+      <div className="flex items-center gap-1.5 flex-wrap">
+        <select
+          value={pickedId}
+          onChange={(e) => setPickedId(e.target.value)}
+          className="flex-1 min-w-[140px] max-w-[260px] px-1.5 py-1 text-[11px] border border-violet-300 rounded bg-white text-slate-700"
+        >
+          <option value="">Pick a theme…</option>
+          {themes.map((t) => (
+            <option key={t.id} value={t.id}>
+              {t.name}
+            </option>
+          ))}
+        </select>
+        <button
+          type="button"
+          disabled={!pickedId}
+          onClick={() => handle('core')}
+          className="px-2 py-1 text-[10px] uppercase font-semibold tracking-wider bg-amber-500 text-white hover:bg-amber-600 disabled:bg-slate-200 disabled:text-slate-400 rounded"
+        >
+          + Core
+        </button>
+        <button
+          type="button"
+          disabled={!pickedId}
+          onClick={() => handle('supporting')}
+          className="px-2 py-1 text-[10px] uppercase font-semibold tracking-wider bg-violet-200 text-violet-800 hover:bg-violet-300 disabled:bg-slate-100 disabled:text-slate-400 rounded"
+        >
+          + Supporting
+        </button>
+      </div>
+      <div className="text-[10px] text-violet-700 mt-1 italic">
+        Subsumed annotations link individually; otherwise the raw span is added uncoded.
+      </div>
     </div>
   );
 }

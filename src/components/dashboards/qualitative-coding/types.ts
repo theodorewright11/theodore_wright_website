@@ -80,6 +80,21 @@ export type ThemeAnnotationLink = {
   weight: 'core' | 'supporting';
 };
 
+// Raw text span attached to a theme that's NOT routed through an annotation
+// (so it carries no code). Used when an analyst highlights text in a doc and
+// chooses "Add to theme" — if no existing annotations are fully contained
+// within the selection, the text is stored here as evidence with no code.
+// If annotations WERE fully contained, those are linked individually instead
+// and no uncoded highlight is created.
+export type ThemeUncodedHighlight = {
+  id: string;
+  docId: string;
+  ranges: AnnotationRange[];
+  weight: 'core' | 'supporting';
+  note?: string;
+  created_at: string;
+};
+
 export type ThemeRating = {
   grounding?: 1 | 2 | 3 | 4 | 5;
   usefulness?: 1 | 2 | 3 | 4 | 5;
@@ -104,6 +119,8 @@ export type Theme = {
   // The Themes view shows all annotations of these codes alongside the
   // direct links, deduped by annotation id (direct links win).
   includeCodeIds: string[];
+  // Raw highlighted text added to the theme without an annotation backing it.
+  uncodedHighlights?: ThemeUncodedHighlight[];
   rating?: ThemeRating;
   created_at: string;
 };

@@ -1013,6 +1013,93 @@ export default function QualitativeCodingDashboard() {
     queueWrite(projectId);
   };
 
+  // Add a raw text span to a theme without going through an annotation:
+  //  - any existing annotation whose ranges are FULLY within the selection
+  //    gets linked to the theme with the given weight (so a multi-coded
+  //    segment contributes every applicable code).
+  //  - if no annotations are fully subsumed, the selected text is recorded
+  //    as a Theme.uncodedHighlights entry with no code attribution.
+  // Returns the number of annotations linked plus 1 if an uncoded highlight
+  // was added (useful for the caller to surface a status message).
+  const addThemeFromSelection = (
+    themeId: string,
+    docId: string,
+    selStart: number,
+    selEnd: number,
+    weight: 'core' | 'supporting' = 'core',
+  ): { linkedCount: number; uncodedAdded: boolean } => {
+    if (!activeProject) return { linkedCount: 0, uncodedAdded: false };
+    const projectId = activeProject.id;
+    // Find every annotation whose every range is fully inside [selStart, selEnd].
+    const subsumed = activeProject.annotations.filter((a) => {
+      if (a.docId !== docId) return false;
+      if (!a.ranges || a.ranges.length === 0) return false;
+      return a.ranges.every((r) => r.start >= selStart && r.end <= selEnd);
+    });
+    let linked = 0;
+    let uncodedAdded = false;
+    updateActiveProject((p) => {
+      const themes = (p.themes ?? []).map((t) => {
+        if (t.id !== themeId) return t;
+        let nextLinks = t.annotationLinks;
+        for (const a of subsumed) {
+          const existing = nextLinks.find((l) => l.annotationId === a.id);
+          if (existing) {
+            if (existing.weight !== weight) {
+              nextLinks = nextLinks.map((l) =>
+                l.annotationId === a.id ? { ...l, weight } : l,
+              );
+            }
+          } else {
+            nextLinks = [...nextLinks, { annotationId: a.id, weight }];
+            linked += 1;
+          }
+        }
+        let nextUncoded = t.uncodedHighlights ?? [];
+        if (subsumed.length === 0) {
+          nextUncoded = [
+            ...nextUncoded,
+            {
+              id: cryptoRandomId(),
+              docId,
+              ranges: [{ start: selStart, end: selEnd }],
+              weight,
+              created_at: new Date().toISOString(),
+            },
+          ];
+          uncodedAdded = true;
+        }
+        return {
+          ...t,
+          annotationLinks: nextLinks,
+          uncodedHighlights: nextUncoded,
+        };
+      });
+      return { ...p, themes };
+    });
+    queueWrite(projectId);
+    return { linkedCount: linked, uncodedAdded };
+  };
+
+  const removeThemeUncodedHighlight = (themeId: string, highlightId: string) => {
+    if (!activeProject) return;
+    const projectId = activeProject.id;
+    updateActiveProject((p) => ({
+      ...p,
+      themes: (p.themes ?? []).map((t) =>
+        t.id === themeId
+          ? {
+              ...t,
+              uncodedHighlights: (t.uncodedHighlights ?? []).filter(
+                (h) => h.id !== highlightId,
+              ),
+            }
+          : t,
+      ),
+    }));
+    queueWrite(projectId);
+  };
+
   // Bulk include / exclude a code (its annotations auto-flow as supporting
   // evidence in the theme view).
   const toggleThemeIncludeCode = (themeId: string, codeId: string) => {
@@ -1371,6 +1458,7 @@ export default function QualitativeCodingDashboard() {
               onLinkAnnotation={linkAnnotationToTheme}
               onUnlinkAnnotation={unlinkAnnotationFromTheme}
               onToggleIncludeCode={toggleThemeIncludeCode}
+              onRemoveUncodedHighlight={removeThemeUncodedHighlight}
               onJumpToAnnotation={jumpToAnnotation}
             />
           ) : view === 'grading' ? (
@@ -1468,6 +1556,9 @@ export default function QualitativeCodingDashboard() {
                         themes={activeProject.themes ?? []}
                         onLinkAnnotationToTheme={linkAnnotationToTheme}
                         onUnlinkAnnotationFromTheme={unlinkAnnotationFromTheme}
+                        onAddThemeFromSelection={(themeId, selStart, selEnd, weight) =>
+                          addThemeFromSelection(themeId, d.id, selStart, selEnd, weight)
+                        }
                         canSendToNote={openDocs.some((o) => o.kind === 'note')}
                         onCreateCode={(name, parentId, color) =>
                           addCode(parentId ?? null, name, color)

@@ -69,6 +69,7 @@ type Props = {
   onLinkAnnotation: (themeId: string, annotationId: string, weight: 'core' | 'supporting') => void;
   onUnlinkAnnotation: (themeId: string, annotationId: string) => void;
   onToggleIncludeCode: (themeId: string, codeId: string) => void;
+  onRemoveUncodedHighlight?: (themeId: string, highlightId: string) => void;
   onJumpToAnnotation: (
     projectId: string,
     docId: string,
@@ -86,6 +87,7 @@ export default function ThemesView({
   onLinkAnnotation,
   onUnlinkAnnotation,
   onToggleIncludeCode,
+  onRemoveUncodedHighlight,
   onJumpToAnnotation,
 }: Props) {
   const themes = project.themes ?? [];
@@ -186,6 +188,7 @@ export default function ThemesView({
             onLinkAnnotation={onLinkAnnotation}
             onUnlinkAnnotation={onUnlinkAnnotation}
             onToggleIncludeCode={onToggleIncludeCode}
+            onRemoveUncodedHighlight={onRemoveUncodedHighlight}
             onJumpToAnnotation={onJumpToAnnotation}
           />
         )}
@@ -323,6 +326,7 @@ function ThemeDetail({
   onLinkAnnotation,
   onUnlinkAnnotation,
   onToggleIncludeCode,
+  onRemoveUncodedHighlight,
   onJumpToAnnotation,
 }: {
   project: Project;
@@ -332,6 +336,7 @@ function ThemeDetail({
   onLinkAnnotation: (themeId: string, annotationId: string, weight: 'core' | 'supporting') => void;
   onUnlinkAnnotation: (themeId: string, annotationId: string) => void;
   onToggleIncludeCode: (themeId: string, codeId: string) => void;
+  onRemoveUncodedHighlight?: (themeId: string, highlightId: string) => void;
   onJumpToAnnotation: (projectId: string, docId: string, annotationId: string) => void;
 }) {
   const [editingName, setEditingName] = useState(false);
@@ -347,6 +352,8 @@ function ThemeDetail({
   // Doc-view extras
   const [docCodeMargin, setDocCodeMargin] = useState<'off' | 'on'>('on');
   const [docCodeLevel, setDocCodeLevel] = useState<'all' | 'top' | 'mid' | 'leaf'>('all');
+
+  const uncodedHighlights = theme.uncodedHighlights ?? [];
 
   // Build the evidence list: direct links (with their weight) + auto-include
   // annotations from includeCodeIds (as 'supporting' unless they're also in
@@ -541,6 +548,11 @@ function ThemeDetail({
         <div className="flex items-center justify-between gap-2 mb-2 flex-wrap">
           <div className="text-[10px] uppercase tracking-wider font-semibold text-slate-500">
             Evidence · {evidence.length}
+            {uncodedHighlights.length > 0 && (
+              <span className="ml-1 normal-case tracking-normal text-violet-700">
+                + {uncodedHighlights.length} uncoded
+              </span>
+            )}
           </div>
           <div className="flex items-center gap-1.5 flex-wrap">
             <div className="inline-flex rounded-md border border-slate-300 overflow-hidden text-[11px]">
@@ -651,6 +663,7 @@ function ThemeDetail({
         ) : evViewMode === 'doc' ? (
           <DocsView
             evidence={evidence}
+            uncodedHighlights={uncodedHighlights}
             project={project}
             codeMargin={docCodeMargin}
             codeLevel={docCodeLevel}
@@ -736,6 +749,64 @@ function ThemeDetail({
                 </div>
               );
             })}
+          </div>
+        )}
+        {evViewMode !== 'doc' && uncodedHighlights.length > 0 && (
+          <div className="mt-6 border border-dashed border-violet-300 rounded-lg bg-violet-50/40 overflow-hidden">
+            <header className="px-3 py-2 border-b border-violet-100 bg-violet-50">
+              <div className="text-[10px] uppercase tracking-wider font-semibold text-violet-700">
+                Uncoded text · {uncodedHighlights.length}
+              </div>
+              <div className="text-[11px] text-violet-700 italic mt-0.5">
+                Raw spans you added to this theme without an underlying annotation.
+              </div>
+            </header>
+            <ol className="divide-y divide-violet-100">
+              {uncodedHighlights.map((h) => {
+                const doc = project.documents.find((d) => d.id === h.docId);
+                const text = (h.ranges ?? [])
+                  .map((r) => (doc?.text ?? '').slice(r.start, r.end))
+                  .join(' … ');
+                return (
+                  <li key={h.id} className="px-3 py-2 group/un">
+                    <div className="flex items-center gap-2 mb-1 flex-wrap">
+                      <span
+                        className={`px-1.5 py-0.5 rounded text-[10px] uppercase font-semibold tracking-wider ${
+                          h.weight === 'core'
+                            ? 'bg-amber-500 text-white'
+                            : 'bg-violet-200 text-violet-800'
+                        }`}
+                      >
+                        {h.weight === 'core' ? 'Core' : 'Supporting'}
+                      </span>
+                      <span className="text-[10px] uppercase font-semibold tracking-wider text-slate-400">
+                        uncoded
+                      </span>
+                      <span className="text-[11px] text-slate-500 ml-auto truncate max-w-[280px]">
+                        {doc?.folder ? `${doc.folder} / ` : ''}
+                        {doc?.title}
+                      </span>
+                      {onRemoveUncodedHighlight && (
+                        <button
+                          type="button"
+                          onClick={() => onRemoveUncodedHighlight(theme.id, h.id)}
+                          className="text-[12px] text-slate-400 hover:text-red-600 leading-none px-1 opacity-0 group-hover/un:opacity-100"
+                          title="remove from theme"
+                        >
+                          ×
+                        </button>
+                      )}
+                    </div>
+                    <blockquote
+                      className="text-[14px] text-slate-800 leading-relaxed border-l-2 border-violet-300 pl-3 whitespace-pre-wrap break-words"
+                      style={{ fontFamily: 'Georgia, Cambria, "Times New Roman", serif' }}
+                    >
+                      {text}
+                    </blockquote>
+                  </li>
+                );
+              })}
+            </ol>
           </div>
         )}
       </section>
@@ -1130,31 +1201,42 @@ type EvidenceItem = {
 // text. The level filter restricts margin codes to top-level / mid / leaves.
 function DocsView({
   evidence,
+  uncodedHighlights,
   project,
   codeMargin,
   codeLevel,
 }: {
   evidence: EvidenceItem[];
+  uncodedHighlights: import('./types').ThemeUncodedHighlight[];
   project: Project;
   codeMargin: 'on' | 'off';
   codeLevel: 'all' | 'top' | 'mid' | 'leaf';
 }) {
-  // Group evidence by docId; only docs that actually exist.
+  // Group evidence (annotation links + uncoded highlights) by docId.
   const docs = useMemo(() => {
-    const byDoc = new Map<string, EvidenceItem[]>();
+    const byDoc = new Map<
+      string,
+      { items: EvidenceItem[]; uncoded: import('./types').ThemeUncodedHighlight[] }
+    >();
     for (const e of evidence) {
-      const arr = byDoc.get(e.annotation.docId) ?? [];
-      arr.push(e);
-      byDoc.set(e.annotation.docId, arr);
+      const k = e.annotation.docId;
+      const cur = byDoc.get(k) ?? { items: [], uncoded: [] };
+      cur.items.push(e);
+      byDoc.set(k, cur);
+    }
+    for (const h of uncodedHighlights) {
+      const cur = byDoc.get(h.docId) ?? { items: [], uncoded: [] };
+      cur.uncoded.push(h);
+      byDoc.set(h.docId, cur);
     }
     return project.documents
       .filter((d) => byDoc.has(d.id))
-      .map((d) => ({ doc: d, items: byDoc.get(d.id)! }))
+      .map((d) => ({ doc: d, ...byDoc.get(d.id)! }))
       .sort((a, b) =>
         (a.doc.folder ?? '').localeCompare(b.doc.folder ?? '') ||
         a.doc.title.localeCompare(b.doc.title),
       );
-  }, [evidence, project.documents]);
+  }, [evidence, uncodedHighlights, project.documents]);
 
   // Cache for which codes are leaves (no child in project.codes references this id as parent).
   const codeLevelOf = useMemo(() => {
@@ -1179,11 +1261,12 @@ function DocsView({
 
   return (
     <div className="space-y-6">
-      {docs.map(({ doc, items }) => (
+      {docs.map(({ doc, items, uncoded }) => (
         <DocBlock
           key={doc.id}
           doc={doc}
           items={items}
+          uncoded={uncoded}
           project={project}
           codeMargin={codeMargin}
           passLevel={passLevel}
@@ -1198,41 +1281,63 @@ function DocsView({
 function DocBlock({
   doc,
   items,
+  uncoded,
   project,
   codeMargin,
   passLevel,
 }: {
   doc: Project['documents'][number];
   items: EvidenceItem[];
+  uncoded: import('./types').ThemeUncodedHighlight[];
   project: Project;
   codeMargin: 'on' | 'off';
   passLevel: (codeId: string) => boolean;
 }) {
-  // Step 1: merge all theme ranges into non-overlapping bands (adjacent ranges
-  // become continuous so two annotations one after the other read as one).
-  type Band = { start: number; end: number; items: EvidenceItem[] };
+  // Step 1: merge all theme ranges (from annotation evidence AND uncoded
+  // highlights) into non-overlapping bands. Adjacent ranges become continuous.
+  type Band = {
+    start: number;
+    end: number;
+    items: EvidenceItem[]; // contributing annotation evidence
+    uncoded: import('./types').ThemeUncodedHighlight[];
+  };
   const bands: Band[] = useMemo(() => {
-    type R = { start: number; end: number; item: EvidenceItem };
+    type R = {
+      start: number;
+      end: number;
+      item?: EvidenceItem;
+      uncoded?: import('./types').ThemeUncodedHighlight;
+    };
     const flat: R[] = [];
     for (const it of items) {
       for (const r of it.annotation.ranges ?? []) {
         flat.push({ start: r.start, end: r.end, item: it });
       }
     }
+    for (const h of uncoded) {
+      for (const r of h.ranges ?? []) {
+        flat.push({ start: r.start, end: r.end, uncoded: h });
+      }
+    }
     flat.sort((a, b) => a.start - b.start || a.end - b.end);
     const out: Band[] = [];
     for (const r of flat) {
       const last = out[out.length - 1];
-      // Merge if overlapping OR touching (adjacent reads as one continuous span).
       if (last && r.start <= last.end) {
         last.end = Math.max(last.end, r.end);
-        if (!last.items.includes(r.item)) last.items.push(r.item);
+        if (r.item && !last.items.includes(r.item)) last.items.push(r.item);
+        if (r.uncoded && !last.uncoded.includes(r.uncoded)) last.uncoded.push(r.uncoded);
       } else {
-        out.push({ start: r.start, end: r.end, items: [r.item] });
+        out.push({
+          start: r.start,
+          end: r.end,
+          items: r.item ? [r.item] : [],
+          uncoded: r.uncoded ? [r.uncoded] : [],
+        });
       }
     }
     return out;
-  }, [items]);
+  }, [items, uncoded]);
 
   // Step 2: for each band, find every annotation (in the whole doc) whose
   // ranges overlap the band — that's the source for the side margin.
@@ -1290,9 +1395,13 @@ function DocBlock({
     return { codes: [...codeSet], inTheme: inThemeCodes };
   });
 
-  // Pick a representative color for each band (first theme item's code).
-  const bandColors = bands.map(
-    (b) => resolveColor(project.codes, b.items[0].annotation.codeId),
+  // Pick a representative color for each band. Use the first contributing
+  // annotation's code color; uncoded-only bands get violet to signal they
+  // carry no code attribution.
+  const bandColors = bands.map((b) =>
+    b.items[0]
+      ? resolveColor(project.codes, b.items[0].annotation.codeId)
+      : '#8b5cf6', // violet-500
   );
 
   // Render the doc text split by band boundaries, with highlighted bands.
@@ -1314,9 +1423,11 @@ function DocBlock({
           color: '#0f172a',
         }}
         title={
-          band.items.length > 1
-            ? `${band.items.length} annotations merged`
-            : undefined
+          band.uncoded.length > 0 && band.items.length === 0
+            ? 'Uncoded text (added directly to theme)'
+            : band.items.length + band.uncoded.length > 1
+              ? `${band.items.length} annotation${band.items.length === 1 ? '' : 's'}${band.uncoded.length > 0 ? ' + ' + band.uncoded.length + ' uncoded' : ''} merged`
+              : undefined
         }
       >
         {doc.text.slice(band.start, band.end)}
@@ -1334,8 +1445,9 @@ function DocBlock({
         <div className="text-[13px] font-bold text-slate-800">{doc.title}</div>
         <div className="text-[10px] text-slate-500 mt-0.5">
           {doc.folder ? `${doc.folder} · ` : ''}
-          {items.length} annotation{items.length === 1 ? '' : 's'} · {bands.length} highlight
-          {bands.length === 1 ? '' : 's'}
+          {items.length} annotation{items.length === 1 ? '' : 's'}
+          {uncoded.length > 0 && ` · ${uncoded.length} uncoded`}
+          {' · '}{bands.length} highlight{bands.length === 1 ? '' : 's'}
         </div>
       </header>
       <div className="flex gap-4 px-4 py-3">
@@ -1358,7 +1470,9 @@ function DocBlock({
                   </div>
                   {meta.codes.length === 0 ? (
                     <div className="italic text-slate-300">
-                      (no codes at this level)
+                      {b.items.length === 0 && b.uncoded.length > 0
+                        ? '(uncoded)'
+                        : '(no codes at this level)'}
                     </div>
                   ) : (
                     <div className="flex flex-wrap gap-1">
