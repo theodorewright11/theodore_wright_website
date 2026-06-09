@@ -23,9 +23,11 @@ export type ExploreFilterState = {
   docCharsFilter: FieldFilter;
   docWordsFilter: FieldFilter;
   docAnnotsFilter: FieldFilter;
-  // Rating filters (Phase 4a). null/undefined = off; otherwise minimum 1-5.
-  codeSpecificityMin?: number;
-  annotationAccuracyMin?: number;
+  // Rating filters: set of allowed scores. Empty/undefined = any; otherwise
+  // the code/annotation's score must be IN the set. Lets you express both
+  // "≥ 4" ({4,5}) and "exactly 3" ({3}).
+  codeSpecificityValues?: Set<number>;
+  annotationAccuracyValues?: Set<number>;
   // Theme filter: limit rows to annotations linked to this theme. Optional
   // weightFilter restricts to a single weight.
   themeId?: string;
@@ -95,8 +97,8 @@ export default function ExploreView({
     docCharsFilter,
     docWordsFilter,
     docAnnotsFilter,
-    codeSpecificityMin,
-    annotationAccuracyMin,
+    codeSpecificityValues,
+    annotationAccuracyValues,
     themeId,
     themeWeight,
   } = filterState;
@@ -123,8 +125,10 @@ export default function ExploreView({
   const setDocCharsFilter = (v: FieldFilter) => onChangeFilter({ docCharsFilter: v });
   const setDocWordsFilter = (v: FieldFilter) => onChangeFilter({ docWordsFilter: v });
   const setDocAnnotsFilter = (v: FieldFilter) => onChangeFilter({ docAnnotsFilter: v });
-  const setCodeSpecificityMin = (v?: number) => onChangeFilter({ codeSpecificityMin: v });
-  const setAnnotationAccuracyMin = (v?: number) => onChangeFilter({ annotationAccuracyMin: v });
+  const setCodeSpecificityValues = (v?: Set<number>) =>
+    onChangeFilter({ codeSpecificityValues: v && v.size > 0 ? v : undefined });
+  const setAnnotationAccuracyValues = (v?: Set<number>) =>
+    onChangeFilter({ annotationAccuracyValues: v && v.size > 0 ? v : undefined });
   const setThemeId = (v?: string) => onChangeFilter({ themeId: v });
   const setThemeWeight = (v?: 'all' | 'core' | 'supporting') => onChangeFilter({ themeWeight: v });
 
@@ -164,14 +168,14 @@ export default function ExploreView({
         docCharsFilter,
         docWordsFilter,
         docAnnotsFilter,
-        codeSpecificityMin,
-        annotationAccuracyMin,
+        codeSpecificityValues,
+        annotationAccuracyValues,
         themeId,
         themeWeight,
       },
       sort,
     );
-  }, [projects, selectedCodeIds, codeFilterMode, textQuery, metaFilters, folderFilter, sort, docCharsFilter, docWordsFilter, docAnnotsFilter, codeSpecificityMin, annotationAccuracyMin, themeId, themeWeight]);
+  }, [projects, selectedCodeIds, codeFilterMode, textQuery, metaFilters, folderFilter, sort, docCharsFilter, docWordsFilter, docAnnotsFilter, codeSpecificityValues, annotationAccuracyValues, themeId, themeWeight]);
 
   useEffect(() => {
     if (!codePickerOpen) {
@@ -257,8 +261,8 @@ export default function ExploreView({
       docCharsFilter: {},
       docWordsFilter: {},
       docAnnotsFilter: {},
-      codeSpecificityMin: undefined,
-      annotationAccuracyMin: undefined,
+      codeSpecificityValues: undefined,
+      annotationAccuracyValues: undefined,
       themeId: undefined,
       themeWeight: undefined,
     });
@@ -272,8 +276,8 @@ export default function ExploreView({
     hasAnyFilter(docCharsFilter) ||
     hasAnyFilter(docWordsFilter) ||
     hasAnyFilter(docAnnotsFilter) ||
-    !!codeSpecificityMin ||
-    !!annotationAccuracyMin ||
+    (codeSpecificityValues?.size ?? 0) > 0 ||
+    (annotationAccuracyValues?.size ?? 0) > 0 ||
     !!themeId;
 
   // Themes across all projects in view, for the theme-filter picker.
@@ -580,42 +584,16 @@ export default function ExploreView({
             <span className="text-[10px] uppercase tracking-wider font-semibold text-slate-500">
               Ratings
             </span>
-            <div className="flex items-center gap-1.5 text-[11px] text-slate-600">
-              <span>Spec ≥</span>
-              <select
-                value={codeSpecificityMin ?? 0}
-                onChange={(e) => {
-                  const v = Number(e.target.value);
-                  setCodeSpecificityMin(v > 0 ? v : undefined);
-                }}
-                className="px-1.5 py-1 text-[11px] border border-slate-200 rounded bg-white"
-              >
-                <option value={0}>any</option>
-                <option value={1}>1</option>
-                <option value={2}>2</option>
-                <option value={3}>3</option>
-                <option value={4}>4</option>
-                <option value={5}>5</option>
-              </select>
-            </div>
-            <div className="flex items-center gap-1.5 text-[11px] text-slate-600">
-              <span>Acc ≥</span>
-              <select
-                value={annotationAccuracyMin ?? 0}
-                onChange={(e) => {
-                  const v = Number(e.target.value);
-                  setAnnotationAccuracyMin(v > 0 ? v : undefined);
-                }}
-                className="px-1.5 py-1 text-[11px] border border-slate-200 rounded bg-white"
-              >
-                <option value={0}>any</option>
-                <option value={1}>1</option>
-                <option value={2}>2</option>
-                <option value={3}>3</option>
-                <option value={4}>4</option>
-                <option value={5}>5</option>
-              </select>
-            </div>
+            <RatingPicker
+              label="Specificity"
+              values={codeSpecificityValues}
+              onChange={setCodeSpecificityValues}
+            />
+            <RatingPicker
+              label="Accuracy"
+              values={annotationAccuracyValues}
+              onChange={setAnnotationAccuracyValues}
+            />
           </div>
 
           {allThemes.length > 0 && (
@@ -629,9 +607,9 @@ export default function ExploreView({
                   setThemeId(e.target.value || undefined);
                   if (!e.target.value) setThemeWeight(undefined);
                 }}
-                className="px-2 py-1 text-[11px] border border-slate-200 rounded bg-white text-slate-700 min-w-0 max-w-[260px]"
+                className="pl-2 pr-7 py-1 text-[11px] border border-slate-200 rounded bg-white text-slate-700 min-w-[160px] max-w-[300px] truncate"
               >
-                <option value="">(any)</option>
+                <option value="">(Any)</option>
                 {allThemes.map((t) => (
                   <option key={t.id} value={t.id}>
                     {showProjectChips ? `${t.projectName} · ${t.name}` : t.name}
@@ -645,7 +623,7 @@ export default function ExploreView({
                       key={w}
                       type="button"
                       onClick={() => setThemeWeight(w)}
-                      className={`px-2 py-1 font-semibold ${
+                      className={`px-2 py-1 font-semibold capitalize ${
                         (themeWeight ?? 'all') === w
                           ? 'bg-violet-600 text-white'
                           : 'text-slate-600 hover:bg-slate-100 border-l border-slate-200 first:border-l-0'
@@ -1275,6 +1253,56 @@ function ByCodeView({
           </section>
         );
       })}
+    </div>
+  );
+}
+
+// Multi-select 1–5 rating filter. Click numbers to toggle them. "Any" clears.
+// Renders compactly inline next to the other filters.
+function RatingPicker({
+  label,
+  values,
+  onChange,
+}: {
+  label: string;
+  values: Set<number> | undefined;
+  onChange: (v: Set<number> | undefined) => void;
+}) {
+  const set = values ?? new Set<number>();
+  const toggle = (n: number) => {
+    const next = new Set(set);
+    if (next.has(n)) next.delete(n);
+    else next.add(n);
+    onChange(next.size > 0 ? next : undefined);
+  };
+  return (
+    <div className="flex items-center gap-1.5 text-[11px] text-slate-600">
+      <span className="font-medium">{label}</span>
+      <button
+        type="button"
+        onClick={() => onChange(undefined)}
+        className={`px-2 py-1 rounded border text-[11px] font-semibold ${
+          set.size === 0
+            ? 'bg-slate-800 border-slate-800 text-white'
+            : 'border-slate-300 text-slate-500 hover:bg-slate-100'
+        }`}
+      >
+        Any
+      </button>
+      {[1, 2, 3, 4, 5].map((n) => (
+        <button
+          key={n}
+          type="button"
+          onClick={() => toggle(n)}
+          className={`w-6 h-6 rounded border text-[11px] font-semibold ${
+            set.has(n)
+              ? 'bg-blue-600 border-blue-600 text-white'
+              : 'border-slate-300 text-slate-600 hover:bg-slate-100'
+          }`}
+        >
+          {n}
+        </button>
+      ))}
     </div>
   );
 }

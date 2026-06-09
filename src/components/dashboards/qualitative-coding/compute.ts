@@ -768,8 +768,9 @@ export type ExploreFilter = {
   docWordsFilter?: FieldFilter;
   docAnnotsFilter?: FieldFilter;
   // Phase 4a rating + theme filters. All optional.
-  codeSpecificityMin?: number;
-  annotationAccuracyMin?: number;
+  // Sets of allowed score values: empty/undefined = no filter.
+  codeSpecificityValues?: Set<number>;
+  annotationAccuracyValues?: Set<number>;
   themeId?: string;
   themeWeight?: 'all' | 'core' | 'supporting';
 };
@@ -957,19 +958,13 @@ export function exploreRows(
         }
       }
       if (!metaOk) continue;
-      // Phase 4a: rating-min filters.
-      if (
-        typeof filter.codeSpecificityMin === 'number' &&
-        filter.codeSpecificityMin > 0
-      ) {
+      // Phase 4a: rating filters (allowed value sets).
+      if (filter.codeSpecificityValues && filter.codeSpecificityValues.size > 0) {
         const c = codeById.get(a.codeId);
-        if (!c || !c.specificity || c.specificity < filter.codeSpecificityMin) continue;
+        if (!c || !c.specificity || !filter.codeSpecificityValues.has(c.specificity)) continue;
       }
-      if (
-        typeof filter.annotationAccuracyMin === 'number' &&
-        filter.annotationAccuracyMin > 0
-      ) {
-        if (!a.accuracy || a.accuracy < filter.annotationAccuracyMin) continue;
+      if (filter.annotationAccuracyValues && filter.annotationAccuracyValues.size > 0) {
+        if (!a.accuracy || !filter.annotationAccuracyValues.has(a.accuracy)) continue;
       }
       // Phase 4a: theme filter.
       if (filter.themeId) {
