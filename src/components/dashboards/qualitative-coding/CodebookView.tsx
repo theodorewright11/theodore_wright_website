@@ -5,11 +5,12 @@ import {
   codePathString,
   descendantIds,
   flattenTree,
+  meanAccuracyForCode,
   resolveColor,
   type CodeNode,
 } from './compute';
 import { emDash } from './storage';
-import type { Code, Project } from './types';
+import type { Annotation, Code, Project } from './types';
 
 type DropPosition = 'before' | 'after' | 'inside';
 
@@ -402,6 +403,7 @@ export default function CodebookView({
                   key={node.pathKey}
                   node={node}
                   codes={project.codes}
+                  annotations={project.annotations}
                   counts={counts}
                   isPanel={isPanel}
                   dragCodeId={dragCodeId}
@@ -484,6 +486,7 @@ function EmptyState({
 function CodebookRow({
   node,
   codes,
+  annotations,
   counts,
   isPanel,
   dragCodeId,
@@ -499,6 +502,7 @@ function CodebookRow({
 }: {
   node: CodeNode;
   codes: Code[];
+  annotations: Annotation[];
   counts: Map<string, number>;
   isPanel: boolean;
   dragCodeId: string | null;
@@ -751,6 +755,18 @@ function CodebookRow({
                     Spec {code.specificity}/5
                   </span>
                 )}
+                {(() => {
+                  const acc = meanAccuracyForCode(annotations, code.id);
+                  if (!acc) return null;
+                  return (
+                    <span
+                      className="inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wider text-sky-800 bg-sky-100 rounded px-1.5 py-0.5"
+                      title={`Mean accuracy across ${acc.count} rated annotation${acc.count === 1 ? '' : 's'}`}
+                    >
+                      Acc {acc.mean.toFixed(1)}/5 · {acc.count}
+                    </span>
+                  );
+                })()}
               </div>
               {code.description && (
                 <p className="text-[13px] text-slate-600 leading-snug mt-1.5 m-0">
@@ -840,6 +856,7 @@ function CodebookRow({
               key={child.pathKey}
               node={child}
               codes={codes}
+              annotations={annotations}
               counts={counts}
               isPanel={isPanel}
               dragCodeId={dragCodeId}

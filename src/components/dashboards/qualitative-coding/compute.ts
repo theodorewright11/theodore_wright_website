@@ -132,6 +132,25 @@ export function resolveColor(codes: Code[], codeId: string): string {
   return '#64748b';
 }
 
+// Mean accuracy score across all annotations for a code id. Returns null if
+// no annotations have an accuracy rating yet. Includes ONLY annotations
+// directly using this code id (not descendants — specificity is per code).
+export function meanAccuracyForCode(
+  annotations: Annotation[],
+  codeId: string,
+): { mean: number; count: number } | null {
+  let sum = 0;
+  let n = 0;
+  for (const a of annotations) {
+    if (a.codeId !== codeId) continue;
+    if (typeof a.accuracy !== 'number') continue;
+    sum += a.accuracy;
+    n += 1;
+  }
+  if (n === 0) return null;
+  return { mean: sum / n, count: n };
+}
+
 export function nextPaletteColor(codes: Code[]): string {
   const used = new Set(
     codes

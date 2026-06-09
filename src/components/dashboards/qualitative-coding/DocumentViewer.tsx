@@ -18,6 +18,15 @@ import { ResizeHandle, RowResizeHandle } from './Resizable';
 import { cryptoRandomId, emDash } from './storage';
 import type { Annotation, Code, Document, MetadataField } from './types';
 
+// Rubric anchors for annotation accuracy (1–5). Shown as button tooltips.
+const ACCURACY_RUBRIC = [
+  '1 · code does not capture this segment',
+  '2 · loosely captures — notably ambiguous label',
+  '3 · partially captures with some ambiguity',
+  '4 · mostly captures with minor ambiguity',
+  '5 · precisely captures — clear, informative shorthand',
+];
+
 type Props = {
   doc: Document;
   codes: Code[];
@@ -1475,6 +1484,14 @@ function AnnotationsPanel({
                       {ranges.length} ranges
                     </span>
                   )}
+                  {a.accuracy && (
+                    <span
+                      className="text-[10px] font-semibold uppercase tracking-wider text-emerald-800 bg-emerald-100 rounded px-1.5 py-0.5"
+                      title={`Accuracy ${a.accuracy}/5${a.accuracyNotes ? ' — ' + a.accuracyNotes : ''}`}
+                    >
+                      Acc {a.accuracy}/5
+                    </span>
+                  )}
                   <span className="text-[10px] font-mono text-slate-400 tabular-nums ml-auto">
                     {ranges.map((r) => `${r.start}–${r.end}`).join(', ')}
                   </span>
@@ -1557,14 +1574,60 @@ function AnnotationsPanel({
                   })}
                 </div>
                 {focused && (
-                  <textarea
-                    value={a.note ?? ''}
-                    onChange={(e) => onUpdate(a.id, { note: emDash(e.target.value) })}
-                    onClick={(e) => e.stopPropagation()}
-                    placeholder="Add a note..."
-                    rows={2}
-                    className="mt-2 w-full px-2 py-1 text-[12px] border border-slate-200 rounded focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 resize-y"
-                  />
+                  <div className="mt-2 space-y-2" onClick={(e) => e.stopPropagation()}>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-[10px] uppercase font-semibold tracking-wider text-slate-500">
+                        Accuracy
+                      </span>
+                      {[1, 2, 3, 4, 5].map((n) => (
+                        <button
+                          key={n}
+                          type="button"
+                          onClick={() =>
+                            onUpdate(a.id, {
+                              accuracy: a.accuracy === n
+                                ? undefined
+                                : (n as 1 | 2 | 3 | 4 | 5),
+                            })
+                          }
+                          title={ACCURACY_RUBRIC[n - 1]}
+                          className={`w-7 h-7 rounded border text-[12px] font-semibold transition-colors ${
+                            a.accuracy === n
+                              ? 'bg-blue-600 border-blue-600 text-white'
+                              : 'border-slate-300 text-slate-600 hover:bg-slate-100'
+                          }`}
+                        >
+                          {n}
+                        </button>
+                      ))}
+                      {a.accuracy && (
+                        <button
+                          type="button"
+                          onClick={() => onUpdate(a.id, { accuracy: undefined })}
+                          className="text-[10px] text-slate-400 hover:text-slate-700"
+                          title="clear rating"
+                        >
+                          clear
+                        </button>
+                      )}
+                    </div>
+                    <textarea
+                      value={a.accuracyNotes ?? ''}
+                      onChange={(e) =>
+                        onUpdate(a.id, { accuracyNotes: emDash(e.target.value) || undefined })
+                      }
+                      placeholder="Why this score? (optional)"
+                      rows={1}
+                      className="w-full px-2 py-1 text-[11px] border border-slate-200 rounded bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 resize-y"
+                    />
+                    <textarea
+                      value={a.note ?? ''}
+                      onChange={(e) => onUpdate(a.id, { note: emDash(e.target.value) })}
+                      placeholder="Add a note..."
+                      rows={2}
+                      className="w-full px-2 py-1 text-[12px] border border-slate-200 rounded focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 resize-y"
+                    />
+                  </div>
                 )}
               </li>
             );

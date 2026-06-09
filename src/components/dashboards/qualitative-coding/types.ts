@@ -57,6 +57,10 @@ export type Annotation = {
   ranges: AnnotationRange[];
   codeId: string;
   note?: string;
+  // Rubric-based rating: how accurately the code label captures THIS text
+  // segment. Per annotation (instance-level). 1–5 scale.
+  accuracy?: 1 | 2 | 3 | 4 | 5;
+  accuracyNotes?: string;
   created_at: string;
 };
 
