@@ -79,9 +79,29 @@ export default function CodebookView({
       ? { codeId: drag.overCodeId, pathKey: drag.overPathKey, zone: drag.overZone }
       : null;
   const rootDragOver = !!drag?.active && drag.overRoot;
-  const tree = buildCodeTree(project.codes);
+  // When the user picks a sort mode, override each code's `order` so
+  // siblings under any parent group come out in score order. Unrated codes
+  // sink. buildCodeTree already sorts siblings by order ascending, then
+  // by created_at as a tie-breaker.
+  const orderedCodes = useMemo(() => {
+    if (sortMode === 'manual') return project.codes;
+    return project.codes.map((c) => {
+      let key: number;
+      if (sortMode === 'spec-desc') {
+        key = c.specificity ? -c.specificity : 1000;
+      } else {
+        const a = meanAccuracyForCode(project.annotations, c.id);
+        key = a ? -a.mean : 1000;
+      }
+      return { ...c, order: key };
+    });
+  }, [project.codes, project.annotations, sortMode]);
+  const tree = buildCodeTree(orderedCodes);
   const [addingRoot, setAddingRoot] = useState(false);
   const [draft, setDraft] = useState('');
+  const [sortMode, setSortMode] = useState<'manual' | 'spec-desc' | 'acc-desc'>(
+    'manual',
+  );
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const startDrag = (
@@ -286,6 +306,18 @@ export default function CodebookView({
               </button>
             );
           })()}
+          {project.codes.length > 1 && (
+            <select
+              value={sortMode}
+              onChange={(e) => setSortMode(e.target.value as typeof sortMode)}
+              title="sort codes within each parent group"
+              className="px-2 py-1.5 text-[12px] font-semibold rounded-md border border-slate-300 text-slate-600 bg-white hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-colors"
+            >
+              <option value="manual">Manual order</option>
+              <option value="spec-desc">Sort by Specificity</option>
+              <option value="acc-desc">Sort by mean Accuracy</option>
+            </select>
+          )}
           {onSortAlphabetically && project.codes.length > 1 && (
             <button
               type="button"
