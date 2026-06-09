@@ -4,6 +4,7 @@ import CodeTree from './CodeTree';
 import CodebookView from './CodebookView';
 import DocumentViewer from './DocumentViewer';
 import ThemesView from './ThemesView';
+import GradingView from './GradingView';
 import ExploreView, {
   defaultExploreFilterState,
   type ExploreFilterState,
@@ -1342,6 +1343,26 @@ export default function QualitativeCodingDashboard() {
               onToggleIncludeCode={toggleThemeIncludeCode}
               onJumpToAnnotation={jumpToAnnotation}
             />
+          ) : view === 'grading' ? (
+            <GradingView
+              project={activeProject}
+              onSetSpecificity={(codeId, score) =>
+                updateCode(codeId, { specificity: score })
+              }
+              onSetAccuracy={(annotationId, score) =>
+                updateAnnotation(annotationId, { accuracy: score })
+              }
+              onSetThemeRating={(themeId, patch) => {
+                const t = (activeProject.themes ?? []).find((x) => x.id === themeId);
+                if (!t) return;
+                updateTheme(themeId, { rating: { ...(t.rating ?? {}), ...patch } });
+              }}
+              onJumpToAnnotation={jumpToAnnotation}
+              onJumpToTheme={(themeId) => {
+                setActiveThemeId(themeId);
+                setView('themes');
+              }}
+            />
           ) : openDocs.length > 0 ? (
             <div className="flex-1 min-w-0 min-h-0 flex">
               <div className="flex-1 min-w-0 min-h-0 flex overflow-x-auto">
@@ -1725,6 +1746,9 @@ function TopBar({
         </ViewBtn>
         <ViewBtn active={view === 'themes'} onClick={() => onSetView('themes')}>
           Themes
+        </ViewBtn>
+        <ViewBtn active={view === 'grading'} onClick={() => onSetView('grading')}>
+          Grading
         </ViewBtn>
         <ViewBtn active={view === 'explore'} onClick={() => onSetView('explore')}>
           Explore{exploreCount > 1 ? ` · ${exploreCount}` : ''}

@@ -29,7 +29,8 @@ export function loadState(): AppState {
           parsed.view === 'explore' ||
           parsed.view === 'about' ||
           parsed.view === 'codebook' ||
-          parsed.view === 'themes'
+          parsed.view === 'themes' ||
+          parsed.view === 'grading'
             ? parsed.view
             : 'documents',
         showCodeDefinitions: !!parsed.showCodeDefinitions,

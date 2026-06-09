@@ -125,7 +125,7 @@ export type Project = {
   drive?: DriveLink;
 };
 
-export type View = 'documents' | 'explore' | 'about' | 'codebook' | 'themes';
+export type View = 'documents' | 'explore' | 'about' | 'codebook' | 'themes' | 'grading';
 
 export type AppState = {
   version: SchemaVersion;
