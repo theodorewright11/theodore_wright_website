@@ -79,6 +79,12 @@ export default function CodebookView({
       ? { codeId: drag.overCodeId, pathKey: drag.overPathKey, zone: drag.overZone }
       : null;
   const rootDragOver = !!drag?.active && drag.overRoot;
+  const [addingRoot, setAddingRoot] = useState(false);
+  const [draft, setDraft] = useState('');
+  const [sortMode, setSortMode] = useState<'manual' | 'spec-desc' | 'acc-desc'>(
+    'manual',
+  );
+  const scrollRef = useRef<HTMLDivElement>(null);
   // When the user picks a sort mode, override each code's `order` so
   // siblings under any parent group come out in score order. Unrated codes
   // sink. buildCodeTree already sorts siblings by order ascending, then
@@ -97,12 +103,6 @@ export default function CodebookView({
     });
   }, [project.codes, project.annotations, sortMode]);
   const tree = buildCodeTree(orderedCodes);
-  const [addingRoot, setAddingRoot] = useState(false);
-  const [draft, setDraft] = useState('');
-  const [sortMode, setSortMode] = useState<'manual' | 'spec-desc' | 'acc-desc'>(
-    'manual',
-  );
-  const scrollRef = useRef<HTMLDivElement>(null);
 
   const startDrag = (
     codeId: string,
