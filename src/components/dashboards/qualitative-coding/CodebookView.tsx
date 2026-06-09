@@ -733,15 +733,25 @@ function CodebookRow({
               >
                 {code.name}
               </HeadingTag>
-              {isShared && (
-                <span
-                  className="inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wider text-purple-700 bg-purple-100 rounded px-1.5 py-0.5 mt-1.5"
-                  title={`Same code, shown under ${parentCount} parents. Edit it once and all instances update.`}
-                >
-                  <span>⤴</span>
-                  shared · {parentCount}
-                </span>
-              )}
+              <div className="flex items-center gap-1.5 flex-wrap mt-1.5">
+                {isShared && (
+                  <span
+                    className="inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wider text-purple-700 bg-purple-100 rounded px-1.5 py-0.5"
+                    title={`Same code, shown under ${parentCount} parents. Edit it once and all instances update.`}
+                  >
+                    <span>⤴</span>
+                    shared · {parentCount}
+                  </span>
+                )}
+                {code.specificity && (
+                  <span
+                    className="inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wider text-emerald-800 bg-emerald-100 rounded px-1.5 py-0.5"
+                    title={`Specificity ${code.specificity}/5${code.specificityNotes ? ' — ' + code.specificityNotes : ''}`}
+                  >
+                    Spec {code.specificity}/5
+                  </span>
+                )}
+              </div>
               {code.description && (
                 <p className="text-[13px] text-slate-600 leading-snug mt-1.5 m-0">
                   {code.description}

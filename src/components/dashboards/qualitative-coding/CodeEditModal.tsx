@@ -13,6 +13,15 @@ type Props = {
   onClose: () => void;
 };
 
+// Rubric anchor text for code specificity (1–5). Shown as button tooltips.
+const SPECIFICITY_RUBRIC = [
+  '1 · unhelpful — applies to nearly anything OR just restates the segment',
+  '2 · poorly matched — too broad to distinguish, or too narrow to add value',
+  '3 · somewhat mismatched — noticeably over- or under-compresses the segment',
+  '4 · mostly appropriate — slight over/under-compression',
+  '5 · precise — meaningfully compresses while preserving what matters',
+];
+
 // Compact modal for quickly editing a code (name, description, color) from
 // anywhere that surfaces codes — e.g. the line-view margin chips and the
 // annotations panel rows. For parent / reorder, use the full Codebook view.
@@ -27,17 +36,25 @@ export default function CodeEditModal({
   const [name, setName] = useState(code.name);
   const [description, setDescription] = useState(code.description ?? '');
   const [color, setColor] = useState<string | null>(code.color);
+  const [specificity, setSpecificity] = useState<number | null>(
+    code.specificity ?? null,
+  );
+  const [specNotes, setSpecNotes] = useState(code.specificityNotes ?? '');
 
   useEffect(() => {
     setName(code.name);
     setDescription(code.description ?? '');
     setColor(code.color);
+    setSpecificity(code.specificity ?? null);
+    setSpecNotes(code.specificityNotes ?? '');
   }, [code.id]);
 
   const isDirty =
     name.trim() !== code.name ||
     description !== (code.description ?? '') ||
-    color !== code.color;
+    color !== code.color ||
+    specificity !== (code.specificity ?? null) ||
+    specNotes !== (code.specificityNotes ?? '');
 
   const save = () => {
     const patch: Partial<Code> = {};
@@ -47,6 +64,12 @@ export default function CodeEditModal({
       patch.description = description.trim() || undefined;
     }
     if (color !== code.color) patch.color = color;
+    if (specificity !== (code.specificity ?? null)) {
+      patch.specificity = (specificity ?? undefined) as Code['specificity'];
+    }
+    if (specNotes !== (code.specificityNotes ?? '')) {
+      patch.specificityNotes = specNotes.trim() || undefined;
+    }
     if (Object.keys(patch).length > 0) onSave(patch);
     onClose();
   };
@@ -200,6 +223,52 @@ export default function CodeEditModal({
               value={color}
               onChange={setColor}
               allowInherit={code.parentIds.length > 0}
+            />
+          </div>
+          <div className="pt-3 border-t border-slate-100">
+            <div className="flex items-baseline justify-between gap-2 mb-1.5">
+              <label className="block text-[10px] uppercase tracking-wider font-semibold text-slate-500">
+                Specificity
+              </label>
+              <span className="text-[10px] text-slate-400">
+                appropriate level of detail · 1 unhelpful → 5 precise
+              </span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              {[1, 2, 3, 4, 5].map((n) => (
+                <button
+                  key={n}
+                  type="button"
+                  onClick={() => setSpecificity(specificity === n ? null : n)}
+                  title={
+                    SPECIFICITY_RUBRIC[n - 1]
+                  }
+                  className={`w-9 h-9 rounded-md border text-[13px] font-semibold transition-colors ${
+                    specificity === n
+                      ? 'bg-blue-600 border-blue-600 text-white shadow-sm'
+                      : 'border-slate-300 text-slate-600 hover:bg-slate-100'
+                  }`}
+                >
+                  {n}
+                </button>
+              ))}
+              {specificity !== null && (
+                <button
+                  type="button"
+                  onClick={() => setSpecificity(null)}
+                  className="ml-1 text-[11px] text-slate-400 hover:text-slate-700"
+                  title="clear rating"
+                >
+                  clear
+                </button>
+              )}
+            </div>
+            <textarea
+              value={specNotes}
+              onChange={(e) => setSpecNotes(emDash(e.target.value))}
+              placeholder="Optional rationale for this score"
+              rows={2}
+              className="mt-2 w-full px-3 py-2 text-[12px] border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 resize-y"
             />
           </div>
         </div>

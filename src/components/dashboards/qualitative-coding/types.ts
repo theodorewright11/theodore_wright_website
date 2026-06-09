@@ -35,6 +35,10 @@ export type Code = {
   color: string | null;
   description?: string;
   order?: number;
+  // Rubric-based rating: how appropriately precise the code's level of detail
+  // is. Per code (intrinsic to how it's defined). 1–5 scale.
+  specificity?: 1 | 2 | 3 | 4 | 5;
+  specificityNotes?: string;
   created_at: string;
 };
 
