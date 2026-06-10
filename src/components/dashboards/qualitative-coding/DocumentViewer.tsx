@@ -355,7 +355,11 @@ export default function DocumentViewer({
                   ? `inset 0 -3px 0 ${violet}`
                   : `inset 0 -1px 0 ${hexAlpha(violet, 0.55)}`,
             }}
-            title={`In theme "${selectedTheme.name}" (${themeWeight}, uncoded)`}
+            title={
+              selectedTheme
+                ? `In theme "${selectedTheme.name}" (${themeWeight}, uncoded)`
+                : `In a theme (${themeWeight}, uncoded)`
+            }
           >
             {seg.text}
           </span>
