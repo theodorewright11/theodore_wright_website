@@ -11,6 +11,7 @@ import ExploreView, {
 } from './ExploreView';
 import MetadataSchemaEditor from './MetadataSchemaEditor';
 import ProjectAboutView from './ProjectAboutView';
+import { buildThemesFromAI } from './aiThemeImport';
 import { ResizeHandle } from './Resizable';
 import {
   buildFolderTree,
@@ -137,6 +138,7 @@ export default function QualitativeCodingDashboard() {
     lastError: null,
   });
   const importInputRef = useRef<HTMLInputElement>(null);
+  const aiThemesInputRef = useRef<HTMLInputElement>(null);
 
   const view: View = state.view ?? 'documents';
   const showCodeDefinitions = !!state.showCodeDefinitions;
@@ -1171,6 +1173,51 @@ export default function QualitativeCodingDashboard() {
     }
   };
 
+  // Merge an AI thematic-analysis JSON into the active project as themes.
+  // Each quote is resolved (source [D{n}] → document, verbatim text → offsets)
+  // into a ThemeUncodedHighlight; unmatched quotes are surfaced, not dropped.
+  const onImportAIThemes = async (file: File) => {
+    if (!activeProject) return;
+    const projectId = activeProject.id;
+    try {
+      const text = await readFileAsText(file);
+      const parsed = JSON.parse(text);
+      const result = buildThemesFromAI(activeProject, parsed, new Date().toISOString());
+
+      if (result.themes.length === 0) {
+        window.alert(
+          `No themes to import.${result.warnings.length ? `\n\n${result.warnings.join('\n')}` : ''}`,
+        );
+        return;
+      }
+
+      const lines = [
+        `Import ${result.themes.length} theme${result.themes.length === 1 ? '' : 's'} into "${activeProject.name}"?`,
+        '',
+        `Quotes located and attached: ${result.matchedQuotes} of ${result.totalQuotes}`,
+      ];
+      if (result.unmatched.length > 0) {
+        lines.push(`Quotes skipped (not found verbatim): ${result.unmatched.length}`);
+        lines.push('');
+        lines.push('First skipped:');
+        for (const u of result.unmatched.slice(0, 6)) {
+          lines.push(`• [${u.source}] "${u.text.slice(0, 60)}${u.text.length > 60 ? '…' : ''}" — ${u.reason}`);
+        }
+      }
+      if (result.warnings.length > 0) lines.push('', ...result.warnings);
+      if (!window.confirm(lines.join('\n'))) return;
+
+      updateActiveProject((p) => ({ ...p, themes: [...(p.themes ?? []), ...result.themes] }));
+      queueWrite(projectId);
+      setView('themes');
+      if (result.themes[0]) setActiveThemeId(result.themes[0].id);
+    } catch (err) {
+      window.alert(
+        `Could not import AI themes: ${err instanceof Error ? err.message : 'unknown error'}`,
+      );
+    }
+  };
+
   // ----- View helpers -----
   const setView = (v: View) => setState((s) => ({ ...s, view: v }));
 
@@ -1340,6 +1387,17 @@ export default function QualitativeCodingDashboard() {
           e.target.value = '';
         }}
       />
+      <input
+        ref={aiThemesInputRef}
+        type="file"
+        accept=".json,application/json"
+        className="hidden"
+        onChange={(e) => {
+          const f = e.target.files?.[0];
+          if (f) onImportAIThemes(f);
+          e.target.value = '';
+        }}
+      />
       <div className="flex-1 min-h-0 flex">
         {view !== 'about' && view !== 'codebook' && (
           <Sidebar
@@ -1471,6 +1529,7 @@ export default function QualitativeCodingDashboard() {
               onToggleIncludeCode={toggleThemeIncludeCode}
               onRemoveUncodedHighlight={removeThemeUncodedHighlight}
               onJumpToAnnotation={jumpToAnnotation}
+              onImportAIThemes={() => aiThemesInputRef.current?.click()}
             />
           ) : view === 'grading' ? (
             <GradingView

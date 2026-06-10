@@ -166,13 +166,25 @@ export default function ProjectAboutView({
           </div>
         )}
 
-        <ProjectStats project={project} />
+        <ProjectStats
+          project={project}
+          popoverShowThemeAdd={popoverShowThemeAdd}
+          onTogglePopoverShowThemeAdd={onTogglePopoverShowThemeAdd}
+        />
       </div>
     </div>
   );
 }
 
-function ProjectStats({ project }: { project: Project }) {
+function ProjectStats({
+  project,
+  popoverShowThemeAdd,
+  onTogglePopoverShowThemeAdd,
+}: {
+  project: Project;
+  popoverShowThemeAdd: boolean;
+  onTogglePopoverShowThemeAdd?: () => void;
+}) {
   const aggregate = useMemo(() => {
     let totalChars = 0;
     let totalWords = 0;

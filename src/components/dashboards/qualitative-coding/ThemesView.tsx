@@ -75,6 +75,7 @@ type Props = {
     docId: string,
     annotationId: string,
   ) => void;
+  onImportAIThemes?: () => void;
 };
 
 export default function ThemesView({
@@ -89,6 +90,7 @@ export default function ThemesView({
   onToggleIncludeCode,
   onRemoveUncodedHighlight,
   onJumpToAnnotation,
+  onImportAIThemes,
 }: Props) {
   const themes = project.themes ?? [];
   const active = themes.find((t) => t.id === activeThemeId) ?? null;
@@ -105,16 +107,28 @@ export default function ThemesView({
           <div className="text-[12px] uppercase tracking-wider font-semibold text-slate-600">
             Themes · {themes.length}
           </div>
-          <button
-            type="button"
-            onClick={() => {
-              setAddingRoot(true);
-              setDraftName('');
-            }}
-            className="text-[11px] font-semibold text-blue-600 hover:bg-blue-50 px-2 py-1 rounded"
-          >
-            + new
-          </button>
+          <div className="flex items-center gap-1">
+            {onImportAIThemes && (
+              <button
+                type="button"
+                onClick={onImportAIThemes}
+                title="Import an AI thematic-analysis JSON into this project"
+                className="text-[11px] font-semibold text-slate-500 hover:bg-slate-100 px-2 py-1 rounded"
+              >
+                import AI ↓
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => {
+                setAddingRoot(true);
+                setDraftName('');
+              }}
+              className="text-[11px] font-semibold text-blue-600 hover:bg-blue-50 px-2 py-1 rounded"
+            >
+              + new
+            </button>
+          </div>
         </div>
         <div className="flex-1 overflow-y-auto py-1">
           {addingRoot && (
