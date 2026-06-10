@@ -352,6 +352,8 @@ function ThemeDetail({
   // Doc-view extras
   const [docCodeMargin, setDocCodeMargin] = useState<'off' | 'on'>('on');
   const [docCodeLevel, setDocCodeLevel] = useState<'all' | 'top' | 'mid' | 'leaf'>('all');
+  const [docThemeMargin, setDocThemeMargin] = useState<'off' | 'on'>('off');
+  const [docThemeInline, setDocThemeInline] = useState<'off' | 'on'>('off');
 
   const uncodedHighlights = theme.uncodedHighlights ?? [];
 
@@ -601,6 +603,30 @@ function ThemeDetail({
                     </button>
                   ))}
                 </div>
+                <button
+                  type="button"
+                  onClick={() => setDocThemeMargin((v) => (v === 'on' ? 'off' : 'on'))}
+                  className={`px-2 py-1 text-[11px] font-semibold rounded-md border ${
+                    docThemeMargin === 'on'
+                      ? 'border-amber-300 bg-amber-50 text-amber-800'
+                      : 'border-slate-300 text-slate-500 hover:bg-slate-100'
+                  }`}
+                  title="show every theme that contains each highlighted span"
+                >
+                  Theme margin {docThemeMargin}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setDocThemeInline((v) => (v === 'on' ? 'off' : 'on'))}
+                  className={`px-2 py-1 text-[11px] font-semibold rounded-md border ${
+                    docThemeInline === 'on'
+                      ? 'border-amber-300 bg-amber-50 text-amber-800'
+                      : 'border-slate-300 text-slate-500 hover:bg-slate-100'
+                  }`}
+                  title="mark text that's in 2+ themes with an extra inline indicator"
+                >
+                  Themes on text {docThemeInline}
+                </button>
               </>
             )}
             <button
@@ -665,8 +691,11 @@ function ThemeDetail({
             evidence={evidence}
             uncodedHighlights={uncodedHighlights}
             project={project}
+            currentThemeId={theme.id}
             codeMargin={docCodeMargin}
             codeLevel={docCodeLevel}
+            themeMargin={docThemeMargin}
+            themeInline={docThemeInline}
           />
         ) : evViewMode === 'flat' ? (
           <ul className="space-y-3">
@@ -1203,14 +1232,20 @@ function DocsView({
   evidence,
   uncodedHighlights,
   project,
+  currentThemeId,
   codeMargin,
   codeLevel,
+  themeMargin,
+  themeInline,
 }: {
   evidence: EvidenceItem[];
   uncodedHighlights: import('./types').ThemeUncodedHighlight[];
   project: Project;
+  currentThemeId: string;
   codeMargin: 'on' | 'off';
   codeLevel: 'all' | 'top' | 'mid' | 'leaf';
+  themeMargin: 'on' | 'off';
+  themeInline: 'on' | 'off';
 }) {
   // Group evidence (annotation links + uncoded highlights) by docId.
   const docs = useMemo(() => {
@@ -1268,8 +1303,11 @@ function DocsView({
           items={items}
           uncoded={uncoded}
           project={project}
+          currentThemeId={currentThemeId}
           codeMargin={codeMargin}
           passLevel={passLevel}
+          themeMargin={themeMargin}
+          themeInline={themeInline}
         />
       ))}
     </div>
@@ -1283,15 +1321,21 @@ function DocBlock({
   items,
   uncoded,
   project,
+  currentThemeId,
   codeMargin,
   passLevel,
+  themeMargin,
+  themeInline,
 }: {
   doc: Project['documents'][number];
   items: EvidenceItem[];
   uncoded: import('./types').ThemeUncodedHighlight[];
   project: Project;
+  currentThemeId: string;
   codeMargin: 'on' | 'off';
   passLevel: (codeId: string) => boolean;
+  themeMargin: 'on' | 'off';
+  themeInline: 'on' | 'off';
 }) {
   // Step 1: merge all theme ranges (from annotation evidence AND uncoded
   // highlights) into non-overlapping bands. Adjacent ranges become continuous.
@@ -1395,6 +1439,96 @@ function DocBlock({
     return { codes: [...codeSet], inTheme: inThemeCodes };
   });
 
+  // Per-band themes: every theme that contains this band's text — via direct
+  // annotation link, includeCodeIds, or uncoded highlight. Built so the new
+  // "Theme margin" column can show how a band appears across themes.
+  type BandThemeEntry = {
+    themeId: string;
+    themeName: string;
+    weight: 'core' | 'supporting';
+    via: 'annotation' | 'auto' | 'uncoded';
+    isCurrent: boolean;
+  };
+  const bandThemes: BandThemeEntry[][] = bands.map((band) => {
+    const entries: BandThemeEntry[] = [];
+    const seen = new Set<string>();
+    const add = (e: BandThemeEntry) => {
+      const key = `${e.themeId}|${e.via}`;
+      if (seen.has(key)) return;
+      seen.add(key);
+      entries.push(e);
+    };
+    for (const t of project.themes ?? []) {
+      // Direct annotation links: an annotation in this doc overlapping the
+      // band that's linked to t.
+      for (const link of t.annotationLinks) {
+        const a = allDocAnns.find((x) => x.id === link.annotationId);
+        if (!a) continue;
+        const overlaps = (a.ranges ?? []).some(
+          (r) => r.start < band.end && r.end > band.start,
+        );
+        if (!overlaps) continue;
+        add({
+          themeId: t.id,
+          themeName: t.name,
+          weight: link.weight,
+          via: 'annotation',
+          isCurrent: t.id === currentThemeId,
+        });
+      }
+      // Auto-include: any annotation in this doc overlapping the band whose
+      // code (or a descendant) is in t.includeCodeIds counts as 'supporting'.
+      if (t.includeCodeIds.length > 0) {
+        const codeIdSet = new Set<string>();
+        for (const cid of t.includeCodeIds) {
+          for (const d of descendantIds(project.codes, cid)) codeIdSet.add(d);
+        }
+        for (const a of allDocAnns) {
+          if (!codeIdSet.has(a.codeId)) continue;
+          const overlaps = (a.ranges ?? []).some(
+            (r) => r.start < band.end && r.end > band.start,
+          );
+          if (!overlaps) continue;
+          add({
+            themeId: t.id,
+            themeName: t.name,
+            weight: 'supporting',
+            via: 'auto',
+            isCurrent: t.id === currentThemeId,
+          });
+        }
+      }
+      // Uncoded highlights of t that overlap the band.
+      for (const h of t.uncodedHighlights ?? []) {
+        if (h.docId !== doc.id) continue;
+        const overlaps = (h.ranges ?? []).some(
+          (r) => r.start < band.end && r.end > band.start,
+        );
+        if (!overlaps) continue;
+        add({
+          themeId: t.id,
+          themeName: t.name,
+          weight: h.weight,
+          via: 'uncoded',
+          isCurrent: t.id === currentThemeId,
+        });
+      }
+    }
+    // Current theme first, then by name.
+    entries.sort((a, b) => {
+      if (a.isCurrent !== b.isCurrent) return a.isCurrent ? -1 : 1;
+      return a.themeName.localeCompare(b.themeName);
+    });
+    return entries;
+  });
+
+  // Count how many themes (across all themes) this band participates in —
+  // used by the "Themes on text" inline indicator.
+  const themesPerBand = bandThemes.map((entries) => {
+    const ids = new Set(entries.map((e) => e.themeId));
+    return ids.size;
+  });
+
   // Per-band color + weight. Weight is "core" if any contributing item is
   // core; otherwise "supporting". Color comes from the first annotation's
   // code; uncoded-only bands use violet.
@@ -1421,15 +1555,23 @@ function DocBlock({
     // dashed underline. Both still use the code color so you can tell which
     // code anchors the band.
     const isCore = weight === 'core';
+    const themesAtBand = themesPerBand[i];
+    // When the user turns "Themes on text" on, mark text that's in 2+ themes
+    // with a thin amber overline so they can see overlap zones at a glance.
+    const multiThemeOverline =
+      themeInline === 'on' && themesAtBand >= 2
+        ? `, inset 0 2px 0 #f59e0b`
+        : '';
     pieces.push(
       <mark
         key={key++}
         className="rounded-sm px-0.5"
         style={{
           backgroundColor: hexToRgba(color, isCore ? 0.38 : 0.16),
-          boxShadow: isCore
-            ? `inset 0 -3px 0 ${color}`
-            : `inset 0 -1px 0 ${hexToRgba(color, 0.55)}`,
+          boxShadow:
+            (isCore
+              ? `inset 0 -3px 0 ${color}`
+              : `inset 0 -1px 0 ${hexToRgba(color, 0.55)}`) + multiThemeOverline,
           color: '#0f172a',
         }}
         title={
@@ -1498,6 +1640,9 @@ function DocBlock({
         </div>
         {codeMargin === 'on' && (
           <aside className="w-[200px] flex-shrink-0 border-l border-slate-100 pl-3 space-y-3">
+            <div className="text-[9px] uppercase tracking-wider font-semibold text-slate-400 mb-1">
+              Codes
+            </div>
             {bands.map((b, i) => {
               const meta = bandMeta[i];
               return (
@@ -1536,6 +1681,48 @@ function DocBlock({
                           <span className="break-words">
                             {project.codes.find((c) => c.id === cid)?.name ?? cid}
                           </span>
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </aside>
+        )}
+        {themeMargin === 'on' && (
+          <aside className="w-[200px] flex-shrink-0 border-l border-slate-100 pl-3 space-y-3">
+            <div className="text-[9px] uppercase tracking-wider font-semibold text-slate-400 mb-1">
+              Themes
+            </div>
+            {bands.map((b, i) => {
+              const entries = bandThemes[i];
+              return (
+                <div key={i} className="text-[10px]">
+                  <div className="text-slate-400 font-mono mb-1">
+                    {b.start}–{b.end}
+                  </div>
+                  {entries.length === 0 ? (
+                    <div className="italic text-slate-300">(no themes)</div>
+                  ) : (
+                    <div className="flex flex-wrap gap-1">
+                      {entries.map((e, idx) => (
+                        <span
+                          key={`${e.themeId}-${e.via}-${idx}`}
+                          className={`inline-flex items-center gap-0.5 px-1 py-0.5 rounded text-[10px] leading-snug ${
+                            e.weight === 'core'
+                              ? 'bg-amber-500 text-white'
+                              : 'bg-violet-100 text-violet-800'
+                          } ${e.isCurrent ? 'ring-1 ring-blue-400' : ''}`}
+                          title={`${e.themeName} · ${e.weight}${
+                            e.via === 'auto'
+                              ? ' · auto-included via code'
+                              : e.via === 'uncoded'
+                                ? ' · uncoded highlight'
+                                : ' · linked via annotation'
+                          }${e.isCurrent ? ' · current theme' : ''}`}
+                        >
+                          <span className="break-words">{e.themeName}</span>
                         </span>
                       ))}
                     </div>
