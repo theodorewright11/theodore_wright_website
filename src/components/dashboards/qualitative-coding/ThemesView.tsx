@@ -815,39 +815,43 @@ function RatingsCard({
 }) {
   return (
     <div className="border border-slate-200 rounded-lg bg-white">
-      <div className="px-3 py-2 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3">
-        {AXES.map((ax) => (
-          <div key={ax.key}>
-            <div className="flex items-baseline justify-between gap-2 mb-1">
-              <span className="text-[11px] font-semibold text-slate-700">
-                {ax.label}
-              </span>
-              <span className="text-[9px] uppercase tracking-wider text-slate-400">
-                {ax.group}
-              </span>
-            </div>
-            <div className="flex items-center gap-1">
-              {[1, 2, 3, 4, 5].map((n) => {
-                const isPicked = rating?.[ax.key] === n;
-                return (
-                  <button
-                    key={n}
-                    type="button"
-                    onClick={() =>
-                      onChange({ [ax.key]: isPicked ? undefined : n } as Partial<ThemeRating>)
-                    }
-                    title={RUBRIC[ax.key][n - 1]}
-                    className={`w-7 h-7 rounded border text-[12px] font-semibold transition-colors ${
-                      isPicked
-                        ? 'bg-blue-600 border-blue-600 text-white'
-                        : 'border-slate-300 text-slate-600 hover:bg-slate-100'
-                    }`}
-                  >
-                    {n}
-                  </button>
-                );
-              })}
-            </div>
+      <div className="px-3 py-2 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3 items-start">
+        {(['evaluative', 'descriptive'] as const).map((grp) => (
+          <div key={grp} className="flex flex-col gap-3">
+            {AXES.filter((ax) => ax.group === grp).map((ax) => (
+              <div key={ax.key}>
+                <div className="flex items-baseline justify-between gap-2 mb-1">
+                  <span className="text-[11px] font-semibold text-slate-700">
+                    {ax.label}
+                  </span>
+                  <span className="text-[9px] uppercase tracking-wider text-slate-400">
+                    {ax.group}
+                  </span>
+                </div>
+                <div className="flex items-center gap-1">
+                  {[1, 2, 3, 4, 5].map((n) => {
+                    const isPicked = rating?.[ax.key] === n;
+                    return (
+                      <button
+                        key={n}
+                        type="button"
+                        onClick={() =>
+                          onChange({ [ax.key]: isPicked ? undefined : n } as Partial<ThemeRating>)
+                        }
+                        title={RUBRIC[ax.key][n - 1]}
+                        className={`w-7 h-7 rounded border text-[12px] font-semibold transition-colors ${
+                          isPicked
+                            ? 'bg-blue-600 border-blue-600 text-white'
+                            : 'border-slate-300 text-slate-600 hover:bg-slate-100'
+                        }`}
+                      >
+                        {n}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
           </div>
         ))}
       </div>
