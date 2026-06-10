@@ -238,33 +238,23 @@ export default function DocumentViewer({
         : null,
     [themesProp, selectedThemeId],
   );
-  const themeAnnotationWeights = useMemo(() => {
-    const m = new Map<string, 'core' | 'supporting'>();
-    if (!selectedTheme) return m;
-    for (const link of selectedTheme.annotationLinks) {
-      m.set(link.annotationId, link.weight);
-    }
-    if (selectedTheme.includeCodeIds.length > 0) {
-      const codeIdSet = new Set<string>();
-      for (const cid of selectedTheme.includeCodeIds) {
-        for (const d of descendantIds(codes, cid)) codeIdSet.add(d);
-      }
-      for (const a of docAnnotations) {
-        if (m.has(a.id)) continue;
-        if (codeIdSet.has(a.codeId)) m.set(a.id, 'supporting');
-      }
-    }
-    return m;
-  }, [selectedTheme, codes, docAnnotations]);
+  // Uncoded theme ranges for THIS doc — pulled from ALL themes when Themes
+  // toggle is on (so all theme-uncoded text segments segment + render), or
+  // just the selectedTheme when one is picked.
   const themeUncodedDocRanges = useMemo(() => {
-    if (!selectedTheme) return [] as { start: number; end: number; weight: 'core' | 'supporting' }[];
     const out: { start: number; end: number; weight: 'core' | 'supporting' }[] = [];
-    for (const h of selectedTheme.uncodedHighlights ?? []) {
-      if (h.docId !== doc.id) continue;
-      for (const r of h.ranges ?? []) out.push({ start: r.start, end: r.end, weight: h.weight });
+    const source = selectedTheme ? [selectedTheme] : (themesProp ?? []);
+    for (const t of source) {
+      if (!t) continue;
+      for (const h of t.uncodedHighlights ?? []) {
+        if (h.docId !== doc.id) continue;
+        for (const r of h.ranges ?? []) {
+          out.push({ start: r.start, end: r.end, weight: h.weight });
+        }
+      }
     }
     return out;
-  }, [selectedTheme, doc.id]);
+  }, [selectedTheme, themesProp, doc.id]);
   const segments = useMemo(
     () =>
       segmentText(
@@ -293,18 +283,22 @@ export default function DocumentViewer({
       let hasCore = false;
       let hasSupporting = false;
       for (const t of themesToCheck) {
+        if (!t) continue;
+        const annotationLinks = t.annotationLinks ?? [];
+        const includeCodeIds = t.includeCodeIds ?? [];
+        const uncodedHighlights = t.uncodedHighlights ?? [];
         // Direct annotation links covering any annotation on this segment
         for (const a of seg.annotations) {
-          const link = t.annotationLinks.find((l) => l.annotationId === a.id);
+          const link = annotationLinks.find((l) => l.annotationId === a.id);
           if (link) {
             if (link.weight === 'core') hasCore = true;
             else hasSupporting = true;
           }
         }
         // Auto-include via codeIds
-        if (t.includeCodeIds.length > 0) {
+        if (includeCodeIds.length > 0) {
           const codeSet = new Set<string>();
-          for (const cid of t.includeCodeIds) {
+          for (const cid of includeCodeIds) {
             for (const d of descendantIds(codes, cid)) codeSet.add(d);
           }
           for (const a of seg.annotations) {
@@ -313,7 +307,7 @@ export default function DocumentViewer({
         }
         // Uncoded highlights — only relevant when no annotations on segment
         if (seg.themeHighlight) {
-          for (const h of t.uncodedHighlights ?? []) {
+          for (const h of uncodedHighlights) {
             if (h.docId !== doc.id) continue;
             for (const r of h.ranges ?? []) {
               if (r.start <= seg.start && r.end >= seg.end) {
