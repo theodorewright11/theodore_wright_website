@@ -15,8 +15,78 @@
 // (theme evidence with no code attached); unmatched quotes are reported back so
 // the user can see what didn't land rather than having it silently dropped.
 
+import { jsonrepair } from 'jsonrepair';
 import { cryptoRandomId } from './storage';
 import { PALETTE, type Project, type Theme, type ThemeUncodedHighlight } from './types';
+
+// LLMs reliably break JSON when a verbatim quote contains a literal `"` (e.g.
+// `...the "experts"`), because they forget to escape it. Strict JSON.parse then
+// fails and the rest of the document derails. This tolerant parser tries, in
+// order: the raw text, our stray-quote escaper, jsonrepair (trailing commas,
+// fences, unquoted keys), and both combined. The first that parses wins.
+export function parseAIThemesJson(text: string): unknown {
+  const clean = stripCodeFences(text);
+  const attempts: (() => string)[] = [
+    () => clean,
+    () => escapeStrayQuotes(clean),
+    () => jsonrepair(clean),
+    () => jsonrepair(escapeStrayQuotes(clean)),
+  ];
+  let lastErr: unknown = new Error('empty input');
+  for (const make of attempts) {
+    try {
+      return JSON.parse(make());
+    } catch (e) {
+      lastErr = e;
+    }
+  }
+  throw lastErr instanceof Error ? lastErr : new Error('Could not parse JSON');
+}
+
+// Strip a leading/trailing ```json … ``` markdown fence if the model wrapped its
+// output in one.
+function stripCodeFences(s: string): string {
+  const t = s.trim();
+  const m = t.match(/^```(?:json)?\s*\n([\s\S]*?)\n```$/i);
+  return m ? m[1] : t;
+}
+
+// Escape double-quotes that appear *inside* a JSON string value but were left
+// unescaped. A `"` only genuinely closes a string if the next non-whitespace
+// character is a JSON structural token (`,` `:` `}` `]`) or end-of-input;
+// otherwise it's a stray inner quote and gets escaped. Existing `\"` / `\\`
+// escapes pass through untouched.
+function escapeStrayQuotes(src: string): string {
+  let out = '';
+  let inString = false;
+  for (let i = 0; i < src.length; i++) {
+    const ch = src[i];
+    if (inString && ch === '\\') {
+      out += ch + (src[i + 1] ?? '');
+      i++;
+      continue;
+    }
+    if (ch === '"') {
+      if (!inString) {
+        inString = true;
+        out += ch;
+      } else {
+        let j = i + 1;
+        while (j < src.length && /\s/.test(src[j])) j++;
+        const next = src[j];
+        if (next === undefined || next === ',' || next === ':' || next === '}' || next === ']') {
+          inString = false;
+          out += ch;
+        } else {
+          out += '\\"';
+        }
+      }
+    } else {
+      out += ch;
+    }
+  }
+  return out;
+}
 
 export type AIImportUnmatched = {
   themeName: string;

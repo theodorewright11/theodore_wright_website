@@ -11,7 +11,7 @@ import ExploreView, {
 } from './ExploreView';
 import MetadataSchemaEditor from './MetadataSchemaEditor';
 import ProjectAboutView from './ProjectAboutView';
-import { buildThemesFromAI } from './aiThemeImport';
+import { buildThemesFromAI, parseAIThemesJson } from './aiThemeImport';
 import { ResizeHandle } from './Resizable';
 import {
   buildFolderTree,
@@ -1226,7 +1226,7 @@ export default function QualitativeCodingDashboard() {
     const projectId = activeProject.id;
     try {
       const text = await readFileAsText(file);
-      const parsed = JSON.parse(text);
+      const parsed = parseAIThemesJson(text);
       const result = buildThemesFromAI(activeProject, parsed, new Date().toISOString());
 
       if (result.themes.length === 0) {
