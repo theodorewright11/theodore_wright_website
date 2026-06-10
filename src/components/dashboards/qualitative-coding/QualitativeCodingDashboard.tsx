@@ -120,6 +120,7 @@ export default function QualitativeCodingDashboard() {
   };
   const [focusedAnnotationId, setFocusedAnnotationId] = useState<string | null>(null);
   const [selectedCodeId, setSelectedCodeId] = useState<string | null>(null);
+  const [selectedThemeId, setSelectedThemeId] = useState<string | null>(null);
   const [schemaOpen, setSchemaOpen] = useState(false);
   const [exportMenuOpen, setExportMenuOpen] = useState(false);
   const [codebookPanelOpen, setCodebookPanelOpen] = useState(false);
@@ -1564,6 +1565,8 @@ export default function QualitativeCodingDashboard() {
                         onRemoveRangeFromAnnotation={removeRangeFromAnnotation}
                         onSendAnnotationToNote={(annData) => sendAnnotationToNote(d, annData)}
                         themes={activeProject.themes ?? []}
+                        selectedThemeId={selectedThemeId}
+                        onSetSelectedThemeId={setSelectedThemeId}
                         showThemeAddInPopover={state.popoverShowThemeAdd !== false}
                         onHideThemeAddInPopover={() =>
                           setState((s) => ({ ...s, popoverShowThemeAdd: false }))

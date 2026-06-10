@@ -5,6 +5,7 @@ import {
   buildCodeTree,
   buildLines,
   codePathString,
+  descendantIds,
   flattenTree,
   nextPaletteColor,
   resolveColor,
@@ -80,6 +81,10 @@ type Props = {
   showThemeAddInPopover?: boolean;
   onHideThemeAddInPopover?: () => void;
   onShowThemeAddInPopover?: () => void;
+  // When set, the doc body highlights annotations linked to this theme and
+  // dims everything else. Works in parallel with selectedCodeId.
+  selectedThemeId?: string | null;
+  onSetSelectedThemeId?: (id: string | null) => void;
   canSendToNote?: boolean;
   qcLinkOptions?: QcLinkOptions;
   onCreateCode?: (
@@ -140,6 +145,8 @@ export default function DocumentViewer({
   showThemeAddInPopover = true,
   onHideThemeAddInPopover,
   onShowThemeAddInPopover,
+  selectedThemeId = null,
+  onSetSelectedThemeId,
   canSendToNote,
   qcLinkOptions,
   onCreateCode,
@@ -210,9 +217,52 @@ export default function DocumentViewer({
     [annotations, doc.id],
   );
 
+  // When a theme is selected from the doc toolbar, compute which annotations
+  // are part of it (direct links + auto-include codes) and which ranges in
+  // this doc were added directly to the theme as uncoded highlights.
+  const selectedTheme = useMemo(
+    () =>
+      selectedThemeId
+        ? (themesProp ?? []).find((t) => t.id === selectedThemeId) ?? null
+        : null,
+    [themesProp, selectedThemeId],
+  );
+  const themeAnnotationWeights = useMemo(() => {
+    const m = new Map<string, 'core' | 'supporting'>();
+    if (!selectedTheme) return m;
+    for (const link of selectedTheme.annotationLinks) {
+      m.set(link.annotationId, link.weight);
+    }
+    if (selectedTheme.includeCodeIds.length > 0) {
+      const codeIdSet = new Set<string>();
+      for (const cid of selectedTheme.includeCodeIds) {
+        for (const d of descendantIds(codes, cid)) codeIdSet.add(d);
+      }
+      for (const a of docAnnotations) {
+        if (m.has(a.id)) continue;
+        if (codeIdSet.has(a.codeId)) m.set(a.id, 'supporting');
+      }
+    }
+    return m;
+  }, [selectedTheme, codes, docAnnotations]);
+  const themeUncodedDocRanges = useMemo(() => {
+    if (!selectedTheme) return [] as { start: number; end: number; weight: 'core' | 'supporting' }[];
+    const out: { start: number; end: number; weight: 'core' | 'supporting' }[] = [];
+    for (const h of selectedTheme.uncodedHighlights ?? []) {
+      if (h.docId !== doc.id) continue;
+      for (const r of h.ranges ?? []) out.push({ start: r.start, end: r.end, weight: h.weight });
+    }
+    return out;
+  }, [selectedTheme, doc.id]);
   const segments = useMemo(
-    () => segmentText(doc.text, docAnnotations, pending ?? undefined),
-    [doc.text, docAnnotations, pending],
+    () =>
+      segmentText(
+        doc.text,
+        docAnnotations,
+        pending ?? undefined,
+        themeUncodedDocRanges,
+      ),
+    [doc.text, docAnnotations, pending, themeUncodedDocRanges],
   );
 
   const lines = useMemo(
@@ -221,6 +271,30 @@ export default function DocumentViewer({
   );
 
   const renderSegment = (seg: ReturnType<typeof segmentText>[number], key: React.Key) => {
+    // Determine whether this segment is part of the currently-selected theme,
+    // and if so, the strongest weight (core > supporting).
+    const themeWeight: 'core' | 'supporting' | null = (() => {
+      if (!selectedTheme) return null;
+      let hasCore = false;
+      let hasSupporting = false;
+      if (seg.themeHighlight) {
+        // Uncoded theme highlight — pick the max weight across overlapping uncoded ranges.
+        for (const r of themeUncodedDocRanges) {
+          if (r.start <= seg.start && r.end >= seg.end) {
+            if (r.weight === 'core') hasCore = true;
+            else hasSupporting = true;
+          }
+        }
+      }
+      for (const a of seg.annotations) {
+        const w = themeAnnotationWeights.get(a.id);
+        if (w === 'core') hasCore = true;
+        else if (w === 'supporting') hasSupporting = true;
+      }
+      if (hasCore) return 'core';
+      if (hasSupporting) return 'supporting';
+      return null;
+    })();
     if (seg.annotations.length === 0) {
       if (seg.pending) {
         return (
@@ -232,16 +306,51 @@ export default function DocumentViewer({
           </span>
         );
       }
+      // Uncoded theme-only segment (no annotations on this stretch).
+      if (selectedTheme && themeWeight) {
+        const violet = '#8b5cf6';
+        return (
+          <span
+            key={key}
+            style={{
+              backgroundColor:
+                themeWeight === 'core'
+                  ? hexAlpha(violet, 0.38)
+                  : hexAlpha(violet, 0.16),
+              boxShadow:
+                themeWeight === 'core'
+                  ? `inset 0 -3px 0 ${violet}`
+                  : `inset 0 -1px 0 ${hexAlpha(violet, 0.55)}`,
+            }}
+            title={`In theme "${selectedTheme.name}" (${themeWeight}, uncoded)`}
+          >
+            {seg.text}
+          </span>
+        );
+      }
       return <span key={key}>{seg.text}</span>;
     }
     const top = seg.annotations[seg.annotations.length - 1];
     const color = resolveColor(codes, top.codeId);
     const dim =
-      selectedCodeId !== null &&
-      !seg.annotations.some((a) => a.codeId === selectedCodeId);
+      (selectedCodeId !== null &&
+        !seg.annotations.some((a) => a.codeId === selectedCodeId)) ||
+      (selectedTheme !== null && themeWeight === null);
     const isFocused =
       focusedAnnotationId !== null &&
       seg.annotations.some((a) => a.id === focusedAnnotationId);
+    // When a theme is selected and this segment IS in the theme, paint the
+    // theme's core/supporting underline on top of the code's underline.
+    const baseShadow = isFocused
+      ? `inset 0 -2px 0 ${color}`
+      : `inset 0 -1px 0 ${color}`;
+    const themeShadow =
+      themeWeight === 'core'
+        ? `, inset 0 -3px 0 ${color}`
+        : themeWeight === 'supporting'
+          ? `, inset 0 -1px 0 ${hexAlpha(color, 0.55)}`
+          : '';
+    const bgAlpha = themeWeight === 'core' ? 0.4 : isFocused ? 0.4 : 0.2;
     return (
       <span
         key={key}
@@ -255,12 +364,13 @@ export default function DocumentViewer({
         style={{
           backgroundColor: seg.pending
             ? 'rgba(254, 240, 138, 0.85)'
-            : hexAlpha(color, isFocused ? 0.4 : 0.2),
-          boxShadow: isFocused ? `inset 0 -2px 0 ${color}` : `inset 0 -1px 0 ${color}`,
+            : hexAlpha(color, bgAlpha),
+          boxShadow: baseShadow + themeShadow,
         }}
-        title={seg.annotations
-          .map((a) => codePathString(codes, a.codeId))
-          .join(' · ')}
+        title={
+          seg.annotations.map((a) => codePathString(codes, a.codeId)).join(' · ') +
+          (themeWeight ? ` · in selected theme (${themeWeight})` : '')
+        }
       >
         {seg.text}
       </span>
@@ -512,6 +622,25 @@ export default function DocumentViewer({
           >
             Lines
           </button>
+        )}
+        {themesProp && themesProp.length > 0 && onSetSelectedThemeId && (
+          <select
+            value={selectedThemeId ?? ''}
+            onChange={(e) => onSetSelectedThemeId(e.target.value || null)}
+            className={`flex-shrink-0 px-2 py-1.5 text-[12px] font-medium rounded-md border ${
+              selectedThemeId
+                ? 'border-violet-300 bg-violet-50 text-violet-800'
+                : 'border-slate-300 text-slate-600 hover:bg-slate-100'
+            }`}
+            title="highlight which annotations & uncoded spans belong to this theme"
+          >
+            <option value="">Theme: any</option>
+            {themesProp.map((t) => (
+              <option key={t.id} value={t.id}>
+                Theme: {t.name}
+              </option>
+            ))}
+          </select>
         )}
         {lineView && onSetLinesMode && (
           <div className="flex items-center bg-slate-100 rounded-md p-0.5 flex-shrink-0">
