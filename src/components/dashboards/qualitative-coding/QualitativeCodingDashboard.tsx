@@ -498,6 +498,51 @@ export default function QualitativeCodingDashboard() {
     setSelectedCodeId(null);
   };
 
+  // Clone a project's documents (+ metadata schema + folders) into a fresh
+  // project with no codes / annotations / themes — a clean-slate twin of the
+  // corpus, e.g. for AI coding to compare against the analyst's. Document order
+  // is preserved so corpus.md's [D{n}] tags still line up. Notes / About /
+  // description (analyst commentary) are intentionally dropped.
+  const duplicateProjectDocsOnly = (sourceId: string) => {
+    const src = state.projects.find((p) => p.id === sourceId);
+    if (!src) return;
+    const now = new Date().toISOString();
+    const copy: Project = {
+      version: 1,
+      id: cryptoRandomId(),
+      name: `${src.name} (copy)`,
+      metadataSchema: src.metadataSchema.map((f) => ({
+        ...f,
+        options: f.options ? [...f.options] : undefined,
+      })),
+      documents: src.documents.map((d) => ({
+        id: cryptoRandomId(),
+        title: d.title,
+        text: d.text,
+        kind: d.kind === 'note' ? 'note' : 'document',
+        folder: d.folder,
+        metadata: { ...d.metadata },
+        created_at: d.created_at ?? now,
+        updated_at: now,
+      })),
+      codes: [],
+      annotations: [],
+      themes: [],
+      folders: src.folders ? [...src.folders] : [],
+      created_at: now,
+      updated_at: now,
+    };
+    setState((s) => ({
+      ...s,
+      projects: [...s.projects, copy],
+      activeProjectId: copy.id,
+      view: 'documents',
+    }));
+    setActiveDocId(null);
+    setSelectedCodeId(null);
+    queueWrite(copy.id);
+  };
+
   const deleteProject = (id: string) => {
     const proj = state.projects.find((p) => p.id === id);
     setState((s) => {
@@ -1357,6 +1402,7 @@ export default function QualitativeCodingDashboard() {
         onSwitch={switchProject}
         onCreate={createProject}
         onDelete={deleteProject}
+        onDuplicateDocs={duplicateProjectDocsOnly}
         onRename={(name) => updateProjectMeta({ name })}
         onOpenSchema={() => setSchemaOpen(true)}
         exportMenuOpen={exportMenuOpen}
@@ -1755,6 +1801,7 @@ function TopBar({
   onSwitch,
   onCreate,
   onDelete,
+  onDuplicateDocs,
   onRename,
   onOpenSchema,
   exportMenuOpen,
@@ -1783,6 +1830,7 @@ function TopBar({
   onSwitch: (id: string) => void;
   onCreate: (name: string) => void;
   onDelete: (id: string) => void;
+  onDuplicateDocs: (id: string) => void;
   onRename: (name: string) => void;
   onOpenSchema: () => void;
   exportMenuOpen: boolean;
@@ -1897,6 +1945,18 @@ function TopBar({
                           ☁
                         </span>
                       )}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onDuplicateDocs(p.id);
+                        setProjectMenuOpen(false);
+                      }}
+                      className="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-blue-600 text-[13px] transition-opacity"
+                      title="duplicate documents into a new project (no codes / annotations / themes)"
+                    >
+                      ⧉
                     </button>
                     {projects.length > 1 && (
                       <button
