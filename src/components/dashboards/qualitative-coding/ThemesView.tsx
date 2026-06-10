@@ -346,14 +346,11 @@ function ThemeDetail({
   const [annPickerOpen, setAnnPickerOpen] = useState(false);
   // Display toggles for the Evidence section.
   const [evViewMode, setEvViewMode] = useState<'flat' | 'by-code' | 'doc'>('by-code');
-  const [evShowFullDoc, setEvShowFullDoc] = useState(false);
-  const [evShowNotes, setEvShowNotes] = useState(true);
   const [evShowMeta, setEvShowMeta] = useState(false);
   // Doc-view extras
   const [docCodeMargin, setDocCodeMargin] = useState<'off' | 'on'>('on');
   const [docCodeLevel, setDocCodeLevel] = useState<'all' | 'top' | 'mid' | 'leaf'>('all');
   const [docThemeMargin, setDocThemeMargin] = useState<'off' | 'on'>('off');
-  const [docThemeInline, setDocThemeInline] = useState<'off' | 'on'>('off');
 
   const uncodedHighlights = theme.uncodedHighlights ?? [];
 
@@ -615,43 +612,8 @@ function ThemeDetail({
                 >
                   Theme margin {docThemeMargin}
                 </button>
-                <button
-                  type="button"
-                  onClick={() => setDocThemeInline((v) => (v === 'on' ? 'off' : 'on'))}
-                  className={`px-2 py-1 text-[11px] font-semibold rounded-md border ${
-                    docThemeInline === 'on'
-                      ? 'border-amber-300 bg-amber-50 text-amber-800'
-                      : 'border-slate-300 text-slate-500 hover:bg-slate-100'
-                  }`}
-                  title="mark text that's in 2+ themes with an extra inline indicator"
-                >
-                  Themes on text {docThemeInline}
-                </button>
               </>
             )}
-            <button
-              type="button"
-              onClick={() => setEvShowFullDoc((v) => !v)}
-              className={`px-2 py-1 text-[11px] font-semibold rounded-md border ${
-                evShowFullDoc
-                  ? 'border-emerald-300 bg-emerald-50 text-emerald-800'
-                  : 'border-slate-300 text-slate-500 hover:bg-slate-100'
-              }`}
-              title={evShowFullDoc ? 'show only the quoted span' : 'show full doc with annotation highlighted'}
-            >
-              Full doc {evShowFullDoc ? 'on' : 'off'}
-            </button>
-            <button
-              type="button"
-              onClick={() => setEvShowNotes((v) => !v)}
-              className={`px-2 py-1 text-[11px] font-semibold rounded-md border ${
-                evShowNotes
-                  ? 'border-amber-300 bg-amber-50 text-amber-800'
-                  : 'border-slate-300 text-slate-500 hover:bg-slate-100'
-              }`}
-            >
-              Notes {evShowNotes ? 'on' : 'off'}
-            </button>
             <button
               type="button"
               onClick={() => setEvShowMeta((v) => !v)}
@@ -695,7 +657,7 @@ function ThemeDetail({
             codeMargin={docCodeMargin}
             codeLevel={docCodeLevel}
             themeMargin={docThemeMargin}
-            themeInline={docThemeInline}
+            showMeta={evShowMeta}
           />
         ) : evViewMode === 'flat' ? (
           <ul className="space-y-3">
@@ -717,8 +679,8 @@ function ThemeDetail({
                     source === 'direct' ? () => onUnlinkAnnotation(theme.id, a.id) : undefined
                   }
                   onJump={() => onJumpToAnnotation(project.id, a.docId, a.id)}
-                  showFullDoc={evShowFullDoc}
-                  showNotes={evShowNotes}
+                  showFullDoc={false}
+                  showNotes={true}
                   showMeta={evShowMeta}
                   showCodePath
                 />
@@ -1236,7 +1198,7 @@ function DocsView({
   codeMargin,
   codeLevel,
   themeMargin,
-  themeInline,
+  showMeta,
 }: {
   evidence: EvidenceItem[];
   uncodedHighlights: import('./types').ThemeUncodedHighlight[];
@@ -1245,7 +1207,7 @@ function DocsView({
   codeMargin: 'on' | 'off';
   codeLevel: 'all' | 'top' | 'mid' | 'leaf';
   themeMargin: 'on' | 'off';
-  themeInline: 'on' | 'off';
+  showMeta: boolean;
 }) {
   // Group evidence (annotation links + uncoded highlights) by docId.
   const docs = useMemo(() => {
@@ -1307,7 +1269,7 @@ function DocsView({
           codeMargin={codeMargin}
           passLevel={passLevel}
           themeMargin={themeMargin}
-          themeInline={themeInline}
+          showMeta={showMeta}
         />
       ))}
     </div>
@@ -1332,7 +1294,7 @@ function DocBlock({
   codeMargin,
   passLevel,
   themeMargin,
-  themeInline,
+  showMeta,
 }: {
   doc: Project['documents'][number];
   items: EvidenceItem[];
@@ -1342,7 +1304,7 @@ function DocBlock({
   codeMargin: 'on' | 'off';
   passLevel: (codeId: string) => boolean;
   themeMargin: 'on' | 'off';
-  themeInline: 'on' | 'off';
+  showMeta: boolean;
 }) {
   // Step 1: merge all theme ranges (from annotation evidence AND uncoded
   // highlights) into non-overlapping bands. Adjacent ranges become continuous.
@@ -1402,7 +1364,15 @@ function DocBlock({
     [project.annotations, doc.id],
   );
   // Local selection — click a chip in either margin to focus on that one.
+  // When the user hasn't picked anything but the Themes margin is on, default
+  // to the theme being viewed (so the current theme's content is highlighted
+  // across every doc by default).
   const [selection, setSelection] = useState<DocSelection>(null);
+  const effectiveSelection: DocSelection =
+    selection ??
+    (themeMargin === 'on'
+      ? { kind: 'theme', themeId: currentThemeId }
+      : null);
 
   // For each band, collect every code that applies to it — including ancestor
   // codes of any directly-applied code. You typically annotate with leaves,
@@ -1566,19 +1536,18 @@ function DocBlock({
     // Does this band match the active selection? Used to dim non-matches.
     const meta = bandMeta[i];
     const matchesSelection =
-      selection === null ||
-      (selection.kind === 'code' &&
-        (meta.codes.includes(selection.codeId) ||
-          // Or any annotation on the band uses a descendant of the selected code
+      effectiveSelection === null ||
+      (effectiveSelection.kind === 'code' &&
+        (meta.codes.includes(effectiveSelection.codeId) ||
           allDocAnns.some(
             (a) =>
-              descendantIds(project.codes, selection.codeId).has(a.codeId) &&
+              descendantIds(project.codes, effectiveSelection.codeId).has(a.codeId) &&
               (a.ranges ?? []).some(
                 (r) => r.start < band.end && r.end > band.start,
               ),
           ))) ||
-      (selection.kind === 'theme' &&
-        bandThemes[i].some((e) => e.themeId === selection.themeId));
+      (effectiveSelection.kind === 'theme' &&
+        bandThemes[i].some((e) => e.themeId === effectiveSelection.themeId));
     // Default visual contributions are gated by margin toggles. When code
     // margin is off, don't paint the code-color background. When theme
     // margin is off, don't paint the core/supporting underline.
@@ -1592,12 +1561,7 @@ function DocBlock({
         ? `inset 0 -3px 0 ${color}`
         : `inset 0 -1px 0 ${hexToRgba(color, 0.55)}`
       : '';
-    // When the user turns "Themes on text" on, mark text that's in 2+ themes
-    // with a thin amber overline so they can see overlap zones at a glance.
-    const multiThemeOverline =
-      themeInline === 'on' && themesAtBand >= 2
-        ? `${underline ? ', ' : ''}inset 0 2px 0 #f59e0b`
-        : '';
+    const multiThemeOverline = '';
     pieces.push(
       <mark
         key={key++}
@@ -1639,6 +1603,17 @@ function DocBlock({
               {uncoded.length > 0 && ` · ${uncoded.length} uncoded`}
               {' · '}{bands.length} highlight{bands.length === 1 ? '' : 's'}
             </div>
+            {showMeta && Object.keys(doc.metadata).length > 0 && (
+              <div className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-[10px] text-slate-500 font-mono">
+                {Object.entries(doc.metadata)
+                  .filter(([_, v]) => v !== null && v !== undefined && v !== '')
+                  .map(([k, v]) => (
+                    <span key={k}>
+                      <span className="text-slate-400">{k}:</span> {String(v)}
+                    </span>
+                  ))}
+              </div>
+            )}
           </div>
           <div className="flex items-center gap-3 text-[10px] text-slate-500 flex-shrink-0">
             <span className="flex items-center gap-1">
