@@ -173,6 +173,8 @@ export type AppState = {
   // When false, the "Add this selection to themes" block at the top of the
   // selection popover is hidden. Defaults to true.
   popoverShowThemeAdd?: boolean;
+  docShowCodes?: boolean;
+  docShowThemes?: boolean;
   activeThemeId?: string | null;
 };
 

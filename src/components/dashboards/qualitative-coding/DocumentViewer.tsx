@@ -85,6 +85,13 @@ type Props = {
   // dims everything else. Works in parallel with selectedCodeId.
   selectedThemeId?: string | null;
   onSetSelectedThemeId?: (id: string | null) => void;
+  // Toggle whether code highlights show on text (and the line-view code
+  // margin renders). Defaults to on.
+  showCodes?: boolean;
+  onToggleShowCodes?: () => void;
+  // Toggle whether theme core/supporting underlines paint by default.
+  showThemes?: boolean;
+  onToggleShowThemes?: () => void;
   canSendToNote?: boolean;
   qcLinkOptions?: QcLinkOptions;
   onCreateCode?: (
@@ -147,6 +154,10 @@ export default function DocumentViewer({
   onShowThemeAddInPopover,
   selectedThemeId = null,
   onSetSelectedThemeId,
+  showCodes = true,
+  onToggleShowCodes,
+  showThemes = false,
+  onToggleShowThemes,
   canSendToNote,
   qcLinkOptions,
   onCreateCode,
@@ -271,25 +282,47 @@ export default function DocumentViewer({
   );
 
   const renderSegment = (seg: ReturnType<typeof segmentText>[number], key: React.Key) => {
-    // Determine whether this segment is part of the currently-selected theme,
-    // and if so, the strongest weight (core > supporting).
+    // When themes are toggled on, figure out the strongest weight (core >
+    // supporting) for the chosen theme. If no specific theme is selected,
+    // default to checking ALL themes — text in any theme gets underlined.
     const themeWeight: 'core' | 'supporting' | null = (() => {
-      if (!selectedTheme) return null;
+      if (!showThemes) return null;
+      const themesToCheck = selectedTheme
+        ? [selectedTheme]
+        : (themesProp ?? []);
       let hasCore = false;
       let hasSupporting = false;
-      if (seg.themeHighlight) {
-        // Uncoded theme highlight — pick the max weight across overlapping uncoded ranges.
-        for (const r of themeUncodedDocRanges) {
-          if (r.start <= seg.start && r.end >= seg.end) {
-            if (r.weight === 'core') hasCore = true;
+      for (const t of themesToCheck) {
+        // Direct annotation links covering any annotation on this segment
+        for (const a of seg.annotations) {
+          const link = t.annotationLinks.find((l) => l.annotationId === a.id);
+          if (link) {
+            if (link.weight === 'core') hasCore = true;
             else hasSupporting = true;
           }
         }
-      }
-      for (const a of seg.annotations) {
-        const w = themeAnnotationWeights.get(a.id);
-        if (w === 'core') hasCore = true;
-        else if (w === 'supporting') hasSupporting = true;
+        // Auto-include via codeIds
+        if (t.includeCodeIds.length > 0) {
+          const codeSet = new Set<string>();
+          for (const cid of t.includeCodeIds) {
+            for (const d of descendantIds(codes, cid)) codeSet.add(d);
+          }
+          for (const a of seg.annotations) {
+            if (codeSet.has(a.codeId)) hasSupporting = true;
+          }
+        }
+        // Uncoded highlights — only relevant when no annotations on segment
+        if (seg.themeHighlight) {
+          for (const h of t.uncodedHighlights ?? []) {
+            if (h.docId !== doc.id) continue;
+            for (const r of h.ranges ?? []) {
+              if (r.start <= seg.start && r.end >= seg.end) {
+                if (h.weight === 'core') hasCore = true;
+                else hasSupporting = true;
+              }
+            }
+          }
+        }
       }
       if (hasCore) return 'core';
       if (hasSupporting) return 'supporting';
@@ -307,7 +340,7 @@ export default function DocumentViewer({
         );
       }
       // Uncoded theme-only segment (no annotations on this stretch).
-      if (selectedTheme && themeWeight) {
+      if (showThemes && themeWeight) {
         const violet = '#8b5cf6';
         return (
           <span
@@ -335,20 +368,23 @@ export default function DocumentViewer({
     const dim =
       (selectedCodeId !== null &&
         !seg.annotations.some((a) => a.codeId === selectedCodeId)) ||
-      (selectedTheme !== null && themeWeight === null);
+      (showThemes && selectedTheme !== null && themeWeight === null);
     const isFocused =
       focusedAnnotationId !== null &&
       seg.annotations.some((a) => a.id === focusedAnnotationId);
-    // When a theme is selected and this segment IS in the theme, paint the
-    // theme's core/supporting underline on top of the code's underline.
-    const baseShadow = isFocused
-      ? `inset 0 -2px 0 ${color}`
-      : `inset 0 -1px 0 ${color}`;
+    // Default code highlight only paints when Codes toggle is on.
+    const baseShadow = !showCodes
+      ? ''
+      : isFocused
+        ? `inset 0 -2px 0 ${color}`
+        : `inset 0 -1px 0 ${color}`;
+    // Theme underline paints on top when Themes is on AND the segment is in
+    // a theme (the selected one, or any theme if none is picked).
     const themeShadow =
       themeWeight === 'core'
-        ? `, inset 0 -3px 0 ${color}`
+        ? `${baseShadow ? ', ' : ''}inset 0 -3px 0 ${color}`
         : themeWeight === 'supporting'
-          ? `, inset 0 -1px 0 ${hexAlpha(color, 0.55)}`
+          ? `${baseShadow ? ', ' : ''}inset 0 -1px 0 ${hexAlpha(color, 0.55)}`
           : '';
     const bgAlpha = themeWeight === 'core' ? 0.4 : isFocused ? 0.4 : 0.2;
     return (
@@ -364,12 +400,14 @@ export default function DocumentViewer({
         style={{
           backgroundColor: seg.pending
             ? 'rgba(254, 240, 138, 0.85)'
-            : hexAlpha(color, bgAlpha),
+            : showCodes
+              ? hexAlpha(color, bgAlpha)
+              : 'transparent',
           boxShadow: baseShadow + themeShadow,
         }}
         title={
           seg.annotations.map((a) => codePathString(codes, a.codeId)).join(' · ') +
-          (themeWeight ? ` · in selected theme (${themeWeight})` : '')
+          (themeWeight ? ` · in theme (${themeWeight})` : '')
         }
       >
         {seg.text}
@@ -623,21 +661,53 @@ export default function DocumentViewer({
             Lines
           </button>
         )}
-        {themesProp && themesProp.length > 0 && onSetSelectedThemeId && (
+        {onToggleShowCodes && (
+          <button
+            type="button"
+            onClick={onToggleShowCodes}
+            title={
+              showCodes
+                ? 'hide code highlights / code margin'
+                : 'show code highlights / code margin'
+            }
+            className={`flex-shrink-0 px-3 py-1.5 text-[13px] font-medium rounded-md transition-colors ${
+              showCodes
+                ? 'bg-blue-100 text-blue-900'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+            }`}
+          >
+            Codes
+          </button>
+        )}
+        {themesProp && themesProp.length > 0 && onToggleShowThemes && (
+          <button
+            type="button"
+            onClick={onToggleShowThemes}
+            title={
+              showThemes
+                ? 'hide theme underlines / theme margin'
+                : 'underline text by core/supporting for the selected theme'
+            }
+            className={`flex-shrink-0 px-3 py-1.5 text-[13px] font-medium rounded-md transition-colors ${
+              showThemes
+                ? 'bg-violet-100 text-violet-900'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+            }`}
+          >
+            Themes
+          </button>
+        )}
+        {showThemes && themesProp && themesProp.length > 1 && onSetSelectedThemeId && (
           <select
             value={selectedThemeId ?? ''}
             onChange={(e) => onSetSelectedThemeId(e.target.value || null)}
-            className={`flex-shrink-0 px-2 py-1.5 text-[12px] font-medium rounded-md border ${
-              selectedThemeId
-                ? 'border-violet-300 bg-violet-50 text-violet-800'
-                : 'border-slate-300 text-slate-600 hover:bg-slate-100'
-            }`}
-            title="highlight which annotations & uncoded spans belong to this theme"
+            className="flex-shrink-0 px-2 py-1.5 text-[12px] font-medium rounded-md border border-violet-300 bg-violet-50 text-violet-800"
+            title="pick which theme to highlight"
           >
-            <option value="">Theme: any</option>
+            <option value="">All themes</option>
             {themesProp.map((t) => (
               <option key={t.id} value={t.id}>
-                Theme: {t.name}
+                {t.name}
               </option>
             ))}
           </select>

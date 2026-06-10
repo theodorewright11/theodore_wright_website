@@ -1567,6 +1567,20 @@ export default function QualitativeCodingDashboard() {
                         themes={activeProject.themes ?? []}
                         selectedThemeId={selectedThemeId}
                         onSetSelectedThemeId={setSelectedThemeId}
+                        showCodes={state.docShowCodes !== false}
+                        onToggleShowCodes={() =>
+                          setState((s) => ({
+                            ...s,
+                            docShowCodes: !(s.docShowCodes !== false),
+                          }))
+                        }
+                        showThemes={!!state.docShowThemes}
+                        onToggleShowThemes={() =>
+                          setState((s) => ({
+                            ...s,
+                            docShowThemes: !s.docShowThemes,
+                          }))
+                        }
                         showThemeAddInPopover={state.popoverShowThemeAdd !== false}
                         onHideThemeAddInPopover={() =>
                           setState((s) => ({ ...s, popoverShowThemeAdd: false }))
