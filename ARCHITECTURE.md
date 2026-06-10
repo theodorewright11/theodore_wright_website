@@ -14,7 +14,11 @@
 ```
 /
 ├── PRD.md, ARCHITECTURE.md, CLAUDE.md   ← read-first specs
-├── stage_outputs/                       ← raw LLM stage outputs (working drafts)
+├── api/auth/                            ← Vercel Node serverless functions for the OAuth code-flow
+│   ├── _lib.js                          ← crypto / cookie / token helpers
+│   ├── exchange.js, refresh.js, signout.js
+├── vercel.json                          ← COOP header (same-origin-allow-popups) for the sign-in popup
+├── stage_outputs/                       ← raw LLM stage outputs (working drafts; gitignored)
 │   └── <topic>/<stage>.md
 ├── design_handoff_personal_site/        ← V4 design source (reference only)
 ├── public/
@@ -24,27 +28,32 @@
 ├── src/
 │   ├── components/
 │   │   ├── Nav.astro                    ← V4 nav (brand + horizontal links, accent active state)
-│   │   ├── Footer.astro                 ← global footer (updated date + two bundle downloads + contact)
+│   │   ├── Footer.astro                 ← global footer (updated date + bundle downloads + contact)
 │   │   ├── SectionLabel.astro           ← Fraunces 18px label + accent "see all →" link, hairline rule below
 │   │   ├── GroupHeader.astro            ← shared status-group header used on /research, /models, /ai-research, /dashboards
+│   │   ├── StatusPill.astro             ← small status badge (live / planned / soft tones) used on the home index columns
 │   │   ├── TierChip.astro               ← me / me x ai / ai chip (writing tiers)
 │   │   ├── DownloadMd.astro             ← uniform "download as .md" button mounted on every content page
 │   │   ├── RefinementLog.astro
+│   │   ├── NowStrip.astro               ← retired top-of-page NOW strip; file kept but no longer imported anywhere
 │   │   ├── models/                      ← React components for interactive models
 │   │   │   └── OptionValueDashboard.tsx
 │   │   ├── dashboards/                  ← React components for the /dashboards/<slug> apps
 │   │   │   ├── finance/                 ← FinanceDashboard.tsx (root, queue), DashboardTab/TransactionsTab/BudgetTab/TransactionForm,
 │   │   │   │                               types.ts, categories.ts, compute.ts, storage.ts (localStorage cache + CSV),
 │   │   │   │                               sheets.ts (GIS + Sheets REST), spendingLogImporter.ts (one-shot legacy-tab seed), AuthBar.tsx
-│   │   │   ├── time-tracker/            ← TimeTrackerDashboard.tsx (root, queue), Clock/Pomodoro/Log tabs, AuthBar.tsx,
-│   │   │   │                               types.ts, compute.ts (pure), storage.ts (localStorage cache + CSV), sheets.ts (GIS + Sheets REST + ensureTabs)
-│   │   │   └── qualitative-coding/      ← QualitativeCodingDashboard.tsx (root, view router, Drive sync queue),
-│   │   │                                   CodeTree.tsx, DocumentViewer.tsx (+Notes side panel), MetadataSchemaEditor.tsx,
-│   │   │                                   ExploreView.tsx (cross-project filter+stats+table), ProjectAboutView.tsx (project info),
-│   │   │                                   Markdown.tsx (inline MD renderer + editor with toolbar), AuthBar.tsx (Drive sign-in),
-│   │   │                                   types.ts, compute.ts (pure: tree + segments + color + folder tree + explore filter),
-│   │   │                                   storage.ts (localStorage + JSON download/import), exporters.ts (JSON + per-doc/project Markdown),
-│   │   │                                   drive.ts (GIS OAuth + Drive Files REST + multipart upload)
+│   │   │   ├── time-tracker/            ← TimeTrackerDashboard.tsx (root, queue, googleAuth code-flow), Clock/Pomodoro/Log tabs,
+│   │   │   │                               WeekStrip/RatingRow/ActivityPicker/TimeStepper, AuthBar.tsx, notify.ts (chime + notification),
+│   │   │   │                               types.ts, compute.ts (pure), storage.ts (localStorage cache + CSV), sheets.ts (Sheets REST + ensureTabs)
+│   │   │   └── qualitative-coding/      ← QualitativeCodingDashboard.tsx (root, 6-view router, Drive sync queue, googleAuth code-flow).
+│   │   │                                   Views: DocumentViewer.tsx (+Notes panel), CodebookView.tsx, ThemesView.tsx, GradingView.tsx,
+│   │   │                                   ExploreView.tsx (cross-project filter+stats+co-occurrence), ProjectAboutView.tsx.
+│   │   │                                   Shared: CodeTree.tsx, HierarchicalCodePicker.tsx, CodeEditModal/AnnotationEditModal,
+│   │   │                                   ThemeMembershipEditor.tsx, MetadataSchemaEditor.tsx, ColorPicker.tsx, Resizable.tsx,
+│   │   │                                   Markdown.tsx (inline MD renderer + editor), AuthBar.tsx.
+│   │   │                                   types.ts, compute.ts (pure: tree + segments + color + lines + co-occurrence + explore),
+│   │   │                                   storage.ts (localStorage + JSON import/export), exporters.ts (JSON + Markdown: doc/codebook/themes/project),
+│   │   │                                   drive.ts (Drive Files REST + multipart), driveSync.ts (folder-per-project orchestrator)
 │   │   └── ai-research/                 ← React components for AI-research stage visualizations
 │   │       ├── PsychVariationGraph.tsx  ← topology graph (force-directed via d3-force) — pan + wheel-zoom + reset
 │   │       ├── PsychVariationModel.tsx  ← model dashboard (variance decomposition + multivariate sex-difference tabs)
@@ -55,9 +64,9 @@
 │   │       ├── AITransitionData.tsx     ← data findings panel for navigating-ai-world (six Q1–Q6 tabs covering λ atrophy speed, dose-response, gate τ, scalar identity, κ calibration, per-domain α; hand-rolled SVG charts)
 │   │       ├── AITransitionExplorer.tsx ← build-stage reader's tool for navigating-ai-world (six views: profile lookup default + six channels demystified + four motivated-reasoning traps + ten-year trajectory under three λ regimes + five moves S2–S6 with channel annotations + eight-bullet take-away; runs the same `compute()` as AITransitionModel with hardcoded parameter vectors per profile)
 │   │       ├── CognitivePartnershipGraph.tsx ← topology graph for technology-utilization-architecture (~66 nodes, 5 variants incl. capability-regime fragility, P-type practitioner nodes + op edge, pan + wheel-zoom + reset)
-│       ├── CognitivePartnershipModel.tsx ← model dashboard for technology-utilization-architecture (per-task router with seven presets + day-portfolio four-strategy comparison; V(u,v;θ) generator-verifier loop)
-│       ├── CognitivePartnershipData.tsx ← data findings panel for technology-utilization-architecture (seven tabs — productivity-record landscape + Q1 CUPS + Q2 Bastani + Q3 mode distribution + Q4 outside-frontier scatter + Q5 workflow swings + Q6 calibration; hand-rolled SVG charts)
-│       └── CognitivePartnershipExplorer.tsx ← build-stage reader's tool for technology-utilization-architecture (five views: pick-a-task plain-language router + compare-strategies portfolio view + common-mistakes + when-to-verify + cheat sheet; wraps the same bilinear math as CognitivePartnershipModel but with discrete low/medium/high pickers and named empirical anchors per recommendation)
+│   │       ├── CognitivePartnershipModel.tsx ← model dashboard (per-task router with seven presets + day-portfolio four-strategy comparison; V(u,v;θ) generator-verifier loop)
+│   │       ├── CognitivePartnershipData.tsx ← data findings panel (seven tabs — productivity landscape + Q1 CUPS + Q2 Bastani + Q3 mode distribution + Q4 outside-frontier scatter + Q5 workflow swings + Q6 calibration)
+│   │       └── CognitivePartnershipExplorer.tsx ← build-stage reader's tool (five views: pick-a-task router + compare-strategies portfolio + common-mistakes + when-to-verify + cheat sheet; same bilinear math as the model)
 │   ├── content/
 │   │   ├── blog/<slug>.mdx              ← essays
 │   │   ├── research/<slug>.mdx          ← formal research entries
@@ -68,9 +77,11 @@
 │   ├── data/                            ← singletons (not collections — small, edited-by-hand)
 │   │   ├── bio.json                     ← name, credentials (subtitle), blurb, location, contact links
 │   │   ├── now.json                     ← `updated` date drives the global Footer (NowStrip retired)
-│   │   └── dashboards.json              ← roster of dashboards with status (planned/in-progress/finished)
+│   │   ├── dashboards.json              ← roster of dashboards with status (planned/in-progress/finished) + optional `private`
+│   │   └── ai_research_planned.json     ← 16 planned AI-research topics ({title, desc}) rendered on /ai-research + home (prompts.md is the longer brainstorm)
 │   ├── lib/
-│   │   └── bundle.ts                    ← shared markdown rendering helpers (bundleHeader, blogToMd, researchToMd, modelToMd, updateToMd, aiStageToMd, section, sortByDate, stripImports)
+│   │   ├── bundle.ts                    ← shared markdown rendering helpers (bundleHeader, blogToMd, researchToMd, modelToMd, updateToMd, aiStageToMd, section, sortByDate, stripImports)
+│   │   └── googleAuth.ts                ← shared OAuth code-flow client (signIn/refresh/signOut/loadCachedToken); talks to api/auth/*
 │   ├── layouts/BaseLayout.astro         ← Nav + slot + Footer, paper bg, flex-column for sticky footer
 │   ├── pages/
 │   │   ├── index.astro                  ← V4 editorial home (masthead + 3-col index + colophon)
@@ -92,6 +103,7 @@
 │   │   │   └── qualitative-coding.astro ← bypasses BaseLayout: own minimal HTML + white bg + Inter font + client:only QualitativeCodingDashboard
 │   │   ├── bundle-mine.md.ts            ← /bundle-mine.md (writing + research + models + updates)
 │   │   ├── bundle-ai-research.md.ts     ← /bundle-ai-research.md (every AI-Research stage)
+│   │   ├── bundle-all.md.ts             ← /bundle-all.md (mine + ai-research concatenated)
 │   │   ├── writing.md.ts                ← /writing.md (all blog as one md file)
 │   │   ├── writing/[slug].md.ts         ← /writing/<slug>.md (single post)
 │   │   ├── research.md.ts               ← /research.md
@@ -119,11 +131,13 @@ Defined in `src/content.config.ts` using the legacy `type: 'content'` API (consi
 
 | Collection | Path glob | Key frontmatter fields |
 |---|---|---|
-| `blog` | `src/content/blog/*.mdx` | title, description, date, tier, draft, tags |
-| `research` | `src/content/research/*.mdx` | title, description, date, status, collaborators, venue, paperUrl, externalUrl, featured |
-| `models` | `src/content/models/*.mdx` | title, description, date, status, featured, component, tags |
-| `ai_research` | `src/content/ai_research/<topic>/<stage>.mdx` | title, description, date, status, refinementPass, refinementLog |
-| `updates` | `src/content/updates/*.mdx` | title, description, date, period, tags, draft |
+| `blog` | `src/content/blog/*.mdx` | title, description, date, tier (`mine`/`collab`/`ai-led`), draft, tags |
+| `research` | `src/content/research/*.mdx` | title, description, date, status (`in-progress`/`published`/`upcoming`/`contribution`), paperStatus?, abstract?, authors[] (`{name, affiliation?, mine}`), collaborators[] (legacy), venue, paperUrl, externalUrl, featured |
+| `models` | `src/content/models/*.mdx` | title, description, date, status (`draft`/`published`), featured, component, tags |
+| `ai_research` | `src/content/ai_research/<topic>/<stage>.mdx` | title, description, date, status (`not-started`/`in-progress`/`complete`), refinementPass, refinementLog |
+| `updates` | `src/content/updates/*.mdx` | title, description?, date, period (`daily`/`weekly`/`monthly`), tags, draft |
+
+`research` carries both the new `authors` array (with affiliations; `mine: true` flags Teddy's own entry) and the legacy `collaborators` string array for entries not yet migrated. Source of truth: `src/content.config.ts`.
 
 For `ai_research`, the topic and stage are derived from the file path. The entry slug is `<topic>/<stage>` and is split on `/` in the routes. Collection key matches folder name (Astro's content auto-discovery).
 
@@ -256,16 +270,17 @@ Both styles use ink/ink-soft/muted/rule/accent tokens consistently.
 
 ### Footer
 
-`Footer.astro` is mounted in `BaseLayout.astro` after the main slot. It reads `src/data/now.json` for the `updated` date (the previous top-of-page NOW strip is retired) and `src/data/bio.json` for contact links. Three slots: left (`updated <date>` + a download link to `/content-bundle.md`), right (email / substack / github). Border-top `rule`, `font-mono text-[11px]`, all in muted/ink-soft.
+`Footer.astro` is mounted in `BaseLayout.astro` after the main slot. It reads `src/data/now.json` for the `updated` date (the previous top-of-page NOW strip is retired) and `src/data/bio.json` for contact links. Slots: left (`updated <date>` + bundle downloads `mine ↓` / `ai's research ↓` / `all ↓`), right (email / substack / github). Border-top `rule`, `font-mono text-[11px]`, all in muted/ink-soft.
 
 ### Content bundles + per-page downloads
 
 Static endpoints that prerender to `.md` files at build time. All endpoints share helpers in `src/lib/bundle.ts` (header/footer rendering, MDX import-stripping, per-collection serializers).
 
-**Top-level bundles** linked from the global Footer:
+**Top-level bundles** linked from the global Footer (`mine ↓`, `ai's research ↓`, `all ↓`):
 
 - `/bundle-mine.md` — `blog` + `research` + `models` + `updates` (the user's own writing/research). Source: `src/pages/bundle-mine.md.ts`.
 - `/bundle-ai-research.md` — every stage of every `ai_research` topic (the full LLM Iterate output). Source: `src/pages/bundle-ai-research.md.ts`.
+- `/bundle-all.md` — the two above concatenated. Source: `src/pages/bundle-all.md.ts`.
 
 **Per-page downloads** mounted on every content page via `DownloadMd.astro` (a uniform top-of-page button):
 
@@ -484,28 +499,36 @@ Lives at [src/components/dashboards/time-tracker/](src/components/dashboards/tim
 
 ### Qualitative Coding dashboard specifics
 
-Lives at [src/components/dashboards/qualitative-coding/](src/components/dashboards/qualitative-coding/). Mounted at `/dashboards/qualitative-coding`. v2 is **public** in the roster (no `private: true` in `dashboards.json`) — anyone can load the URL, but data is per-browser (localStorage) and per-Google-account (Drive), so no one but the signed-in user sees their projects.
+Lives at [src/components/dashboards/qualitative-coding/](src/components/dashboards/qualitative-coding/). Mounted at `/dashboards/qualitative-coding`. **Public** in the roster (no `private: true` in `dashboards.json`) — anyone can load the URL, but data is per-browser (localStorage) and per-Google-account (Drive), so no one but the signed-in user sees their projects. Beyond v2's coding tree + Explore, the tool now adds an analyst **Themes** layer over annotations and a **Grading** layer (code specificity / annotation accuracy / multi-axis theme ratings) for comparing one project's coding against another (e.g. AI vs analyst).
 
 **Layout deviation**: this is the one dashboard whose page does *not* use `BaseLayout`. [src/pages/dashboards/qualitative-coding.astro](src/pages/dashboards/qualitative-coding.astro) declares its own minimal `<html>/<body>` with a white background, loads `global.css` for Tailwind, pulls in Inter from Google Fonts, and mounts the dashboard at full viewport (`100vh × 100vw`). It also defines a global `.md-preview` CSS block scoped to the rendered Markdown (headings, lists, blockquotes, code, inline links). The site Nav/Footer are deliberately absent — this is a text-annotation tool that needs maximum vertical space and a UI language distinct from the editorial paper aesthetic. The "← Dashboards" affordance is rendered inside the dashboard's own TopBar.
 
 **Files**:
 
-- `QualitativeCodingDashboard.tsx` — root component. Owns `AppState` (in localStorage), the active project / document / code selection, the view router (`documents` / `explore` / `about`), all CRUD handlers, the Drive sync queue + lifecycle, the schema-editor modal, the export menu, and the JSON import file input. Composes `TopBar` + `Sidebar` (hidden in About view) + `DocumentViewer` / `ExploreView` / `ProjectAboutView` + `MetadataSchemaEditor`. The `NoProjects` empty state replaces the entire UI before the first project is created.
-- `CodeTree.tsx` — recursive renderer of the code tree. Per-row inline rename (double-click), an inline edit form (pencil icon) for name + description + color, "+" to add a child, "×" to delete (cascades to descendants + dependent annotations after a `confirm`). A `defs` toggle in the header shows code descriptions inline under each name; descriptions also appear in the selection popover and the annotation focus panel.
-- `DocumentViewer.tsx` — the meat. Title + folder-path input + per-schema-field metadata inputs at the top. A two-state mode toggle (`Read & code` vs `Edit text`): edit mode is a plain `<textarea>`; read mode renders text as segments produced by `segmentText` from `compute.ts`. Selection is captured on `mouseUp`/`keyUp` using `document.createRange()` + `Range#toString().length` to map DOM selection back to character offsets in the original text. When the selection is non-empty inside the container, a `SelectionPopover` (a `forwardRef` component) opens anchored to the selection's bounding rect; it searches the flattened code tree (rendering each row's description as a subtitle) and commits the annotation on click or Enter. A 📝 Notes button in the toolbar opens a 380px right-side panel mounting a `MarkdownEditor` bound to `Document.notes` — that panel exists specifically for the user's personal commentary, separate from the coded data. Below the text, `AnnotationsPanel` lists every annotation for the doc with a click-to-focus interaction (focused → its segment gets a thicker underline; opens an editable note textarea and surfaces the code's description).
-- `ExploreView.tsx` — the cross-project annotation browser. Receives a `projects: Project[]` array (the active project plus any included via the multi-select picker), runs `exploreRows` from `compute.ts` to produce one row per annotation across all those projects, and renders a filter sidebar (code multi-select tree with per-project section headers when more than one project is in view; folder dropdown; metadata field filters; free-text search), a four-card stats strip (annotations / unique codes / docs / projects), a top-codes chip strip, and a card list of every matching annotation with project chip, code path, span text, note, and any metadata. Cards call `onJumpToAnnotation(projectId, docId, annotationId)` which the root component uses to switch active project (if different), set the active doc, focus the annotation, and switch to Documents view.
+- `QualitativeCodingDashboard.tsx` — root component. Owns `AppState` (in localStorage), the active project / document / code / theme selection, the **6-view router** (`documents` / `codebook` / `themes` / `grading` / `explore` / `about`), all CRUD handlers, the Drive sync queue + lifecycle (via `googleAuth.ts` code-flow + `driveSync.ts`), the schema-editor modal, the export menu, and the JSON import file input. Composes `TopBar` + `Sidebar` (hidden in About and Codebook views) + the active view component + modals. The `NoProjects` empty state replaces the entire UI before the first project is created. Many resizable-panel widths/heights and per-view toggles persist in `AppState`.
+- `CodeTree.tsx` — recursive renderer of the code tree in the Sidebar. Per-row inline rename (double-click), an inline edit form for name + description + color, "+" to add a child, "×" to delete (cascades to descendants + dependent annotations after a `confirm`). A `defs` toggle shows code descriptions inline; descriptions also appear in the selection popover and the annotation focus panel.
+- `CodebookView.tsx` — full-page code-tree manager (Sidebar hidden). Drag-drop reordering with multi-parent support (Alt-drag adds a parent without removing the old one), collapse/expand, inline editing, parent-link management, alphabetical sort, and a definitions toggle.
+- `ThemesView.tsx` — analyst-level grouping layer above codes. Hierarchical theme tree + a theme-detail card: a Markdown narrative editor, linked annotations toggled core/supporting, uncoded highlights, an include-codes picker (`HierarchicalCodePicker`), and the multi-axis `ThemeRating`.
+- `GradingView.tsx` — rubric-rating dashboard with three tabs: **Codes** (specificity 1–5), **Annotations** (accuracy 1–5, with a per-code drill-down), and **Themes** (multi-axis `ThemeRating`: grounding / usefulness / independence / interpretation level / prevalence). Designed for grading one project's coding against another (e.g. AI's vs the analyst's).
+- `ThemeMembershipEditor.tsx` — reusable inline widget showing an annotation's theme links with add/remove + core/supporting toggle. Used in `AnnotationEditModal` and Explore cards.
+- `HierarchicalCodePicker.tsx` — shared searchable hierarchical multi-select for codes (keeps tree structure, flattens on search). Used in Explore filters and theme include-codes.
+- `CodeEditModal.tsx` / `AnnotationEditModal.tsx` — compact edit modals. Code modal: name + description + color (`ColorPicker`) + specificity rating. Annotation modal: note + accuracy rating + accuracy notes + theme membership. Parent/reorder operations stay in `CodebookView`.
+- `ColorPicker.tsx` — 12-color base palette + expandable shade grid (5 shades per base) + an "inherit" option for `null` color.
+- `Resizable.tsx` — `ResizeHandle` / `RowResizeHandle` draggable dividers for the resizable panels.
+- `DocumentViewer.tsx` — the meat. Title + folder-path input + per-schema-field metadata at the top. A mode toggle (`Read & code` vs `Edit text`): edit mode is a `<textarea>`; read mode renders text as segments produced by `segmentText` from `compute.ts`, optionally chunked into lines (`buildLines`). Selection is captured on `mouseUp`/`keyUp` using `document.createRange()` + `Range#toString().length` to map DOM selection back to character offsets. A non-empty selection opens a `SelectionPopover` anchored to the selection rect; it searches the flattened code tree and commits the annotation on click or Enter (and can add a range to / replace ranges on a focused multi-range annotation). A 📝 Notes button opens a 380px right-side `MarkdownEditor` bound to `Document.notes`. Toolbar `Codes`/`Themes` toggles gate which highlight layer is shown. Below the text, `AnnotationsPanel` lists every annotation with click-to-focus.
+- `ExploreView.tsx` — the cross-project annotation browser. Receives a `projects: Project[]` array (the active project plus any included via the multi-select picker), runs `exploreRows` + `coOccurringCodes` from `compute.ts`, and renders a filter sidebar (`HierarchicalCodePicker` with per-project headers; folder dropdown; metadata filters; free-text search), a stats strip (annotations / unique codes / docs / projects), a top-codes chip strip, an optional code co-occurrence matrix, and a card list (flat or grouped by-code) of every matching annotation with project chip, code path, span text, note, theme links, and metadata. Cards call `onJumpToAnnotation(projectId, docId, annotationId)` to switch project + doc, focus the annotation, and return to Documents view.
 - `ProjectAboutView.tsx` — the Info view. Editable project name (large hero), editable one-line description, and a `MarkdownEditor` for `Project.about` with Write/Read tabs (Read shows the rendered Markdown via `MarkdownRendered`). A "Project at a glance" stat strip (docs / codes / annotations / metadata fields) plus a created/updated date line at the bottom.
 - `MetadataSchemaEditor.tsx` — modal for editing the per-project metadata schema. Add/rename/delete fields, change type (`text` / `number` / `date` / `enum`), edit comma-separated options for enums. Field `key` is derived from the label (slugified) once and never changes after creation.
 - `Markdown.tsx` — a tiny self-contained Markdown renderer + editor. `renderMarkdown(src)` handles headings (`# … ######`), paragraphs, `**bold**` / `*italic*` / `_italic_` / `` `inline code` ``, fenced code blocks, ordered/unordered lists, blockquotes, and `[label](url)` links — output is escaped (`<`, `>`, `&` → entities) before regex replacement so the markdown source can't smuggle HTML. `MarkdownEditor` is a toolbar (H1/H2/H3, B/I/`<>`, `•`/`1.`/`>`/🔗) on top of a `<textarea>` with a Write/Preview tab toggle; toolbar buttons wrap selection (`surround`) or prefix selected lines (`linePrefix`) and the link button inserts `[selection](https://)`. `MarkdownRendered` is the read-only display variant. Both consume styles from the global `.md-preview` CSS block in the page.
-- `AuthBar.tsx` — the Drive sign-in pill in the TopBar. Five visual states: `local only` (no env var), `Sign in to sync` (configured, no token), `signed-in` (email + colored dot — green idle / blue pulsing syncing / red error / grey offline), with a dropdown that shows file count, last error, "Pull all from Drive", and Sign out.
-- `types.ts` — `SchemaVersion`, `MetadataField`, `Document` (incl. `notes?`, `folder?`), `Code`, `Annotation`, `Project` (incl. `about?`, `drive?`), `DriveLink`, `View`, `AppState` (incl. `exploreProjectIds?`, `view?`, `showCodeDefinitions?`) plus the 12-color `PALETTE` constant.
-- `storage.ts` — `loadState` / `saveState` with a single localStorage key, `coerceProject` for tolerant JSON import (defaults `folder`/`notes`/`metadata` on docs; carries through `about` and `drive`), `cryptoRandomId`, `newProject`, `downloadJSON` / `downloadText` (Blob → anchor click → revoke), `readFileAsText`.
-- `compute.ts` — pure: `buildCodeTree` / `flattenTree` (DAG of `parentIds` flattened into a tree by duplicating each code under every parent; `CodeNode` carries `parentId` + `pathKey` so each visual instance has stable identity); `codePath` / `codePathString` (first-parent walk to root); `descendantIds` (DAG-aware reachability via `parentIds → id`); `resolveColor` (first-parent walk); `nextPaletteColor`; `segmentText` (split text at annotation boundaries); `annotationsForDoc`; `codeCounts` / `deepCodeCounts`; `findDoc`; `buildFolderTree` (group documents by their `/`-separated folder path → nested `FolderNode` tree; root-level docs returned separately); `folderDocCount` (transitive); `exploreRows` (filter annotations across N projects by code-id set, folder prefix, metadata-contains, text-search of span+note → flat `ExploreRow[]`).
-- `exporters.ts` — pure builders for the three export shapes (`exportProjectJSON`, `exportProjectMarkdown`, `exportDocumentMarkdown`). Markdown table escapes pipes in span text and code paths.
-- `drive.ts` — Drive REST helpers. GIS browser-side OAuth (same pattern as `finance/sheets.ts`), scope `https://www.googleapis.com/auth/drive.file`. Token in `sessionStorage` (`tw-qual-coding-google-token`, 60s safety margin). Generalised helpers: `listAppFiles(token, rootFolderId?)`, `listChildren(token, folderId)`, `getFileContent<T>`, `createFolder`, `findOrCreateFolder(token, name, parentId, cache?)`, `createFile({ name, parentId, mimeType, content, appTagged })`, `updateFile({ fileId, content, mimeType, name? })`, `renameFile`, `moveFile`, `deleteFile`. Multipart helper for create (`multipart/related` boundary + metadata + content parts). `DriveAuthError` (401/403) triggers token drop. The MIME constants live in `MIME.json / md / folder`.
+- `AuthBar.tsx` — the Drive sign-in pill in the TopBar. Visual states: `local only` (no env var), `Sign in to sync` (configured, no token), `signed-in` (email + colored dot — green idle / blue pulsing syncing / red error / grey offline), with a dropdown showing file count, last error, "Refresh from Drive", and Sign out.
+- `types.ts` — `SchemaVersion`, `MetadataField`, `DocumentKind`, `Document` (incl. `notes?`, `folder?`, `kind?`), `Code` (incl. `specificity?: 1–5`, `specificityNotes?`), `Annotation` (multi-range `ranges[]`, incl. `accuracy?: 1–5`, `accuracyNotes?`), `Theme` + `ThemeAnnotationLink` + `ThemeUncodedHighlight` + `ThemeRating` (5 axes), `Project` (incl. `about?`, `themes?`, `folders?`, `drive?`), `DriveLink`, `View` (6 values), `AppState` (many persisted toggles + panel sizes + `activeThemeId?`) plus the 12-color `PALETTE` constant.
+- `storage.ts` — `loadState` / `saveState` with a single localStorage key. `coerceProject` for tolerant JSON import (defaults docs' `folder`/`notes`/`kind`/`metadata`; migrates legacy single-`parentId` codes → `parentIds[]`; migrates legacy `{start,end}` annotations → `ranges[]`; carries through `themes`, `about`, `drive`). Plus `cryptoRandomId`, `newProject`, `downloadJSON` / `downloadText`, `readFileAsText`.
+- `compute.ts` — pure. Code/tree: `buildCodeTree` / `flattenTree` (DAG flattened by duplicating each code under every parent; `CodeNode` carries `parentId` + `pathKey`), `codePath` / `codePathString`, `descendantIds`, `resolveColor`, `nextPaletteColor`, `hexToHsl`/`hslToHex`/`getShades`. Annotations: `annRanges`/`annStart`/`annEnd`/`annText`, `segmentText`, `buildLines` (chunk by sentence or N chars), `annotationsForDoc`, `annotationsByCode`, `codeCounts`/`deepCodeCounts`, `meanAccuracyForCode`. Folders: `buildFolderTree`, `folderDocCount`. Explore: `exploreRows`, `exploreCodeUniverse`, `coOccurringCodes` (code co-occurrence matrix). Plus `countWords`, `docAnnotationCount`, `findDoc`.
+- `exporters.ts` — pure builders: `exportProjectJSON`, `exportProjectMarkdown`, `exportDocumentMarkdown`, `codebookMarkdown`, `themesMarkdown`. Markdown tables escape pipes in span text and code/theme paths.
+- `drive.ts` — Drive REST helpers (the auth itself now runs through `googleAuth.ts`'s code-flow; the legacy GIS sign-in block in this file is unused). Scope `https://www.googleapis.com/auth/drive.file`. Generalised helpers: `listAppFiles(token, rootFolderId?)`, `listChildren`, `getFileContent<T>`, `createFolder`, `findOrCreateFolder`, `createFile({ name, parentId, mimeType, content, appTagged })`, `updateFile`, `renameFile`, `moveFile`, `deleteFile`. Multipart helper for create. `DriveAuthError` (401/403) triggers token drop. MIME constants in `MIME.json / md / folder`.
 - `driveSync.ts` — per-project sync orchestrator (separated from `drive.ts` so the REST helpers stay pure). Owns the folder-per-project layout. Exports `syncProjectToDrive(token, project, rootFolderId?)` (returns updated `DriveLink`), `pullProjectFromDrive(token, source)` (handles both new and legacy sources), and `deleteProjectFromDrive(token, drive)` (deletes the whole folder).
 
-**Storage**: one localStorage key, `tw-qual-coding-v1`. Schema `{ version: 1, projects: Project[], activeProjectId: string | null, exploreProjectIds?: string[], view?: View, showCodeDefinitions?: boolean }`. On import (`coerceProject`), the entire incoming project is reassigned a fresh `id` and its `drive` link is dropped to avoid colliding with or overwriting an existing Drive file. All mutations go through `updateActiveProject(p => ...)` (immutably replaces the active project in `state.projects` and stamps `updated_at`); each one also calls `queueWrite(projectId)` to schedule a Drive write 800ms later.
+**Storage**: one localStorage key, `tw-qual-coding-v1`. The persisted `AppState` is `{ version: 1, projects, activeProjectId }` plus a long tail of optional UI state (`view`, `exploreProjectIds`, `showCodeDefinitions`, `activeThemeId`, panel widths/heights, per-view collapse + display toggles, line-view settings). On import (`coerceProject`), the incoming project is reassigned a fresh `id` and its `drive` link is dropped to avoid overwriting an existing Drive file. All mutations go through `updateActiveProject(p => ...)` (immutably replaces the active project and stamps `updated_at`); each also calls `queueWrite(projectId)` to schedule a Drive write 800ms later.
 
 **Drive sync mechanics** (v3 — folder per project):
 
@@ -544,7 +567,7 @@ This works because `Range#toString()` returns the concatenated text content of e
 
 - `npm run dev` — local at http://localhost:4321
 - `npm run build` — static output to `dist/`
-- Deployed at **https://teddy-wright.com**. (Hosting platform recorded here when known — Cloudflare Pages is recommended if Cloudflare Access ever gets used to gate `/dashboards/*` private dashboards.)
+- Deployed on **Vercel** at **https://teddy-wright.com**. Vercel serves the static Astro build plus the top-level `api/` directory as Node serverless functions (the OAuth code-flow backend) — no Astro SSR adapter. The dashboard env vars (`GOOGLE_CLIENT_SECRET`, `TOKEN_ENC_KEY`, the `PUBLIC_*` IDs, optional `ALLOWED_EMAILS`) live in Vercel project settings. (If `/dashboards/*` ever needs gating, Cloudflare Access in front remains the planned approach.)
 
 ## Known pitfalls
 

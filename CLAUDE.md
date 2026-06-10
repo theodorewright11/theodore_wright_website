@@ -18,6 +18,8 @@ After any change that affects:
 
 Do this in the same commit. Specs that lag the code are worse than no specs.
 
+Keep the specs lean — describe the current state, not the history of getting there. The PRD's **Decisions log is for major product/architecture turning points only**; do NOT add a per-pass refinement narration there (that lives in each stage's `refinementLog` frontmatter and in git — duplicating it just bloats the spec).
+
 ## Commit and push after every meaningful change
 
 When a logical unit of work completes (a feature, a bug fix, a content addition, a refactor):
@@ -37,7 +39,7 @@ Never run destructive git commands (`reset --hard`, `push --force`, `branch -D`)
 - **Defensive at boundaries only**. Don't validate inputs from internal code. Validate at file/network/user boundaries.
 - **No premature abstraction**. Three similar lines is fine. Extract on the fourth.
 - **Comments**: only when the *why* is non-obvious. No comments restating what the code does.
-- **Match the design system**. Use existing tokens (`max-w-3xl`, `primary-*` colors, Inter, left-rule cards) — don't invent new ones without updating `ARCHITECTURE.md`.
+- **Match the V4 design system**. Use the locked tokens — `paper`/`ink`/`accent` colors, Fraunces / Source Serif 4 / JetBrains Mono fonts, the `max-w-[1080px]` / `max-w-[760px]` / `max-w-[640px]` containers, group-header + item-separator patterns. Don't reach for the retired V3 look (`primary-*` indigo, Inter, left-rule cards) and don't invent new tokens without updating `ARCHITECTURE.md`. (The `/dashboards/qualitative-coding` tool is the one deliberate exception — white bg + Inter, app UI.)
 - **Tests**: not yet required for this site (it's a content site). When interactive model components get complex, add Vitest unit tests.
 
 ## LLM Iterate refinement loop
