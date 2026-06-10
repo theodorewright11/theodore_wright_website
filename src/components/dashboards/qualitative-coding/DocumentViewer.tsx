@@ -210,28 +210,9 @@ export default function DocumentViewer({
     [annotations, doc.id],
   );
 
-  // Theme uncoded highlights for THIS doc — raw spans added directly to
-  // themes (no annotation). Rendered as a separate visual layer so the
-  // analyst can see what's been pulled into themes even without a code.
-  const themeUncodedRanges = useMemo(() => {
-    const out: { start: number; end: number }[] = [];
-    for (const t of themesProp ?? []) {
-      for (const h of t.uncodedHighlights ?? []) {
-        if (h.docId !== doc.id) continue;
-        for (const r of h.ranges ?? []) out.push({ start: r.start, end: r.end });
-      }
-    }
-    return out;
-  }, [themesProp, doc.id]);
   const segments = useMemo(
-    () =>
-      segmentText(
-        doc.text,
-        docAnnotations,
-        pending ?? undefined,
-        themeUncodedRanges,
-      ),
-    [doc.text, docAnnotations, pending, themeUncodedRanges],
+    () => segmentText(doc.text, docAnnotations, pending ?? undefined),
+    [doc.text, docAnnotations, pending],
   );
 
   const lines = useMemo(
@@ -240,31 +221,12 @@ export default function DocumentViewer({
   );
 
   const renderSegment = (seg: ReturnType<typeof segmentText>[number], key: React.Key) => {
-    // Theme-uncoded highlight (raw text added directly to a theme, no code).
-    // Render the same way as an annotation highlight but with violet tint
-    // and a dashed underline so it's visually distinct from coded spans.
-    const themeOnlyShadow =
-      'inset 0 -2px 0 #8b5cf6, inset 0 -3px 0 white, inset 0 -4px 0 #8b5cf6';
     if (seg.annotations.length === 0) {
       if (seg.pending) {
         return (
           <span
             key={key}
             style={{ backgroundColor: 'rgba(254, 240, 138, 0.85)' }}
-          >
-            {seg.text}
-          </span>
-        );
-      }
-      if (seg.themeHighlight) {
-        return (
-          <span
-            key={key}
-            style={{
-              backgroundColor: 'rgba(139, 92, 246, 0.16)',
-              boxShadow: themeOnlyShadow,
-            }}
-            title="In a theme (uncoded highlight)"
           >
             {seg.text}
           </span>
@@ -280,15 +242,6 @@ export default function DocumentViewer({
     const isFocused =
       focusedAnnotationId !== null &&
       seg.annotations.some((a) => a.id === focusedAnnotationId);
-    // When a coded segment ALSO falls in a theme uncoded highlight (rare —
-    // happens if you highlight overlapping spans), layer the violet underline
-    // on top of the code one.
-    const baseShadow = isFocused
-      ? `inset 0 -2px 0 ${color}`
-      : `inset 0 -1px 0 ${color}`;
-    const themeOverlay = seg.themeHighlight
-      ? `, inset 0 -3px 0 white, inset 0 -4px 0 #8b5cf6`
-      : '';
     return (
       <span
         key={key}
@@ -303,12 +256,11 @@ export default function DocumentViewer({
           backgroundColor: seg.pending
             ? 'rgba(254, 240, 138, 0.85)'
             : hexAlpha(color, isFocused ? 0.4 : 0.2),
-          boxShadow: baseShadow + themeOverlay,
+          boxShadow: isFocused ? `inset 0 -2px 0 ${color}` : `inset 0 -1px 0 ${color}`,
         }}
-        title={
-          seg.annotations.map((a) => codePathString(codes, a.codeId)).join(' · ') +
-          (seg.themeHighlight ? ' · also in a theme (uncoded)' : '')
-        }
+        title={seg.annotations
+          .map((a) => codePathString(codes, a.codeId))
+          .join(' · ')}
       >
         {seg.text}
       </span>
