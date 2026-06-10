@@ -1316,6 +1316,13 @@ function DocsView({
 
 // Render one doc: the full text with merged theme ranges highlighted, plus
 // (optionally) a side margin with the codes that cover each highlighted band.
+// Local selection state inside a DocBlock: clicking a chip selects that
+// code or theme; when set, only matching bands highlight, others dim.
+type DocSelection =
+  | { kind: 'code'; codeId: string }
+  | { kind: 'theme'; themeId: string }
+  | null;
+
 function DocBlock({
   doc,
   items,
@@ -1394,6 +1401,9 @@ function DocBlock({
     () => project.annotations.filter((a) => a.docId === doc.id),
     [project.annotations, doc.id],
   );
+  // Local selection — click a chip in either margin to focus on that one.
+  const [selection, setSelection] = useState<DocSelection>(null);
+
   // For each band, collect every code that applies to it — including ancestor
   // codes of any directly-applied code. You typically annotate with leaves,
   // and a leaf implies its parent chain; filtering by 'top' / 'mid' should
@@ -1551,27 +1561,52 @@ function DocBlock({
       pieces.push(<span key={key++}>{doc.text.slice(cursor, band.start)}</span>);
     }
     const { color, weight } = bandInfo[i];
-    // Core: stronger fill + solid underline. Supporting: lighter fill +
-    // dashed underline. Both still use the code color so you can tell which
-    // code anchors the band.
     const isCore = weight === 'core';
     const themesAtBand = themesPerBand[i];
+    // Does this band match the active selection? Used to dim non-matches.
+    const meta = bandMeta[i];
+    const matchesSelection =
+      selection === null ||
+      (selection.kind === 'code' &&
+        (meta.codes.includes(selection.codeId) ||
+          // Or any annotation on the band uses a descendant of the selected code
+          allDocAnns.some(
+            (a) =>
+              descendantIds(project.codes, selection.codeId).has(a.codeId) &&
+              (a.ranges ?? []).some(
+                (r) => r.start < band.end && r.end > band.start,
+              ),
+          ))) ||
+      (selection.kind === 'theme' &&
+        bandThemes[i].some((e) => e.themeId === selection.themeId));
+    // Default visual contributions are gated by margin toggles. When code
+    // margin is off, don't paint the code-color background. When theme
+    // margin is off, don't paint the core/supporting underline.
+    const showCodeBg = codeMargin === 'on';
+    const showThemeLine = themeMargin === 'on';
+    const bgColor = showCodeBg
+      ? hexToRgba(color, isCore ? 0.38 : 0.16)
+      : 'transparent';
+    const underline = showThemeLine
+      ? isCore
+        ? `inset 0 -3px 0 ${color}`
+        : `inset 0 -1px 0 ${hexToRgba(color, 0.55)}`
+      : '';
     // When the user turns "Themes on text" on, mark text that's in 2+ themes
     // with a thin amber overline so they can see overlap zones at a glance.
     const multiThemeOverline =
       themeInline === 'on' && themesAtBand >= 2
-        ? `, inset 0 2px 0 #f59e0b`
+        ? `${underline ? ', ' : ''}inset 0 2px 0 #f59e0b`
         : '';
     pieces.push(
       <mark
         key={key++}
-        className="rounded-sm px-0.5"
+        className={`rounded-sm px-0.5 transition-opacity ${
+          matchesSelection ? '' : 'opacity-25'
+        }`}
         style={{
-          backgroundColor: hexToRgba(color, isCore ? 0.38 : 0.16),
-          boxShadow:
-            (isCore
-              ? `inset 0 -3px 0 ${color}`
-              : `inset 0 -1px 0 ${hexToRgba(color, 0.55)}`) + multiThemeOverline,
+          backgroundColor: bgColor,
+          boxShadow: underline + multiThemeOverline,
           color: '#0f172a',
         }}
         title={
@@ -1658,31 +1693,47 @@ function DocBlock({
                     </div>
                   ) : (
                     <div className="flex flex-wrap gap-1">
-                      {meta.codes.map((cid) => (
-                        <span
-                          key={cid}
-                          className={`inline-flex items-center gap-0.5 px-1 py-0.5 rounded text-[10px] leading-snug ${
-                            meta.inTheme.has(cid)
-                              ? 'bg-amber-100 text-amber-900 ring-1 ring-amber-300'
-                              : 'bg-slate-100 text-slate-700'
-                          }`}
-                          title={
-                            meta.inTheme.has(cid)
-                              ? 'linked to this theme via an annotation here'
-                              : 'present on this text but not in the theme'
-                          }
-                        >
-                          <span
-                            className="w-1.5 h-1.5 rounded-sm flex-shrink-0"
-                            style={{
-                              background: resolveColor(project.codes, cid),
-                            }}
-                          />
-                          <span className="break-words">
-                            {project.codes.find((c) => c.id === cid)?.name ?? cid}
-                          </span>
-                        </span>
-                      ))}
+                      {meta.codes.map((cid) => {
+                        const isPicked =
+                          selection?.kind === 'code' && selection.codeId === cid;
+                        return (
+                          <button
+                            type="button"
+                            key={cid}
+                            onClick={() =>
+                              setSelection((s) =>
+                                s?.kind === 'code' && s.codeId === cid
+                                  ? null
+                                  : { kind: 'code', codeId: cid },
+                              )
+                            }
+                            className={`inline-flex items-center gap-0.5 px-1 py-0.5 rounded text-[10px] leading-snug transition-colors ${
+                              isPicked
+                                ? 'bg-blue-600 text-white ring-1 ring-blue-700'
+                                : meta.inTheme.has(cid)
+                                  ? 'bg-amber-100 text-amber-900 ring-1 ring-amber-300 hover:bg-amber-200'
+                                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                            }`}
+                            title={
+                              isPicked
+                                ? 'click to clear selection'
+                                : meta.inTheme.has(cid)
+                                  ? 'click to highlight only this code'
+                                  : 'present on this text but not in the theme — click to highlight only this code'
+                            }
+                          >
+                            <span
+                              className="w-1.5 h-1.5 rounded-sm flex-shrink-0"
+                              style={{
+                                background: resolveColor(project.codes, cid),
+                              }}
+                            />
+                            <span className="break-words">
+                              {project.codes.find((c) => c.id === cid)?.name ?? cid}
+                            </span>
+                          </button>
+                        );
+                      })}
                     </div>
                   )}
                 </div>
@@ -1706,25 +1757,42 @@ function DocBlock({
                     <div className="italic text-slate-300">(no themes)</div>
                   ) : (
                     <div className="flex flex-wrap gap-1">
-                      {entries.map((e, idx) => (
-                        <span
-                          key={`${e.themeId}-${e.via}-${idx}`}
-                          className={`inline-flex items-center gap-0.5 px-1 py-0.5 rounded text-[10px] leading-snug ${
-                            e.weight === 'core'
-                              ? 'bg-amber-500 text-white'
-                              : 'bg-violet-100 text-violet-800'
-                          } ${e.isCurrent ? 'ring-1 ring-blue-400' : ''}`}
-                          title={`${e.themeName} · ${e.weight}${
-                            e.via === 'auto'
-                              ? ' · auto-included via code'
-                              : e.via === 'uncoded'
-                                ? ' · uncoded highlight'
-                                : ' · linked via annotation'
-                          }${e.isCurrent ? ' · current theme' : ''}`}
-                        >
-                          <span className="break-words">{e.themeName}</span>
-                        </span>
-                      ))}
+                      {entries.map((e, idx) => {
+                        const isPicked =
+                          selection?.kind === 'theme' &&
+                          selection.themeId === e.themeId;
+                        return (
+                          <button
+                            type="button"
+                            key={`${e.themeId}-${e.via}-${idx}`}
+                            onClick={() =>
+                              setSelection((s) =>
+                                s?.kind === 'theme' && s.themeId === e.themeId
+                                  ? null
+                                  : { kind: 'theme', themeId: e.themeId },
+                              )
+                            }
+                            className={`inline-flex items-center gap-0.5 px-1 py-0.5 rounded text-[10px] leading-snug transition-colors ${
+                              isPicked
+                                ? 'bg-blue-600 text-white ring-1 ring-blue-700'
+                                : e.weight === 'core'
+                                  ? 'bg-amber-500 text-white hover:bg-amber-600'
+                                  : 'bg-violet-100 text-violet-800 hover:bg-violet-200'
+                            } ${
+                              !isPicked && e.isCurrent ? 'ring-1 ring-blue-400' : ''
+                            }`}
+                            title={`${e.themeName} · ${e.weight}${
+                              e.via === 'auto'
+                                ? ' · auto-included via code'
+                                : e.via === 'uncoded'
+                                  ? ' · uncoded highlight'
+                                  : ' · linked via annotation'
+                            }${e.isCurrent ? ' · current theme' : ''} · click to highlight only this theme`}
+                          >
+                            <span className="break-words">{e.themeName}</span>
+                          </button>
+                        );
+                      })}
                     </div>
                   )}
                 </div>
