@@ -730,8 +730,8 @@ function ThemeDetail({
                             source === 'direct' ? () => onUnlinkAnnotation(theme.id, a.id) : undefined
                           }
                           onJump={() => onJumpToAnnotation(project.id, a.docId, a.id)}
-                          showFullDoc={evShowFullDoc}
-                          showNotes={evShowNotes}
+                          showFullDoc={false}
+                          showNotes={true}
                           showMeta={evShowMeta}
                         />
                       </li>
