@@ -262,6 +262,7 @@ A personal qualitative-coding tool: organize text documents into projects, build
   - `project.json` — canonical state (machine-readable; the dashboard's source of truth).
   - `project.md` — full project export (all documents + annotation tables).
   - `codebook.md` — code tree with names + definitions.
+  - `corpus.md` — every document as a `[D1]` / `[D2]` … identifier + verbatim text, for pasting into an AI prompt's `{data}` block. `D` = document (generic data-model unit); order matches `project.documents`, so `[D{n}]` resolves to `documents[n-1]`. This identifier is the stable join key an AI thematic-analysis output echoes back as each quote's `source`, so the eventual "import AI themes" path can map quotes back to documents.
   - `documents/` — subfolder. Inside, each `Document` is rendered to its own `.md` file, with subfolders mirroring `Document.folder` (e.g. a doc with `folder: "Interviews/Round 1"` lives at `documents/Interviews/Round 1/<title>.md`).
 - Only `project.json` carries the `appProperties.tw_qual_coding=v1` tag — that's what `listAppFiles` uses to discover projects. The .md files are read-only exports (the dashboard never reads them).
 - **Legacy migration**: v2 wrote a single flat JSON per project directly in the configured folder (or root). On the first v3 sync, `syncProjectToDrive` detects a `drive.fileId` (or a `projectJsonId` whose parent is the configured root), creates a new project folder, moves the legacy file in, renames it to `project.json`, and writes the new derived files alongside.

@@ -5,6 +5,7 @@
 //     project.json
 //     project.md
 //     codebook.md
+//     corpus.md
 //     documents/
 //       <doc.folder mirrored as nested subfolders>/
 //         <doc title>.md
@@ -25,6 +26,7 @@ import {
 } from './drive';
 import {
   codebookMarkdown,
+  exportCorpusForAI,
   exportDocumentMarkdown,
   exportProjectJSON,
   exportProjectMarkdown,
@@ -82,6 +84,9 @@ export async function syncProjectToDrive(
   );
   const existingThemesMd = folderListing.find(
     (f) => f.mimeType !== MIME.folder && f.name === 'themes.md',
+  );
+  const existingCorpusMd = folderListing.find(
+    (f) => f.mimeType !== MIME.folder && f.name === 'corpus.md',
   );
   const existingDocumentsFolder = folderListing.find(
     (f) => f.mimeType === MIME.folder && f.name === 'documents',
@@ -155,6 +160,24 @@ export async function syncProjectToDrive(
       parentId: folderId,
       mimeType: MIME.md,
       content: themesContent,
+    });
+  }
+
+  // 5c. Write corpus.md — every document as [D1], [D2], … + verbatim text, for
+  //     pasting into an AI prompt's {data} block (always; harmless when empty).
+  const corpusContent = exportCorpusForAI(project);
+  if (existingCorpusMd) {
+    await updateFile(token, {
+      fileId: existingCorpusMd.id,
+      content: corpusContent,
+      mimeType: MIME.md,
+    });
+  } else {
+    await createFile(token, {
+      name: 'corpus.md',
+      parentId: folderId,
+      mimeType: MIME.md,
+      content: corpusContent,
     });
   }
 

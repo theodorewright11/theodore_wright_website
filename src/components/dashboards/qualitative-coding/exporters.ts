@@ -318,6 +318,22 @@ function evidenceForTheme(theme: Theme, project: Project): ThemeEvidence[] {
   return out;
 }
 
+// Dead-simple corpus export for pasting into an AI prompt's {data} block: each
+// document as a short generated identifier ([D1], [D2], …) followed by its
+// verbatim text. The identifier — not the title — is the stable key the model
+// echoes back as a quote's `source`, so quotes map to a document on reconcile.
+// `D` = document (the generic data-model unit, project-type-agnostic). Order
+// matches project.documents, so [D{n}] resolves to documents[n-1].
+export function exportCorpusForAI(project: Project): string {
+  const parts: string[] = [];
+  project.documents.forEach((doc, i) => {
+    if (i > 0) parts.push('');
+    parts.push(`[D${i + 1}]`);
+    parts.push(doc.text);
+  });
+  return parts.join('\n');
+}
+
 export function exportProjectMarkdown(project: Project): string {
   const parts: string[] = [];
   parts.push(`# ${project.name}`);
