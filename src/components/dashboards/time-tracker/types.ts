@@ -56,7 +56,8 @@ export const RATING_ANCHORS: Record<string, { low: string; high: string }> = {
 // Fixed activity taxonomy — kept stable on purpose so cross-tabs stay
 // comparable over time. Edit this list to change the options.
 export const ACTIVITY_TYPES = [
-  'Coding', 'Writing', 'Reading', 'Thinking', 'Meetings', 'Admin', 'Learning', 'Other',
+  'Coding', 'Writing', 'Reading', 'Thinking', 'Meetings', 'Admin', 'Learning',
+  'Visual design', 'Other',
 ] as const;
 
 export const ACTIVITY_DEFINITIONS: Record<string, string> = {
@@ -67,6 +68,7 @@ export const ACTIVITY_DEFINITIONS: Record<string, string> = {
   Meetings: 'Calls, meetings, syncs — working with other people.',
   Admin: 'Email, scheduling, logistics, and other busywork.',
   Learning: 'Courses, tutorials, deliberately building a skill.',
+  'Visual design': 'Posters, slides, figures, layout, illustration — making something visual.',
   Other: "Anything that doesn't fit the buckets above.",
 };
 
