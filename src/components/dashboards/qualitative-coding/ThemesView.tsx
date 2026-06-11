@@ -7,7 +7,7 @@ import {
   resolveColor,
 } from './compute';
 import HierarchicalCodePicker from './HierarchicalCodePicker';
-import { MarkdownEditor } from './Markdown';
+import { MarkdownEditor, MarkdownRendered } from './Markdown';
 import { emDash } from './storage';
 import type { Annotation, Code, Project, Theme, ThemeRating } from './types';
 
@@ -96,6 +96,7 @@ export default function ThemesView({
   const active = themes.find((t) => t.id === activeThemeId) ?? null;
   const [addingRoot, setAddingRoot] = useState(false);
   const [draftName, setDraftName] = useState('');
+  const [docMode, setDocMode] = useState(false);
 
   // Group themes by parent for sidebar render.
   const tree = useMemo(() => buildThemeTree(themes), [themes]);
@@ -108,6 +109,16 @@ export default function ThemesView({
             Themes · {themes.length}
           </div>
           <div className="flex items-center gap-1">
+            <button
+              type="button"
+              onClick={() => setDocMode((v) => !v)}
+              title={docMode ? 'Switch to card view' : 'Read all themes as a document (rateable)'}
+              className={`text-[11px] font-semibold px-2 py-1 rounded ${
+                docMode ? 'bg-slate-900 text-white' : 'text-slate-500 hover:bg-slate-100'
+              }`}
+            >
+              doc
+            </button>
             {onImportAIThemes && (
               <button
                 type="button"
@@ -189,7 +200,9 @@ export default function ThemesView({
       </aside>
 
       <main className="flex-1 min-w-0 min-h-0 overflow-y-auto">
-        {!active ? (
+        {docMode ? (
+          <ThemesDocView project={project} tree={tree} onUpdateTheme={onUpdateTheme} />
+        ) : !active ? (
           <div className="h-full flex items-center justify-center text-[14px] text-slate-400 italic">
             Select a theme on the left, or create one.
           </div>
@@ -237,6 +250,149 @@ function buildThemeTree(themes: Theme[]): ThemeNode[] {
       children: build(theme.id),
     }));
   return build(null);
+}
+
+function flattenThemeTree(nodes: ThemeNode[], depth = 0): { theme: Theme; depth: number }[] {
+  const out: { theme: Theme; depth: number }[] = [];
+  for (const n of nodes) {
+    out.push({ theme: n.theme, depth });
+    out.push(...flattenThemeTree(n.children, depth + 1));
+  }
+  return out;
+}
+
+// All supporting spans for a theme (uncoded highlights + linked annotations),
+// each with its [D{n}] document tag and core/supporting role.
+function themeSupportingSpans(
+  theme: Theme,
+  project: Project,
+): { text: string; source: string; role: 'core' | 'supporting' }[] {
+  const docIndex = new Map(project.documents.map((d, i) => [d.id, i]));
+  const tag = (docId: string): string => {
+    const i = docIndex.get(docId);
+    return i === undefined ? '?' : `D${i + 1}`;
+  };
+  const out: { text: string; source: string; role: 'core' | 'supporting' }[] = [];
+  for (const h of theme.uncodedHighlights ?? []) {
+    const doc = project.documents.find((d) => d.id === h.docId);
+    const text = (h.ranges ?? [])
+      .map((r) => (doc?.text ?? '').slice(r.start, r.end))
+      .join(' … ');
+    out.push({ text, source: tag(h.docId), role: h.weight });
+  }
+  const annById = new Map(project.annotations.map((a) => [a.id, a]));
+  for (const link of theme.annotationLinks) {
+    const a = annById.get(link.annotationId);
+    if (!a) continue;
+    const doc = project.documents.find((d) => d.id === a.docId);
+    out.push({ text: annText(a, doc?.text ?? ''), source: tag(a.docId), role: link.weight });
+  }
+  return out;
+}
+
+// Read-as-a-document view of every theme — name as a heading (nested by depth),
+// definition + reasoning rendered, supporting spans quoted, and the same rating
+// control inline so you can score while reading top-to-bottom.
+function ThemesDocView({
+  project,
+  tree,
+  onUpdateTheme,
+}: {
+  project: Project;
+  tree: ThemeNode[];
+  onUpdateTheme: (id: string, patch: Partial<Theme>) => void;
+}) {
+  const flat = useMemo(() => flattenThemeTree(tree), [tree]);
+  if (flat.length === 0) {
+    return (
+      <div className="h-full flex items-center justify-center text-[14px] text-slate-400 italic">
+        No themes yet.
+      </div>
+    );
+  }
+  return (
+    <div className="px-8 py-6 max-w-[840px] mx-auto">
+      {flat.map(({ theme, depth }) => {
+        const supporting = themeSupportingSpans(theme, project);
+        const headingClass =
+          depth === 0
+            ? 'text-[24px]'
+            : depth === 1
+              ? 'text-[19px]'
+              : 'text-[16px]';
+        return (
+          <section
+            key={theme.id}
+            className={`mb-10 ${depth > 0 ? 'border-l-2 border-slate-100 pl-4' : ''}`}
+          >
+            <div className="flex items-baseline gap-2 mb-2">
+              <span className="text-[11px] font-mono text-slate-300 select-none">
+                {'#'.repeat(depth + 1)}
+              </span>
+              <h2 className={`font-bold text-slate-900 leading-tight ${headingClass}`}>
+                {theme.name}
+              </h2>
+            </div>
+
+            {theme.definition && theme.definition.trim() && (
+              <div className="mb-3">
+                <div className="text-[10px] uppercase tracking-wider font-semibold text-slate-400 mb-0.5">
+                  Definition
+                </div>
+                <MarkdownRendered text={theme.definition} className="text-[14px] text-slate-800" />
+              </div>
+            )}
+            {theme.reasoning && theme.reasoning.trim() && (
+              <div className="mb-3">
+                <div className="text-[10px] uppercase tracking-wider font-semibold text-slate-400 mb-0.5">
+                  Reasoning
+                </div>
+                <MarkdownRendered text={theme.reasoning} className="text-[14px] text-slate-800" />
+              </div>
+            )}
+
+            <div className="mb-3">
+              <RatingsCard
+                rating={theme.rating}
+                onChange={(patch) =>
+                  onUpdateTheme(theme.id, { rating: { ...(theme.rating ?? {}), ...patch } })
+                }
+              />
+            </div>
+
+            {supporting.length > 0 && (
+              <div>
+                <div className="text-[10px] uppercase tracking-wider font-semibold text-slate-400 mb-1">
+                  Supporting · {supporting.length}
+                </div>
+                <ul className="space-y-1.5">
+                  {supporting.map((s, i) => (
+                    <li key={i} className="flex items-start gap-2">
+                      <span
+                        className={`mt-0.5 px-1.5 py-0.5 rounded text-[9px] uppercase font-semibold tracking-wider flex-shrink-0 ${
+                          s.role === 'core'
+                            ? 'bg-amber-500 text-white'
+                            : 'bg-slate-200 text-slate-600'
+                        }`}
+                      >
+                        {s.source}
+                      </span>
+                      <blockquote
+                        className="text-[13px] text-slate-700 leading-relaxed border-l-2 border-slate-200 pl-2 whitespace-pre-wrap break-words flex-1"
+                        style={{ fontFamily: 'Georgia, Cambria, "Times New Roman", serif' }}
+                      >
+                        {s.text}
+                      </blockquote>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </section>
+        );
+      })}
+    </div>
+  );
 }
 
 function ThemeRow({
