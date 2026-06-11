@@ -51,12 +51,12 @@ const RUBRIC: Record<keyof Omit<ThemeRating, 'notes'>, string[]> = {
 };
 
 type AxisKey = keyof typeof RUBRIC;
+// Only the hand-rated axes are shown. Independence and Prevalence are computed
+// downstream (set-level filter / quote-derived), so they're not rated here.
 const AXES: { key: AxisKey; label: string; group: 'evaluative' | 'descriptive' }[] = [
   { key: 'grounding', label: 'Grounding', group: 'evaluative' },
   { key: 'usefulness', label: 'Usefulness', group: 'evaluative' },
-  { key: 'independence', label: 'Independence', group: 'evaluative' },
   { key: 'interpretationLevel', label: 'Interpretation level', group: 'descriptive' },
-  { key: 'prevalence', label: 'Prevalence', group: 'descriptive' },
 ];
 
 type Props = {
@@ -483,13 +483,25 @@ function ThemeDetail({
 
       <section className="mb-5">
         <div className="text-[10px] uppercase tracking-wider font-semibold text-slate-500 mb-1">
-          Interpretation
+          Definition
         </div>
         <MarkdownEditor
-          value={theme.description ?? ''}
-          onChange={(v) => onUpdateTheme(theme.id, { description: v })}
-          placeholder="Write your interpretation of this theme. What pattern are you naming? How does it answer the research question?"
-          minHeight={180}
+          value={theme.definition ?? ''}
+          onChange={(v) => onUpdateTheme(theme.id, { definition: v })}
+          placeholder="What does this theme capture, and where are its boundaries? How does it connect to the research question?"
+          minHeight={140}
+        />
+      </section>
+
+      <section className="mb-5">
+        <div className="text-[10px] uppercase tracking-wider font-semibold text-slate-500 mb-1">
+          Reasoning
+        </div>
+        <MarkdownEditor
+          value={theme.reasoning ?? ''}
+          onChange={(v) => onUpdateTheme(theme.id, { reasoning: v })}
+          placeholder="The pattern you observed across the data that led to this theme — what you noticed and why it matters."
+          minHeight={140}
         />
       </section>
 

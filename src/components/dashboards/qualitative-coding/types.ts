@@ -107,7 +107,14 @@ export type ThemeRating = {
 export type Theme = {
   id: string;
   name: string;
-  // Markdown narrative — your written-up interpretation of the theme.
+  // Structured narrative, kept as two separate fields so they can be embedded /
+  // exported independently (the AI-TA comparison workflow). `definition` = what
+  // the theme captures + its boundaries; `reasoning` = the analyst/model's
+  // thinking about the pattern. Both Markdown.
+  definition?: string;
+  reasoning?: string;
+  // Legacy single freeform narrative. Migrated into `definition` on load when
+  // `definition` is absent (see storage.coerceTheme). Retained for back-compat.
   description?: string;
   parentIds: string[];
   color: string | null;

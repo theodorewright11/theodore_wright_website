@@ -44,6 +44,7 @@ import {
   exportDocumentMarkdown,
   exportProjectJSON,
   exportProjectMarkdown,
+  exportThemesRatingsJSON,
   themesMarkdown,
 } from './exporters';
 import {
@@ -1193,6 +1194,14 @@ export default function QualitativeCodingDashboard() {
     downloadText(`${slugFile(activeProject.name)}.themes.md`, themesMarkdown(activeProject));
     setExportMenuOpen(false);
   };
+  const onExportThemesRatingsJSON = () => {
+    if (!activeProject) return;
+    downloadJSON(
+      `${slugFile(activeProject.name)}.themes-ratings.json`,
+      exportThemesRatingsJSON(activeProject),
+    );
+    setExportMenuOpen(false);
+  };
   const onExportDocMD = () => {
     if (!activeProject) return;
     const doc = findDoc(activeProject, activeDocId);
@@ -1410,6 +1419,7 @@ export default function QualitativeCodingDashboard() {
         onExportJSON={onExportJSON}
         onExportProjectMD={onExportProjectMD}
         onExportThemesMD={onExportThemesMD}
+        onExportThemesRatingsJSON={onExportThemesRatingsJSON}
         onExportDocMD={onExportDocMD}
         canExportDocMD={openDocs.length > 0}
         onImport={() => importInputRef.current?.click()}
@@ -1809,6 +1819,7 @@ function TopBar({
   onExportJSON,
   onExportProjectMD,
   onExportThemesMD,
+  onExportThemesRatingsJSON,
   onExportDocMD,
   canExportDocMD,
   onImport,
@@ -1838,6 +1849,7 @@ function TopBar({
   onExportJSON: () => void;
   onExportProjectMD: () => void;
   onExportThemesMD: () => void;
+  onExportThemesRatingsJSON: () => void;
   onExportDocMD: () => void;
   canExportDocMD: boolean;
   onImport: () => void;
@@ -2091,6 +2103,14 @@ function TopBar({
               >
                 <span className="text-[13px] font-semibold text-slate-900">Themes Markdown</span>
                 <span className="text-[11px] text-slate-500">Every theme + ratings + evidence</span>
+              </button>
+              <button
+                type="button"
+                onClick={onExportThemesRatingsJSON}
+                className="w-full flex flex-col items-start gap-0.5 px-3 py-2 border-t border-slate-100 hover:bg-blue-50 transition-colors"
+              >
+                <span className="text-[13px] font-semibold text-slate-900">Themes + ratings JSON</span>
+                <span className="text-[11px] text-slate-500">Compact themes/ratings/quotes for analysis (SPUR)</span>
               </button>
               <button
                 type="button"

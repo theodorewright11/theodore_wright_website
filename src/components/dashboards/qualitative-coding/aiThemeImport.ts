@@ -114,15 +114,8 @@ function resolveDocIndex(source: unknown): number | null {
   return n - 1;
 }
 
-function composeDescription(t: any): string | undefined {
-  const parts: string[] = [];
-  const add = (label: string, v: unknown) => {
-    if (typeof v === 'string' && v.trim()) parts.push(`**${label}.** ${v.trim()}`);
-  };
-  add('Definition', t?.definition);
-  add('Justification', t?.justification);
-  add('Reasoning', t?.reasoning);
-  return parts.length > 0 ? parts.join('\n\n') : undefined;
+function cleanField(v: unknown): string | undefined {
+  return typeof v === 'string' && v.trim() ? v.trim() : undefined;
 }
 
 export function buildThemesFromAI(
@@ -205,7 +198,8 @@ export function buildThemesFromAI(
     themes.push({
       id: cryptoRandomId(),
       name: themeName,
-      description: composeDescription(rt),
+      definition: cleanField(rt?.definition),
+      reasoning: cleanField(rt?.reasoning),
       parentIds: [],
       color: PALETTE[(existingCount + ti) % PALETTE.length],
       order: existingCount + ti,

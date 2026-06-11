@@ -153,10 +153,17 @@ function coerceAnnotation(a: any) {
 // constrained to 'core' | 'supporting' with 'supporting' as the default.
 function coerceTheme(t: any) {
   const links = Array.isArray(t?.annotationLinks) ? t.annotationLinks : [];
+  const definition = typeof t?.definition === 'string' ? t.definition : undefined;
+  const legacyDescription = typeof t?.description === 'string' ? t.description : undefined;
   return {
     id: typeof t?.id === 'string' ? t.id : cryptoRandomId(),
     name: typeof t?.name === 'string' ? t.name : 'Untitled theme',
-    description: typeof t?.description === 'string' ? t.description : undefined,
+    // Migrate a legacy single `description` narrative into `definition` when no
+    // definition is set, so old themes surface (and stay editable) in the new
+    // two-field UI. Once `definition` exists this is a no-op.
+    definition: definition ?? legacyDescription,
+    reasoning: typeof t?.reasoning === 'string' ? t.reasoning : undefined,
+    description: definition ? legacyDescription : undefined,
     parentIds: Array.isArray(t?.parentIds)
       ? t.parentIds.filter((s: any) => typeof s === 'string')
       : [],

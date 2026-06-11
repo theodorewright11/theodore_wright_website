@@ -173,8 +173,8 @@ export function themesMarkdown(project: Project): string {
   // Summary table
   lines.push('## At a glance');
   lines.push('');
-  lines.push('| Theme | Grounding | Usefulness | Independence | Interp. | Prevalence | Evidence |');
-  lines.push('| --- | :-: | :-: | :-: | :-: | :-: | ---: |');
+  lines.push('| Theme | Grounding | Usefulness | Interp. | Evidence |');
+  lines.push('| --- | :-: | :-: | :-: | ---: |');
   const themeMap = new Map(themes.map((t) => [t.id, t]));
   const depthOf = (t: Theme): number => {
     let d = 0;
@@ -194,7 +194,7 @@ export function themesMarkdown(project: Project): string {
     const cell = (n?: number) => (n ? `${n}` : '—');
     const ev = evidenceForTheme(t, project);
     lines.push(
-      `| ${indent}${depthOf(t) > 0 ? '↳ ' : ''}**${escapePipes(t.name)}** | ${cell(r.grounding)} | ${cell(r.usefulness)} | ${cell(r.independence)} | ${cell(r.interpretationLevel)} | ${cell(r.prevalence)} | ${ev.length} |`,
+      `| ${indent}${depthOf(t) > 0 ? '↳ ' : ''}**${escapePipes(t.name)}** | ${cell(r.grounding)} | ${cell(r.usefulness)} | ${cell(r.interpretationLevel)} | ${ev.length} |`,
     );
   }
   lines.push('');
@@ -213,8 +213,20 @@ export function themesMarkdown(project: Project): string {
       lines.push('');
     }
 
+    if (t.definition && t.definition.trim()) {
+      lines.push('### Definition');
+      lines.push('');
+      lines.push(t.definition.trim());
+      lines.push('');
+    }
+    if (t.reasoning && t.reasoning.trim()) {
+      lines.push('### Reasoning');
+      lines.push('');
+      lines.push(t.reasoning.trim());
+      lines.push('');
+    }
     if (t.description && t.description.trim()) {
-      lines.push('### Interpretation');
+      lines.push('### Notes');
       lines.push('');
       lines.push(t.description.trim());
       lines.push('');
@@ -227,9 +239,7 @@ export function themesMarkdown(project: Project): string {
       const rows: [string, number | undefined][] = [
         ['Grounding', r.grounding],
         ['Usefulness', r.usefulness],
-        ['Independence', r.independence],
         ['Interpretation level', r.interpretationLevel],
-        ['Prevalence', r.prevalence],
       ];
       for (const [k, v] of rows) {
         if (v) lines.push(`- **${k}**: ${v}/5`);
@@ -316,6 +326,58 @@ function evidenceForTheme(theme: Theme, project: Project): ThemeEvidence[] {
     }
   }
   return out;
+}
+
+// Compact JSON of just the themes + their hand ratings + supporting segments —
+// the SPUR-ready artifact for embedding / quantitative comparison. Each theme:
+// name, definition, reasoning, the three rated axes (+ notes), and every
+// supporting span as { text, source, role }, where `source` is the document's
+// [D{n}] tag (project.documents order, matching corpus.md). Parent name is
+// included so sub-theme structure survives the flattening.
+export function exportThemesRatingsJSON(project: Project): unknown {
+  const themes = project.themes ?? [];
+  const themeName = new Map(themes.map((t) => [t.id, t.name]));
+  const docIndex = new Map(project.documents.map((d, i) => [d.id, i]));
+  const tag = (docId: string): string => {
+    const i = docIndex.get(docId);
+    return i === undefined ? '?' : `D${i + 1}`;
+  };
+  return {
+    project: project.name,
+    exported_at: new Date().toISOString(),
+    themes: themes.map((t) => {
+      const supporting: { text: string; source: string; role: 'core' | 'supporting' }[] = [];
+      for (const h of t.uncodedHighlights ?? []) {
+        const doc = project.documents.find((d) => d.id === h.docId);
+        const text = (h.ranges ?? [])
+          .map((r) => (doc?.text ?? '').slice(r.start, r.end))
+          .join(' … ');
+        supporting.push({ text, source: tag(h.docId), role: h.weight });
+      }
+      for (const e of evidenceForTheme(t, project)) {
+        const doc = project.documents.find((d) => d.id === e.annotation.docId);
+        supporting.push({
+          text: annText(e.annotation, doc?.text ?? ''),
+          source: tag(e.annotation.docId),
+          role: e.weight,
+        });
+      }
+      const r = t.rating ?? {};
+      return {
+        name: t.name,
+        parent: t.parentIds[0] ? themeName.get(t.parentIds[0]) ?? null : null,
+        definition: t.definition ?? null,
+        reasoning: t.reasoning ?? null,
+        ratings: {
+          grounding: r.grounding ?? null,
+          usefulness: r.usefulness ?? null,
+          interpretationLevel: r.interpretationLevel ?? null,
+          notes: r.notes ?? null,
+        },
+        supporting,
+      };
+    }),
+  };
 }
 
 // Dead-simple corpus export for pasting into an AI prompt's {data} block: each
