@@ -18,7 +18,7 @@ import ColorPicker from './ColorPicker';
 import { MarkdownEditor, type QcLinkOptions } from './Markdown';
 import { ResizeHandle, RowResizeHandle } from './Resizable';
 import { cryptoRandomId, emDash } from './storage';
-import type { Annotation, Code, Document, MetadataField } from './types';
+import type { Annotation, Code, Document, MetadataField, Theme } from './types';
 import ThemeMembershipEditor from './ThemeMembershipEditor';
 
 // Rubric anchors for annotation accuracy (1–5). Shown as button tooltips.
@@ -197,6 +197,19 @@ export default function DocumentViewer({
   const [notesOpen, setNotesOpen] = useState(false);
   const [editingCodeId, setEditingCodeId] = useState<string | null>(null);
   const [editingAnnotationId, setEditingAnnotationId] = useState<string | null>(null);
+  // Codes margin column (independent of line view). `showCodes` governs on-text
+  // code highlights; this governs the right-margin code-chip column.
+  const [codesColumn, setCodesColumn] = useState(false);
+  // Which themes are actively highlighted (multi-select; replaces the single
+  // selected-theme dropdown). Empty by default — no themes shown until clicked.
+  const [shownThemeIds, setShownThemeIds] = useState<Set<string>>(new Set());
+  const toggleShownTheme = (id: string) =>
+    setShownThemeIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
   const containerRef = useRef<HTMLDivElement>(null);
   const popoverRef = useRef<HTMLDivElement>(null);
   const bodyScrollRef = useRef<HTMLDivElement>(null);
@@ -228,24 +241,18 @@ export default function DocumentViewer({
     [annotations, doc.id],
   );
 
-  // When a theme is selected from the doc toolbar, compute which annotations
-  // are part of it (direct links + auto-include codes) and which ranges in
-  // this doc were added directly to the theme as uncoded highlights.
-  const selectedTheme = useMemo(
-    () =>
-      selectedThemeId
-        ? (themesProp ?? []).find((t) => t.id === selectedThemeId) ?? null
-        : null,
-    [themesProp, selectedThemeId],
+  // The themes currently toggled on in the doc toolbar (multi-select). Their
+  // spans get highlighted on the text and listed in the themes margin column.
+  const shownThemes = useMemo(
+    () => (showThemes ? (themesProp ?? []).filter((t) => shownThemeIds.has(t.id)) : []),
+    [showThemes, themesProp, shownThemeIds],
   );
-  // Uncoded theme ranges for THIS doc — pulled from ALL themes when Themes
-  // toggle is on (so all theme-uncoded text segments segment + render), or
-  // just the selectedTheme when one is picked.
+  const themeColor = (t: Theme): string => t.color ?? '#8b5cf6';
+  // Uncoded theme ranges for THIS doc — only from the themes toggled on, so
+  // their uncoded stretches get split into their own segments and rendered.
   const themeUncodedDocRanges = useMemo(() => {
     const out: { start: number; end: number; weight: 'core' | 'supporting' }[] = [];
-    const source = selectedTheme ? [selectedTheme] : (themesProp ?? []);
-    for (const t of source) {
-      if (!t) continue;
+    for (const t of shownThemes) {
       for (const h of t.uncodedHighlights ?? []) {
         if (h.docId !== doc.id) continue;
         for (const r of h.ranges ?? []) {
@@ -254,7 +261,7 @@ export default function DocumentViewer({
       }
     }
     return out;
-  }, [selectedTheme, themesProp, doc.id]);
+  }, [shownThemes, doc.id]);
   const segments = useMemo(
     () =>
       segmentText(
@@ -272,54 +279,47 @@ export default function DocumentViewer({
   );
 
   const renderSegment = (seg: ReturnType<typeof segmentText>[number], key: React.Key) => {
-    // When themes are toggled on, figure out the strongest weight (core >
-    // supporting) for the chosen theme. If no specific theme is selected,
-    // default to checking ALL themes — text in any theme gets underlined.
-    const themeWeight: 'core' | 'supporting' | null = (() => {
-      if (!showThemes) return null;
-      const themesToCheck = selectedTheme
-        ? [selectedTheme]
-        : (themesProp ?? []);
-      let hasCore = false;
-      let hasSupporting = false;
-      for (const t of themesToCheck) {
-        if (!t) continue;
+    // Whether this segment falls inside any toggled-on theme, and in which
+    // theme's color + weight. Core beats supporting; the first shown theme to
+    // match wins the color (themes are highlighted in their own color, like the
+    // Themes view). No themes shown → no hit.
+    const themeHit: { color: string; weight: 'core' | 'supporting'; name: string } | null = (() => {
+      let core: { color: string; name: string } | null = null;
+      let supporting: { color: string; name: string } | null = null;
+      for (const t of shownThemes) {
+        const color = themeColor(t);
         const annotationLinks = t.annotationLinks ?? [];
         const includeCodeIds = t.includeCodeIds ?? [];
-        const uncodedHighlights = t.uncodedHighlights ?? [];
-        // Direct annotation links covering any annotation on this segment
         for (const a of seg.annotations) {
           const link = annotationLinks.find((l) => l.annotationId === a.id);
           if (link) {
-            if (link.weight === 'core') hasCore = true;
-            else hasSupporting = true;
+            if (link.weight === 'core') core = core ?? { color, name: t.name };
+            else supporting = supporting ?? { color, name: t.name };
           }
         }
-        // Auto-include via codeIds
         if (includeCodeIds.length > 0) {
           const codeSet = new Set<string>();
           for (const cid of includeCodeIds) {
             for (const d of descendantIds(codes, cid)) codeSet.add(d);
           }
           for (const a of seg.annotations) {
-            if (codeSet.has(a.codeId)) hasSupporting = true;
+            if (codeSet.has(a.codeId)) supporting = supporting ?? { color, name: t.name };
           }
         }
-        // Uncoded highlights — only relevant when no annotations on segment
         if (seg.themeHighlight) {
-          for (const h of uncodedHighlights) {
+          for (const h of t.uncodedHighlights ?? []) {
             if (h.docId !== doc.id) continue;
             for (const r of h.ranges ?? []) {
               if (r.start <= seg.start && r.end >= seg.end) {
-                if (h.weight === 'core') hasCore = true;
-                else hasSupporting = true;
+                if (h.weight === 'core') core = core ?? { color, name: t.name };
+                else supporting = supporting ?? { color, name: t.name };
               }
             }
           }
         }
       }
-      if (hasCore) return 'core';
-      if (hasSupporting) return 'supporting';
+      if (core) return { ...core, weight: 'core' };
+      if (supporting) return { ...supporting, weight: 'supporting' };
       return null;
     })();
     if (seg.annotations.length === 0) {
@@ -334,26 +334,20 @@ export default function DocumentViewer({
         );
       }
       // Uncoded theme-only segment (no annotations on this stretch).
-      if (showThemes && themeWeight) {
-        const violet = '#8b5cf6';
+      if (themeHit) {
+        const tc = themeHit.color;
         return (
           <span
             key={key}
             style={{
               backgroundColor:
-                themeWeight === 'core'
-                  ? hexAlpha(violet, 0.38)
-                  : hexAlpha(violet, 0.16),
+                themeHit.weight === 'core' ? hexAlpha(tc, 0.38) : hexAlpha(tc, 0.16),
               boxShadow:
-                themeWeight === 'core'
-                  ? `inset 0 -3px 0 ${violet}`
-                  : `inset 0 -1px 0 ${hexAlpha(violet, 0.55)}`,
+                themeHit.weight === 'core'
+                  ? `inset 0 -3px 0 ${tc}`
+                  : `inset 0 -1px 0 ${hexAlpha(tc, 0.55)}`,
             }}
-            title={
-              selectedTheme
-                ? `In theme "${selectedTheme.name}" (${themeWeight}, uncoded)`
-                : `In a theme (${themeWeight}, uncoded)`
-            }
+            title={`In theme "${themeHit.name}" (${themeHit.weight}, uncoded)`}
           >
             {seg.text}
           </span>
@@ -364,27 +358,25 @@ export default function DocumentViewer({
     const top = seg.annotations[seg.annotations.length - 1];
     const color = resolveColor(codes, top.codeId);
     const dim =
-      (selectedCodeId !== null &&
-        !seg.annotations.some((a) => a.codeId === selectedCodeId)) ||
-      (showThemes && selectedTheme !== null && themeWeight === null);
+      selectedCodeId !== null &&
+      !seg.annotations.some((a) => a.codeId === selectedCodeId);
     const isFocused =
       focusedAnnotationId !== null &&
       seg.annotations.some((a) => a.id === focusedAnnotationId);
-    // Default code highlight only paints when Codes toggle is on.
+    // On-text code highlight only paints when the Highlight toggle is on.
     const baseShadow = !showCodes
       ? ''
       : isFocused
         ? `inset 0 -2px 0 ${color}`
         : `inset 0 -1px 0 ${color}`;
-    // Theme underline paints on top when Themes is on AND the segment is in
-    // a theme (the selected one, or any theme if none is picked).
-    const themeShadow =
-      themeWeight === 'core'
-        ? `${baseShadow ? ', ' : ''}inset 0 -3px 0 ${color}`
-        : themeWeight === 'supporting'
-          ? `${baseShadow ? ', ' : ''}inset 0 -1px 0 ${hexAlpha(color, 0.55)}`
-          : '';
-    const bgAlpha = themeWeight === 'core' ? 0.4 : isFocused ? 0.4 : 0.2;
+    // Theme underline (in the theme's own color) paints on top when the segment
+    // belongs to a toggled-on theme.
+    const themeShadow = themeHit
+      ? themeHit.weight === 'core'
+        ? `${baseShadow ? ', ' : ''}inset 0 -3px 0 ${themeHit.color}`
+        : `${baseShadow ? ', ' : ''}inset 0 -1px 0 ${hexAlpha(themeHit.color, 0.55)}`
+      : '';
+    const bgAlpha = themeHit?.weight === 'core' ? 0.4 : isFocused ? 0.4 : 0.2;
     return (
       <span
         key={key}
@@ -405,7 +397,7 @@ export default function DocumentViewer({
         }}
         title={
           seg.annotations.map((a) => codePathString(codes, a.codeId)).join(' · ') +
-          (themeWeight ? ` · in theme (${themeWeight})` : '')
+          (themeHit ? ` · in theme "${themeHit.name}" (${themeHit.weight})` : '')
         }
       >
         {seg.text}
@@ -430,6 +422,50 @@ export default function DocumentViewer({
     }
     return map;
   }, [lines, docAnnotations]);
+
+  // Per-line theme chips for the themes margin column: each toggled-on theme is
+  // placed on the first line touched by any of its spans in this doc (links +
+  // auto-include annotations + uncoded highlights).
+  const themesByLine = useMemo(() => {
+    const map = new Map<number, { theme: Theme; weight: 'core' | 'supporting' }[]>();
+    const annById = new Map(docAnnotations.map((a) => [a.id, a]));
+    for (const t of shownThemes) {
+      const spans: { start: number; weight: 'core' | 'supporting' }[] = [];
+      for (const link of t.annotationLinks ?? []) {
+        const a = annById.get(link.annotationId);
+        if (!a) continue;
+        for (const r of annRanges(a)) spans.push({ start: r.start, weight: link.weight });
+      }
+      if ((t.includeCodeIds ?? []).length > 0) {
+        const codeSet = new Set<string>();
+        for (const cid of t.includeCodeIds) {
+          for (const d of descendantIds(codes, cid)) codeSet.add(d);
+        }
+        for (const a of docAnnotations) {
+          if (!codeSet.has(a.codeId)) continue;
+          for (const r of annRanges(a)) spans.push({ start: r.start, weight: 'supporting' });
+        }
+      }
+      for (const h of t.uncodedHighlights ?? []) {
+        if (h.docId !== doc.id) continue;
+        for (const r of h.ranges ?? []) spans.push({ start: r.start, weight: h.weight });
+      }
+      if (spans.length === 0) continue;
+      // Strongest weight + earliest line.
+      const firstStart = Math.min(...spans.map((s) => s.start));
+      const weight: 'core' | 'supporting' = spans.some((s) => s.weight === 'core')
+        ? 'core'
+        : 'supporting';
+      const line = lines.find((l) => firstStart >= l.start && firstStart <= l.end);
+      if (!line) continue;
+      const arr = map.get(line.number) ?? [];
+      arr.push({ theme: t, weight });
+      map.set(line.number, arr);
+    }
+    return map;
+  }, [shownThemes, docAnnotations, codes, lines, doc.id]);
+
+  const rowLayout = !!lineView || codesColumn || !!showThemes;
 
   useEffect(() => {
     const onDocPointerDown = (e: PointerEvent) => {
@@ -647,8 +683,8 @@ export default function DocumentViewer({
             onClick={onToggleLineView}
             title={
               lineView
-                ? 'switch to paragraph view'
-                : 'show line numbers + code margin'
+                ? 'hide line numbers'
+                : 'number the lines + show the sentence/chars control'
             }
             className={`flex-shrink-0 px-3 py-1.5 text-[13px] font-medium rounded-md transition-colors ${
               lineView
@@ -659,22 +695,34 @@ export default function DocumentViewer({
             Lines
           </button>
         )}
+        <button
+          type="button"
+          onClick={() => setCodesColumn((v) => !v)}
+          title={codesColumn ? 'hide the code margin column' : 'show a code margin column beside the text'}
+          className={`flex-shrink-0 px-3 py-1.5 text-[13px] font-medium rounded-md transition-colors ${
+            codesColumn
+              ? 'bg-blue-100 text-blue-900'
+              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+          }`}
+        >
+          Codes
+        </button>
         {onToggleShowCodes && (
           <button
             type="button"
             onClick={onToggleShowCodes}
             title={
               showCodes
-                ? 'hide code highlights / code margin'
-                : 'show code highlights / code margin'
+                ? 'hide code highlights on the text'
+                : 'highlight coded spans on the text'
             }
             className={`flex-shrink-0 px-3 py-1.5 text-[13px] font-medium rounded-md transition-colors ${
               showCodes
-                ? 'bg-blue-100 text-blue-900'
+                ? 'bg-blue-50 text-blue-800 ring-1 ring-blue-200'
                 : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
             }`}
           >
-            Codes
+            Highlight
           </button>
         )}
         {themesProp && themesProp.length > 0 && onToggleShowThemes && (
@@ -683,8 +731,8 @@ export default function DocumentViewer({
             onClick={onToggleShowThemes}
             title={
               showThemes
-                ? 'hide theme underlines / theme margin'
-                : 'underline text by core/supporting for the selected theme'
+                ? 'hide the themes column'
+                : 'show a themes column and pick which themes to highlight'
             }
             className={`flex-shrink-0 px-3 py-1.5 text-[13px] font-medium rounded-md transition-colors ${
               showThemes
@@ -695,20 +743,33 @@ export default function DocumentViewer({
             Themes
           </button>
         )}
-        {showThemes && themesProp && themesProp.length > 1 && onSetSelectedThemeId && (
-          <select
-            value={selectedThemeId ?? ''}
-            onChange={(e) => onSetSelectedThemeId(e.target.value || null)}
-            className="flex-shrink-0 px-2 py-1.5 text-[12px] font-medium rounded-md border border-violet-300 bg-violet-50 text-violet-800"
-            title="pick which theme to highlight"
-          >
-            <option value="">All themes</option>
-            {themesProp.map((t) => (
-              <option key={t.id} value={t.id}>
-                {t.name}
-              </option>
-            ))}
-          </select>
+        {showThemes && themesProp && themesProp.length > 0 && (
+          <div className="flex items-center gap-1 flex-wrap">
+            {themesProp.map((t) => {
+              const on = shownThemeIds.has(t.id);
+              const c = t.color ?? '#8b5cf6';
+              return (
+                <button
+                  key={t.id}
+                  type="button"
+                  onClick={() => toggleShownTheme(t.id)}
+                  title={on ? `hide "${t.name}"` : `highlight "${t.name}"`}
+                  className="flex-shrink-0 inline-flex items-center gap-1 px-2 py-1 text-[11px] font-semibold rounded-md border transition-colors"
+                  style={{
+                    borderColor: c,
+                    backgroundColor: on ? hexAlpha(c, 0.22) : 'transparent',
+                    color: on ? '#1e293b' : '#64748b',
+                  }}
+                >
+                  <span
+                    className="w-2 h-2 rounded-sm flex-shrink-0"
+                    style={{ background: on ? c : 'transparent', border: `1px solid ${c}` }}
+                  />
+                  {t.name}
+                </button>
+              );
+            })}
+          </div>
         )}
         {lineView && onSetLinesMode && (
           <div className="flex items-center bg-slate-100 rounded-md p-0.5 flex-shrink-0">
@@ -773,7 +834,7 @@ export default function DocumentViewer({
               whose spans fall outside the new length will be removed or clamped.
             </div>
           </div>
-        ) : lineView ? (
+        ) : rowLayout ? (
           <div className="max-w-[1100px] mx-auto px-6 py-6">
             <div
               ref={containerRef}
@@ -802,14 +863,17 @@ export default function DocumentViewer({
                     }))
                     .filter((s) => s.text.length > 0);
                   const annsHere = annotationsByLine.get(line.number) ?? [];
+                  const themesHere = themesByLine.get(line.number) ?? [];
                   return (
                     <div
                       key={line.number}
                       className="flex gap-3 py-0.5 border-l-2 border-transparent hover:border-slate-200"
                     >
-                      <span className="w-10 text-right text-[11px] text-slate-300 select-none mt-1 font-mono flex-shrink-0">
-                        {line.number}
-                      </span>
+                      {lineView && (
+                        <span className="w-10 text-right text-[11px] text-slate-300 select-none mt-1 font-mono flex-shrink-0">
+                          {line.number}
+                        </span>
+                      )}
                       <div
                         data-line-start={line.start}
                         className="flex-1 min-w-0 leading-[1.65] whitespace-pre-wrap break-words"
@@ -822,6 +886,28 @@ export default function DocumentViewer({
                               renderSegment(seg, `${line.number}-${i}`),
                             )}
                       </div>
+                      {showThemes && (
+                        <div className="w-[200px] flex-shrink-0 flex flex-wrap gap-1 mt-0.5 self-start">
+                          {themesHere.map(({ theme: t, weight }) => {
+                            const c = t.color ?? '#8b5cf6';
+                            return (
+                              <span
+                                key={t.id}
+                                className="inline-flex items-center text-[11px] px-1.5 py-0.5 rounded leading-snug break-words max-w-full"
+                                style={{
+                                  backgroundColor: hexAlpha(c, weight === 'core' ? 0.34 : 0.16),
+                                  color: '#1e293b',
+                                  boxShadow: `inset 2px 0 0 ${c}`,
+                                }}
+                                title={`${t.name} (${weight})`}
+                              >
+                                {t.name}
+                              </span>
+                            );
+                          })}
+                        </div>
+                      )}
+                      {codesColumn && (
                       <div className="w-[260px] flex-shrink-0 flex flex-wrap gap-1 mt-0.5 self-start">
                         {annsHere.map((a) => {
                           const color = resolveColor(codes, a.codeId);
@@ -877,6 +963,7 @@ export default function DocumentViewer({
                           );
                         })}
                       </div>
+                      )}
                     </div>
                   );
                 })
