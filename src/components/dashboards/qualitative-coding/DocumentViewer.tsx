@@ -423,13 +423,14 @@ export default function DocumentViewer({
     return map;
   }, [lines, docAnnotations]);
 
-  // Per-line theme chips for the themes margin column: each toggled-on theme is
-  // placed on the first line touched by any of its spans in this doc (links +
-  // auto-include annotations + uncoded highlights).
+  // Per-line theme chips for the themes margin column. Covers EVERY theme with
+  // a span in this doc (not just the toggled-on ones) — the column is how you
+  // discover and click the doc's themes. Each is placed on the first line
+  // touched by any of its spans (links + auto-include annotations + uncoded).
   const themesByLine = useMemo(() => {
     const map = new Map<number, { theme: Theme; weight: 'core' | 'supporting' }[]>();
     const annById = new Map(docAnnotations.map((a) => [a.id, a]));
-    for (const t of shownThemes) {
+    for (const t of themesProp ?? []) {
       const spans: { start: number; weight: 'core' | 'supporting' }[] = [];
       for (const link of t.annotationLinks ?? []) {
         const a = annById.get(link.annotationId);
@@ -463,7 +464,7 @@ export default function DocumentViewer({
       map.set(line.number, arr);
     }
     return map;
-  }, [shownThemes, docAnnotations, codes, lines, doc.id]);
+  }, [themesProp, docAnnotations, codes, lines, doc.id]);
 
   const rowLayout = !!lineView || codesColumn || !!showThemes;
 
@@ -743,34 +744,6 @@ export default function DocumentViewer({
             Themes
           </button>
         )}
-        {showThemes && themesProp && themesProp.length > 0 && (
-          <div className="flex items-center gap-1 flex-wrap">
-            {themesProp.map((t) => {
-              const on = shownThemeIds.has(t.id);
-              const c = t.color ?? '#8b5cf6';
-              return (
-                <button
-                  key={t.id}
-                  type="button"
-                  onClick={() => toggleShownTheme(t.id)}
-                  title={on ? `hide "${t.name}"` : `highlight "${t.name}"`}
-                  className="flex-shrink-0 inline-flex items-center gap-1 px-2 py-1 text-[11px] font-semibold rounded-md border transition-colors"
-                  style={{
-                    borderColor: c,
-                    backgroundColor: on ? hexAlpha(c, 0.22) : 'transparent',
-                    color: on ? '#1e293b' : '#64748b',
-                  }}
-                >
-                  <span
-                    className="w-2 h-2 rounded-sm flex-shrink-0"
-                    style={{ background: on ? c : 'transparent', border: `1px solid ${c}` }}
-                  />
-                  {t.name}
-                </button>
-              );
-            })}
-          </div>
-        )}
         {lineView && onSetLinesMode && (
           <div className="flex items-center bg-slate-100 rounded-md p-0.5 flex-shrink-0">
             <button
@@ -890,19 +863,28 @@ export default function DocumentViewer({
                         <div className="w-[200px] flex-shrink-0 flex flex-wrap gap-1 mt-0.5 self-start">
                           {themesHere.map(({ theme: t, weight }) => {
                             const c = t.color ?? '#8b5cf6';
+                            const on = shownThemeIds.has(t.id);
                             return (
-                              <span
+                              <button
                                 key={t.id}
-                                className="inline-flex items-center text-[11px] px-1.5 py-0.5 rounded leading-snug break-words max-w-full"
-                                style={{
-                                  backgroundColor: hexAlpha(c, weight === 'core' ? 0.34 : 0.16),
-                                  color: '#1e293b',
-                                  boxShadow: `inset 2px 0 0 ${c}`,
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  toggleShownTheme(t.id);
                                 }}
-                                title={`${t.name} (${weight})`}
+                                className="inline-flex items-center text-[11px] px-1.5 py-0.5 rounded leading-snug break-words max-w-full border transition-colors text-left"
+                                style={{
+                                  borderColor: c,
+                                  backgroundColor: on
+                                    ? hexAlpha(c, weight === 'core' ? 0.34 : 0.18)
+                                    : 'transparent',
+                                  color: on ? '#1e293b' : '#64748b',
+                                  boxShadow: on ? `inset 2px 0 0 ${c}` : 'none',
+                                }}
+                                title={on ? `hide "${t.name}" highlight` : `highlight "${t.name}" (${weight})`}
                               >
                                 {t.name}
-                              </span>
+                              </button>
                             );
                           })}
                         </div>
