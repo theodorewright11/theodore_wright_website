@@ -375,8 +375,14 @@ export default function QualitativeCodingDashboard() {
           // Local wins ties so newer-typed edits aren't clobbered on a focus pull.
           if (localTime >= serverTime) {
             // Keep the in-memory local (incl. unflushed edits); adopt the
-            // server's Drive link so the next write targets the right files.
-            merged.push({ ...local, drive: pulled.drive });
+            // server's Drive link but preserve our local content hashes so the
+            // next sync can still skip unchanged files.
+            merged.push({
+              ...local,
+              drive: pulled.drive
+                ? { ...pulled.drive, hashes: local.drive?.hashes }
+                : local.drive,
+            });
             localPreferredIds.push(pulled.id);
           } else {
             merged.push(pulled);

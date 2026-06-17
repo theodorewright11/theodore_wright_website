@@ -68,6 +68,15 @@ export type DriveLink = {
   folderId: string;
   projectJsonId: string;
   modifiedTime?: string;
+  // Content hashes of the derived export files last written, so a sync skips
+  // rewriting files that didn't change (esp. the per-document tree).
+  hashes?: {
+    projectMd?: string;
+    codebookMd?: string;
+    themesMd?: string;
+    corpusMd?: string;
+    docs?: string;
+  };
 };
 
 // A theme is an analyst-level grouping of evidence (annotations) under a
