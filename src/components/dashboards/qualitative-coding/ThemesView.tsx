@@ -9,7 +9,15 @@ import {
 import HierarchicalCodePicker from './HierarchicalCodePicker';
 import { MarkdownEditor, MarkdownRendered } from './Markdown';
 import { emDash } from './storage';
-import type { Annotation, Code, Project, Theme, ThemeRating } from './types';
+import type {
+  Annotation,
+  Code,
+  Project,
+  Theme,
+  ThemeRating,
+  ThemeRelation,
+  ThemeRelationType,
+} from './types';
 
 // Rubric anchors shown as tooltips on rating buttons.
 const RUBRIC: Record<keyof Omit<ThemeRating, 'notes'>, string[]> = {
@@ -58,12 +66,11 @@ const RUBRIC: Record<keyof Omit<ThemeRating, 'notes'>, string[]> = {
 };
 
 type AxisKey = keyof typeof RUBRIC;
-// Only the hand-rated axes are shown. Independence and Prevalence are computed
-// downstream (set-level filter / quote-derived), so they're not rated here.
+// Hand-rated axes. Independence is captured via typed theme relations (see the
+// Theme relations section), not a 1–5 score; prevalence is computed downstream.
 const AXES: { key: AxisKey; label: string; group: 'evaluative' | 'descriptive' }[] = [
   { key: 'grounding', label: 'Grounding', group: 'evaluative' },
   { key: 'usefulness', label: 'Usefulness', group: 'evaluative' },
-  { key: 'independence', label: 'Independence', group: 'evaluative' },
   { key: 'interpretationLevel', label: 'Interpretation level', group: 'descriptive' },
   { key: 'novelty', label: 'Novelty', group: 'descriptive' },
 ];
@@ -87,6 +94,15 @@ type Props = {
   onImportAIThemes?: () => void;
   onDeleteAllThemes?: () => void;
   onJumpToDoc?: (docId: string) => void;
+  themeRelations: ThemeRelation[];
+  onAddThemeRelation: (fromId: string, toId: string, type: ThemeRelationType) => void;
+  onRemoveThemeRelation: (fromId: string, toId: string, type: ThemeRelationType) => void;
+  onSetThemeRelationSimilarity: (
+    fromId: string,
+    toId: string,
+    type: ThemeRelationType,
+    similarity: 1 | 2 | 3 | 4 | 5 | undefined,
+  ) => void;
 };
 
 export default function ThemesView({
@@ -104,6 +120,10 @@ export default function ThemesView({
   onImportAIThemes,
   onDeleteAllThemes,
   onJumpToDoc,
+  themeRelations,
+  onAddThemeRelation,
+  onRemoveThemeRelation,
+  onSetThemeRelationSimilarity,
 }: Props) {
   const themes = project.themes ?? [];
   const active = themes.find((t) => t.id === activeThemeId) ?? null;
@@ -241,6 +261,10 @@ export default function ThemesView({
             onRemoveUncodedHighlight={onRemoveUncodedHighlight}
             onJumpToAnnotation={onJumpToAnnotation}
             onJumpToDoc={onJumpToDoc}
+            themeRelations={themeRelations}
+            onAddThemeRelation={onAddThemeRelation}
+            onRemoveThemeRelation={onRemoveThemeRelation}
+            onSetThemeRelationSimilarity={onSetThemeRelationSimilarity}
           />
         )}
       </main>
@@ -527,6 +551,10 @@ function ThemeDetail({
   onRemoveUncodedHighlight,
   onJumpToAnnotation,
   onJumpToDoc,
+  themeRelations,
+  onAddThemeRelation,
+  onRemoveThemeRelation,
+  onSetThemeRelationSimilarity,
 }: {
   project: Project;
   theme: Theme;
@@ -538,6 +566,15 @@ function ThemeDetail({
   onRemoveUncodedHighlight?: (themeId: string, highlightId: string) => void;
   onJumpToAnnotation: (projectId: string, docId: string, annotationId: string) => void;
   onJumpToDoc?: (docId: string) => void;
+  themeRelations: ThemeRelation[];
+  onAddThemeRelation: (fromId: string, toId: string, type: ThemeRelationType) => void;
+  onRemoveThemeRelation: (fromId: string, toId: string, type: ThemeRelationType) => void;
+  onSetThemeRelationSimilarity: (
+    fromId: string,
+    toId: string,
+    type: ThemeRelationType,
+    similarity: 1 | 2 | 3 | 4 | 5 | undefined,
+  ) => void;
 }) {
   const [editingName, setEditingName] = useState(false);
   const [draftName, setDraftName] = useState(theme.name);
@@ -551,6 +588,9 @@ function ThemeDetail({
   const [docCodeMargin, setDocCodeMargin] = useState<'off' | 'on'>('on');
   const [docCodeLevel, setDocCodeLevel] = useState<'all' | 'top' | 'mid' | 'leaf'>('all');
   const [docThemeMargin, setDocThemeMargin] = useState<'off' | 'on'>('off');
+  // Theme-relation add controls.
+  const [relTargetId, setRelTargetId] = useState('');
+  const [relType, setRelType] = useState<ThemeRelationType>('related');
 
   const uncodedHighlights = theme.uncodedHighlights ?? [];
 
@@ -705,58 +745,120 @@ function ThemeDetail({
 
       <section className="mb-5">
         <div className="text-[10px] uppercase tracking-wider font-semibold text-slate-500 mb-2">
-          Similar themes <span className="normal-case tracking-normal text-slate-400">(overlap — informs the Independence rating)</span>
+          Theme relations{' '}
+          <span className="normal-case tracking-normal text-slate-400">
+            (overlap with other themes — replaces the Independence score)
+          </span>
         </div>
-        <div className="flex flex-wrap items-center gap-1.5">
-          {(theme.similarThemeIds ?? []).map((sid) => {
-            const st = project.themes?.find((x) => x.id === sid);
-            if (!st) return null;
-            const c = st.color ?? '#8b5cf6';
-            return (
-              <span
-                key={sid}
-                className="inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-[12px] text-slate-700 border bg-slate-50"
-                style={{ borderColor: c }}
-              >
-                <span className="w-2 h-2 rounded-sm" style={{ background: c }} />
-                {st.name}
-                <button
-                  type="button"
-                  onClick={() =>
-                    onUpdateTheme(theme.id, {
-                      similarThemeIds: (theme.similarThemeIds ?? []).filter((x) => x !== sid),
-                    })
-                  }
-                  className="text-slate-400 hover:text-red-600 text-[14px] leading-none"
-                  title="remove"
+        <div className="space-y-1.5">
+          {themeRelations
+            .filter((r) => r.from === theme.id || r.to === theme.id)
+            .map((r) => {
+              const otherId = r.from === theme.id ? r.to : r.from;
+              const other = project.themes?.find((x) => x.id === otherId);
+              if (!other) return null;
+              const c = other.color ?? '#8b5cf6';
+              const label =
+                r.type === 'related'
+                  ? 'Related to'
+                  : r.from === theme.id
+                    ? 'Subsumes'
+                    : 'Subsumed by';
+              return (
+                <div
+                  key={`${r.from}|${r.to}|${r.type}`}
+                  className="flex items-center gap-2 flex-wrap border border-slate-200 rounded-md px-2 py-1.5 bg-white"
                 >
-                  ×
-                </button>
-              </span>
-            );
-          })}
-          <select
-            value=""
-            onChange={(e) => {
-              const id = e.target.value;
-              if (!id) return;
-              onUpdateTheme(theme.id, {
-                similarThemeIds: [...(theme.similarThemeIds ?? []), id],
-              });
-            }}
-            className="px-2 py-1 text-[12px] border border-slate-300 rounded-md bg-white text-slate-600"
-          >
-            <option value="">+ mark similar theme…</option>
-            {(project.themes ?? [])
-              .filter(
-                (x) => x.id !== theme.id && !(theme.similarThemeIds ?? []).includes(x.id),
-              )
-              .map((x) => (
-                <option key={x.id} value={x.id}>
-                  {x.name}
-                </option>
-              ))}
-          </select>
+                  <span
+                    className={`text-[10px] uppercase font-semibold tracking-wider px-1.5 py-0.5 rounded ${
+                      r.type === 'related'
+                        ? 'bg-sky-100 text-sky-800'
+                        : 'bg-purple-100 text-purple-800'
+                    }`}
+                  >
+                    {label}
+                  </span>
+                  <span className="inline-flex items-center gap-1 text-[13px] text-slate-800 font-medium">
+                    <span className="w-2 h-2 rounded-sm" style={{ background: c }} />
+                    {other.name}
+                  </span>
+                  <div className="flex items-center gap-0.5 ml-auto">
+                    <span className="text-[10px] uppercase tracking-wider text-slate-400 mr-1">
+                      similarity
+                    </span>
+                    {([1, 2, 3, 4, 5] as const).map((n) => {
+                      const picked = r.similarity === n;
+                      return (
+                        <button
+                          key={n}
+                          type="button"
+                          onClick={() =>
+                            onSetThemeRelationSimilarity(
+                              r.from,
+                              r.to,
+                              r.type,
+                              picked ? undefined : n,
+                            )
+                          }
+                          className={`w-6 h-6 rounded border text-[11px] font-semibold transition-colors ${
+                            picked
+                              ? 'bg-blue-600 border-blue-600 text-white'
+                              : 'border-slate-300 text-slate-600 hover:bg-slate-100'
+                          }`}
+                        >
+                          {n}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => onRemoveThemeRelation(r.from, r.to, r.type)}
+                    className="text-slate-400 hover:text-red-600 text-[15px] leading-none px-1"
+                    title="remove relation"
+                  >
+                    ×
+                  </button>
+                </div>
+              );
+            })}
+          <div className="flex items-center gap-1.5 flex-wrap pt-1">
+            <select
+              value={relType}
+              onChange={(e) => setRelType(e.target.value as ThemeRelationType)}
+              className="px-2 py-1 text-[12px] border border-slate-300 rounded-md bg-white text-slate-700"
+              title="related = says a similar thing · subsumes = this theme captures the other"
+            >
+              <option value="related">Related to</option>
+              <option value="subsumes">Subsumes</option>
+            </select>
+            <select
+              value={relTargetId}
+              onChange={(e) => setRelTargetId(e.target.value)}
+              className="px-2 py-1 text-[12px] border border-slate-300 rounded-md bg-white text-slate-700"
+            >
+              <option value="">another theme…</option>
+              {(project.themes ?? [])
+                .filter((x) => x.id !== theme.id)
+                .map((x) => (
+                  <option key={x.id} value={x.id}>
+                    {x.name}
+                  </option>
+                ))}
+            </select>
+            <button
+              type="button"
+              disabled={!relTargetId}
+              onClick={() => {
+                if (!relTargetId) return;
+                onAddThemeRelation(theme.id, relTargetId, relType);
+                setRelTargetId('');
+              }}
+              className="text-[12px] font-semibold text-blue-600 hover:bg-blue-50 px-2 py-1 rounded disabled:opacity-40 disabled:hover:bg-transparent"
+            >
+              + Add
+            </button>
+          </div>
         </div>
       </section>
 

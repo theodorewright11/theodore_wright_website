@@ -103,6 +103,22 @@ export function coerceProject(p: any): Project {
     codes: Array.isArray(p.codes) ? p.codes.map(coerceCode) : [],
     annotations: Array.isArray(p.annotations) ? p.annotations.map(coerceAnnotation) : [],
     themes: Array.isArray(p.themes) ? p.themes.map(coerceTheme) : [],
+    themeRelations: Array.isArray(p.themeRelations)
+      ? p.themeRelations
+          .filter(
+            (r: any) =>
+              r &&
+              typeof r.from === 'string' &&
+              typeof r.to === 'string' &&
+              (r.type === 'related' || r.type === 'subsumes'),
+          )
+          .map((r: any) => ({
+            from: r.from,
+            to: r.to,
+            type: r.type,
+            similarity: clampRating(r.similarity),
+          }))
+      : undefined,
     folders: Array.isArray(p.folders) ? p.folders.filter((f: any) => typeof f === 'string') : [],
     lowEffort: !!p.lowEffort,
     additionalText: typeof p.additionalText === 'string' ? p.additionalText : undefined,
@@ -180,9 +196,6 @@ function coerceTheme(t: any) {
     includeCodeIds: Array.isArray(t?.includeCodeIds)
       ? t.includeCodeIds.filter((s: any) => typeof s === 'string')
       : [],
-    similarThemeIds: Array.isArray(t?.similarThemeIds)
-      ? t.similarThemeIds.filter((s: any) => typeof s === 'string')
-      : undefined,
     extraQuotes: Array.isArray(t?.extraQuotes)
       ? t.extraQuotes
           .filter((q: any) => q && typeof q.text === 'string')

@@ -145,11 +145,20 @@ export type Theme = {
   // Quotes that couldn't be anchored to a doc span (paraphrases / no source) —
   // kept on low-effort imports so the evidence text isn't lost.
   extraQuotes?: ThemeExtraQuote[];
-  // Other themes (by id) the analyst judges this one overlaps / is similar to —
-  // the qualitative companion to the Independence rating.
-  similarThemeIds?: string[];
   rating?: ThemeRating;
   created_at: string;
+};
+
+// A typed, scored relationship between two themes (replaces the Independence
+// rating). `related` is symmetric (A↔B); `subsumes` is directed (from captures
+// to → on `to`'s side it reads "subsumed by"). Stored once per pair at the
+// project level so a relation rated from one theme shows on the other too.
+export type ThemeRelationType = 'related' | 'subsumes';
+export type ThemeRelation = {
+  from: string; // theme id
+  to: string; // theme id
+  type: ThemeRelationType;
+  similarity?: 1 | 2 | 3 | 4 | 5;
 };
 
 export type Project = {
@@ -163,6 +172,8 @@ export type Project = {
   codes: Code[];
   annotations: Annotation[];
   themes?: Theme[];
+  // Typed similarity relations between themes (the Independence companion).
+  themeRelations?: ThemeRelation[];
   folders?: string[];
   // Low-effort import mode: when on, AI-theme import keeps non-anchored quotes
   // (paraphrases / no source) as theme `extraQuotes` and captures the import's

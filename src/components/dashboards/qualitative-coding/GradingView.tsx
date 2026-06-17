@@ -330,7 +330,6 @@ function ThemesTable({
   const ratingHeaders: { key: ThemeSortKey; short: string; long: string }[] = [
     { key: 'grounding', short: 'G', long: 'Grounding' },
     { key: 'usefulness', short: 'U', long: 'Usefulness' },
-    { key: 'independence', short: 'I', long: 'Independence' },
     { key: 'interpretationLevel', short: 'IL', long: 'Interpretation' },
     { key: 'novelty', short: 'N', long: 'Novelty' },
   ];

@@ -400,7 +400,7 @@ function RubricSection() {
             title="Theme rubric — evaluative"
             intro={
               <>
-                Themes are rated on three evaluative criteria. Subthemes use the same scale — independence is scoped to siblings under the same parent.
+                Themes are rated on two evaluative criteria. Independence is no longer a 1–5 score — instead, mark <strong>theme relations</strong> in the theme detail card (Related / Subsumes, each with a 1–5 similarity).
               </>
             }
             rows={[
@@ -426,15 +426,26 @@ function RubricSection() {
                   '1 · does not address the research question',
                 ],
               },
+            ]}
+          />
+
+          <RubricBlock
+            title="Theme relations (replaces Independence)"
+            intro={
+              <>
+                In the theme detail card, link a theme to others it overlaps. <strong>Related</strong> = says a similar thing (symmetric — rate once, applies both ways). <strong>Subsumes</strong> = this theme captures the other (directed; the other reads "subsumed by"). Each link carries a 1–5 similarity.
+              </>
+            }
+            rows={[
               {
-                criterion: 'Independence',
-                question: 'Is this theme distinct from other themes in the set?',
+                criterion: 'Similarity (per relation)',
+                question: 'How similar are the two linked themes?',
                 anchors: [
-                  '5 · clearly distinct; captures a unique pattern',
-                  '4 · mostly distinct with minor overlap with one other theme',
-                  '3 · partially distinct; moderate overlap with another theme',
-                  '2 · substantial overlap with another theme',
-                  '1 · redundant; captures no unique pattern',
+                  '5 · essentially the same pattern',
+                  '4 · strongly overlapping',
+                  '3 · moderate overlap',
+                  '2 · slight overlap',
+                  '1 · faint / tangential overlap',
                 ],
               },
             ]}

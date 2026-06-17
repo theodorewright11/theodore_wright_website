@@ -65,6 +65,7 @@ import type {
   MetadataField,
   Project,
   Theme,
+  ThemeRelation,
   View,
 } from './types';
 
@@ -1023,6 +1024,65 @@ export default function QualitativeCodingDashboard() {
     queueWrite(projectId);
   };
 
+  // ----- Theme relations (typed similarity edges; replaces Independence) -----
+  const sameRelation = (
+    r: ThemeRelation,
+    from: string,
+    to: string,
+    type: ThemeRelation['type'],
+  ): boolean => {
+    if (r.type !== type) return false;
+    if (type === 'related') {
+      return (r.from === from && r.to === to) || (r.from === to && r.to === from);
+    }
+    return r.from === from && r.to === to;
+  };
+  const addThemeRelation = (
+    fromId: string,
+    toId: string,
+    type: ThemeRelation['type'],
+  ) => {
+    if (!activeProject || fromId === toId) return;
+    const projectId = activeProject.id;
+    updateActiveProject((p) => {
+      const rels = p.themeRelations ?? [];
+      if (rels.some((r) => sameRelation(r, fromId, toId, type))) return p;
+      return { ...p, themeRelations: [...rels, { from: fromId, to: toId, type }] };
+    });
+    queueWrite(projectId);
+  };
+  const removeThemeRelation = (
+    fromId: string,
+    toId: string,
+    type: ThemeRelation['type'],
+  ) => {
+    if (!activeProject) return;
+    const projectId = activeProject.id;
+    updateActiveProject((p) => ({
+      ...p,
+      themeRelations: (p.themeRelations ?? []).filter(
+        (r) => !sameRelation(r, fromId, toId, type),
+      ),
+    }));
+    queueWrite(projectId);
+  };
+  const setThemeRelationSimilarity = (
+    fromId: string,
+    toId: string,
+    type: ThemeRelation['type'],
+    similarity: 1 | 2 | 3 | 4 | 5 | undefined,
+  ) => {
+    if (!activeProject) return;
+    const projectId = activeProject.id;
+    updateActiveProject((p) => ({
+      ...p,
+      themeRelations: (p.themeRelations ?? []).map((r) =>
+        sameRelation(r, fromId, toId, type) ? { ...r, similarity } : r,
+      ),
+    }));
+    queueWrite(projectId);
+  };
+
   // Link / unlink an annotation to a theme with a 'core' | 'supporting'
   // weight. Idempotent: re-adding flips the weight.
   const linkAnnotationToTheme = (
@@ -1620,6 +1680,10 @@ export default function QualitativeCodingDashboard() {
               onImportAIThemes={() => aiThemesInputRef.current?.click()}
               onDeleteAllThemes={deleteAllThemes}
               onJumpToDoc={jumpToDoc}
+              themeRelations={activeProject.themeRelations ?? []}
+              onAddThemeRelation={addThemeRelation}
+              onRemoveThemeRelation={removeThemeRelation}
+              onSetThemeRelationSimilarity={setThemeRelationSimilarity}
             />
           ) : view === 'grading' ? (
             <GradingView
