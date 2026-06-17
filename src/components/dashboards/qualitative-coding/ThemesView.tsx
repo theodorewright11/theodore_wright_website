@@ -64,8 +64,8 @@ const RUBRIC: Record<keyof Omit<ThemeRating, 'notes'>, string[]> = {
     '5 · nothing in the no-data output even gestures at this territory',
   ],
   analyticalNovelty: [
-    '1 · yes — common knowledge for anyone who knows the domain basics',
-    '2 · mostly yes, though the data adds minor specificity',
+    '1 · common knowledge for anyone who knows the domain basics',
+    '2 · mostly known already; the data adds only minor specificity',
     '3 · they’d know the general area, but this specific insight isn’t obvious from domain knowledge alone',
     '4 · they probably wouldn’t arrive at this understanding without reading the data',
     '5 · this would be surprising even to someone who knows the domain well',
