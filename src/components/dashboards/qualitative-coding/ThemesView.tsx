@@ -64,11 +64,11 @@ const RUBRIC: Record<keyof Omit<ThemeRating, 'notes'>, string[]> = {
     '5 · nothing in the no-data output even gestures at this territory',
   ],
   analyticalNovelty: [
-    '1 · same claim as the no-data version, just with quotes attached',
-    '2 · slightly more specific but same underlying point',
-    '3 · adds a mechanism or dynamic the no-data version didn’t articulate',
-    '4 · reframes the topic in a way the no-data version wouldn’t produce',
-    '5 · the insight depends entirely on what’s in the data; no-data couldn’t get here',
+    '1 · yes — common knowledge for anyone who knows the domain basics',
+    '2 · mostly yes, though the data adds minor specificity',
+    '3 · they’d know the general area, but this specific insight isn’t obvious from domain knowledge alone',
+    '4 · they probably wouldn’t arrive at this understanding without reading the data',
+    '5 · this would be surprising even to someone who knows the domain well',
   ],
 };
 
