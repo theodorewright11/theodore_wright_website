@@ -239,6 +239,20 @@ export async function getFileContent<T = unknown>(
   return r.json() as Promise<T>;
 }
 
+// True if the file/folder exists and isn't trashed. Used to detect a Drive
+// folder that was deleted out from under a project (stale drive.folderId).
+export async function fileExists(token: string, fileId: string): Promise<boolean> {
+  const url = `https://www.googleapis.com/drive/v3/files/${encodeURIComponent(fileId)}?fields=id,trashed`;
+  const r = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+  if (r.status === 404) return false;
+  if (r.status === 401 || r.status === 403) {
+    throw new DriveAuthError(r.status, `Drive auth failed (${r.status}).`);
+  }
+  if (!r.ok) return false;
+  const data = (await r.json().catch(() => null)) as { trashed?: boolean } | null;
+  return !!data && !data.trashed;
+}
+
 export async function createFolder(
   token: string,
   name: string,

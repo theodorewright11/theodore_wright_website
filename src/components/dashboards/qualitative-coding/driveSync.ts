@@ -15,6 +15,7 @@ import {
   createFile,
   createFolder,
   deleteFile,
+  fileExists,
   findOrCreateFolder,
   getFileContent,
   listChildren,
@@ -46,17 +47,25 @@ export async function syncProjectToDrive(
 ): Promise<DriveLink> {
   const folderCache = new Map<string, string>();
 
+  // If the configured root folder was deleted, fall back to My Drive root so we
+  // don't try to create inside a missing parent (404).
+  let root = rootFolderId;
+  if (root && !(await fileExists(token, root))) root = undefined;
+
   // 1. Ensure project folder exists. Migration path: if drive.folderId is
   //    missing but a legacy drive.projectJsonId-or-fileId points to a flat
   //    file in rootFolderId, create the new folder and move the file in.
   let folderId = project.drive?.folderId;
+  // A stale folderId (folder deleted/trashed in Drive) would 404 every write —
+  // treat it as missing so a fresh folder is created below.
+  if (folderId && !(await fileExists(token, folderId))) folderId = undefined;
   const legacyFileId =
     !folderId && (project.drive as any)?.fileId
       ? (project.drive as any).fileId
       : project.drive?.projectJsonId;
 
   if (!folderId) {
-    folderId = await findOrCreateFolder(token, project.name, rootFolderId, folderCache);
+    folderId = await findOrCreateFolder(token, project.name, root, folderCache);
     if (legacyFileId) {
       // Move legacy flat file into the new folder, rename to project.json.
       try {
