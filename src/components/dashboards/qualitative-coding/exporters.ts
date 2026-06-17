@@ -173,7 +173,7 @@ export function themesMarkdown(project: Project): string {
   // Summary table
   lines.push('## At a glance');
   lines.push('');
-  lines.push('| Theme | Grounding | RQ fit | Interp. | Prior nov. | Analytic nov. | Evidence |');
+  lines.push('| Theme | Grounding | Research question fit | Interp. | Prior nov. | Analytic nov. | Evidence |');
   lines.push('| --- | :-: | :-: | :-: | :-: | :-: | ---: |');
   const themeMap = new Map(themes.map((t) => [t.id, t]));
   const depthOf = (t: Theme): number => {
@@ -380,7 +380,7 @@ export function exportThemesRatingsJSON(project: Project): unknown {
         reasoning: t.reasoning ?? null,
         ratings: {
           grounding: r.grounding ?? null,
-          rqFit: r.usefulness ?? null,
+          researchQuestionFit: r.usefulness ?? null,
           interpretationLevel: r.interpretationLevel ?? null,
           aiPriorNovelty: r.aiPriorNovelty ?? null,
           analyticalNovelty: r.analyticalNovelty ?? null,
@@ -448,7 +448,7 @@ export function exportProjectMarkdown(project: Project): string {
       const r = t.rating ?? {};
       const ratingBits: string[] = [];
       if (r.grounding) ratingBits.push(`G:${r.grounding}`);
-      if (r.usefulness) ratingBits.push(`RQ:${r.usefulness}`);
+      if (r.usefulness) ratingBits.push(`ResearchQuestionFit:${r.usefulness}`);
       if (r.independence) ratingBits.push(`I:${r.independence}`);
       if (r.interpretationLevel) ratingBits.push(`Int:${r.interpretationLevel}`);
       if (r.prevalence) ratingBits.push(`P:${r.prevalence}`);
