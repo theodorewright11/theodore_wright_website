@@ -63,6 +63,7 @@ type AxisKey = keyof typeof RUBRIC;
 const AXES: { key: AxisKey; label: string; group: 'evaluative' | 'descriptive' }[] = [
   { key: 'grounding', label: 'Grounding', group: 'evaluative' },
   { key: 'usefulness', label: 'Usefulness', group: 'evaluative' },
+  { key: 'independence', label: 'Independence', group: 'evaluative' },
   { key: 'interpretationLevel', label: 'Interpretation level', group: 'descriptive' },
   { key: 'novelty', label: 'Novelty', group: 'descriptive' },
 ];
@@ -700,6 +701,63 @@ function ThemeDetail({
             onUpdateTheme(theme.id, { rating: { ...(theme.rating ?? {}), ...patch } })
           }
         />
+      </section>
+
+      <section className="mb-5">
+        <div className="text-[10px] uppercase tracking-wider font-semibold text-slate-500 mb-2">
+          Similar themes <span className="normal-case tracking-normal text-slate-400">(overlap — informs the Independence rating)</span>
+        </div>
+        <div className="flex flex-wrap items-center gap-1.5">
+          {(theme.similarThemeIds ?? []).map((sid) => {
+            const st = project.themes?.find((x) => x.id === sid);
+            if (!st) return null;
+            const c = st.color ?? '#8b5cf6';
+            return (
+              <span
+                key={sid}
+                className="inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-[12px] text-slate-700 border bg-slate-50"
+                style={{ borderColor: c }}
+              >
+                <span className="w-2 h-2 rounded-sm" style={{ background: c }} />
+                {st.name}
+                <button
+                  type="button"
+                  onClick={() =>
+                    onUpdateTheme(theme.id, {
+                      similarThemeIds: (theme.similarThemeIds ?? []).filter((x) => x !== sid),
+                    })
+                  }
+                  className="text-slate-400 hover:text-red-600 text-[14px] leading-none"
+                  title="remove"
+                >
+                  ×
+                </button>
+              </span>
+            );
+          })}
+          <select
+            value=""
+            onChange={(e) => {
+              const id = e.target.value;
+              if (!id) return;
+              onUpdateTheme(theme.id, {
+                similarThemeIds: [...(theme.similarThemeIds ?? []), id],
+              });
+            }}
+            className="px-2 py-1 text-[12px] border border-slate-300 rounded-md bg-white text-slate-600"
+          >
+            <option value="">+ mark similar theme…</option>
+            {(project.themes ?? [])
+              .filter(
+                (x) => x.id !== theme.id && !(theme.similarThemeIds ?? []).includes(x.id),
+              )
+              .map((x) => (
+                <option key={x.id} value={x.id}>
+                  {x.name}
+                </option>
+              ))}
+          </select>
+        </div>
       </section>
 
       <section className="mb-5">

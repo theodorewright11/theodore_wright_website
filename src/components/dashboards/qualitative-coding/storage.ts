@@ -180,6 +180,9 @@ function coerceTheme(t: any) {
     includeCodeIds: Array.isArray(t?.includeCodeIds)
       ? t.includeCodeIds.filter((s: any) => typeof s === 'string')
       : [],
+    similarThemeIds: Array.isArray(t?.similarThemeIds)
+      ? t.similarThemeIds.filter((s: any) => typeof s === 'string')
+      : undefined,
     extraQuotes: Array.isArray(t?.extraQuotes)
       ? t.extraQuotes
           .filter((q: any) => q && typeof q.text === 'string')

@@ -173,8 +173,8 @@ export function themesMarkdown(project: Project): string {
   // Summary table
   lines.push('## At a glance');
   lines.push('');
-  lines.push('| Theme | Grounding | Usefulness | Interp. | Novelty | Evidence |');
-  lines.push('| --- | :-: | :-: | :-: | :-: | ---: |');
+  lines.push('| Theme | Grounding | Usefulness | Independence | Interp. | Novelty | Evidence |');
+  lines.push('| --- | :-: | :-: | :-: | :-: | :-: | ---: |');
   const themeMap = new Map(themes.map((t) => [t.id, t]));
   const depthOf = (t: Theme): number => {
     let d = 0;
@@ -194,7 +194,7 @@ export function themesMarkdown(project: Project): string {
     const cell = (n?: number) => (n ? `${n}` : '—');
     const ev = evidenceForTheme(t, project);
     lines.push(
-      `| ${indent}${depthOf(t) > 0 ? '↳ ' : ''}**${escapePipes(t.name)}** | ${cell(r.grounding)} | ${cell(r.usefulness)} | ${cell(r.interpretationLevel)} | ${cell(r.novelty)} | ${ev.length} |`,
+      `| ${indent}${depthOf(t) > 0 ? '↳ ' : ''}**${escapePipes(t.name)}** | ${cell(r.grounding)} | ${cell(r.usefulness)} | ${cell(r.independence)} | ${cell(r.interpretationLevel)} | ${cell(r.novelty)} | ${ev.length} |`,
     );
   }
   lines.push('');
@@ -239,6 +239,7 @@ export function themesMarkdown(project: Project): string {
       const rows: [string, number | undefined][] = [
         ['Grounding', r.grounding],
         ['Usefulness', r.usefulness],
+        ['Independence', r.independence],
         ['Interpretation level', r.interpretationLevel],
         ['Novelty', r.novelty],
       ];
@@ -380,10 +381,14 @@ export function exportThemesRatingsJSON(project: Project): unknown {
         ratings: {
           grounding: r.grounding ?? null,
           usefulness: r.usefulness ?? null,
+          independence: r.independence ?? null,
           interpretationLevel: r.interpretationLevel ?? null,
           novelty: r.novelty ?? null,
           notes: r.notes ?? null,
         },
+        similar: (t.similarThemeIds ?? [])
+          .map((id) => themeName.get(id))
+          .filter((n): n is string => !!n),
         supporting,
       };
     }),

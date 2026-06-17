@@ -145,6 +145,9 @@ export type Theme = {
   // Quotes that couldn't be anchored to a doc span (paraphrases / no source) —
   // kept on low-effort imports so the evidence text isn't lost.
   extraQuotes?: ThemeExtraQuote[];
+  // Other themes (by id) the analyst judges this one overlaps / is similar to —
+  // the qualitative companion to the Independence rating.
+  similarThemeIds?: string[];
   rating?: ThemeRating;
   created_at: string;
 };
