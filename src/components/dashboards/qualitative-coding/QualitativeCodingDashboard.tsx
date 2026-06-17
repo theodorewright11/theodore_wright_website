@@ -296,6 +296,20 @@ export default function QualitativeCodingDashboard() {
     [drive.token, updateProjectById, queueWrite],
   );
 
+  // Manual "Sync now": flush every pending debounced write immediately and also
+  // push the active project, so edits hit Drive without waiting out the 800ms.
+  const syncNow = useCallback(() => {
+    if (!drive.token) return;
+    const ids = new Set<string>();
+    for (const [pid, t] of pendingWrites.current.entries()) {
+      clearTimeout(t);
+      ids.add(pid);
+    }
+    pendingWrites.current.clear();
+    if (state.activeProjectId) ids.add(state.activeProjectId);
+    for (const id of ids) runWrite(id);
+  }, [drive.token, state.activeProjectId, runWrite]);
+
   const pullAllFromDrive = useCallback(async () => {
     if (!drive.token) return;
     setDrive((d) => ({ ...d, syncStatus: 'syncing', lastError: null }));
@@ -1524,6 +1538,7 @@ export default function QualitativeCodingDashboard() {
         onDriveSignIn={handleSignIn}
         onDriveSignOut={handleSignOut}
         onDrivePullAll={pullAllFromDrive}
+        onDriveSyncNow={syncNow}
       />
       <input
         ref={importInputRef}
@@ -1930,6 +1945,7 @@ function TopBar({
   onDriveSignIn,
   onDriveSignOut,
   onDrivePullAll,
+  onDriveSyncNow,
 }: {
   project: Project;
   projects: Project[];
@@ -1960,6 +1976,7 @@ function TopBar({
   onDriveSignIn: () => void;
   onDriveSignOut: () => void;
   onDrivePullAll: () => void;
+  onDriveSyncNow: () => void;
 }) {
   const [renaming, setRenaming] = useState(false);
   const [name, setName] = useState(project.name);
@@ -2161,6 +2178,7 @@ function TopBar({
           onSignIn={onDriveSignIn}
           onSignOut={onDriveSignOut}
           onPullAll={onDrivePullAll}
+          onSyncNow={onDriveSyncNow}
         />
         <div className="relative">
           <button

@@ -11,6 +11,7 @@ type Props = {
   onSignIn: () => void;
   onSignOut: () => void;
   onPullAll: () => void;
+  onSyncNow: () => void;
 };
 
 export default function AuthBar({
@@ -22,6 +23,7 @@ export default function AuthBar({
   onSignIn,
   onSignOut,
   onPullAll,
+  onSyncNow,
 }: Props) {
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
@@ -109,6 +111,19 @@ export default function AuthBar({
               <div className="mt-1 text-[11px] text-red-600 leading-snug">{lastError}</div>
             )}
           </div>
+          <button
+            type="button"
+            onClick={() => {
+              setOpen(false);
+              onSyncNow();
+            }}
+            className="w-full text-left px-3.5 py-2.5 hover:bg-blue-50 transition-colors border-b border-slate-100"
+          >
+            <div className="text-[13px] font-medium text-slate-800">Sync now</div>
+            <div className="text-[11px] text-slate-500 leading-snug">
+              Push the current project to Drive immediately (skips the 800ms auto-save wait).
+            </div>
+          </button>
           <button
             type="button"
             onClick={() => {
