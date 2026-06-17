@@ -65,6 +65,15 @@ const RUBRIC: Record<keyof Omit<ThemeRating, 'notes'>, string[]> = {
   ],
 };
 
+// Tooltips for the 1–5 theme-relation similarity buttons (index 0 = score 1).
+const SIMILARITY_ANCHORS = [
+  '1 · faint / tangential overlap',
+  '2 · slight overlap',
+  '3 · moderate overlap',
+  '4 · strongly overlapping',
+  '5 · essentially the same pattern',
+];
+
 type AxisKey = keyof typeof RUBRIC;
 // Hand-rated axes. Independence is captured via typed theme relations (see the
 // Theme relations section), not a 1–5 score; prevalence is computed downstream.
@@ -745,10 +754,7 @@ function ThemeDetail({
 
       <section className="mb-5">
         <div className="text-[10px] uppercase tracking-wider font-semibold text-slate-500 mb-2">
-          Theme relations{' '}
-          <span className="normal-case tracking-normal text-slate-400">
-            (overlap with other themes — replaces the Independence score)
-          </span>
+          Theme relations
         </div>
         <div className="space-y-1.5">
           {themeRelations
@@ -800,6 +806,7 @@ function ThemeDetail({
                               picked ? undefined : n,
                             )
                           }
+                          title={SIMILARITY_ANCHORS[n - 1]}
                           className={`w-6 h-6 rounded border text-[11px] font-semibold transition-colors ${
                             picked
                               ? 'bg-blue-600 border-blue-600 text-white'
