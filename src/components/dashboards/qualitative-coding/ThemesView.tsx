@@ -77,6 +77,7 @@ type Props = {
   ) => void;
   onImportAIThemes?: () => void;
   onDeleteAllThemes?: () => void;
+  onJumpToDoc?: (docId: string) => void;
 };
 
 export default function ThemesView({
@@ -93,6 +94,7 @@ export default function ThemesView({
   onJumpToAnnotation,
   onImportAIThemes,
   onDeleteAllThemes,
+  onJumpToDoc,
 }: Props) {
   const themes = project.themes ?? [];
   const active = themes.find((t) => t.id === activeThemeId) ?? null;
@@ -229,6 +231,7 @@ export default function ThemesView({
             onToggleIncludeCode={onToggleIncludeCode}
             onRemoveUncodedHighlight={onRemoveUncodedHighlight}
             onJumpToAnnotation={onJumpToAnnotation}
+            onJumpToDoc={onJumpToDoc}
           />
         )}
       </main>
@@ -514,6 +517,7 @@ function ThemeDetail({
   onToggleIncludeCode,
   onRemoveUncodedHighlight,
   onJumpToAnnotation,
+  onJumpToDoc,
 }: {
   project: Project;
   theme: Theme;
@@ -524,6 +528,7 @@ function ThemeDetail({
   onToggleIncludeCode: (themeId: string, codeId: string) => void;
   onRemoveUncodedHighlight?: (themeId: string, highlightId: string) => void;
   onJumpToAnnotation: (projectId: string, docId: string, annotationId: string) => void;
+  onJumpToDoc?: (docId: string) => void;
 }) {
   const [editingName, setEditingName] = useState(false);
   const [draftName, setDraftName] = useState(theme.name);
@@ -1035,15 +1040,26 @@ function ThemeDetail({
                     <span className="text-[10px] uppercase tracking-wider text-slate-400 font-semibold">
                       possible match
                     </span>
-                    {(q.possibleSources ?? []).map((p) => (
-                      <span
-                        key={p.source}
-                        className="text-[11px] font-mono px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800"
-                        title={`${Math.round(p.score * 100)}% word overlap with ${p.source}`}
-                      >
-                        {p.source} · {Math.round(p.score * 100)}%
-                      </span>
-                    ))}
+                    {(q.possibleSources ?? []).map((p) => {
+                      const idx = parseInt((p.source.match(/\d+/) ?? ['0'])[0], 10) - 1;
+                      const targetDoc = project.documents[idx];
+                      return (
+                        <button
+                          key={p.source}
+                          type="button"
+                          onClick={() => targetDoc && onJumpToDoc?.(targetDoc.id)}
+                          disabled={!targetDoc || !onJumpToDoc}
+                          className="text-[11px] font-mono px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 hover:bg-emerald-200 disabled:hover:bg-emerald-100 disabled:cursor-default transition-colors"
+                          title={
+                            targetDoc
+                              ? `Go to ${targetDoc.title || p.source} (${Math.round(p.score * 100)}% match)`
+                              : `${p.source} — document not found`
+                          }
+                        >
+                          {p.source} · {Math.round(p.score * 100)}%
+                        </button>
+                      );
+                    })}
                   </div>
                 )}
               </li>

@@ -1390,6 +1390,12 @@ export default function QualitativeCodingDashboard() {
     setFocusedAnnotationId(annotationId);
   };
 
+  const jumpToDoc = (docId: string) => {
+    setView('documents');
+    setSelectedCodeId(null);
+    setActiveDocId(docId);
+  };
+
   if (!hydrated) {
     return (
       <div className="flex items-center justify-center h-screen bg-white text-slate-400 text-[13px]">
@@ -1613,6 +1619,7 @@ export default function QualitativeCodingDashboard() {
               onJumpToAnnotation={jumpToAnnotation}
               onImportAIThemes={() => aiThemesInputRef.current?.click()}
               onDeleteAllThemes={deleteAllThemes}
+              onJumpToDoc={jumpToDoc}
             />
           ) : view === 'grading' ? (
             <GradingView
