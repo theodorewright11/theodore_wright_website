@@ -114,6 +114,7 @@ export type ThemeRating = {
   independence?: 1 | 2 | 3 | 4 | 5;
   interpretationLevel?: 1 | 2 | 3 | 4 | 5;
   prevalence?: 1 | 2 | 3 | 4 | 5;
+  novelty?: 1 | 2 | 3 | 4 | 5;
   notes?: string;
 };
 

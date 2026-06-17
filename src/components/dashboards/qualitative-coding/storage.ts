@@ -230,6 +230,7 @@ function coerceTheme(t: any) {
             independence: clampRating(t.rating.independence),
             interpretationLevel: clampRating(t.rating.interpretationLevel),
             prevalence: clampRating(t.rating.prevalence),
+            novelty: clampRating(t.rating.novelty),
             notes:
               typeof t.rating.notes === 'string' ? t.rating.notes : undefined,
           }

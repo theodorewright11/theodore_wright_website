@@ -470,6 +470,17 @@ function RubricSection() {
                   '1 · very few items; rare',
                 ],
               },
+              {
+                criterion: 'Novelty',
+                question: 'How novel or non-obvious is this theme beyond prior expectation?',
+                anchors: [
+                  '5 · highly novel; reveals something genuinely unexpected',
+                  '4 · largely novel; a fresh or surprising insight',
+                  '3 · moderately novel; a non-obvious framing',
+                  '2 · mostly expected; a minor new angle',
+                  '1 · obvious / expected; adds little beyond prior knowledge',
+                ],
+              },
             ]}
           />
 

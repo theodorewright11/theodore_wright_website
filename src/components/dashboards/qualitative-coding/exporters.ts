@@ -173,8 +173,8 @@ export function themesMarkdown(project: Project): string {
   // Summary table
   lines.push('## At a glance');
   lines.push('');
-  lines.push('| Theme | Grounding | Usefulness | Interp. | Evidence |');
-  lines.push('| --- | :-: | :-: | :-: | ---: |');
+  lines.push('| Theme | Grounding | Usefulness | Interp. | Novelty | Evidence |');
+  lines.push('| --- | :-: | :-: | :-: | :-: | ---: |');
   const themeMap = new Map(themes.map((t) => [t.id, t]));
   const depthOf = (t: Theme): number => {
     let d = 0;
@@ -194,7 +194,7 @@ export function themesMarkdown(project: Project): string {
     const cell = (n?: number) => (n ? `${n}` : '—');
     const ev = evidenceForTheme(t, project);
     lines.push(
-      `| ${indent}${depthOf(t) > 0 ? '↳ ' : ''}**${escapePipes(t.name)}** | ${cell(r.grounding)} | ${cell(r.usefulness)} | ${cell(r.interpretationLevel)} | ${ev.length} |`,
+      `| ${indent}${depthOf(t) > 0 ? '↳ ' : ''}**${escapePipes(t.name)}** | ${cell(r.grounding)} | ${cell(r.usefulness)} | ${cell(r.interpretationLevel)} | ${cell(r.novelty)} | ${ev.length} |`,
     );
   }
   lines.push('');
@@ -240,6 +240,7 @@ export function themesMarkdown(project: Project): string {
         ['Grounding', r.grounding],
         ['Usefulness', r.usefulness],
         ['Interpretation level', r.interpretationLevel],
+        ['Novelty', r.novelty],
       ];
       for (const [k, v] of rows) {
         if (v) lines.push(`- **${k}**: ${v}/5`);
@@ -380,6 +381,7 @@ export function exportThemesRatingsJSON(project: Project): unknown {
           grounding: r.grounding ?? null,
           usefulness: r.usefulness ?? null,
           interpretationLevel: r.interpretationLevel ?? null,
+          novelty: r.novelty ?? null,
           notes: r.notes ?? null,
         },
         supporting,
