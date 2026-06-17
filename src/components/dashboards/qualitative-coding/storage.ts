@@ -187,6 +187,13 @@ function coerceTheme(t: any) {
             text: q.text,
             source: typeof q.source === 'string' ? q.source : undefined,
             role: q.role === 'core' || q.role === 'supporting' ? q.role : undefined,
+            possibleSources: Array.isArray(q.possibleSources)
+              ? q.possibleSources
+                  .filter(
+                    (p: any) => p && typeof p.source === 'string' && typeof p.score === 'number',
+                  )
+                  .map((p: any) => ({ source: p.source, score: p.score }))
+              : undefined,
           }))
       : undefined,
     uncodedHighlights: Array.isArray(t?.uncodedHighlights)

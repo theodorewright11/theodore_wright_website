@@ -76,6 +76,7 @@ type Props = {
     annotationId: string,
   ) => void;
   onImportAIThemes?: () => void;
+  onDeleteAllThemes?: () => void;
 };
 
 export default function ThemesView({
@@ -91,6 +92,7 @@ export default function ThemesView({
   onRemoveUncodedHighlight,
   onJumpToAnnotation,
   onImportAIThemes,
+  onDeleteAllThemes,
 }: Props) {
   const themes = project.themes ?? [];
   const active = themes.find((t) => t.id === activeThemeId) ?? null;
@@ -117,7 +119,7 @@ export default function ThemesView({
                 docMode ? 'bg-slate-900 text-white' : 'text-slate-500 hover:bg-slate-100'
               }`}
             >
-              doc
+              Doc
             </button>
             {onImportAIThemes && (
               <button
@@ -126,7 +128,17 @@ export default function ThemesView({
                 title="Import an AI thematic-analysis JSON into this project"
                 className="text-[11px] font-semibold text-slate-500 hover:bg-slate-100 px-2 py-1 rounded"
               >
-                import AI ↓
+                Import AI ↓
+              </button>
+            )}
+            {onDeleteAllThemes && themes.length > 0 && (
+              <button
+                type="button"
+                onClick={onDeleteAllThemes}
+                title="Delete every theme in this project"
+                className="text-[11px] font-semibold text-slate-400 hover:text-red-600 hover:bg-red-50 px-2 py-1 rounded"
+              >
+                Clear all
               </button>
             )}
             <button
@@ -137,7 +149,7 @@ export default function ThemesView({
               }}
               className="text-[11px] font-semibold text-blue-600 hover:bg-blue-50 px-2 py-1 rounded"
             >
-              + new
+              + New
             </button>
           </div>
         </div>
@@ -1018,6 +1030,22 @@ function ThemeDetail({
                 >
                   {q.text}
                 </blockquote>
+                {(q.possibleSources ?? []).length > 0 && (
+                  <div className="mt-1 flex items-center gap-1.5 flex-wrap pl-3">
+                    <span className="text-[10px] uppercase tracking-wider text-slate-400 font-semibold">
+                      possible match
+                    </span>
+                    {(q.possibleSources ?? []).map((p) => (
+                      <span
+                        key={p.source}
+                        className="text-[11px] font-mono px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800"
+                        title={`${Math.round(p.score * 100)}% word overlap with ${p.source}`}
+                      >
+                        {p.source} · {Math.round(p.score * 100)}%
+                      </span>
+                    ))}
+                  </div>
+                )}
               </li>
             ))}
           </ol>

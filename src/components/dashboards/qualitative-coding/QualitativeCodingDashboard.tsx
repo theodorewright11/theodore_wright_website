@@ -1010,6 +1010,19 @@ export default function QualitativeCodingDashboard() {
     queueWrite(projectId);
   };
 
+  const deleteAllThemes = () => {
+    if (!activeProject) return;
+    const count = (activeProject.themes ?? []).length;
+    if (count === 0) return;
+    if (!window.confirm(`Delete all ${count} theme${count === 1 ? '' : 's'} in "${activeProject.name}"? This cannot be undone.`)) {
+      return;
+    }
+    const projectId = activeProject.id;
+    updateActiveProject((p) => ({ ...p, themes: [] }));
+    setState((s) => ({ ...s, activeThemeId: null }));
+    queueWrite(projectId);
+  };
+
   // Link / unlink an annotation to a theme with a 'core' | 'supporting'
   // weight. Idempotent: re-adding flips the weight.
   const linkAnnotationToTheme = (
@@ -1599,6 +1612,7 @@ export default function QualitativeCodingDashboard() {
               onRemoveUncodedHighlight={removeThemeUncodedHighlight}
               onJumpToAnnotation={jumpToAnnotation}
               onImportAIThemes={() => aiThemesInputRef.current?.click()}
+              onDeleteAllThemes={deleteAllThemes}
             />
           ) : view === 'grading' ? (
             <GradingView
@@ -2315,9 +2329,6 @@ function Sidebar({
         >
           +D
         </RailBtn>
-        <RailBtn onClick={onOpenCodebookView} title="open codebook">
-          Cb
-        </RailBtn>
       </aside>
     );
   }
@@ -2328,7 +2339,7 @@ function Sidebar({
       style={{ width: `${width}px` }}
     >
       <ResizeHandle side="right" width={width} min={240} max={520} onChange={onResize} />
-      <div className="flex items-center justify-between px-4 py-2 border-b border-slate-200">
+      <div className="flex items-center px-4 py-2 border-b border-slate-200">
         <button
           type="button"
           onClick={onToggleCollapsed}
@@ -2336,14 +2347,6 @@ function Sidebar({
           title="collapse sidebar"
         >
           « Collapse
-        </button>
-        <button
-          type="button"
-          onClick={onOpenCodebookView}
-          className="text-[12px] font-medium text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded px-2 py-1 transition-colors"
-          title="open codebook view"
-        >
-          Codebook →
         </button>
       </div>
       <div className="flex-1 overflow-y-auto">
@@ -2460,21 +2463,6 @@ function Sidebar({
           )}
         </div>
 
-        <div className="p-5 pt-3">
-          <button
-            type="button"
-            onClick={onOpenCodebookView}
-            className="w-full px-3 py-2.5 text-left text-[13px] font-medium text-slate-600 hover:text-slate-900 border border-slate-200 hover:border-slate-300 bg-white hover:bg-slate-50 rounded-md transition-colors flex items-center justify-between"
-            title="open the codebook to manage codes"
-          >
-            <span>Codes &amp; definitions</span>
-            <span className="text-slate-400 text-[12px]">→</span>
-          </button>
-          <div className="mt-1.5 text-[11px] text-slate-400 leading-snug px-1">
-            {project.codes.length} code{project.codes.length === 1 ? '' : 's'} ·
-            manage in Codebook
-          </div>
-        </div>
       </div>
       <div className="border-t border-slate-200 px-5 py-3 bg-white">
         <div className="text-[11px] font-mono text-slate-400 leading-tight">

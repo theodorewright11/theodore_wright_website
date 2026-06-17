@@ -128,6 +128,40 @@ function cleanField(v: unknown): string | undefined {
   return typeof v === 'string' && v.trim() ? v.trim() : undefined;
 }
 
+function normalizeForMatch(s: string): string {
+  return s
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+// For a quote that couldn't be anchored verbatim, find documents that plausibly
+// contain it: a normalized substring match (near-verbatim — smart quotes /
+// whitespace / punctuation differences) scores 1; otherwise the fraction of the
+// quote's content words present in the doc. Returns the top few above 0.6.
+function findPossibleSources(
+  text: string,
+  documents: Project['documents'],
+): { source: string; score: number }[] {
+  const nq = normalizeForMatch(text);
+  if (!nq) return [];
+  const qWords = [...new Set(nq.split(' ').filter((w) => w.length > 3))];
+  const out: { source: string; score: number }[] = [];
+  documents.forEach((d, i) => {
+    const nd = normalizeForMatch(d.text);
+    let score = 0;
+    if (nd.includes(nq)) score = 1;
+    else if (qWords.length > 0) {
+      const present = qWords.filter((w) => nd.includes(w)).length;
+      score = present / qWords.length;
+    }
+    if (score >= 0.6) out.push({ source: `D${i + 1}`, score: Math.round(score * 100) / 100 });
+  });
+  out.sort((a, b) => b.score - a.score);
+  return out.slice(0, 3);
+}
+
 export function buildThemesFromAI(
   project: Project,
   raw: unknown,
@@ -180,10 +214,12 @@ export function buildThemesFromAI(
     ) => {
       if (lowEffort) {
         keptUnanchored++;
+        const possibleSources = findPossibleSources(text, project.documents);
         extraQuotes.push({
           text,
           source: typeof q?.source === 'string' ? q.source : undefined,
           role: q?.role === 'core' || q?.role === 'supporting' ? q.role : undefined,
+          possibleSources: possibleSources.length > 0 ? possibleSources : undefined,
         });
       } else {
         unmatched.push({ themeName, source: String(q?.source ?? '?'), text, reason });

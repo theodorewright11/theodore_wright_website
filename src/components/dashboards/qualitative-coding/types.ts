@@ -103,6 +103,9 @@ export type ThemeExtraQuote = {
   text: string;
   source?: string;
   role?: 'core' | 'supporting';
+  // Documents whose text plausibly contains this quote (near-verbatim or high
+  // word-overlap), found at import time. Lets a paraphrase suggest its origin.
+  possibleSources?: { source: string; score: number }[];
 };
 
 export type ThemeRating = {
