@@ -21,7 +21,7 @@ type Props = {
 };
 
 type CodeSortKey = 'name' | 'count' | 'specificity' | 'accuracy';
-type ThemeSortKey = 'name' | 'count' | 'grounding' | 'usefulness' | 'independence' | 'interpretationLevel' | 'prevalence' | 'novelty';
+type ThemeSortKey = 'name' | 'count' | 'grounding' | 'usefulness' | 'independence' | 'interpretationLevel' | 'prevalence' | 'aiPriorNovelty' | 'analyticalNovelty';
 
 export default function GradingView({
   project,
@@ -331,7 +331,8 @@ function ThemesTable({
     { key: 'grounding', short: 'G', long: 'Grounding' },
     { key: 'usefulness', short: 'U', long: 'Usefulness' },
     { key: 'interpretationLevel', short: 'IL', long: 'Interpretation' },
-    { key: 'novelty', short: 'N', long: 'Novelty' },
+    { key: 'aiPriorNovelty', short: 'PN', long: 'AI prior novelty' },
+    { key: 'analyticalNovelty', short: 'AN', long: 'Analytical novelty' },
   ];
 
   if (themes.length === 0) {

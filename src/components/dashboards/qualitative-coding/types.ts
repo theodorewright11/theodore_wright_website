@@ -114,7 +114,11 @@ export type ThemeRating = {
   independence?: 1 | 2 | 3 | 4 | 5;
   interpretationLevel?: 1 | 2 | 3 | 4 | 5;
   prevalence?: 1 | 2 | 3 | 4 | 5;
-  novelty?: 1 | 2 | 3 | 4 | 5;
+  // Novelty split in two (both vs. the no-data baseline output):
+  //   aiPriorNovelty   — is the theme's SUBJECT MATTER present in no-data?
+  //   analyticalNovelty — does it SAY something no-data doesn't / couldn't?
+  aiPriorNovelty?: 1 | 2 | 3 | 4 | 5;
+  analyticalNovelty?: 1 | 2 | 3 | 4 | 5;
   notes?: string;
 };
 

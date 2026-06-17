@@ -56,12 +56,19 @@ const RUBRIC: Record<keyof Omit<ThemeRating, 'notes'>, string[]> = {
     '4 · majority of data items; common',
     '5 · nearly all data items; pervasive',
   ],
-  novelty: [
-    '1 · obvious / expected; adds little beyond prior knowledge',
-    '2 · mostly expected; a minor new angle',
-    '3 · moderately novel; a non-obvious framing',
-    '4 · largely novel; a fresh or surprising insight',
-    '5 · highly novel; reveals something genuinely unexpected',
+  aiPriorNovelty: [
+    '1 · directly matches a no-data theme',
+    '2 · closely related to a no-data theme, minor reframing',
+    '3 · adjacent to no-data themes but distinct enough to not be a match',
+    '4 · no clear counterpart in the no-data output',
+    '5 · nothing in the no-data output even gestures at this territory',
+  ],
+  analyticalNovelty: [
+    '1 · same claim as the no-data version, just with quotes attached',
+    '2 · slightly more specific but same underlying point',
+    '3 · adds a mechanism or dynamic the no-data version didn’t articulate',
+    '4 · reframes the topic in a way the no-data version wouldn’t produce',
+    '5 · the insight depends entirely on what’s in the data; no-data couldn’t get here',
   ],
 };
 
@@ -81,7 +88,8 @@ const AXES: { key: AxisKey; label: string; group: 'evaluative' | 'descriptive' }
   { key: 'grounding', label: 'Grounding', group: 'evaluative' },
   { key: 'usefulness', label: 'Usefulness', group: 'evaluative' },
   { key: 'interpretationLevel', label: 'Interpretation level', group: 'descriptive' },
-  { key: 'novelty', label: 'Novelty', group: 'descriptive' },
+  { key: 'aiPriorNovelty', label: 'AI prior novelty', group: 'descriptive' },
+  { key: 'analyticalNovelty', label: 'Analytical novelty', group: 'descriptive' },
 ];
 
 type Props = {

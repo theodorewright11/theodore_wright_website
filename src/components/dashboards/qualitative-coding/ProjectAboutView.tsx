@@ -482,14 +482,25 @@ function RubricSection() {
                 ],
               },
               {
-                criterion: 'Novelty',
-                question: 'How novel or non-obvious is this theme beyond prior expectation?',
+                criterion: 'AI prior novelty',
+                question: "Is this theme's subject matter present in the no-data output?",
                 anchors: [
-                  '5 · highly novel; reveals something genuinely unexpected',
-                  '4 · largely novel; a fresh or surprising insight',
-                  '3 · moderately novel; a non-obvious framing',
-                  '2 · mostly expected; a minor new angle',
-                  '1 · obvious / expected; adds little beyond prior knowledge',
+                  '5 · nothing in the no-data output even gestures at this territory',
+                  '4 · no clear counterpart in the no-data output',
+                  '3 · adjacent to no-data themes but distinct enough to not be a match',
+                  '2 · closely related to a no-data theme, minor reframing',
+                  '1 · directly matches a no-data theme',
+                ],
+              },
+              {
+                criterion: 'Analytical novelty',
+                question: "Does the theme say something about this topic the no-data version doesn't or couldn't?",
+                anchors: [
+                  '5 · the insight depends entirely on what’s in the data; no-data couldn’t get here',
+                  '4 · reframes the topic in a way the no-data version wouldn’t produce',
+                  '3 · adds a mechanism or dynamic the no-data version didn’t articulate',
+                  '2 · slightly more specific but same underlying point',
+                  '1 · same claim as the no-data version, just with quotes attached',
                 ],
               },
             ]}
