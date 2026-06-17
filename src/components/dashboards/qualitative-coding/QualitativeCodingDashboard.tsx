@@ -340,38 +340,39 @@ export default function QualitativeCodingDashboard() {
         }
       }
       const pulledIds = new Set(pulledProjects.map((p) => p.id));
-      const localSnapshot = JSON.parse(
-        window.localStorage.getItem('tw-qual-coding-v1') ?? '{}',
-      );
-      const localProjects: Project[] = (localSnapshot.projects ?? []) as Project[];
-      const localById = new Map(localProjects.map((p) => [p.id, p]));
+
+      // Merge against the CURRENT in-memory projects (not a localStorage
+      // snapshot, which can be stale between a setState and the saveState flush
+      // — a focus-pull in that gap used to clobber a just-made rating edit).
       const localPreferredIds: string[] = [];
-
-      const merged: Project[] = [];
-      for (const pulled of pulledProjects) {
-        const local = localById.get(pulled.id);
-        if (!local) {
-          merged.push(pulled);
-          continue;
-        }
-        const localTime = Date.parse(local.updated_at) || 0;
-        const serverTime = Date.parse(pulled.updated_at) || 0;
-        // Local wins ties so newer-typed edits aren't clobbered on a focus pull.
-        if (localTime >= serverTime) {
-          // Adopt server's Drive link (folderId / projectJsonId) so the next
-          // write updates the correct files rather than creating duplicates.
-          merged.push({ ...local, drive: pulled.drive });
-          localPreferredIds.push(pulled.id);
-        } else {
-          merged.push(pulled);
-        }
-      }
-      for (const local of localProjects) {
-        if (pulledIds.has(local.id)) continue;
-        merged.push(local);
-      }
-
+      let mergedOut: Project[] = [];
       setState((s) => {
+        localPreferredIds.length = 0;
+        const localById = new Map(s.projects.map((p) => [p.id, p]));
+        const merged: Project[] = [];
+        for (const pulled of pulledProjects) {
+          const local = localById.get(pulled.id);
+          if (!local) {
+            merged.push(pulled);
+            continue;
+          }
+          const localTime = Date.parse(local.updated_at) || 0;
+          const serverTime = Date.parse(pulled.updated_at) || 0;
+          // Local wins ties so newer-typed edits aren't clobbered on a focus pull.
+          if (localTime >= serverTime) {
+            // Keep the in-memory local (incl. unflushed edits); adopt the
+            // server's Drive link so the next write targets the right files.
+            merged.push({ ...local, drive: pulled.drive });
+            localPreferredIds.push(pulled.id);
+          } else {
+            merged.push(pulled);
+          }
+        }
+        for (const local of s.projects) {
+          if (pulledIds.has(local.id)) continue;
+          merged.push(local);
+        }
+        mergedOut = merged;
         const seenIds = new Set(merged.map((p) => p.id));
         return {
           ...s,
@@ -386,7 +387,7 @@ export default function QualitativeCodingDashboard() {
       // Queue writes for: (a) local-newer projects so server catches up,
       // (b) projects that need migration (no folderId yet).
       for (const id of localPreferredIds) queueWrite(id);
-      for (const p of localProjects) {
+      for (const p of mergedOut) {
         if (!p.drive || !p.drive.folderId) {
           queueWrite(p.id);
         }
