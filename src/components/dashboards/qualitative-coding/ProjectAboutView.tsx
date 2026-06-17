@@ -21,18 +21,27 @@ export default function ProjectAboutView({
   const [description, setDescription] = useState(project.description ?? '');
   const [aboutDraft, setAboutDraft] = useState(project.about ?? '');
   const [aboutMode, setAboutMode] = useState<'view' | 'edit'>(project.about ? 'view' : 'edit');
+  const [additionalText, setAdditionalText] = useState(project.additionalText ?? '');
 
   useEffect(() => {
     setName(project.name);
     setDescription(project.description ?? '');
     setAboutDraft(project.about ?? '');
     setAboutMode(project.about ? 'view' : 'edit');
+    setAdditionalText(project.additionalText ?? '');
   }, [project.id]);
+
+  // Keep the additional-text box in sync when an import writes into it while the
+  // Info view is open.
+  useEffect(() => {
+    setAdditionalText(project.additionalText ?? '');
+  }, [project.additionalText]);
 
   const isDirty =
     name.trim() !== project.name ||
     description !== (project.description ?? '') ||
-    aboutDraft !== (project.about ?? '');
+    aboutDraft !== (project.about ?? '') ||
+    additionalText !== (project.additionalText ?? '');
 
   const save = () => {
     const patch: Partial<Project> = {};
@@ -44,6 +53,9 @@ export default function ProjectAboutView({
     if (aboutDraft !== (project.about ?? '')) {
       patch.about = aboutDraft || undefined;
     }
+    if (additionalText !== (project.additionalText ?? '')) {
+      patch.additionalText = additionalText.trim() || undefined;
+    }
     if (Object.keys(patch).length > 0) onUpdate(patch);
   };
 
@@ -51,6 +63,7 @@ export default function ProjectAboutView({
     setName(project.name);
     setDescription(project.description ?? '');
     setAboutDraft(project.about ?? '');
+    setAdditionalText(project.additionalText ?? '');
   };
 
   return (
@@ -143,6 +156,40 @@ export default function ProjectAboutView({
             </div>
           )}
         </div>
+
+        <div className="mb-8">
+          <label className="flex items-start gap-2 text-[13px] text-slate-700 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={!!project.lowEffort}
+              onChange={(e) => onUpdate({ lowEffort: e.target.checked })}
+              className="mt-1 accent-blue-600"
+            />
+            <span>
+              <span className="font-semibold">Low-effort import mode</span>
+              <span className="block text-[11px] text-slate-500 mt-0.5">
+                When on, importing an AI themes JSON keeps quotes that can't be anchored to a document span
+                (paraphrases, or quotes with no <code>[D#]</code> source) as plain text under each theme, and
+                captures the file's <code>additional_text</code> into the box below — instead of dropping them.
+              </span>
+            </span>
+          </label>
+        </div>
+
+        {(project.lowEffort || additionalText) && (
+          <div className="mb-8">
+            <label className="block text-[10px] uppercase font-semibold tracking-[0.12em] text-slate-500 mb-2">
+              Additional text (unassigned import prose)
+            </label>
+            <textarea
+              value={additionalText}
+              onChange={(e) => setAdditionalText(e.target.value)}
+              placeholder="Captured on import — any prose from the AI output that didn't map to a theme (intro, summary, frequency tables, etc.). Editable."
+              rows={6}
+              className="w-full px-3 py-2 text-[13px] text-slate-800 border border-slate-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 resize-y leading-relaxed"
+            />
+          </div>
+        )}
 
         {isDirty && (
           <div className="mb-8 flex items-center gap-3">

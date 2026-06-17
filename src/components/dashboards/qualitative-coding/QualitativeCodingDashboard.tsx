@@ -1233,10 +1233,11 @@ export default function QualitativeCodingDashboard() {
   const onImportAIThemes = async (file: File) => {
     if (!activeProject) return;
     const projectId = activeProject.id;
+    const lowEffort = !!activeProject.lowEffort;
     try {
       const text = await readFileAsText(file);
       const parsed = parseAIThemesJson(text);
-      const result = buildThemesFromAI(activeProject, parsed, new Date().toISOString());
+      const result = buildThemesFromAI(activeProject, parsed, new Date().toISOString(), lowEffort);
 
       if (result.themes.length === 0) {
         window.alert(
@@ -1246,10 +1247,16 @@ export default function QualitativeCodingDashboard() {
       }
 
       const lines = [
-        `Import ${result.themes.length} theme${result.themes.length === 1 ? '' : 's'} into "${activeProject.name}"?`,
+        `Import ${result.themes.length} theme${result.themes.length === 1 ? '' : 's'} into "${activeProject.name}"?${lowEffort ? ' (low-effort mode)' : ''}`,
         '',
         `Quotes located and attached: ${result.matchedQuotes} of ${result.totalQuotes}`,
       ];
+      if (result.keptUnanchored > 0) {
+        lines.push(`Non-anchored quotes kept as text: ${result.keptUnanchored}`);
+      }
+      if (result.additionalText) {
+        lines.push('Captured "additional text" → saved to project Info.');
+      }
       if (result.unmatched.length > 0) {
         lines.push(`Quotes skipped (not found verbatim): ${result.unmatched.length}`);
         lines.push('');
@@ -1261,7 +1268,13 @@ export default function QualitativeCodingDashboard() {
       if (result.warnings.length > 0) lines.push('', ...result.warnings);
       if (!window.confirm(lines.join('\n'))) return;
 
-      updateActiveProject((p) => ({ ...p, themes: [...(p.themes ?? []), ...result.themes] }));
+      updateActiveProject((p) => ({
+        ...p,
+        themes: [...(p.themes ?? []), ...result.themes],
+        additionalText: result.additionalText
+          ? [p.additionalText, result.additionalText].filter(Boolean).join('\n\n---\n\n')
+          : p.additionalText,
+      }));
       queueWrite(projectId);
       setView('themes');
       if (result.themes[0]) setActiveThemeId(result.themes[0].id);

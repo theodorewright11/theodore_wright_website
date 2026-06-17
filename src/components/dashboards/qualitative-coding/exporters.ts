@@ -362,6 +362,14 @@ export function exportThemesRatingsJSON(project: Project): unknown {
           role: e.weight,
         });
       }
+      // Non-anchored quotes (low-effort imports): no doc span.
+      for (const eq of t.extraQuotes ?? []) {
+        supporting.push({
+          text: eq.text,
+          source: eq.source || '?',
+          role: eq.role ?? 'supporting',
+        });
+      }
       const r = t.rating ?? {};
       return {
         name: t.name,

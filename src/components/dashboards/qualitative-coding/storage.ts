@@ -104,6 +104,8 @@ export function coerceProject(p: any): Project {
     annotations: Array.isArray(p.annotations) ? p.annotations.map(coerceAnnotation) : [],
     themes: Array.isArray(p.themes) ? p.themes.map(coerceTheme) : [],
     folders: Array.isArray(p.folders) ? p.folders.filter((f: any) => typeof f === 'string') : [],
+    lowEffort: !!p.lowEffort,
+    additionalText: typeof p.additionalText === 'string' ? p.additionalText : undefined,
     created_at: p.created_at ?? new Date().toISOString(),
     updated_at: p.updated_at ?? new Date().toISOString(),
     drive:
@@ -178,6 +180,15 @@ function coerceTheme(t: any) {
     includeCodeIds: Array.isArray(t?.includeCodeIds)
       ? t.includeCodeIds.filter((s: any) => typeof s === 'string')
       : [],
+    extraQuotes: Array.isArray(t?.extraQuotes)
+      ? t.extraQuotes
+          .filter((q: any) => q && typeof q.text === 'string')
+          .map((q: any) => ({
+            text: q.text,
+            source: typeof q.source === 'string' ? q.source : undefined,
+            role: q.role === 'core' || q.role === 'supporting' ? q.role : undefined,
+          }))
+      : undefined,
     uncodedHighlights: Array.isArray(t?.uncodedHighlights)
       ? t.uncodedHighlights
           .filter(

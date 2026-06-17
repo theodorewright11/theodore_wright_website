@@ -287,6 +287,10 @@ function themeSupportingSpans(
     const doc = project.documents.find((d) => d.id === a.docId);
     out.push({ text: annText(a, doc?.text ?? ''), source: tag(a.docId), role: link.weight });
   }
+  // Non-anchored quotes (low-effort imports): no doc span, shown as plain text.
+  for (const eq of theme.extraQuotes ?? []) {
+    out.push({ text: eq.text, source: eq.source || '—', role: eq.role ?? 'supporting' });
+  }
   return out;
 }
 
@@ -983,6 +987,42 @@ function ThemeDetail({
           </div>
         )}
       </section>
+
+      {(theme.extraQuotes ?? []).length > 0 && (
+        <section className="mt-6 border border-dashed border-amber-300 rounded-lg bg-amber-50/40 overflow-hidden">
+          <header className="px-3 py-2 border-b border-amber-100 bg-amber-50">
+            <div className="text-[10px] uppercase tracking-wider font-semibold text-amber-700">
+              Extra quotes · {(theme.extraQuotes ?? []).length}
+            </div>
+            <div className="text-[11px] text-amber-700 italic mt-0.5">
+              Quotes that couldn't be anchored to a document span (paraphrases / no source). Kept from a
+              low-effort import; not highlighted on the text.
+            </div>
+          </header>
+          <ol className="divide-y divide-amber-100">
+            {(theme.extraQuotes ?? []).map((q, i) => (
+              <li key={i} className="px-3 py-2">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-[10px] uppercase font-semibold tracking-wider text-slate-400">
+                    {q.source || 'no source'}
+                  </span>
+                  {q.role && (
+                    <span className="text-[10px] uppercase font-semibold tracking-wider text-slate-400">
+                      {q.role}
+                    </span>
+                  )}
+                </div>
+                <blockquote
+                  className="text-[14px] text-slate-800 leading-relaxed border-l-2 border-amber-300 pl-3 whitespace-pre-wrap break-words"
+                  style={{ fontFamily: 'Georgia, Cambria, "Times New Roman", serif' }}
+                >
+                  {q.text}
+                </blockquote>
+              </li>
+            ))}
+          </ol>
+        </section>
+      )}
     </div>
   );
 }

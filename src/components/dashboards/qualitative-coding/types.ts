@@ -95,6 +95,16 @@ export type ThemeUncodedHighlight = {
   created_at: string;
 };
 
+// A quote attached to a theme that could NOT be anchored to a document span —
+// either a paraphrase (not verbatim) or one with no usable [D{n}] source. Only
+// kept on low-effort imports; shown as plain text under the theme, not as an
+// on-text highlight.
+export type ThemeExtraQuote = {
+  text: string;
+  source?: string;
+  role?: 'core' | 'supporting';
+};
+
 export type ThemeRating = {
   grounding?: 1 | 2 | 3 | 4 | 5;
   usefulness?: 1 | 2 | 3 | 4 | 5;
@@ -128,6 +138,9 @@ export type Theme = {
   includeCodeIds: string[];
   // Raw highlighted text added to the theme without an annotation backing it.
   uncodedHighlights?: ThemeUncodedHighlight[];
+  // Quotes that couldn't be anchored to a doc span (paraphrases / no source) —
+  // kept on low-effort imports so the evidence text isn't lost.
+  extraQuotes?: ThemeExtraQuote[];
   rating?: ThemeRating;
   created_at: string;
 };
@@ -144,6 +157,13 @@ export type Project = {
   annotations: Annotation[];
   themes?: Theme[];
   folders?: string[];
+  // Low-effort import mode: when on, AI-theme import keeps non-anchored quotes
+  // (paraphrases / no source) as theme `extraQuotes` and captures the import's
+  // `additional_text` into `additionalText` instead of discarding them.
+  lowEffort?: boolean;
+  // Leftover prose from an AI-theme import that didn't map to any theme
+  // (intro/summary/frequency tables, etc.). Surfaced in the Info view.
+  additionalText?: string;
   created_at: string;
   updated_at: string;
   drive?: DriveLink;

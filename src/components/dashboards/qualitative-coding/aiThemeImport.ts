@@ -17,7 +17,13 @@
 
 import { jsonrepair } from 'jsonrepair';
 import { cryptoRandomId } from './storage';
-import { PALETTE, type Project, type Theme, type ThemeUncodedHighlight } from './types';
+import {
+  PALETTE,
+  type Project,
+  type Theme,
+  type ThemeExtraQuote,
+  type ThemeUncodedHighlight,
+} from './types';
 
 // LLMs reliably break JSON when a verbatim quote contains a literal `"` (e.g.
 // `...the "experts"`), because they forget to escape it. Strict JSON.parse then
@@ -101,6 +107,10 @@ export type AIImportResult = {
   totalQuotes: number;
   unmatched: AIImportUnmatched[];
   warnings: string[];
+  additionalText?: string;
+  // In low-effort mode, how many non-anchored quotes were kept as extraQuotes
+  // (rather than reported as unmatched).
+  keptUnanchored: number;
 };
 
 // Pull the document index out of a source tag. Accepts "D4", "[D4]", "d4",
@@ -122,11 +132,15 @@ export function buildThemesFromAI(
   project: Project,
   raw: unknown,
   now: string,
+  lowEffort = false,
 ): AIImportResult {
   const warnings: string[] = [];
   const unmatched: AIImportUnmatched[] = [];
   let matchedQuotes = 0;
   let totalQuotes = 0;
+  let keptUnanchored = 0;
+
+  const additionalText = cleanField((raw as any)?.additional_text);
 
   const rawThemes: any[] = Array.isArray((raw as any)?.themes)
     ? (raw as any).themes
@@ -136,7 +150,15 @@ export function buildThemesFromAI(
 
   if (rawThemes.length === 0) {
     warnings.push('No "themes" array found in the file.');
-    return { themes: [], matchedQuotes: 0, totalQuotes: 0, unmatched, warnings };
+    return {
+      themes: [],
+      matchedQuotes: 0,
+      totalQuotes: 0,
+      unmatched,
+      warnings,
+      additionalText,
+      keptUnanchored: 0,
+    };
   }
 
   const existingCount = (project.themes ?? []).length;
@@ -147,6 +169,26 @@ export function buildThemesFromAI(
       typeof rt?.name === 'string' && rt.name.trim() ? rt.name.trim() : `Imported theme ${ti + 1}`;
     const quotes: any[] = Array.isArray(rt?.quotes) ? rt.quotes : [];
     const highlights: ThemeUncodedHighlight[] = [];
+    const extraQuotes: ThemeExtraQuote[] = [];
+
+    // A quote that can't be anchored: keep it as an extraQuote in low-effort
+    // mode (so paraphrases / sourceless quotes still show), otherwise report it.
+    const cannotAnchor = (
+      q: any,
+      text: string,
+      reason: string,
+    ) => {
+      if (lowEffort) {
+        keptUnanchored++;
+        extraQuotes.push({
+          text,
+          source: typeof q?.source === 'string' ? q.source : undefined,
+          role: q?.role === 'core' || q?.role === 'supporting' ? q.role : undefined,
+        });
+      } else {
+        unmatched.push({ themeName, source: String(q?.source ?? '?'), text, reason });
+      }
+    };
 
     for (const q of quotes) {
       totalQuotes++;
@@ -162,27 +204,17 @@ export function buildThemesFromAI(
       }
       const idx = resolveDocIndex(q?.source);
       if (idx === null) {
-        unmatched.push({ themeName, source: String(q?.source ?? '?'), text, reason: 'unreadable source tag' });
+        cannotAnchor(q, text, 'unreadable source tag');
         continue;
       }
       const doc = project.documents[idx];
       if (!doc) {
-        unmatched.push({
-          themeName,
-          source: String(q?.source ?? '?'),
-          text,
-          reason: `no document at index ${idx + 1}`,
-        });
+        cannotAnchor(q, text, `no document at index ${idx + 1}`);
         continue;
       }
       const start = doc.text.indexOf(text);
       if (start < 0) {
-        unmatched.push({
-          themeName,
-          source: String(q?.source ?? '?'),
-          text,
-          reason: `text not found verbatim in ${String(q?.source)}`,
-        });
+        cannotAnchor(q, text, `text not found verbatim in ${String(q?.source)}`);
         continue;
       }
       matchedQuotes++;
@@ -206,9 +238,10 @@ export function buildThemesFromAI(
       annotationLinks: [],
       includeCodeIds: [],
       uncodedHighlights: highlights,
+      extraQuotes: extraQuotes.length > 0 ? extraQuotes : undefined,
       created_at: now,
     });
   });
 
-  return { themes, matchedQuotes, totalQuotes, unmatched, warnings };
+  return { themes, matchedQuotes, totalQuotes, unmatched, warnings, additionalText, keptUnanchored };
 }
