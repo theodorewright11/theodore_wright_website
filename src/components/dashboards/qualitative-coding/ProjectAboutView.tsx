@@ -416,7 +416,7 @@ function RubricSection() {
                 ],
               },
               {
-                criterion: 'Usefulness',
+                criterion: 'Research question fit',
                 question: 'Does this theme contribute to answering the research question?',
                 anchors: [
                   '5 · directly addresses at appropriate depth; meaningfully advances the analysis',
@@ -430,7 +430,7 @@ function RubricSection() {
           />
 
           <RubricBlock
-            title="Theme relations (replaces Independence)"
+            title="Theme similarity (replaces Independence)"
             intro={
               <>
                 In the theme detail card, link a theme to others it overlaps. <strong>Related</strong> = says a similar thing (symmetric — rate once, applies both ways). <strong>Subsumes</strong> = this theme captures the other (directed; the other reads "subsumed by"). Each link carries a 1–5 similarity.
@@ -438,7 +438,7 @@ function RubricSection() {
             }
             rows={[
               {
-                criterion: 'Similarity (per relation)',
+                criterion: 'Similarity (per link)',
                 question: 'How similar are the two linked themes?',
                 anchors: [
                   '5 · essentially the same pattern',

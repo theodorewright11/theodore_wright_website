@@ -86,7 +86,7 @@ type AxisKey = keyof typeof RUBRIC;
 // Theme relations section), not a 1–5 score; prevalence is computed downstream.
 const AXES: { key: AxisKey; label: string; group: 'evaluative' | 'descriptive' }[] = [
   { key: 'grounding', label: 'Grounding', group: 'evaluative' },
-  { key: 'usefulness', label: 'Usefulness', group: 'evaluative' },
+  { key: 'usefulness', label: 'Research question fit', group: 'evaluative' },
   { key: 'interpretationLevel', label: 'Interpretation level', group: 'descriptive' },
   { key: 'aiPriorNovelty', label: 'AI prior novelty', group: 'descriptive' },
   { key: 'analyticalNovelty', label: 'Analytical novelty', group: 'descriptive' },
@@ -762,7 +762,7 @@ function ThemeDetail({
 
       <section className="mb-5">
         <div className="text-[10px] uppercase tracking-wider font-semibold text-slate-500 mb-2">
-          Theme relations
+          Theme similarity
         </div>
         <div className="space-y-1.5">
           {themeRelations

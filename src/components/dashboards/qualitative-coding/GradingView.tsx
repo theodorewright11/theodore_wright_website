@@ -329,7 +329,7 @@ function ThemesTable({
   // Only the hand-rated axes. Independence/Prevalence are computed downstream.
   const ratingHeaders: { key: ThemeSortKey; short: string; long: string }[] = [
     { key: 'grounding', short: 'G', long: 'Grounding' },
-    { key: 'usefulness', short: 'U', long: 'Usefulness' },
+    { key: 'usefulness', short: 'RQ', long: 'Research question fit' },
     { key: 'interpretationLevel', short: 'IL', long: 'Interpretation' },
     { key: 'aiPriorNovelty', short: 'PN', long: 'AI prior novelty' },
     { key: 'analyticalNovelty', short: 'AN', long: 'Analytical novelty' },

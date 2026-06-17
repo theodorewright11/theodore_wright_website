@@ -173,7 +173,7 @@ export function themesMarkdown(project: Project): string {
   // Summary table
   lines.push('## At a glance');
   lines.push('');
-  lines.push('| Theme | Grounding | Usefulness | Interp. | Prior nov. | Analytic nov. | Evidence |');
+  lines.push('| Theme | Grounding | RQ fit | Interp. | Prior nov. | Analytic nov. | Evidence |');
   lines.push('| --- | :-: | :-: | :-: | :-: | :-: | ---: |');
   const themeMap = new Map(themes.map((t) => [t.id, t]));
   const depthOf = (t: Theme): number => {
@@ -238,7 +238,7 @@ export function themesMarkdown(project: Project): string {
       const r = t.rating;
       const rows: [string, number | undefined][] = [
         ['Grounding', r.grounding],
-        ['Usefulness', r.usefulness],
+        ['Research question fit', r.usefulness],
         ['Interpretation level', r.interpretationLevel],
         ['AI prior novelty', r.aiPriorNovelty],
         ['Analytical novelty', r.analyticalNovelty],
@@ -380,17 +380,17 @@ export function exportThemesRatingsJSON(project: Project): unknown {
         reasoning: t.reasoning ?? null,
         ratings: {
           grounding: r.grounding ?? null,
-          usefulness: r.usefulness ?? null,
+          rqFit: r.usefulness ?? null,
           interpretationLevel: r.interpretationLevel ?? null,
           aiPriorNovelty: r.aiPriorNovelty ?? null,
           analyticalNovelty: r.analyticalNovelty ?? null,
           notes: r.notes ?? null,
         },
-        relations: (project.themeRelations ?? [])
+        similarities: (project.themeRelations ?? [])
           .filter((rel) => rel.from === t.id || rel.to === t.id)
           .map((rel) => {
             const otherId = rel.from === t.id ? rel.to : rel.from;
-            const relation =
+            const type =
               rel.type === 'related'
                 ? 'related'
                 : rel.from === t.id
@@ -398,7 +398,7 @@ export function exportThemesRatingsJSON(project: Project): unknown {
                   : 'subsumed-by';
             return {
               other: themeName.get(otherId) ?? null,
-              relation,
+              type,
               similarity: rel.similarity ?? null,
             };
           }),
@@ -448,7 +448,7 @@ export function exportProjectMarkdown(project: Project): string {
       const r = t.rating ?? {};
       const ratingBits: string[] = [];
       if (r.grounding) ratingBits.push(`G:${r.grounding}`);
-      if (r.usefulness) ratingBits.push(`U:${r.usefulness}`);
+      if (r.usefulness) ratingBits.push(`RQ:${r.usefulness}`);
       if (r.independence) ratingBits.push(`I:${r.independence}`);
       if (r.interpretationLevel) ratingBits.push(`Int:${r.interpretationLevel}`);
       if (r.prevalence) ratingBits.push(`P:${r.prevalence}`);
