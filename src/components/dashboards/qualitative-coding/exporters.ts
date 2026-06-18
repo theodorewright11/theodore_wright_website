@@ -314,13 +314,21 @@ export function themesMarkdown(project: Project): string {
         }
         lines.push('');
       }
-      // Non-anchored quotes kept from low-effort imports (no doc span).
+      // Non-anchored quotes kept from low-effort imports (paraphrases / no doc
+      // span). Role is optional here — only label it when present.
       if (extra.length > 0) {
         lines.push(`#### Extra quotes (${extra.length})`);
         lines.push('');
         for (const q of extra) {
-          const weightTag = q.role === 'core' ? '**Core**' : '_Supporting_';
-          lines.push(`- ${weightTag} · ${q.source || 'no source'}`);
+          const bits: string[] = [];
+          if (q.role) bits.push(q.role === 'core' ? '**Core**' : '_Supporting_');
+          bits.push(q.source || 'no source');
+          if ((q.possibleSources ?? []).length > 0) {
+            bits.push(
+              `possible: ${q.possibleSources!.map((p) => `${p.source} ${Math.round(p.score * 100)}%`).join(', ')}`,
+            );
+          }
+          lines.push(`- ${bits.join(' · ')}`);
           lines.push(`  > ${q.text.replace(/\n+/g, ' ').slice(0, 400)}`);
         }
         lines.push('');
@@ -381,7 +389,12 @@ export function exportThemesRatingsJSON(project: Project): unknown {
     project: project.name,
     exported_at: new Date().toISOString(),
     themes: themes.map((t) => {
-      const quotes: { text: string; source: string; role: 'core' | 'supporting' }[] = [];
+      const quotes: {
+        text: string;
+        source: string;
+        role: 'core' | 'supporting' | null;
+        possibleSources?: { source: string; score: number }[];
+      }[] = [];
       for (const h of t.uncodedHighlights ?? []) {
         const doc = project.documents.find((d) => d.id === h.docId);
         const text = (h.ranges ?? [])
@@ -397,12 +410,16 @@ export function exportThemesRatingsJSON(project: Project): unknown {
           role: e.weight,
         });
       }
-      // Non-anchored quotes (low-effort imports): no doc span.
+      // Non-anchored quotes (low-effort imports): no doc span. Role may be
+      // absent (kept as null, not forced to supporting); carry possible matches.
       for (const eq of t.extraQuotes ?? []) {
         quotes.push({
           text: eq.text,
           source: eq.source || '?',
-          role: eq.role ?? 'supporting',
+          role: eq.role ?? null,
+          ...(eq.possibleSources && eq.possibleSources.length > 0
+            ? { possibleSources: eq.possibleSources }
+            : {}),
         });
       }
       const r = t.rating ?? {};
