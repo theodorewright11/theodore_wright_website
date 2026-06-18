@@ -2959,14 +2959,14 @@ function EmptyDocPane({ onAdd, hasDocs }: { onAdd: () => void; hasDocs: boolean 
 }
 
 function slugFile(name: string): string {
-  // Preserve case + underscores so the download filename matches the project
-  // name (it's a join key for the SPUR pipeline). Only spaces and filename-
-  // unsafe punctuation collapse to '-'.
+  // Preserve case + underscores + dots + hyphens so the download filename
+  // matches the project name (it's a join key for the SPUR pipeline). Only
+  // spaces and filename-unsafe punctuation collapse to '-'.
   return (
     name
       .trim()
-      .replace(/[^a-zA-Z0-9_]+/g, '-')
-      .replace(/^-+|-+$/g, '')
+      .replace(/[^a-zA-Z0-9_.-]+/g, '-')
+      .replace(/^[-.]+|[-.]+$/g, '')
       .slice(0, 60) || 'project'
   );
 }

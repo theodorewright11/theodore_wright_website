@@ -348,17 +348,17 @@ export function exportThemesRatingsJSON(project: Project): unknown {
     project: project.name,
     exported_at: new Date().toISOString(),
     themes: themes.map((t) => {
-      const supporting: { text: string; source: string; role: 'core' | 'supporting' }[] = [];
+      const quotes: { text: string; source: string; role: 'core' | 'supporting' }[] = [];
       for (const h of t.uncodedHighlights ?? []) {
         const doc = project.documents.find((d) => d.id === h.docId);
         const text = (h.ranges ?? [])
           .map((r) => (doc?.text ?? '').slice(r.start, r.end))
           .join(' … ');
-        supporting.push({ text, source: tag(h.docId), role: h.weight });
+        quotes.push({ text, source: tag(h.docId), role: h.weight });
       }
       for (const e of evidenceForTheme(t, project)) {
         const doc = project.documents.find((d) => d.id === e.annotation.docId);
-        supporting.push({
+        quotes.push({
           text: annText(e.annotation, doc?.text ?? ''),
           source: tag(e.annotation.docId),
           role: e.weight,
@@ -366,7 +366,7 @@ export function exportThemesRatingsJSON(project: Project): unknown {
       }
       // Non-anchored quotes (low-effort imports): no doc span.
       for (const eq of t.extraQuotes ?? []) {
-        supporting.push({
+        quotes.push({
           text: eq.text,
           source: eq.source || '?',
           role: eq.role ?? 'supporting',
@@ -402,7 +402,7 @@ export function exportThemesRatingsJSON(project: Project): unknown {
               similarity: rel.similarity ?? null,
             };
           }),
-        supporting,
+        quotes,
       };
     }),
   };
