@@ -188,13 +188,16 @@ export function themesMarkdown(project: Project): string {
     }
     return d;
   };
+  const totalEvidence = (t: Theme): number =>
+    evidenceForTheme(t, project).length +
+    (t.uncodedHighlights?.length ?? 0) +
+    (t.extraQuotes?.length ?? 0);
   for (const t of themes) {
     const indent = '&nbsp;'.repeat(depthOf(t) * 4);
     const r = t.rating ?? {};
     const cell = (n?: number) => (n ? `${n}` : '—');
-    const ev = evidenceForTheme(t, project);
     lines.push(
-      `| ${indent}${depthOf(t) > 0 ? '↳ ' : ''}**${escapePipes(t.name)}** | ${cell(r.grounding)} | ${cell(r.usefulness)} | ${cell(r.interpretationLevel)} | ${cell(r.aiPriorNovelty)} | ${cell(r.analyticalNovelty)} | ${ev.length} |`,
+      `| ${indent}${depthOf(t) > 0 ? '↳ ' : ''}**${escapePipes(t.name)}** | ${cell(r.grounding)} | ${cell(r.usefulness)} | ${cell(r.interpretationLevel)} | ${cell(r.aiPriorNovelty)} | ${cell(r.analyticalNovelty)} | ${totalEvidence(t)} |`,
     );
   }
   lines.push('');
@@ -263,10 +266,13 @@ export function themesMarkdown(project: Project): string {
     }
 
     const ev = evidenceForTheme(t, project);
-    if (ev.length > 0) {
-      lines.push(`### Evidence (${ev.length})`);
+    const uncoded = t.uncodedHighlights ?? [];
+    const extra = t.extraQuotes ?? [];
+    const evTotal = ev.length + uncoded.length + extra.length;
+    if (evTotal > 0) {
+      lines.push(`### Evidence (${evTotal})`);
       lines.push('');
-      // Group by code path
+      // Coded evidence, grouped by code path.
       const byCode = new Map<string, typeof ev>();
       for (const e of ev) {
         const arr = byCode.get(e.annotation.codeId) ?? [];
@@ -289,6 +295,33 @@ export function themesMarkdown(project: Project): string {
           lines.push(`- ${weightTag}${sourceTag} · ${docTitle}`);
           lines.push(`  > ${text.slice(0, 400)}${text.length > 400 ? '…' : ''}`);
           if (a.note) lines.push(`  > _note: ${a.note.replace(/\n/g, ' ')}_`);
+        }
+        lines.push('');
+      }
+      // Uncoded quote highlights (e.g. AI-imported themes — evidence with no code).
+      if (uncoded.length > 0) {
+        lines.push(`#### Uncoded quotes (${uncoded.length})`);
+        lines.push('');
+        for (const h of uncoded) {
+          const doc = project.documents.find((d) => d.id === h.docId);
+          const text = (h.ranges ?? [])
+            .map((r) => (doc?.text ?? '').slice(r.start, r.end))
+            .join(' … ')
+            .replace(/\n+/g, ' ');
+          const weightTag = h.weight === 'core' ? '**Core**' : '_Supporting_';
+          lines.push(`- ${weightTag} · ${doc?.title ?? 'unknown doc'}`);
+          lines.push(`  > ${text.slice(0, 400)}${text.length > 400 ? '…' : ''}`);
+        }
+        lines.push('');
+      }
+      // Non-anchored quotes kept from low-effort imports (no doc span).
+      if (extra.length > 0) {
+        lines.push(`#### Extra quotes (${extra.length})`);
+        lines.push('');
+        for (const q of extra) {
+          const weightTag = q.role === 'core' ? '**Core**' : '_Supporting_';
+          lines.push(`- ${weightTag} · ${q.source || 'no source'}`);
+          lines.push(`  > ${q.text.replace(/\n+/g, ' ').slice(0, 400)}`);
         }
         lines.push('');
       }
