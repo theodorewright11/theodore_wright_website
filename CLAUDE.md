@@ -97,6 +97,8 @@ Raw outputs from each LLM iterate session live in `stage_outputs/<topic>/<stage>
 - A change touches multiple existing pages
 - The task is ambiguous about what artifact to produce
 
+**How to ask**: ask clarifying/decision questions as plain text in the chat. Do **not** use the interactive multiple-choice question UI — the user prefers to read and answer questions inline.
+
 ## Routine ops
 
 - **New essay**: `src/content/blog/<slug>.mdx` with frontmatter `tier: 'mine' | 'collab' | 'ai-led'`

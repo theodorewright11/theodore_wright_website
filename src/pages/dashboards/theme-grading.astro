@@ -1,0 +1,50 @@
+---
+import '../../styles/global.css';
+import ThemeGradingDashboard from '../../components/dashboards/theme-grading/ThemeGradingDashboard';
+
+const title = 'Theme Grading — Dashboards';
+const description =
+  'Rate AI-generated qualitative themes against a rubric, side by side, across runs.';
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content={description} />
+    <meta name="robots" content="noindex" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+    />
+    <title>{title}</title>
+    <style is:global>
+      html, body {
+        margin: 0;
+        padding: 0;
+        height: 100%;
+        background: #ffffff;
+        color: #0f172a;
+        font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        -webkit-font-smoothing: antialiased;
+        text-rendering: optimizeLegibility;
+      }
+      body {
+        overflow: hidden;
+      }
+      #tg-root {
+        height: 100vh;
+        width: 100vw;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="tg-root">
+      <ThemeGradingDashboard client:only="react" />
+    </div>
+  </body>
+</html>

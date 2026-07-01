@@ -45,15 +45,24 @@
 │   │   │   ├── time-tracker/            ← TimeTrackerDashboard.tsx (root, queue, googleAuth code-flow), Clock/Pomodoro/Log tabs,
 │   │   │   │                               WeekStrip/RatingRow/ActivityPicker/TimeStepper, AuthBar.tsx, notify.ts (chime + notification),
 │   │   │   │                               types.ts, compute.ts (pure), storage.ts (localStorage cache + CSV), sheets.ts (Sheets REST + ensureTabs)
-│   │   │   └── qualitative-coding/      ← QualitativeCodingDashboard.tsx (root, 6-view router, Drive sync queue, googleAuth code-flow).
-│   │   │                                   Views: DocumentViewer.tsx (+Notes panel), CodebookView.tsx, ThemesView.tsx, GradingView.tsx,
-│   │   │                                   ExploreView.tsx (cross-project filter+stats+co-occurrence), ProjectAboutView.tsx.
-│   │   │                                   Shared: CodeTree.tsx, HierarchicalCodePicker.tsx, CodeEditModal/AnnotationEditModal,
-│   │   │                                   ThemeMembershipEditor.tsx, MetadataSchemaEditor.tsx, ColorPicker.tsx, Resizable.tsx,
-│   │   │                                   Markdown.tsx (inline MD renderer + editor), AuthBar.tsx.
-│   │   │                                   types.ts, compute.ts (pure: tree + segments + color + lines + co-occurrence + explore),
-│   │   │                                   storage.ts (localStorage + JSON import/export), exporters.ts (JSON + Markdown: doc/codebook/themes/project),
-│   │   │                                   drive.ts (Drive Files REST + multipart), driveSync.ts (folder-per-project orchestrator)
+│   │   │   ├── qualitative-coding/      ← QualitativeCodingDashboard.tsx (root, 6-view router, Drive sync queue, googleAuth code-flow).
+│   │   │   │                               Views: DocumentViewer.tsx (+Notes panel), CodebookView.tsx, ThemesView.tsx, GradingView.tsx,
+│   │   │   │                               ExploreView.tsx (cross-project filter+stats+co-occurrence), ProjectAboutView.tsx.
+│   │   │   │                               Shared: CodeTree.tsx, HierarchicalCodePicker.tsx, CodeEditModal/AnnotationEditModal,
+│   │   │   │                               ThemeMembershipEditor.tsx, MetadataSchemaEditor.tsx, ColorPicker.tsx, Resizable.tsx,
+│   │   │   │                               Markdown.tsx (inline MD renderer + editor), AuthBar.tsx.
+│   │   │   │                               types.ts, compute.ts (pure: tree + segments + color + lines + co-occurrence + explore),
+│   │   │   │                               storage.ts (localStorage + JSON import/export), exporters.ts (JSON + Markdown: doc/codebook/themes/project),
+│   │   │   │                               drive.ts (Drive Files REST + multipart), driveSync.ts (folder-per-project orchestrator)
+│   │   │   └── theme-grading/           ← ThemeGradingDashboard.tsx (root, 3-view router, single-state Drive sync, googleAuth code-flow).
+│   │   │                                   Views: RunsView.tsx (corpus CSV upload + run creation/list), RateView.tsx (side-by-side theme
+│   │   │                                   cards, 6-axis 1–5/N-A scoring, rubric panel, pin-to-compare + pairwise similarity, doc modal),
+│   │   │                                   ExploreView.tsx (dimension/score filters + mean-by-dimension table + exports).
+│   │   │                                   types.ts, rubric.ts (axis definitions + level text — rubric source of truth), shared.tsx
+│   │   │                                   (ScoreButtons w/ N-A, chips, run labels), storage.ts (localStorage + CSV parse/export),
+│   │   │                                   themeImport.ts (anchors AI theme JSON to a corpus; reuses qual-coding's tolerant parseAIThemesJson),
+│   │   │                                   drive.ts (trimmed Drive REST, tag tw_theme_grading=v1), driveSync.ts (state.json + derived
+│   │   │                                   ratings/similarities CSVs; entity-level merge on pull), AuthBar.tsx
 │   │   └── ai-research/                 ← React components for AI-research stage visualizations
 │   │       ├── PsychVariationGraph.tsx  ← topology graph (force-directed via d3-force) — pan + wheel-zoom + reset
 │   │       ├── PsychVariationModel.tsx  ← model dashboard (variance decomposition + multivariate sex-difference tabs)
@@ -100,7 +109,8 @@
 │   │   │   ├── finance.astro            ← mounts FinanceDashboard with client:only="react"
 │   │   │   ├── emotional-wellbeing.astro
 │   │   │   ├── time-tracker.astro       ← mounts TimeTrackerDashboard with client:only="react"
-│   │   │   └── qualitative-coding.astro ← bypasses BaseLayout: own minimal HTML + white bg + Inter font + client:only QualitativeCodingDashboard
+│   │   │   ├── qualitative-coding.astro ← bypasses BaseLayout: own minimal HTML + white bg + Inter font + client:only QualitativeCodingDashboard
+│   │   │   └── theme-grading.astro      ← same pattern: minimal HTML + white bg + Inter + client:only ThemeGradingDashboard
 │   │   ├── bundle-mine.md.ts            ← /bundle-mine.md (writing + research + models + updates)
 │   │   ├── bundle-ai-research.md.ts     ← /bundle-ai-research.md (every AI-Research stage)
 │   │   ├── bundle-all.md.ts             ← /bundle-all.md (mine + ai-research concatenated)
@@ -320,7 +330,7 @@ To attach a paper to a research entry, set `paperUrl: '/papers/<slug>.pdf'` in t
 - Static for everything public
 - `/dashboards/*` will be protected by **Cloudflare Access** when those routes get built. No server code required — Cloudflare sits in front of the static deploy and challenges visitors to authenticate.
 
-### Google sign-in (Time Tracker, Qual Coding; Finance pending)
+### Google sign-in (Time Tracker, Qual Coding, Theme Grading; Finance pending)
 
 Auth uses the **OAuth 2.0 authorization-code flow with a refresh token**, backed by three Vercel serverless functions. This replaced the old GIS *implicit token flow*, whose silent refresh (`requestAccessToken({ prompt: 'none' })`) was permanently broken: it opens a popup to `accounts.google.com`, which sends `COOP: same-origin`, severing the opener's `window.closed` handle (Chrome: *"Cross-Origin-Opener-Policy policy would block the window.closed call"* → GIS `popup_closed`). No site-side header fixes this, because the boundary is set by Google's popup, not us — so silent refresh failed and forced a manual re-sign-in every hour.
 

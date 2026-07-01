@@ -112,7 +112,7 @@ Each dashboard ships in two tiers:
 
 **Private tier** exists only for dashboards where Teddy's actual data is the point (life metrics, ongoing trackers). Cloudflare Access in front, build-time data fetch from a private source.
 
-Dashboards: decision-helper (planned), finance, emotional-wellbeing, time-tracker, qualitative-coding.
+Dashboards: decision-helper (planned), finance, emotional-wellbeing, time-tracker, qualitative-coding, theme-grading.
 
 ### Per-dashboard product specs
 
@@ -291,6 +291,28 @@ A personal qualitative-coding tool: organize text documents into projects, build
 **Future (v3)**: inline `[span]{code}` rendering in per-document Markdown export. PDF import (PDF.js text extraction). Multi-code-per-span shorthand in the popover. Drive conflict resolution beyond "server wins on pull / client wins on write" (e.g. surface diffs when both sides have changed). Code-co-occurrence and intercoder-reliability stats in Explore.
 
 **Public-data conventions**: no source-document content is ever committed to the repo. The dashboard's only persistent stores are localStorage and the user's own Drive — both per-user. Coded transcripts stay in those stores; this is enforced by convention (no scripts read project state from disk).
+
+#### Theme Grading
+
+**Status**: v1 shipped, **public** (listed in the roster; data-isolated like Qualitative Coding — localStorage + the signed-in user's own Drive, no gate). Renders at `/dashboards/theme-grading`. Same app-style UI language as Qualitative Coding (white bg, Inter, bypasses `BaseLayout`).
+
+A dedicated rubric-rating tool for AI-generated qualitative themes — the fast-loop companion to the Qualitative Coding dashboard, built for the AI-positionality study (~48 runs × ~10 themes over a 160-comment corpus). Answers: *how do AI-generated themes score on the rubric across models, positionalities, research questions, and prompt conditions?*
+
+**Core unit: the Run** — one AI thematic-analysis output tagged with the study's independent variables: **model / positionality / research question / condition / repeat # / notes**. All free-text with datalist autocomplete from prior runs (condition pre-seeds: `no-data engineered`, `with-data non-engineered`, `with-data engineered`), so Explore can group/filter by exact value. Each run anchors its quotes against a shared **corpus**.
+
+**Three views** (top-bar toggle):
+
+- **Runs** — setup. Upload a data CSV (`id,text` columns; aliases like `data`/`comment`/`body` accepted; headerless fallback) → each row becomes a corpus document `D1…Dn` in row order (the `[D{n}]` join key). Multiple corpora supported (e.g. the 20-comment refinement set vs the 160). Create a run: paste/upload the AI themes JSON (same format as qual-coding's "import AI ↓": `{ themes: [{ name, definition, reasoning, quotes: [{ text, source, role }] }], additional_text? }`, tolerant parsing shared with that dashboard) + fill the metadata fields. Quotes are anchored verbatim to corpus docs; non-anchored quotes are always kept, with possible-source suggestions (normalized-substring / word-overlap ≥ 0.6). Run cards show metadata chips, rated-progress (`N/M rated`), and per-axis means; inline metadata editing + delete.
+- **Rate** — the rating workspace. Themes render as identical cards in a 1/2/3-column grid. Display toggles: definition / reasoning / quotes / sources / score hints. Each card carries six 1–5 **+ N/A** score strips — Grounding, Research question fit (evaluative); Interpretation level, AI prior novelty, Analytical novelty, Positionality influence (descriptive; the last marked **WIP** but fully functional) — plus a rating-notes field. A collapsible **rubric panel** shows every axis's question + all five level descriptions (accordion); with "score hints" on, level text also appears as button tooltips and beside the selected score. Clicking an anchored quote opens the source document in a modal with the span highlighted; possible-source tags open the candidate doc. **Pin** up to 3 themes into a compare strip (pins persist across run switches, so cross-run comparison works); every pinned pair gets a 1–5/N-A **Theme similarity** rating + notes, stored once per unordered pair.
+- **Explore** — the analysis view. Chip filters per dimension (model / positionality / RQ / condition) + per-axis score filters (any / 1–5 / N/A / unrated). A **mean-scores table** grouped by any dimension (means over numeric scores only; N/A counted separately). A theme table with all scores; clicking a theme jumps to it in Rate. Exports: `theme-grading.ratings.csv` (one row per theme with run metadata + all six scores — the analysis-ready artifact), `theme-grading.similarities.csv` (one row per rated pair), and a full-state JSON.
+
+**Rating semantics**: each axis is `1–5 | 'na' | unrated`. `N/A` is an explicit judgment ("this axis doesn't apply here"), distinct from unrated. A theme is "fully rated" when all six axes have a value. Rubric text lives in `rubric.ts` (source of truth for axis definitions and level descriptions).
+
+**Data model**: `Corpus { id, name, docs: [{ extId, text }] }` · `Run { id, corpusId, model, positionality, researchQuestion, condition, repeat?, notes?, themes, additionalText? }` · `RatedTheme { id, name, definition?, reasoning?, quotes: [{ text, source?, role?, anchor? (docIdx/start/end), possibleSources? }], rating }` · `SimilarityPair { themeA, themeB, similarity?, notes? }` (theme ids are global, so pairs span runs).
+
+**Persistence**: localStorage key `tw-theme-grading-v1`. **Drive sync** via the shared OAuth code-flow (`src/lib/googleAuth.ts`): one Drive folder **`Theme Grading`** (created inside `PUBLIC_THEME_GRADING_DRIVE_FOLDER_ID` if set, else My Drive root) holding `state.json` (canonical, app-tagged `tw_theme_grading=v1`) plus derived `ratings.csv` and `similarities.csv`. Debounced 800ms push of the whole state; pull on sign-in/focus with an **entity-level merge** (runs latest-wins by `updated_at`, local wins ties; corpora union; similarity pairs union; deletion tombstones on both sides).
+
+**Deliberately out of scope (v1)**: codes/annotations, editing theme text, sub-theme hierarchies, AI-assisted grading.
 
 ## Papers and PDFs
 

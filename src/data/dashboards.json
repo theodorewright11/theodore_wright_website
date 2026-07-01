@@ -29,5 +29,11 @@
     "title": "Qualitative Coding",
     "desc": "Personal qualitative-coding tool: nested code tree, per-doc metadata, interpretive themes, a grading rubric, a cross-project Explore view, Markdown notes, and Google Drive sync. Exports canonical JSON and Markdown for AI-comparison work.",
     "status": "in-progress"
+  },
+  {
+    "slug": "theme-grading",
+    "title": "Theme Grading",
+    "desc": "Dedicated rubric-rating tool for AI-generated qualitative themes: upload a data CSV and per-run theme JSON, rate six axes (1–5 or N/A) side by side with the rubric inline, pin themes for pairwise similarity, and explore mean scores across models, positionalities, research questions, and conditions. Google Drive sync + CSV export.",
+    "status": "in-progress"
   }
 ]
