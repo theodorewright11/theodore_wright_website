@@ -20,6 +20,7 @@ type Props = {
   onDeleteRun: (id: string) => void;
   onUpdateRunMeta: (id: string, patch: Partial<Run>) => void;
   onOpenRun: (id: string) => void;
+  onReanchorRun: (runId: string, corpusId: string) => { anchored: number; total: number };
 };
 
 export default function RunsView({
@@ -31,6 +32,7 @@ export default function RunsView({
   onDeleteRun,
   onUpdateRunMeta,
   onOpenRun,
+  onReanchorRun,
 }: Props) {
   return (
     <div className="flex-1 min-w-0 min-h-0 overflow-y-auto bg-white">
@@ -48,6 +50,7 @@ export default function RunsView({
           onDeleteRun={onDeleteRun}
           onUpdateRunMeta={onUpdateRunMeta}
           onOpenRun={onOpenRun}
+          onReanchorRun={onReanchorRun}
         />
       </div>
     </div>
@@ -96,7 +99,7 @@ function CorpusSection({
         </button>
         <span className="text-[11px] text-slate-400">
           columns: <code className="bg-slate-100 px-1 rounded">id</code>,{' '}
-          <code className="bg-slate-100 px-1 rounded">text</code> — row order sets the D-numbers
+          <code className="bg-slate-100 px-1 rounded">text</code> (row order sets the D-numbers)
         </span>
         <input
           ref={fileRef}
@@ -140,7 +143,7 @@ function CorpusSection({
                     onClick={() => setPreviewId(previewId === c.id ? null : c.id)}
                     className="text-[11px] text-slate-500 hover:text-slate-800 px-1.5 py-0.5 rounded hover:bg-slate-100 flex-shrink-0"
                   >
-                    {previewId === c.id ? 'hide' : 'preview'}
+                    {previewId === c.id ? 'Hide' : 'Preview'}
                   </button>
                   <button
                     type="button"
@@ -158,7 +161,7 @@ function CorpusSection({
                     }}
                     className="text-[11px] text-red-500 hover:text-red-700 px-1.5 py-0.5 rounded hover:bg-red-50 flex-shrink-0"
                   >
-                    delete
+                    Delete
                   </button>
                 </div>
                 {previewId === c.id && (
@@ -276,7 +279,7 @@ function NewRunSection({
         json,
       );
       setResult(
-        `Run created: ${r.themeCount} themes, ${r.anchoredQuotes}/${r.totalQuotes} quotes anchored.` +
+        `Run created: ${r.themeCount} themes, ${r.anchoredQuotes}/${r.totalQuotes} quotes found in data.` +
           (r.warnings.length > 0 ? ` ${r.warnings.join(' ')}` : ''),
       );
       setJson('');
@@ -296,7 +299,7 @@ function NewRunSection({
           onClick={() => setOpen((v) => !v)}
           className="px-3 py-1 text-[12px] font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-md transition-colors"
         >
-          {open ? 'close' : '+ add run'}
+          {open ? 'Close' : '+ Add run'}
         </button>
       </div>
       {open && (
@@ -305,7 +308,7 @@ function NewRunSection({
             <input
               value={name}
               onChange={(e) => applyName(e.target.value)}
-              placeholder="{model}_{promptvariant}_v{version}_{datasource}_{rq}_{positionality}_run{n}"
+              placeholder="{model}_{promptvariant}-v{version}_{datasource}_{rq}_{positionality}_run{n}"
               className={`${inputCls} font-mono`}
             />
           </Field>
@@ -315,7 +318,7 @@ function NewRunSection({
                 list="tg-models"
                 value={meta.model}
                 onChange={(e) => setField('model')(e.target.value)}
-                placeholder="claude, gpt"
+                placeholder="claude, chatgpt5.5, gemini"
                 className={inputCls}
               />
               <datalist id="tg-models">
@@ -329,7 +332,7 @@ function NewRunSection({
                 list="tg-prompt-variants"
                 value={meta.promptVariant}
                 onChange={(e) => setField('promptVariant')(e.target.value)}
-                placeholder="engineered_data"
+                placeholder="engineered-data"
                 className={inputCls}
               />
               <datalist id="tg-prompt-variants">
@@ -351,7 +354,7 @@ function NewRunSection({
                 list="tg-data-sources"
                 value={meta.dataSource}
                 onChange={(e) => setField('dataSource')(e.target.value)}
-                placeholder="160_als_comments"
+                placeholder="160-als-comments"
                 className={inputCls}
               />
               <datalist id="tg-data-sources">
@@ -365,7 +368,7 @@ function NewRunSection({
                 list="tg-rqs"
                 value={meta.rq}
                 onChange={(e) => setField('rq')(e.target.value)}
-                placeholder="policy"
+                placeholder="rq1"
                 className={inputCls}
               />
               <datalist id="tg-rqs">
@@ -379,7 +382,7 @@ function NewRunSection({
                 list="tg-positionalities"
                 value={meta.positionality}
                 onChange={(e) => setField('positionality')(e.target.value)}
-                placeholder="neutral, patient, fda, researcher"
+                placeholder="p1"
                 className={inputCls}
               />
               <datalist id="tg-positionalities">
@@ -433,7 +436,7 @@ function NewRunSection({
                 onClick={() => jsonFileRef.current?.click()}
                 className="px-2.5 py-1.5 text-[11px] font-semibold text-slate-600 border border-slate-300 rounded-md hover:bg-slate-100 flex-shrink-0"
               >
-                upload .json
+                Upload .json
               </button>
               <input
                 ref={jsonFileRef}
@@ -496,13 +499,16 @@ function RunListSection({
   onDeleteRun,
   onUpdateRunMeta,
   onOpenRun,
+  onReanchorRun,
 }: {
   state: AppState;
   onDeleteRun: (id: string) => void;
   onUpdateRunMeta: (id: string, patch: Partial<Run>) => void;
   onOpenRun: (id: string) => void;
+  onReanchorRun: (runId: string, corpusId: string) => { anchored: number; total: number };
 }) {
   const [editId, setEditId] = useState<string | null>(null);
+  const [reanchorReport, setReanchorReport] = useState<Record<string, string>>({});
 
   const runs = useMemo(
     () =>
@@ -519,7 +525,7 @@ function RunListSection({
         <div className="text-[13px] text-slate-400 italic border border-dashed border-slate-200 rounded-lg p-6 text-center">
           No runs yet. Add one above — each run is one AI output (≤10 themes) named{' '}
           <code className="text-[11px] bg-slate-100 px-1 rounded">
-            {'{model}_{promptvariant}_v{version}_{datasource}_{rq}_{positionality}_run{n}'}
+            {'{model}_{promptvariant}-v{version}_{datasource}_{rq}_{positionality}_run{n}'}
           </code>
           .
         </div>
@@ -559,7 +565,7 @@ function RunListSection({
                       : 'text-slate-500'
                   }`}
                 >
-                  {rated}/{run.themes.length} rated
+                  {rated}/{run.themes.length} Rated
                 </span>
               </div>
               <div className="mt-1 flex items-center gap-1.5 flex-wrap">
@@ -567,38 +573,45 @@ function RunListSection({
                 {run.promptVariant && <Chip label={run.promptVariant} />}
                 {run.version && <Chip label={`v${run.version}`} />}
                 {run.dataSource && <Chip label={run.dataSource} tone="amber" />}
-                {run.rq && <Chip label={`rq: ${run.rq}`} />}
+                {run.rq && <Chip label={run.rq} />}
                 {run.positionality && <Chip label={run.positionality} />}
-                {run.runN && <Chip label={`run ${run.runN}`} />}
-                {corpus && <Chip label={`↳ ${corpus}`} tone="amber" />}
+                {run.runN && <Chip label={`run${run.runN}`} />}
+                {corpus && <Chip label={corpus} tone="amber" />}
               </div>
-              {means.length > 0 && (
-                <div className="mt-1 text-[10px] font-mono text-slate-400">
-                  {means.map((m) => `${m.k} ${m.v!.toFixed(1)}`).join(' · ')}
-                </div>
-              )}
+              <div className="mt-1 text-[10px] font-mono text-slate-400">
+                {(() => {
+                  const total = run.themes.reduce((s, t) => s + t.quotes.length, 0);
+                  const inData = run.themes.reduce(
+                    (s, t) => s + t.quotes.filter((q) => q.anchor).length,
+                    0,
+                  );
+                  const parts = [`${inData}/${total} quotes in data`];
+                  for (const m of means) parts.push(`${m.k} ${m.v!.toFixed(1)}`);
+                  return parts.join(' · ');
+                })()}
+              </div>
               <div className="mt-1.5 flex items-center gap-2">
                 <button
                   type="button"
                   onClick={() => onOpenRun(run.id)}
                   className="px-2.5 py-1 text-[11px] font-semibold text-white bg-slate-900 hover:bg-slate-700 rounded transition-colors"
                 >
-                  Rate →
+                  Rate
                 </button>
                 <button
                   type="button"
                   onClick={() => downloadJSON(runExportFilename(run), runThemesRatingsJSON(run, state))}
                   className="px-2 py-1 text-[11px] font-semibold text-slate-600 border border-slate-300 rounded hover:bg-slate-100 transition-colors"
-                  title="download this run's themes + ratings as JSON"
+                  title="Download this run's themes + ratings as JSON"
                 >
-                  export ↓
+                  Export
                 </button>
                 <button
                   type="button"
                   onClick={() => setEditId(editId === run.id ? null : run.id)}
                   className="px-2 py-1 text-[11px] text-slate-500 hover:text-slate-800 rounded hover:bg-slate-100"
                 >
-                  {editId === run.id ? 'close' : 'edit'}
+                  {editId === run.id ? 'Close' : 'Edit'}
                 </button>
                 <button
                   type="button"
@@ -607,10 +620,48 @@ function RunListSection({
                   }}
                   className="px-2 py-1 text-[11px] text-red-500 hover:text-red-700 rounded hover:bg-red-50 ml-auto"
                 >
-                  delete
+                  Delete
                 </button>
               </div>
               {editId === run.id && (
+                <>
+                <div className="mt-2 flex items-end gap-2 flex-wrap border-t border-slate-100 pt-2">
+                  <Field label="Anchor against">
+                    <select
+                      value={run.corpusId ?? ''}
+                      onChange={(e) =>
+                        onUpdateRunMeta(run.id, { corpusId: e.target.value || null })
+                      }
+                      className={inputCls}
+                    >
+                      <option value="">— none —</option>
+                      {state.corpora.map((c) => (
+                        <option key={c.id} value={c.id}>
+                          {c.name} ({c.docs.length} docs)
+                        </option>
+                      ))}
+                    </select>
+                  </Field>
+                  <button
+                    type="button"
+                    disabled={!run.corpusId}
+                    onClick={() => {
+                      if (!run.corpusId) return;
+                      const r = onReanchorRun(run.id, run.corpusId);
+                      setReanchorReport((m) => ({
+                        ...m,
+                        [run.id]: `${r.anchored}/${r.total} quotes found in data.`,
+                      }));
+                    }}
+                    className="px-2.5 py-1.5 text-[11px] font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-md transition-colors disabled:opacity-40"
+                    title="Match every quote against the selected data again"
+                  >
+                    Re-match quotes
+                  </button>
+                  {reanchorReport[run.id] && (
+                    <span className="text-[11px] text-emerald-700">{reanchorReport[run.id]}</span>
+                  )}
+                </div>
                 <div className="mt-2 grid grid-cols-2 md:grid-cols-4 gap-2 border-t border-slate-100 pt-2">
                   <Field label="Model">
                     <input
@@ -673,6 +724,7 @@ function RunListSection({
                     />
                   </Field>
                 </div>
+                </>
               )}
             </li>
           );

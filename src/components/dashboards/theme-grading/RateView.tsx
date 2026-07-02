@@ -18,7 +18,6 @@ type Props = {
   onToggleDisplay: (
     key: 'showDefinition' | 'showReasoning' | 'showQuotes' | 'showQuoteSources' | 'showRubricHints',
   ) => void;
-  onSetColumns: (n: 1 | 2 | 3) => void;
   onFocusHandled: () => void;
 };
 
@@ -34,7 +33,6 @@ export default function RateView({
   onSetSimilarityNotes,
   onRemoveSimilarity,
   onToggleDisplay,
-  onSetColumns,
   onFocusHandled,
 }: Props) {
   const [rubricOpen, setRubricOpen] = useState(false);
@@ -67,18 +65,16 @@ export default function RateView({
   };
 
   const shownIds = shownRuns.map((r) => r.id);
-  const addableRuns = state.runs.filter((r) => !shownIds.includes(r.id));
 
   const singleRun = shownRuns.length === 1;
-  const cols = state.rateColumns ?? 2;
-  const singleGridCls =
-    cols === 1 ? 'grid-cols-1' : cols === 2 ? 'grid-cols-1 lg:grid-cols-2' : 'grid-cols-1 lg:grid-cols-3';
   const runGridCls =
     shownRuns.length <= 1
       ? 'grid-cols-1'
       : shownRuns.length === 2
         ? 'grid-cols-1 lg:grid-cols-2'
-        : 'grid-cols-1 lg:grid-cols-3';
+        : shownRuns.length === 3
+          ? 'grid-cols-1 lg:grid-cols-3'
+          : 'grid-cols-1 lg:grid-cols-4';
 
   const cardProps = {
     state,
@@ -103,23 +99,23 @@ export default function RateView({
           <span className="text-[11px] uppercase tracking-wider font-semibold text-slate-500">
             Runs
           </span>
-          {shownRuns.map((r) => (
+          {shownRuns.map((r, i) => (
             <span
-              key={r.id}
+              key={`${r.id}:${i}`}
               className="inline-flex items-center gap-1.5 pl-2.5 pr-1.5 py-1 bg-white border border-slate-300 rounded-md text-[11px] font-mono text-slate-700 max-w-[380px]"
             >
               <span className="truncate">{buildRunName(r)}</span>
               <button
                 type="button"
-                onClick={() => onSetRateRuns(shownIds.filter((id) => id !== r.id))}
+                onClick={() => onSetRateRuns(shownIds.filter((_, j) => j !== i))}
                 className="text-slate-400 hover:text-red-600 font-sans font-semibold px-0.5"
-                title="remove from view"
+                title="Remove from view"
               >
                 ×
               </button>
             </span>
           ))}
-          {shownRuns.length < 3 && addableRuns.length > 0 && (
+          {shownRuns.length < 4 && state.runs.length > 0 && (
             <select
               value=""
               onChange={(e) => {
@@ -127,33 +123,13 @@ export default function RateView({
               }}
               className="px-2 py-1 text-[11px] border border-dashed border-slate-300 rounded-md bg-white text-slate-500 outline-none max-w-[280px]"
             >
-              <option value="">+ show run…</option>
-              {addableRuns.map((r) => (
+              <option value="">+ Show run…</option>
+              {state.runs.map((r) => (
                 <option key={r.id} value={r.id}>
                   {buildRunName(r)}
                 </option>
               ))}
             </select>
-          )}
-
-          {singleRun && (
-            <div className="inline-flex rounded-md border border-slate-300 overflow-hidden">
-              {([1, 2, 3] as const).map((n) => (
-                <button
-                  key={n}
-                  type="button"
-                  onClick={() => onSetColumns(n)}
-                  title={`${n} column${n === 1 ? '' : 's'}`}
-                  className={`px-2.5 py-1 text-[11px] font-semibold ${
-                    cols === n
-                      ? 'bg-slate-900 text-white'
-                      : 'text-slate-600 hover:bg-slate-100 border-l border-slate-200 first:border-l-0'
-                  }`}
-                >
-                  {n}
-                </button>
-              ))}
-            </div>
           )}
 
           <div className="flex items-center gap-2.5 text-[11px] text-slate-600 flex-wrap ml-auto">
@@ -180,14 +156,14 @@ export default function RateView({
 
         {shownRuns.length === 0 ? (
           <div className="text-[13px] text-slate-400 italic border border-dashed border-slate-300 rounded-lg p-10 text-center bg-white">
-            No run shown. Pick one with “+ show run…” above, or create one in the Runs tab.
+            No run shown. Pick one with “+ Show run…” above, or create one in the Runs tab.
           </div>
         ) : (
           <div className={`grid gap-4 ${runGridCls} items-start`}>
-            {shownRuns.map((run) => (
-              <div key={run.id} className="min-w-0">
+            {shownRuns.map((run, i) => (
+              <div key={`${run.id}:${i}`} className="min-w-0">
                 <RunHeader run={run} corpusName={run.corpusId ? corpusById.get(run.corpusId)?.name : undefined} />
-                <div className={`grid gap-3 ${singleRun ? singleGridCls : 'grid-cols-1'}`}>
+                <div className={`grid gap-3 ${singleRun ? 'grid-cols-1 lg:grid-cols-2' : 'grid-cols-1'}`}>
                   {run.themes.map((t) => (
                     <ThemeCard key={t.id} theme={t} run={run} {...cardProps} />
                   ))}
@@ -242,7 +218,7 @@ function RunHeader({ run, corpusName }: { run: Run; corpusName?: string }) {
               : 'text-slate-500'
           }`}
         >
-          {rated}/{run.themes.length} rated
+          {rated}/{run.themes.length} Rated
         </span>
       </div>
       <div className="mt-1 flex items-center gap-1.5 flex-wrap">
@@ -250,10 +226,10 @@ function RunHeader({ run, corpusName }: { run: Run; corpusName?: string }) {
         {run.promptVariant && <Chip label={run.promptVariant} />}
         {run.version && <Chip label={`v${run.version}`} />}
         {run.dataSource && <Chip label={run.dataSource} tone="amber" />}
-        {run.rq && <Chip label={`rq: ${run.rq}`} />}
+        {run.rq && <Chip label={run.rq} />}
         {run.positionality && <Chip label={run.positionality} />}
-        {run.runN && <Chip label={`run ${run.runN}`} />}
-        {corpusName && <Chip label={`↳ ${corpusName}`} tone="amber" />}
+        {run.runN && <Chip label={`run${run.runN}`} />}
+        {corpusName && <Chip label={corpusName} tone="amber" />}
       </div>
     </div>
   );
@@ -433,7 +409,7 @@ function ThemeCard({
       {state.showQuotes !== false && theme.quotes.length > 0 && (
         <div className="mt-2">
           <div className="text-[10px] uppercase tracking-wider font-semibold text-slate-400 mb-1">
-            Quotes ({theme.quotes.filter((q) => q.anchor).length}/{theme.quotes.length} anchored)
+            Quotes ({theme.quotes.filter((q) => q.anchor).length}/{theme.quotes.length} in data)
           </div>
           <ul className="space-y-1">
             {theme.quotes.map((q, i) => (
@@ -445,7 +421,7 @@ function ThemeCard({
                   className={`text-left italic break-words ${
                     q.anchor ? 'hover:bg-blue-50 rounded cursor-pointer' : 'cursor-default'
                   }`}
-                  title={q.anchor ? 'open source document' : 'not found verbatim in the data'}
+                  title={q.anchor ? 'Open source document' : 'Not found in the data'}
                 >
                   “{q.text}”
                 </button>
@@ -456,8 +432,8 @@ function ThemeCard({
                         className={`font-mono text-[10px] ${q.anchor ? 'text-emerald-600' : 'text-slate-400'}`}
                         title={
                           q.anchor
-                            ? 'anchored: found verbatim in this document'
-                            : 'not anchored: text not found verbatim in this document'
+                            ? 'Found in this document'
+                            : 'Not found in this document (✗) — paraphrase or wrong source tag'
                         }
                       >
                         {q.source}
@@ -511,9 +487,17 @@ function ThemeCard({
                   onChange={(nv) => onSetScore(run.id, theme.id, a.key, nv)}
                 />
               </div>
-              {state.showRubricHints && typeof v === 'number' && (
-                <div className="mt-0.5 ml-[150px] text-[10px] text-slate-500 leading-snug">
-                  {a.levels[5 - v]}
+              {state.showRubricHints && (
+                <div className="mt-0.5 ml-[150px] text-[10px] leading-snug">
+                  {typeof v === 'number' ? (
+                    <span className="text-slate-600">
+                      <span className="font-semibold">{v}:</span> {a.levels[5 - v]}
+                    </span>
+                  ) : v === 'na' ? (
+                    <span className="text-slate-400 italic">Marked not applicable.</span>
+                  ) : (
+                    <span className="text-slate-400 italic">{a.question}</span>
+                  )}
                 </div>
               )}
             </div>
@@ -524,7 +508,7 @@ function ThemeCard({
           <input
             value={theme.rating.notes ?? ''}
             onChange={(e) => onSetRatingNotes(run.id, theme.id, e.target.value)}
-            placeholder="rating notes"
+            placeholder="Rating notes"
             className="flex-1 px-1.5 py-0.5 text-[11px] border border-slate-200 rounded outline-none focus:border-blue-400 min-w-0"
           />
         </div>
@@ -560,14 +544,14 @@ function ThemeCard({
             <input
               value={pair.notes ?? ''}
               onChange={(e) => onSetSimilarityNotes(theme.id, otherId, e.target.value)}
-              placeholder="notes"
+              placeholder="Notes"
               className="px-1.5 py-0.5 text-[10px] border border-slate-200 rounded w-[90px] outline-none focus:border-blue-400"
             />
             <button
               type="button"
               onClick={() => onRemoveSimilarity(theme.id, otherId)}
               className="text-slate-300 hover:text-red-600 text-[12px] leading-none px-0.5"
-              title="remove similarity link"
+              title="Remove similarity link"
             >
               ×
             </button>
@@ -581,7 +565,7 @@ function ThemeCard({
             }}
             className="w-full px-1.5 py-1 text-[11px] border border-dashed border-slate-300 rounded bg-white text-slate-500 outline-none"
           >
-            <option value="">+ compare with…</option>
+            <option value="">+ Compare with…</option>
             {candidates.map((c) => (
               <option key={c.id} value={c.id}>
                 {c.label}

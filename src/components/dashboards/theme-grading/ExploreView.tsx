@@ -158,7 +158,7 @@ export default function ExploreView({
                 }}
                 className="text-[11px] text-slate-500 hover:text-slate-800 px-1.5 py-0.5 rounded hover:bg-slate-100"
               >
-                clear all
+                Clear all
               </button>
             )}
             <span className="ml-auto text-[11px] text-slate-500 font-mono">
@@ -297,9 +297,9 @@ export default function ExploreView({
           <div className="flex items-center gap-2 mb-2">
             <h2 className="font-bold text-[15px] text-slate-900">Themes</h2>
             <div className="ml-auto flex items-center gap-2">
-              <ExportBtn label="ratings.csv" onClick={onExportRatingsCSV} />
-              <ExportBtn label="similarities.csv" onClick={onExportSimilaritiesCSV} />
-              <ExportBtn label="full .json" onClick={onExportJSON} />
+              <ExportBtn label="Ratings .csv" onClick={onExportRatingsCSV} />
+              <ExportBtn label="Similarities .csv" onClick={onExportSimilaritiesCSV} />
+              <ExportBtn label="Full .json" onClick={onExportJSON} />
             </div>
           </div>
           {rows.length === 0 ? (
@@ -381,7 +381,7 @@ function ExportBtn({ label, onClick }: { label: string; onClick: () => void }) {
       onClick={onClick}
       className="px-2.5 py-1 text-[11px] font-semibold text-slate-600 border border-slate-300 rounded-md hover:bg-slate-100 transition-colors"
     >
-      {label} ↓
+      {label}
     </button>
   );
 }

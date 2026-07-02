@@ -23,7 +23,7 @@ import {
   saveState,
   similaritiesCSV,
 } from './storage';
-import { buildThemesFromImport, parseAIThemesJson } from './themeImport';
+import { buildThemesFromImport, parseAIThemesJson, reanchorThemes } from './themeImport';
 import type { AppState, AxisScore, Run, View } from './types';
 
 const GOOGLE_CLIENT_ID = (import.meta as any).env?.PUBLIC_GOOGLE_CLIENT_ID as string | undefined;
@@ -72,13 +72,13 @@ export default function ThemeGradingDashboard() {
     return ids
       .map((id) => state.runs.find((r) => r.id === id))
       .filter((r): r is Run => !!r)
-      .slice(0, 3);
+      .slice(0, 4);
   }, [state.rateRunIds, state.activeRunId, state.runs]);
 
   const setRateRuns = (ids: string[]) =>
     setState((s) => ({
       ...s,
-      rateRunIds: ids.slice(0, 3),
+      rateRunIds: ids.slice(0, 4),
       activeRunId: ids[0] ?? s.activeRunId,
     }));
 
@@ -331,6 +331,22 @@ export default function ThemeGradingDashboard() {
       runs: s.runs.map((r) => (r.id === id ? touchRun({ ...r, ...patch }) : r)),
     }));
 
+  // Re-run quote↔data matching for an existing run (e.g. after uploading the
+  // data it should have pointed at). Ratings and theme ids are preserved.
+  const reanchorRun = (runId: string, corpusId: string) => {
+    const corpus = state.corpora.find((c) => c.id === corpusId);
+    const run = state.runs.find((r) => r.id === runId);
+    if (!corpus || !run) return { anchored: 0, total: 0 };
+    const result = reanchorThemes(run.themes, corpus);
+    mutate((s) => ({
+      ...s,
+      runs: s.runs.map((r) =>
+        r.id === runId ? touchRun({ ...r, corpusId, themes: result.themes }) : r,
+      ),
+    }));
+    return { anchored: result.anchoredQuotes, total: result.totalQuotes };
+  };
+
   const setScore = (runId: string, themeId: string, axis: AxisDef['key'], v: AxisScore | undefined) =>
     mutate((s) => ({
       ...s,
@@ -415,7 +431,7 @@ export default function ThemeGradingDashboard() {
   const jumpToTheme = (runId: string, themeId: string) => {
     setState((s) => {
       const shown = s.rateRunIds ?? (s.activeRunId ? [s.activeRunId] : []);
-      const nextShown = shown.includes(runId) ? shown : [...shown, runId].slice(-3);
+      const nextShown = shown.includes(runId) ? shown : [...shown, runId].slice(-4);
       return { ...s, rateRunIds: nextShown, activeRunId: runId, view: 'rate' };
     });
     setFocusThemeId(themeId);
@@ -452,9 +468,6 @@ export default function ThemeGradingDashboard() {
             </button>
           ))}
         </div>
-        <span className="text-[11px] text-slate-400 hidden md:inline">
-          rate AI-generated themes against the rubric, across runs
-        </span>
         <div className="ml-auto flex items-center gap-2">
           <AuthBar
             configured={!!GOOGLE_CLIENT_ID}
@@ -483,6 +496,7 @@ export default function ThemeGradingDashboard() {
           onOpenRun={(id) =>
             setState((s) => ({ ...s, rateRunIds: [id], activeRunId: id, view: 'rate' }))
           }
+          onReanchorRun={reanchorRun}
         />
       )}
       {view === 'rate' && (
@@ -506,7 +520,6 @@ export default function ThemeGradingDashboard() {
               return { ...s, [key]: !current };
             })
           }
-          onSetColumns={(n) => setState((s) => ({ ...s, rateColumns: n }))}
           onFocusHandled={() => setFocusThemeId(null)}
         />
       )}

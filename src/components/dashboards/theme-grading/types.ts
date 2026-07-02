@@ -63,18 +63,18 @@ export type RatedTheme = {
 // One AI thematic-analysis output plus the study dimensions it was run under.
 // The dimension fields are free strings (with autocomplete from prior runs) so
 // Explore can group/filter by exact value. They follow the study's run-naming
-// convention — {model}_{promptVariant}_v{version}_{dataSource}_{rq}_{positionality}_run{n}
+// convention — {model}_{promptVariant}-v{version}_{dataSource}_{rq}_{positionality}_run{n}
 // — and a full name pasted into the New-run form autofills them (runName.ts).
 export type Run = {
   id: string;
   corpusId: string | null;
-  model: string;
-  promptVariant: string; // engineered_data | engineered_no_data | not_engineered_data
-  version: string; // prompt version, the v{n} token
-  dataSource: string; // e.g. 20_als_comments, 160_als_comments
-  rq: string; // research-question shorthand
-  positionality: string;
-  runN?: string; // repeat # for stochasticity checks, the run{n} token
+  model: string; // chatgpt5.5 | claude | gemini | human-teddy | …
+  promptVariant: string; // engineered-data | engineered-no-data | not-engineered-data | na
+  version: string; // the -v{n} token attached to the prompt variant
+  dataSource: string; // e.g. 20-als-comments, 160-als-comments, na
+  rq: string; // research-question shorthand (rq1, rq2, …)
+  positionality: string; // p1, p2, …
+  runN?: string; // consistency-measurement repeat, the run{n} token
   notes?: string;
   themes: RatedTheme[];
   // Top-level prose from the import that didn't map to a theme.
@@ -110,7 +110,8 @@ export type AppState = {
   runs: Run[];
   similarities: SimilarityPair[];
   activeRunId: string | null;
-  // Runs shown side by side in the Rate view (one column each, max 3).
+  // Runs shown side by side in the Rate view (one column each, max 4;
+  // duplicates allowed so a run can be compared against itself).
   rateRunIds?: string[];
   view?: View;
   // Rate-view display toggles
@@ -119,7 +120,6 @@ export type AppState = {
   showQuotes?: boolean;
   showQuoteSources?: boolean;
   showRubricHints?: boolean;
-  rateColumns?: 1 | 2 | 3;
   // Tombstones so a Drive pull doesn't resurrect deleted entities.
   deletedRunIds?: string[];
   deletedCorpusIds?: string[];
@@ -136,13 +136,16 @@ export const AXIS_KEYS: AxisKey[] = [
   'positionalityInfluence',
 ];
 
-// Known prompt-variant values (free text; these seed the autocomplete and let
-// the run-name parser anchor on them).
+// Known prompt-variant values (free text; these seed the autocomplete). The
+// version rides in the run name attached with a hyphen (engineered-data-v2);
+// `na` is the human reference set (no prompt).
 export const PROMPT_VARIANTS = [
-  'engineered_data',
-  'engineered_no_data',
-  'not_engineered_data',
+  'engineered-data',
+  'engineered-no-data',
+  'not-engineered-data',
+  'na',
 ];
 
 // Data-source suggestions (free text; grows as transcripts etc. come in).
-export const DATA_SOURCE_SUGGESTIONS = ['20_als_comments', '160_als_comments'];
+// `na` for no-data runs.
+export const DATA_SOURCE_SUGGESTIONS = ['20-als-comments', '160-als-comments', 'na'];

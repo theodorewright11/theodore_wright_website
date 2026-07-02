@@ -25,7 +25,6 @@ const empty: AppState = {
   showQuotes: true,
   showQuoteSources: true,
   showRubricHints: false,
-  rateColumns: 2,
   deletedRunIds: [],
   deletedCorpusIds: [],
 };
@@ -72,7 +71,7 @@ export function coerceState(p: any): AppState {
       : [],
     activeRunId: typeof p.activeRunId === 'string' ? p.activeRunId : null,
     rateRunIds: Array.isArray(p.rateRunIds)
-      ? p.rateRunIds.filter((s: any) => typeof s === 'string').slice(0, 3)
+      ? p.rateRunIds.filter((s: any) => typeof s === 'string').slice(0, 4)
       : undefined,
     view: p.view === 'rate' || p.view === 'explore' ? p.view : 'runs',
     showDefinition: p.showDefinition !== false,
@@ -80,7 +79,6 @@ export function coerceState(p: any): AppState {
     showQuotes: p.showQuotes !== false,
     showQuoteSources: p.showQuoteSources !== false,
     showRubricHints: !!p.showRubricHints,
-    rateColumns: p.rateColumns === 1 || p.rateColumns === 3 ? p.rateColumns : 2,
     deletedRunIds: Array.isArray(p.deletedRunIds)
       ? p.deletedRunIds.filter((s: any) => typeof s === 'string')
       : [],
