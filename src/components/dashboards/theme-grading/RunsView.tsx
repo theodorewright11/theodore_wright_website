@@ -1,8 +1,12 @@
 import { useMemo, useRef, useState } from 'react';
+import { runExportFilename, runThemesRatingsJSON } from './exporters';
+import { buildRunName, parseRunName } from './runName';
 import { Chip, isFullyRated, meanScore } from './shared';
-import { readFileAsText } from './storage';
+import { downloadJSON, readFileAsText } from './storage';
 import type { AppState, Corpus, Run } from './types';
-import { CONDITION_SUGGESTIONS } from './types';
+import { DATA_SOURCE_SUGGESTIONS, PROMPT_VARIANTS } from './types';
+
+type RunMetaInput = Omit<Run, 'id' | 'themes' | 'created_at' | 'updated_at' | 'additionalText'>;
 
 type Props = {
   state: AppState;
@@ -10,7 +14,7 @@ type Props = {
   onDeleteCorpus: (id: string) => void;
   onRenameCorpus: (id: string, name: string) => void;
   onCreateRun: (
-    meta: Omit<Run, 'id' | 'themes' | 'created_at' | 'updated_at' | 'additionalText'>,
+    meta: RunMetaInput,
     themesJson: string,
   ) => { themeCount: number; anchoredQuotes: number; totalQuotes: number; warnings: string[] };
   onDeleteRun: (id: string) => void;
@@ -149,7 +153,8 @@ function CorpusSection({
                         )
                           return;
                       } else if (!window.confirm(`Delete "${c.name}"?`)) return;
-                      onDeleteCorpus_(c.id);
+                      onDelete(c.id);
+                      if (previewId === c.id) setPreviewId(null);
                     }}
                     className="text-[11px] text-red-500 hover:text-red-700 px-1.5 py-0.5 rounded hover:bg-red-50 flex-shrink-0"
                   >
@@ -183,11 +188,6 @@ function CorpusSection({
       )}
     </section>
   );
-
-  function onDeleteCorpus_(id: string) {
-    onDelete(id);
-    if (previewId === id) setPreviewId(null);
-  }
 }
 
 // --- New run -------------------------------------------------------------------
@@ -195,6 +195,17 @@ function CorpusSection({
 function distinct(values: (string | undefined)[]): string[] {
   return [...new Set(values.filter((v): v is string => !!v && v.trim().length > 0))];
 }
+
+const emptyMeta = {
+  model: '',
+  promptVariant: '',
+  version: '',
+  dataSource: '',
+  rq: '',
+  positionality: '',
+  runN: '',
+  notes: '',
+};
 
 function NewRunSection({
   state,
@@ -205,26 +216,42 @@ function NewRunSection({
 }) {
   const [open, setOpen] = useState(false);
   const [corpusId, setCorpusId] = useState<string>('');
-  const [model, setModel] = useState('');
-  const [positionality, setPositionality] = useState('');
-  const [researchQuestion, setResearchQuestion] = useState('');
-  const [condition, setCondition] = useState('');
-  const [repeat, setRepeat] = useState('');
-  const [notes, setNotes] = useState('');
+  const [name, setName] = useState('');
+  const [meta, setMeta] = useState({ ...emptyMeta });
   const [json, setJson] = useState('');
   const [result, setResult] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const jsonFileRef = useRef<HTMLInputElement>(null);
 
   const models = distinct(state.runs.map((r) => r.model));
-  const positionalities = distinct(state.runs.map((r) => r.positionality));
-  const rqs = distinct(state.runs.map((r) => r.researchQuestion));
-  const conditions = distinct([
-    ...state.runs.map((r) => r.condition),
-    ...CONDITION_SUGGESTIONS,
+  const promptVariants = distinct([...state.runs.map((r) => r.promptVariant), ...PROMPT_VARIANTS]);
+  const dataSources = distinct([
+    ...state.runs.map((r) => r.dataSource),
+    ...DATA_SOURCE_SUGGESTIONS,
   ]);
+  const rqs = distinct(state.runs.map((r) => r.rq));
+  const positionalities = distinct(state.runs.map((r) => r.positionality));
 
   const effectiveCorpusId = corpusId || state.corpora[0]?.id || '';
+
+  // Pasting/typing a full run name autofills whatever fields it can parse.
+  const applyName = (v: string) => {
+    setName(v);
+    const parsed = parseRunName(v);
+    setMeta((m) => ({
+      ...m,
+      model: parsed.model ?? m.model,
+      promptVariant: parsed.promptVariant ?? m.promptVariant,
+      version: parsed.version ?? m.version,
+      dataSource: parsed.dataSource ?? m.dataSource,
+      rq: parsed.rq ?? m.rq,
+      positionality: parsed.positionality ?? m.positionality,
+      runN: parsed.runN ?? m.runN,
+    }));
+  };
+
+  const setField = (k: keyof typeof emptyMeta) => (v: string) =>
+    setMeta((m) => ({ ...m, [k]: v }));
 
   const create = () => {
     setError(null);
@@ -237,12 +264,14 @@ function NewRunSection({
       const r = onCreateRun(
         {
           corpusId: effectiveCorpusId || null,
-          model: model.trim(),
-          positionality: positionality.trim(),
-          researchQuestion: researchQuestion.trim(),
-          condition: condition.trim(),
-          repeat: repeat.trim() || undefined,
-          notes: notes.trim() || undefined,
+          model: meta.model.trim(),
+          promptVariant: meta.promptVariant.trim(),
+          version: meta.version.trim().replace(/^v/i, ''),
+          dataSource: meta.dataSource.trim(),
+          rq: meta.rq.trim(),
+          positionality: meta.positionality.trim(),
+          runN: meta.runN.trim().replace(/^run/i, '') || undefined,
+          notes: meta.notes.trim() || undefined,
         },
         json,
       );
@@ -251,8 +280,8 @@ function NewRunSection({
           (r.warnings.length > 0 ? ` ${r.warnings.join(' ')}` : ''),
       );
       setJson('');
-      setRepeat('');
-      setNotes('');
+      setName('');
+      setMeta((m) => ({ ...m, runN: '', notes: '' }));
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     }
@@ -272,13 +301,21 @@ function NewRunSection({
       </div>
       {open && (
         <div className="border border-slate-200 rounded-lg p-4 space-y-3">
-          <div className="grid grid-cols-2 gap-3">
+          <Field label="Run name (autofills the fields below)">
+            <input
+              value={name}
+              onChange={(e) => applyName(e.target.value)}
+              placeholder="{model}_{promptvariant}_v{version}_{datasource}_{rq}_{positionality}_run{n}"
+              className={`${inputCls} font-mono`}
+            />
+          </Field>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             <Field label="Model">
               <input
                 list="tg-models"
-                value={model}
-                onChange={(e) => setModel(e.target.value)}
-                placeholder="e.g. Claude, GPT"
+                value={meta.model}
+                onChange={(e) => setField('model')(e.target.value)}
+                placeholder="claude, gpt"
                 className={inputCls}
               />
               <datalist id="tg-models">
@@ -287,26 +324,48 @@ function NewRunSection({
                 ))}
               </datalist>
             </Field>
-            <Field label="Positionality">
+            <Field label="Prompt variant">
               <input
-                list="tg-positionalities"
-                value={positionality}
-                onChange={(e) => setPositionality(e.target.value)}
-                placeholder="e.g. Neutral, Patient, FDA worker, Researcher"
+                list="tg-prompt-variants"
+                value={meta.promptVariant}
+                onChange={(e) => setField('promptVariant')(e.target.value)}
+                placeholder="engineered_data"
                 className={inputCls}
               />
-              <datalist id="tg-positionalities">
-                {positionalities.map((m) => (
+              <datalist id="tg-prompt-variants">
+                {promptVariants.map((m) => (
                   <option key={m} value={m} />
                 ))}
               </datalist>
             </Field>
-            <Field label="Research question">
+            <Field label="Version">
+              <input
+                value={meta.version}
+                onChange={(e) => setField('version')(e.target.value)}
+                placeholder="2"
+                className={inputCls}
+              />
+            </Field>
+            <Field label="Data source">
+              <input
+                list="tg-data-sources"
+                value={meta.dataSource}
+                onChange={(e) => setField('dataSource')(e.target.value)}
+                placeholder="160_als_comments"
+                className={inputCls}
+              />
+              <datalist id="tg-data-sources">
+                {dataSources.map((m) => (
+                  <option key={m} value={m} />
+                ))}
+              </datalist>
+            </Field>
+            <Field label="RQ (shorthand)">
               <input
                 list="tg-rqs"
-                value={researchQuestion}
-                onChange={(e) => setResearchQuestion(e.target.value)}
-                placeholder="the RQ this run was prompted with"
+                value={meta.rq}
+                onChange={(e) => setField('rq')(e.target.value)}
+                placeholder="policy"
                 className={inputCls}
               />
               <datalist id="tg-rqs">
@@ -315,27 +374,35 @@ function NewRunSection({
                 ))}
               </datalist>
             </Field>
-            <Field label="Condition">
+            <Field label="Positionality">
               <input
-                list="tg-conditions"
-                value={condition}
-                onChange={(e) => setCondition(e.target.value)}
-                placeholder="e.g. with-data engineered"
+                list="tg-positionalities"
+                value={meta.positionality}
+                onChange={(e) => setField('positionality')(e.target.value)}
+                placeholder="neutral, patient, fda, researcher"
                 className={inputCls}
               />
-              <datalist id="tg-conditions">
-                {conditions.map((m) => (
+              <datalist id="tg-positionalities">
+                {positionalities.map((m) => (
                   <option key={m} value={m} />
                 ))}
               </datalist>
             </Field>
-            <Field label="Data">
+            <Field label="Run #">
+              <input
+                value={meta.runN}
+                onChange={(e) => setField('runN')(e.target.value)}
+                placeholder="1"
+                className={inputCls}
+              />
+            </Field>
+            <Field label="Anchor against">
               <select
                 value={effectiveCorpusId}
                 onChange={(e) => setCorpusId(e.target.value)}
                 className={inputCls}
               >
-                {state.corpora.length === 0 && <option value="">— none uploaded —</option>}
+                {state.corpora.length === 0 && <option value="">— no data uploaded —</option>}
                 {state.corpora.map((c) => (
                   <option key={c.id} value={c.id}>
                     {c.name} ({c.docs.length} docs)
@@ -343,25 +410,15 @@ function NewRunSection({
                 ))}
               </select>
             </Field>
-            <div className="grid grid-cols-2 gap-3">
-              <Field label="Repeat #">
-                <input
-                  value={repeat}
-                  onChange={(e) => setRepeat(e.target.value)}
-                  placeholder="optional"
-                  className={inputCls}
-                />
-              </Field>
-              <Field label="Notes">
-                <input
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                  placeholder="optional"
-                  className={inputCls}
-                />
-              </Field>
-            </div>
           </div>
+          <Field label="Notes">
+            <input
+              value={meta.notes}
+              onChange={(e) => setField('notes')(e.target.value)}
+              placeholder="optional"
+              className={inputCls}
+            />
+          </Field>
           <Field label="Themes JSON">
             <div className="flex items-start gap-2">
               <textarea
@@ -385,7 +442,11 @@ function NewRunSection({
                 className="hidden"
                 onChange={async (e) => {
                   const f = e.target.files?.[0];
-                  if (f) setJson(await readFileAsText(f));
+                  if (f) {
+                    setJson(await readFileAsText(f));
+                    // A file named to the convention autofills the fields too.
+                    if (!name) applyName(f.name);
+                  }
                   e.target.value = '';
                 }}
               />
@@ -456,8 +517,11 @@ function RunListSection({
       <section>
         <h2 className="font-bold text-[16px] text-slate-900 mb-2">Runs</h2>
         <div className="text-[13px] text-slate-400 italic border border-dashed border-slate-200 rounded-lg p-6 text-center">
-          No runs yet. Add one above — each run is one AI output (≤10 themes) tagged with model,
-          positionality, research question, and condition.
+          No runs yet. Add one above — each run is one AI output (≤10 themes) named{' '}
+          <code className="text-[11px] bg-slate-100 px-1 rounded">
+            {'{model}_{promptvariant}_v{version}_{datasource}_{rq}_{positionality}_run{n}'}
+          </code>
+          .
         </div>
       </section>
     );
@@ -485,11 +549,9 @@ function RunListSection({
           return (
             <li key={run.id} className="border border-slate-200 rounded-lg px-3 py-2.5">
               <div className="flex items-center gap-2 flex-wrap">
-                {run.model && <Chip label={run.model} tone="blue" />}
-                {run.positionality && <Chip label={run.positionality} />}
-                {run.condition && <Chip label={run.condition} />}
-                {run.repeat && <Chip label={`rep ${run.repeat}`} />}
-                {corpus && <Chip label={corpus} tone="amber" />}
+                <span className="font-mono text-[12px] font-bold text-slate-800 break-all">
+                  {buildRunName(run)}
+                </span>
                 <span
                   className={`ml-auto text-[11px] font-mono flex-shrink-0 ${
                     rated === run.themes.length && run.themes.length > 0
@@ -500,11 +562,16 @@ function RunListSection({
                   {rated}/{run.themes.length} rated
                 </span>
               </div>
-              {run.researchQuestion && (
-                <div className="mt-1 text-[12px] text-slate-600 leading-snug">
-                  {run.researchQuestion}
-                </div>
-              )}
+              <div className="mt-1 flex items-center gap-1.5 flex-wrap">
+                {run.model && <Chip label={run.model} tone="blue" />}
+                {run.promptVariant && <Chip label={run.promptVariant} />}
+                {run.version && <Chip label={`v${run.version}`} />}
+                {run.dataSource && <Chip label={run.dataSource} tone="amber" />}
+                {run.rq && <Chip label={`rq: ${run.rq}`} />}
+                {run.positionality && <Chip label={run.positionality} />}
+                {run.runN && <Chip label={`run ${run.runN}`} />}
+                {corpus && <Chip label={`↳ ${corpus}`} tone="amber" />}
+              </div>
               {means.length > 0 && (
                 <div className="mt-1 text-[10px] font-mono text-slate-400">
                   {means.map((m) => `${m.k} ${m.v!.toFixed(1)}`).join(' · ')}
@@ -517,6 +584,14 @@ function RunListSection({
                   className="px-2.5 py-1 text-[11px] font-semibold text-white bg-slate-900 hover:bg-slate-700 rounded transition-colors"
                 >
                   Rate →
+                </button>
+                <button
+                  type="button"
+                  onClick={() => downloadJSON(runExportFilename(run), runThemesRatingsJSON(run, state))}
+                  className="px-2 py-1 text-[11px] font-semibold text-slate-600 border border-slate-300 rounded hover:bg-slate-100 transition-colors"
+                  title="download this run's themes + ratings as JSON"
+                >
+                  export ↓
                 </button>
                 <button
                   type="button"
@@ -536,11 +611,39 @@ function RunListSection({
                 </button>
               </div>
               {editId === run.id && (
-                <div className="mt-2 grid grid-cols-2 gap-2 border-t border-slate-100 pt-2">
+                <div className="mt-2 grid grid-cols-2 md:grid-cols-4 gap-2 border-t border-slate-100 pt-2">
                   <Field label="Model">
                     <input
                       value={run.model}
                       onChange={(e) => onUpdateRunMeta(run.id, { model: e.target.value })}
+                      className={inputCls}
+                    />
+                  </Field>
+                  <Field label="Prompt variant">
+                    <input
+                      value={run.promptVariant}
+                      onChange={(e) => onUpdateRunMeta(run.id, { promptVariant: e.target.value })}
+                      className={inputCls}
+                    />
+                  </Field>
+                  <Field label="Version">
+                    <input
+                      value={run.version}
+                      onChange={(e) => onUpdateRunMeta(run.id, { version: e.target.value })}
+                      className={inputCls}
+                    />
+                  </Field>
+                  <Field label="Data source">
+                    <input
+                      value={run.dataSource}
+                      onChange={(e) => onUpdateRunMeta(run.id, { dataSource: e.target.value })}
+                      className={inputCls}
+                    />
+                  </Field>
+                  <Field label="RQ (shorthand)">
+                    <input
+                      value={run.rq}
+                      onChange={(e) => onUpdateRunMeta(run.id, { rq: e.target.value })}
                       className={inputCls}
                     />
                   </Field>
@@ -551,27 +654,11 @@ function RunListSection({
                       className={inputCls}
                     />
                   </Field>
-                  <Field label="Research question">
+                  <Field label="Run #">
                     <input
-                      value={run.researchQuestion}
+                      value={run.runN ?? ''}
                       onChange={(e) =>
-                        onUpdateRunMeta(run.id, { researchQuestion: e.target.value })
-                      }
-                      className={inputCls}
-                    />
-                  </Field>
-                  <Field label="Condition">
-                    <input
-                      value={run.condition}
-                      onChange={(e) => onUpdateRunMeta(run.id, { condition: e.target.value })}
-                      className={inputCls}
-                    />
-                  </Field>
-                  <Field label="Repeat #">
-                    <input
-                      value={run.repeat ?? ''}
-                      onChange={(e) =>
-                        onUpdateRunMeta(run.id, { repeat: e.target.value || undefined })
+                        onUpdateRunMeta(run.id, { runN: e.target.value || undefined })
                       }
                       className={inputCls}
                     />

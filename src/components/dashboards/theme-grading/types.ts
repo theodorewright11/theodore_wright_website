@@ -62,15 +62,19 @@ export type RatedTheme = {
 
 // One AI thematic-analysis output plus the study dimensions it was run under.
 // The dimension fields are free strings (with autocomplete from prior runs) so
-// Explore can group/filter by exact value.
+// Explore can group/filter by exact value. They follow the study's run-naming
+// convention — {model}_{promptVariant}_v{version}_{dataSource}_{rq}_{positionality}_run{n}
+// — and a full name pasted into the New-run form autofills them (runName.ts).
 export type Run = {
   id: string;
   corpusId: string | null;
   model: string;
+  promptVariant: string; // engineered_data | engineered_no_data | not_engineered_data
+  version: string; // prompt version, the v{n} token
+  dataSource: string; // e.g. 20_als_comments, 160_als_comments
+  rq: string; // research-question shorthand
   positionality: string;
-  researchQuestion: string;
-  condition: string;
-  repeat?: string; // repeat # for stochasticity checks
+  runN?: string; // repeat # for stochasticity checks, the run{n} token
   notes?: string;
   themes: RatedTheme[];
   // Top-level prose from the import that didn't map to a theme.
@@ -106,6 +110,8 @@ export type AppState = {
   runs: Run[];
   similarities: SimilarityPair[];
   activeRunId: string | null;
+  // Runs shown side by side in the Rate view (one column each, max 3).
+  rateRunIds?: string[];
   view?: View;
   // Rate-view display toggles
   showDefinition?: boolean;
@@ -130,10 +136,13 @@ export const AXIS_KEYS: AxisKey[] = [
   'positionalityInfluence',
 ];
 
-// Suggested values for the run-condition field (free text; these seed the
-// autocomplete before any runs exist).
-export const CONDITION_SUGGESTIONS = [
-  'no-data engineered',
-  'with-data non-engineered',
-  'with-data engineered',
+// Known prompt-variant values (free text; these seed the autocomplete and let
+// the run-name parser anchor on them).
+export const PROMPT_VARIANTS = [
+  'engineered_data',
+  'engineered_no_data',
+  'not_engineered_data',
 ];
+
+// Data-source suggestions (free text; grows as transcripts etc. come in).
+export const DATA_SOURCE_SUGGESTIONS = ['20_als_comments', '160_als_comments'];

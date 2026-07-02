@@ -46,7 +46,6 @@ export default function ThemeGradingDashboard() {
     lastError: null,
   });
   // Session-only UI state.
-  const [pinnedIds, setPinnedIds] = useState<string[]>([]);
   const [focusThemeId, setFocusThemeId] = useState<string | null>(null);
 
   const view: View = state.view ?? 'runs';
@@ -66,10 +65,22 @@ export default function ThemeGradingDashboard() {
     if (hydrated) saveState(state);
   }, [state, hydrated]);
 
-  const activeRun = useMemo<Run | null>(() => {
-    if (!state.activeRunId) return null;
-    return state.runs.find((r) => r.id === state.activeRunId) ?? null;
-  }, [state.activeRunId, state.runs]);
+  // Runs shown side by side in the Rate view (max 3). Falls back to the last
+  // opened run for state saved before rateRunIds existed.
+  const shownRuns = useMemo<Run[]>(() => {
+    const ids = state.rateRunIds ?? (state.activeRunId ? [state.activeRunId] : []);
+    return ids
+      .map((id) => state.runs.find((r) => r.id === id))
+      .filter((r): r is Run => !!r)
+      .slice(0, 3);
+  }, [state.rateRunIds, state.activeRunId, state.runs]);
+
+  const setRateRuns = (ids: string[]) =>
+    setState((s) => ({
+      ...s,
+      rateRunIds: ids.slice(0, 3),
+      activeRunId: ids[0] ?? s.activeRunId,
+    }));
 
   // ----- Drive sync (single state file, debounced) -----
   const pendingWrite = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -310,6 +321,7 @@ export default function ThemeGradingDashboard() {
       ...s,
       runs: s.runs.filter((r) => r.id !== id),
       deletedRunIds: [...(s.deletedRunIds ?? []), id],
+      rateRunIds: (s.rateRunIds ?? []).filter((x) => x !== id),
       activeRunId: s.activeRunId === id ? s.runs.find((r) => r.id !== id)?.id ?? null : s.activeRunId,
     }));
 
@@ -351,52 +363,61 @@ export default function ThemeGradingDashboard() {
       ),
     }));
 
-  const upsertSimilarity = (
-    themeA: string,
-    themeB: string,
-    patch: { similarity?: AxisScore | undefined; notes?: string },
-    patchKeys: ('similarity' | 'notes')[],
-  ) =>
+  const findPairIndex = (sims: AppState['similarities'], a: string, b: string) =>
+    sims.findIndex(
+      (x) => (x.themeA === a && x.themeB === b) || (x.themeA === b && x.themeB === a),
+    );
+
+  // Adding a link keeps the pair even before a score is set; only the explicit
+  // remove deletes it.
+  const addSimilarity = (themeA: string, themeB: string) =>
     mutate((s) => {
-      const idx = s.similarities.findIndex(
-        (x) =>
-          (x.themeA === themeA && x.themeB === themeB) ||
-          (x.themeA === themeB && x.themeB === themeA),
-      );
-      if (idx >= 0) {
-        const next = [...s.similarities];
-        const cur = { ...next[idx] };
-        if (patchKeys.includes('similarity')) cur.similarity = patch.similarity;
-        if (patchKeys.includes('notes')) cur.notes = patch.notes || undefined;
-        next[idx] = cur;
-        // Drop fully-empty pairs so clearing a score doesn't leave debris.
-        if (cur.similarity === undefined && !cur.notes) next.splice(idx, 1);
-        return { ...s, similarities: next };
-      }
-      if (patch.similarity === undefined && !patch.notes) return s;
+      if (findPairIndex(s.similarities, themeA, themeB) >= 0) return s;
       return {
         ...s,
         similarities: [
           ...s.similarities,
-          {
-            id: cryptoRandomId(),
-            themeA,
-            themeB,
-            similarity: patch.similarity,
-            notes: patch.notes || undefined,
-            created_at: new Date().toISOString(),
-          },
+          { id: cryptoRandomId(), themeA, themeB, created_at: new Date().toISOString() },
         ],
       };
     });
 
-  const togglePin = (themeId: string) =>
-    setPinnedIds((prev) =>
-      prev.includes(themeId) ? prev.filter((x) => x !== themeId) : [...prev, themeId].slice(-3),
-    );
+  const patchSimilarity = (
+    themeA: string,
+    themeB: string,
+    apply: (cur: AppState['similarities'][number]) => AppState['similarities'][number],
+  ) =>
+    mutate((s) => {
+      const idx = findPairIndex(s.similarities, themeA, themeB);
+      if (idx >= 0) {
+        const next = [...s.similarities];
+        next[idx] = apply({ ...next[idx] });
+        return { ...s, similarities: next };
+      }
+      return {
+        ...s,
+        similarities: [
+          ...s.similarities,
+          apply({ id: cryptoRandomId(), themeA, themeB, created_at: new Date().toISOString() }),
+        ],
+      };
+    });
+
+  const removeSimilarity = (themeA: string, themeB: string) =>
+    mutate((s) => {
+      const idx = findPairIndex(s.similarities, themeA, themeB);
+      if (idx < 0) return s;
+      const next = [...s.similarities];
+      next.splice(idx, 1);
+      return { ...s, similarities: next };
+    });
 
   const jumpToTheme = (runId: string, themeId: string) => {
-    setState((s) => ({ ...s, activeRunId: runId, view: 'rate' }));
+    setState((s) => {
+      const shown = s.rateRunIds ?? (s.activeRunId ? [s.activeRunId] : []);
+      const nextShown = shown.includes(runId) ? shown : [...shown, runId].slice(-3);
+      return { ...s, rateRunIds: nextShown, activeRunId: runId, view: 'rate' };
+    });
     setFocusThemeId(themeId);
   };
 
@@ -459,22 +480,25 @@ export default function ThemeGradingDashboard() {
           onCreateRun={createRun}
           onDeleteRun={deleteRun}
           onUpdateRunMeta={updateRunMeta}
-          onOpenRun={(id) => setState((s) => ({ ...s, activeRunId: id, view: 'rate' }))}
+          onOpenRun={(id) =>
+            setState((s) => ({ ...s, rateRunIds: [id], activeRunId: id, view: 'rate' }))
+          }
         />
       )}
       {view === 'rate' && (
         <RateView
           state={state}
-          activeRun={activeRun}
-          pinnedIds={pinnedIds}
+          shownRuns={shownRuns}
           focusThemeId={focusThemeId}
-          onSelectRun={(id) => setState((s) => ({ ...s, activeRunId: id }))}
+          onSetRateRuns={setRateRuns}
           onSetScore={setScore}
           onSetRatingNotes={setRatingNotes}
-          onTogglePin={togglePin}
-          onClearPins={() => setPinnedIds([])}
-          onSetSimilarity={(a, b, v) => upsertSimilarity(a, b, { similarity: v }, ['similarity'])}
-          onSetSimilarityNotes={(a, b, notes) => upsertSimilarity(a, b, { notes }, ['notes'])}
+          onAddSimilarity={addSimilarity}
+          onSetSimilarity={(a, b, v) => patchSimilarity(a, b, (cur) => ({ ...cur, similarity: v }))}
+          onSetSimilarityNotes={(a, b, notes) =>
+            patchSimilarity(a, b, (cur) => ({ ...cur, notes: notes || undefined }))
+          }
+          onRemoveSimilarity={removeSimilarity}
           onToggleDisplay={(key) =>
             setState((s) => {
               // showRubricHints defaults off; the others default on.

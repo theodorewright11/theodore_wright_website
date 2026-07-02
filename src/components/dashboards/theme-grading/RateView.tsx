@@ -1,44 +1,38 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { buildRunName } from './runName';
 import { AXES, SIMILARITY_RUBRIC, type AxisDef } from './rubric';
-import { Chip, ScoreButtons, isFullyRated, ratedAxisCount, runLabel } from './shared';
+import { Chip, ScoreButtons, isFullyRated, ratedAxisCount } from './shared';
 import type { AppState, AxisScore, Corpus, RatedTheme, Run, ThemeQuote } from './types';
 
 type Props = {
   state: AppState;
-  activeRun: Run | null;
-  pinnedIds: string[];
+  shownRuns: Run[];
   focusThemeId: string | null;
-  onSelectRun: (id: string) => void;
+  onSetRateRuns: (ids: string[]) => void;
   onSetScore: (runId: string, themeId: string, axis: AxisDef['key'], v: AxisScore | undefined) => void;
   onSetRatingNotes: (runId: string, themeId: string, notes: string) => void;
-  onTogglePin: (themeId: string) => void;
-  onClearPins: () => void;
+  onAddSimilarity: (themeA: string, themeB: string) => void;
   onSetSimilarity: (themeA: string, themeB: string, v: AxisScore | undefined) => void;
   onSetSimilarityNotes: (themeA: string, themeB: string, notes: string) => void;
-  onToggleDisplay: (key: 'showDefinition' | 'showReasoning' | 'showQuotes' | 'showQuoteSources' | 'showRubricHints') => void;
+  onRemoveSimilarity: (themeA: string, themeB: string) => void;
+  onToggleDisplay: (
+    key: 'showDefinition' | 'showReasoning' | 'showQuotes' | 'showQuoteSources' | 'showRubricHints',
+  ) => void;
   onSetColumns: (n: 1 | 2 | 3) => void;
   onFocusHandled: () => void;
 };
 
-// theme id → its run + theme, across every run (pins can span runs).
-function themeIndex(runs: Run[]): Map<string, { run: Run; theme: RatedTheme }> {
-  const m = new Map<string, { run: Run; theme: RatedTheme }>();
-  for (const run of runs) for (const t of run.themes) m.set(t.id, { run, theme: t });
-  return m;
-}
-
 export default function RateView({
   state,
-  activeRun,
-  pinnedIds,
+  shownRuns,
   focusThemeId,
-  onSelectRun,
+  onSetRateRuns,
   onSetScore,
   onSetRatingNotes,
-  onTogglePin,
-  onClearPins,
+  onAddSimilarity,
   onSetSimilarity,
   onSetSimilarityNotes,
+  onRemoveSimilarity,
   onToggleDisplay,
   onSetColumns,
   onFocusHandled,
@@ -50,8 +44,13 @@ export default function RateView({
     highlight?: { start: number; end: number };
   } | null>(null);
 
-  const index = useMemo(() => themeIndex(state.runs), [state.runs]);
   const corpusById = useMemo(() => new Map(state.corpora.map((c) => [c.id, c])), [state.corpora]);
+  // theme id → run + theme, across every run (similarity links can span runs).
+  const themeById = useMemo(() => {
+    const m = new Map<string, { run: Run; theme: RatedTheme }>();
+    for (const run of state.runs) for (const t of run.themes) m.set(t.id, { run, theme: t });
+    return m;
+  }, [state.runs]);
 
   const openQuoteDoc = (run: Run, q: ThemeQuote, docIdxOverride?: number) => {
     const corpus = run.corpusId ? corpusById.get(run.corpusId) : undefined;
@@ -67,202 +66,150 @@ export default function RateView({
     }
   };
 
-  const cols = state.rateColumns ?? 2;
-  const gridCls =
-    cols === 1 ? 'grid-cols-1' : cols === 2 ? 'grid-cols-1 lg:grid-cols-2' : 'grid-cols-1 lg:grid-cols-3';
+  const shownIds = shownRuns.map((r) => r.id);
+  const addableRuns = state.runs.filter((r) => !shownIds.includes(r.id));
 
-  const pinned = pinnedIds
-    .map((id) => index.get(id))
-    .filter((x): x is { run: Run; theme: RatedTheme } => !!x);
+  const singleRun = shownRuns.length === 1;
+  const cols = state.rateColumns ?? 2;
+  const singleGridCls =
+    cols === 1 ? 'grid-cols-1' : cols === 2 ? 'grid-cols-1 lg:grid-cols-2' : 'grid-cols-1 lg:grid-cols-3';
+  const runGridCls =
+    shownRuns.length <= 1
+      ? 'grid-cols-1'
+      : shownRuns.length === 2
+        ? 'grid-cols-1 lg:grid-cols-2'
+        : 'grid-cols-1 lg:grid-cols-3';
+
+  const cardProps = {
+    state,
+    themeById,
+    onSetScore,
+    onSetRatingNotes,
+    onAddSimilarity,
+    onSetSimilarity,
+    onSetSimilarityNotes,
+    onRemoveSimilarity,
+    onQuoteClick: openQuoteDoc,
+    focusThemeId,
+    onFocusHandled,
+    shownRuns,
+  };
 
   return (
     <div className="flex-1 min-w-0 min-h-0 overflow-y-auto bg-slate-50/60">
-      <div className="max-w-[1400px] mx-auto px-6 py-4">
+      <div className="max-w-[1500px] mx-auto px-6 py-4">
         {/* Toolbar */}
         <div className="flex items-center gap-3 flex-wrap mb-3">
-          <select
-            value={activeRun?.id ?? ''}
-            onChange={(e) => onSelectRun(e.target.value)}
-            className="px-2 py-1.5 text-[12px] border border-slate-300 rounded-md bg-white max-w-[440px] outline-none focus:border-blue-400"
-          >
-            {state.runs.length === 0 && <option value="">— no runs yet —</option>}
-            {state.runs.map((r) => (
-              <option key={r.id} value={r.id}>
-                {runLabel(r, state.corpora)}
-              </option>
-            ))}
-          </select>
-
-          <div className="inline-flex rounded-md border border-slate-300 overflow-hidden">
-            {([1, 2, 3] as const).map((n) => (
+          <span className="text-[11px] uppercase tracking-wider font-semibold text-slate-500">
+            Runs
+          </span>
+          {shownRuns.map((r) => (
+            <span
+              key={r.id}
+              className="inline-flex items-center gap-1.5 pl-2.5 pr-1.5 py-1 bg-white border border-slate-300 rounded-md text-[11px] font-mono text-slate-700 max-w-[380px]"
+            >
+              <span className="truncate">{buildRunName(r)}</span>
               <button
-                key={n}
                 type="button"
-                onClick={() => onSetColumns(n)}
-                title={`${n} column${n === 1 ? '' : 's'}`}
-                className={`px-2.5 py-1 text-[11px] font-semibold ${
-                  cols === n
-                    ? 'bg-slate-900 text-white'
-                    : 'text-slate-600 hover:bg-slate-100 border-l border-slate-200 first:border-l-0'
-                }`}
+                onClick={() => onSetRateRuns(shownIds.filter((id) => id !== r.id))}
+                className="text-slate-400 hover:text-red-600 font-sans font-semibold px-0.5"
+                title="remove from view"
               >
-                {n}
+                ×
               </button>
-            ))}
-          </div>
+            </span>
+          ))}
+          {shownRuns.length < 3 && addableRuns.length > 0 && (
+            <select
+              value=""
+              onChange={(e) => {
+                if (e.target.value) onSetRateRuns([...shownIds, e.target.value]);
+              }}
+              className="px-2 py-1 text-[11px] border border-dashed border-slate-300 rounded-md bg-white text-slate-500 outline-none max-w-[280px]"
+            >
+              <option value="">+ show run…</option>
+              {addableRuns.map((r) => (
+                <option key={r.id} value={r.id}>
+                  {buildRunName(r)}
+                </option>
+              ))}
+            </select>
+          )}
 
-          <div className="flex items-center gap-2.5 text-[11px] text-slate-600 flex-wrap">
-            <Toggle label="definition" on={state.showDefinition !== false} onClick={() => onToggleDisplay('showDefinition')} />
-            <Toggle label="reasoning" on={state.showReasoning !== false} onClick={() => onToggleDisplay('showReasoning')} />
-            <Toggle label="quotes" on={state.showQuotes !== false} onClick={() => onToggleDisplay('showQuotes')} />
-            <Toggle label="sources" on={state.showQuoteSources !== false} onClick={() => onToggleDisplay('showQuoteSources')} />
-            <Toggle label="score hints" on={!!state.showRubricHints} onClick={() => onToggleDisplay('showRubricHints')} />
-          </div>
+          {singleRun && (
+            <div className="inline-flex rounded-md border border-slate-300 overflow-hidden">
+              {([1, 2, 3] as const).map((n) => (
+                <button
+                  key={n}
+                  type="button"
+                  onClick={() => onSetColumns(n)}
+                  title={`${n} column${n === 1 ? '' : 's'}`}
+                  className={`px-2.5 py-1 text-[11px] font-semibold ${
+                    cols === n
+                      ? 'bg-slate-900 text-white'
+                      : 'text-slate-600 hover:bg-slate-100 border-l border-slate-200 first:border-l-0'
+                  }`}
+                >
+                  {n}
+                </button>
+              ))}
+            </div>
+          )}
 
-          <button
-            type="button"
-            onClick={() => setRubricOpen((v) => !v)}
-            className={`ml-auto px-3 py-1 text-[11px] font-semibold rounded-md border transition-colors ${
-              rubricOpen
-                ? 'bg-slate-900 text-white border-slate-900'
-                : 'text-slate-600 border-slate-300 hover:bg-slate-100'
-            }`}
-          >
-            rubric
-          </button>
+          <div className="flex items-center gap-2.5 text-[11px] text-slate-600 flex-wrap ml-auto">
+            <Toggle label="Definition" on={state.showDefinition !== false} onClick={() => onToggleDisplay('showDefinition')} />
+            <Toggle label="Reasoning" on={state.showReasoning !== false} onClick={() => onToggleDisplay('showReasoning')} />
+            <Toggle label="Quotes" on={state.showQuotes !== false} onClick={() => onToggleDisplay('showQuotes')} />
+            <Toggle label="Sources" on={state.showQuoteSources !== false} onClick={() => onToggleDisplay('showQuoteSources')} />
+            <Toggle label="Score hints" on={!!state.showRubricHints} onClick={() => onToggleDisplay('showRubricHints')} />
+            <button
+              type="button"
+              onClick={() => setRubricOpen((v) => !v)}
+              className={`px-3 py-1 text-[11px] font-semibold rounded-md border transition-colors ${
+                rubricOpen
+                  ? 'bg-slate-900 text-white border-slate-900'
+                  : 'text-slate-600 border-slate-300 hover:bg-slate-100'
+              }`}
+            >
+              Rubric
+            </button>
+          </div>
         </div>
 
         {rubricOpen && <RubricPanel />}
 
-        {/* Pinned compare strip */}
-        {pinned.length > 0 && (
-          <div className="mb-4 border border-amber-300 bg-amber-50/50 rounded-lg p-3">
-            <div className="flex items-center gap-2 mb-2">
-              <span className="text-[11px] uppercase tracking-wider font-semibold text-amber-800">
-                Compare ({pinned.length}/3)
-              </span>
-              <span className="text-[11px] text-amber-700">
-                pins persist across runs — pin themes from two runs to rate cross-run similarity
-              </span>
-              <button
-                type="button"
-                onClick={onClearPins}
-                className="ml-auto text-[11px] text-amber-800 hover:text-amber-950 px-1.5 py-0.5 rounded hover:bg-amber-100"
-              >
-                clear pins
-              </button>
-            </div>
-            <div
-              className={`grid gap-3 ${
-                pinned.length === 1 ? 'grid-cols-1' : pinned.length === 2 ? 'grid-cols-1 lg:grid-cols-2' : 'grid-cols-1 lg:grid-cols-3'
-              }`}
-            >
-              {pinned.map(({ run, theme }) => (
-                <ThemeCard
-                  key={theme.id}
-                  theme={theme}
-                  run={run}
-                  state={state}
-                  pinned
-                  showRunChips
-                  onSetScore={onSetScore}
-                  onSetRatingNotes={onSetRatingNotes}
-                  onTogglePin={onTogglePin}
-                  onQuoteClick={openQuoteDoc}
-                />
-              ))}
-            </div>
-            {/* Pairwise similarity */}
-            {pinned.length >= 2 && (
-              <div className="mt-3 space-y-2">
-                {pairs(pinned).map(([a, b]) => {
-                  const sim = state.similarities.find(
-                    (s) =>
-                      (s.themeA === a.theme.id && s.themeB === b.theme.id) ||
-                      (s.themeA === b.theme.id && s.themeB === a.theme.id),
-                  );
-                  return (
-                    <div
-                      key={`${a.theme.id}|${b.theme.id}`}
-                      className="flex items-center gap-3 flex-wrap bg-white border border-amber-200 rounded-md px-3 py-2"
-                    >
-                      <span className="text-[11px] font-semibold text-slate-700 break-words min-w-0">
-                        {a.theme.name} <span className="text-slate-400 font-normal">×</span>{' '}
-                        {b.theme.name}
-                      </span>
-                      <div className="flex items-center gap-2 ml-auto flex-shrink-0">
-                        <span
-                          className="text-[10px] uppercase tracking-wider font-semibold text-slate-500"
-                          title={SIMILARITY_RUBRIC.question}
-                        >
-                          similarity
-                        </span>
-                        <ScoreButtons
-                          compact
-                          value={sim?.similarity ?? null}
-                          levels={SIMILARITY_RUBRIC.levels}
-                          onChange={(v) => onSetSimilarity(a.theme.id, b.theme.id, v)}
-                        />
-                        <input
-                          value={sim?.notes ?? ''}
-                          onChange={(e) =>
-                            onSetSimilarityNotes(a.theme.id, b.theme.id, e.target.value)
-                          }
-                          placeholder="notes"
-                          className="px-1.5 py-0.5 text-[11px] border border-slate-200 rounded w-[160px] outline-none focus:border-blue-400"
-                        />
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Theme grid */}
-        {!activeRun ? (
+        {shownRuns.length === 0 ? (
           <div className="text-[13px] text-slate-400 italic border border-dashed border-slate-300 rounded-lg p-10 text-center bg-white">
-            No run selected. Create one in the Runs tab.
-          </div>
-        ) : activeRun.themes.length === 0 ? (
-          <div className="text-[13px] text-slate-400 italic border border-dashed border-slate-300 rounded-lg p-10 text-center bg-white">
-            This run has no themes.
+            No run shown. Pick one with “+ show run…” above, or create one in the Runs tab.
           </div>
         ) : (
-          <>
-            <div className="mb-2 text-[11px] text-slate-500 font-mono">
-              {activeRun.themes.filter(isFullyRated).length}/{activeRun.themes.length} themes fully
-              rated
-            </div>
-            <div className={`grid gap-3 ${gridCls}`}>
-              {activeRun.themes.map((t) => (
-                <ThemeCard
-                  key={t.id}
-                  theme={t}
-                  run={activeRun}
-                  state={state}
-                  pinned={pinnedIds.includes(t.id)}
-                  focus={focusThemeId === t.id}
-                  onFocusHandled={onFocusHandled}
-                  onSetScore={onSetScore}
-                  onSetRatingNotes={onSetRatingNotes}
-                  onTogglePin={onTogglePin}
-                  onQuoteClick={openQuoteDoc}
-                />
-              ))}
-            </div>
-            {activeRun.additionalText && (
-              <div className="mt-4 bg-white border border-slate-200 rounded-lg p-3">
-                <div className="text-[10px] uppercase tracking-wider font-semibold text-slate-500 mb-1">
-                  Additional text from import
+          <div className={`grid gap-4 ${runGridCls} items-start`}>
+            {shownRuns.map((run) => (
+              <div key={run.id} className="min-w-0">
+                <RunHeader run={run} corpusName={run.corpusId ? corpusById.get(run.corpusId)?.name : undefined} />
+                <div className={`grid gap-3 ${singleRun ? singleGridCls : 'grid-cols-1'}`}>
+                  {run.themes.map((t) => (
+                    <ThemeCard key={t.id} theme={t} run={run} {...cardProps} />
+                  ))}
+                  {run.themes.length === 0 && (
+                    <div className="text-[12px] text-slate-400 italic border border-dashed border-slate-300 rounded-lg p-6 text-center bg-white">
+                      This run has no themes.
+                    </div>
+                  )}
                 </div>
-                <div className="text-[12px] text-slate-600 whitespace-pre-wrap leading-snug">
-                  {activeRun.additionalText}
-                </div>
+                {run.additionalText && (
+                  <div className="mt-3 bg-white border border-slate-200 rounded-lg p-3">
+                    <div className="text-[10px] uppercase tracking-wider font-semibold text-slate-500 mb-1">
+                      Additional text from import
+                    </div>
+                    <div className="text-[12px] text-slate-600 whitespace-pre-wrap leading-snug">
+                      {run.additionalText}
+                    </div>
+                  </div>
+                )}
               </div>
-            )}
-          </>
+            ))}
+          </div>
         )}
       </div>
 
@@ -278,11 +225,38 @@ export default function RateView({
   );
 }
 
-function pairs<T>(arr: T[]): [T, T][] {
-  const out: [T, T][] = [];
-  for (let i = 0; i < arr.length; i++)
-    for (let j = i + 1; j < arr.length; j++) out.push([arr[i], arr[j]]);
-  return out;
+// --- Run column header --------------------------------------------------------
+
+function RunHeader({ run, corpusName }: { run: Run; corpusName?: string }) {
+  const rated = run.themes.filter(isFullyRated).length;
+  return (
+    <div className="mb-2.5 bg-white border border-slate-300 rounded-lg px-3 py-2 sticky top-0 z-10 shadow-sm">
+      <div className="flex items-center gap-2">
+        <span className="font-mono text-[12px] font-bold text-slate-800 break-all leading-snug">
+          {buildRunName(run)}
+        </span>
+        <span
+          className={`ml-auto flex-shrink-0 text-[11px] font-mono ${
+            rated === run.themes.length && run.themes.length > 0
+              ? 'text-emerald-600 font-semibold'
+              : 'text-slate-500'
+          }`}
+        >
+          {rated}/{run.themes.length} rated
+        </span>
+      </div>
+      <div className="mt-1 flex items-center gap-1.5 flex-wrap">
+        {run.model && <Chip label={run.model} tone="blue" />}
+        {run.promptVariant && <Chip label={run.promptVariant} />}
+        {run.version && <Chip label={`v${run.version}`} />}
+        {run.dataSource && <Chip label={run.dataSource} tone="amber" />}
+        {run.rq && <Chip label={`rq: ${run.rq}`} />}
+        {run.positionality && <Chip label={run.positionality} />}
+        {run.runN && <Chip label={`run ${run.runN}`} />}
+        {corpusName && <Chip label={`↳ ${corpusName}`} tone="amber" />}
+      </div>
+    </div>
+  );
 }
 
 function Toggle({ label, on, onClick }: { label: string; on: boolean; onClick: () => void }) {
@@ -377,35 +351,65 @@ function ThemeCard({
   theme,
   run,
   state,
-  pinned,
-  showRunChips = false,
-  focus = false,
+  themeById,
+  shownRuns,
+  focusThemeId,
   onFocusHandled,
   onSetScore,
   onSetRatingNotes,
-  onTogglePin,
+  onAddSimilarity,
+  onSetSimilarity,
+  onSetSimilarityNotes,
+  onRemoveSimilarity,
   onQuoteClick,
 }: {
   theme: RatedTheme;
   run: Run;
   state: AppState;
-  pinned: boolean;
-  showRunChips?: boolean;
-  focus?: boolean;
-  onFocusHandled?: () => void;
+  themeById: Map<string, { run: Run; theme: RatedTheme }>;
+  shownRuns: Run[];
+  focusThemeId: string | null;
+  onFocusHandled: () => void;
   onSetScore: Props['onSetScore'];
   onSetRatingNotes: Props['onSetRatingNotes'];
-  onTogglePin: (themeId: string) => void;
+  onAddSimilarity: Props['onAddSimilarity'];
+  onSetSimilarity: Props['onSetSimilarity'];
+  onSetSimilarityNotes: Props['onSetSimilarityNotes'];
+  onRemoveSimilarity: Props['onRemoveSimilarity'];
   onQuoteClick: (run: Run, q: ThemeQuote, docIdxOverride?: number) => void;
 }) {
+  const focus = focusThemeId === theme.id;
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (focus && ref.current) {
       ref.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      onFocusHandled?.();
+      onFocusHandled();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [focus]);
+
+  // Existing similarity links involving this theme.
+  const links = state.similarities
+    .filter((s) => s.themeA === theme.id || s.themeB === theme.id)
+    .map((s) => {
+      const otherId = s.themeA === theme.id ? s.themeB : s.themeA;
+      const other = themeById.get(otherId);
+      return other ? { pair: s, otherId, other } : null;
+    })
+    .filter((x): x is NonNullable<typeof x> => x !== null);
+  const linkedIds = new Set(links.map((l) => l.otherId));
+
+  // Candidates for a new link: same run's themes first, then other shown runs.
+  const candidates: { id: string; label: string }[] = [];
+  for (const r of [run, ...shownRuns.filter((r) => r.id !== run.id)]) {
+    for (const t of r.themes) {
+      if (t.id === theme.id || linkedIds.has(t.id)) continue;
+      candidates.push({
+        id: t.id,
+        label: r.id === run.id ? t.name : `[${buildRunName(r)}] ${t.name}`,
+      });
+    }
+  }
 
   const rated = ratedAxisCount(theme);
   return (
@@ -415,30 +419,9 @@ function ThemeCard({
         focus ? 'border-blue-400 ring-2 ring-blue-100' : 'border-slate-200'
       }`}
     >
-      <div className="flex items-start gap-2">
-        <h3 className="text-[14px] font-bold text-slate-900 leading-snug break-words flex-1">
-          {theme.name}
-        </h3>
-        <button
-          type="button"
-          onClick={() => onTogglePin(theme.id)}
-          title={pinned ? 'unpin from compare' : 'pin to compare (up to 3)'}
-          className={`flex-shrink-0 px-1.5 py-0.5 rounded text-[11px] font-semibold border transition-colors ${
-            pinned
-              ? 'bg-amber-100 text-amber-800 border-amber-300'
-              : 'text-slate-400 border-slate-200 hover:border-amber-300 hover:text-amber-700'
-          }`}
-        >
-          {pinned ? 'pinned' : 'pin'}
-        </button>
-      </div>
-      {showRunChips && (
-        <div className="mt-1 flex items-center gap-1.5 flex-wrap">
-          {run.model && <Chip label={run.model} tone="blue" />}
-          {run.positionality && <Chip label={run.positionality} />}
-          {run.condition && <Chip label={run.condition} />}
-        </div>
-      )}
+      <h3 className="text-[14px] font-bold text-slate-900 leading-snug break-words">
+        {theme.name}
+      </h3>
 
       {state.showDefinition !== false && theme.definition && (
         <Section label="Definition" text={theme.definition} />
@@ -471,6 +454,11 @@ function ThemeCard({
                     {q.source && (
                       <span
                         className={`font-mono text-[10px] ${q.anchor ? 'text-emerald-600' : 'text-slate-400'}`}
+                        title={
+                          q.anchor
+                            ? 'anchored: found verbatim in this document'
+                            : 'not anchored: text not found verbatim in this document'
+                        }
                       >
                         {q.source}
                         {q.anchor ? '' : ' ✗'}
@@ -505,26 +493,28 @@ function ThemeCard({
         {AXES.map((a) => {
           const v = theme.rating[a.key];
           return (
-            <div key={a.key} className="flex items-center gap-2">
-              <span
-                title={a.question}
-                className={`text-[11px] font-medium w-[150px] flex-shrink-0 ${
-                  a.wip ? 'text-amber-700' : 'text-slate-600'
-                }`}
-              >
-                {a.label}
-                {a.wip && <span className="ml-1 text-[8px] uppercase font-bold">wip</span>}
-              </span>
-              <ScoreButtons
-                compact
-                value={v ?? null}
-                levels={state.showRubricHints ? a.levels : undefined}
-                onChange={(nv) => onSetScore(run.id, theme.id, a.key, nv)}
-              />
-              {state.showRubricHints && typeof v === 'number' && (
-                <span className="text-[10px] text-slate-400 leading-tight line-clamp-2 min-w-0">
-                  {a.levels[5 - v]}
+            <div key={a.key}>
+              <div className="flex items-center gap-2">
+                <span
+                  title={a.question}
+                  className={`text-[11px] font-medium w-[150px] flex-shrink-0 ${
+                    a.wip ? 'text-amber-700' : 'text-slate-600'
+                  }`}
+                >
+                  {a.label}
+                  {a.wip && <span className="ml-1 text-[8px] uppercase font-bold">wip</span>}
                 </span>
+                <ScoreButtons
+                  compact
+                  value={v ?? null}
+                  levels={a.levels}
+                  onChange={(nv) => onSetScore(run.id, theme.id, a.key, nv)}
+                />
+              </div>
+              {state.showRubricHints && typeof v === 'number' && (
+                <div className="mt-0.5 ml-[150px] text-[10px] text-slate-500 leading-snug">
+                  {a.levels[5 - v]}
+                </div>
               )}
             </div>
           );
@@ -538,6 +528,67 @@ function ThemeCard({
             className="flex-1 px-1.5 py-0.5 text-[11px] border border-slate-200 rounded outline-none focus:border-blue-400 min-w-0"
           />
         </div>
+      </div>
+
+      {/* Theme similarity */}
+      <div className="mt-2 pt-2 border-t border-slate-100">
+        <div
+          className="text-[10px] uppercase tracking-wider font-semibold text-slate-400 mb-1"
+          title={SIMILARITY_RUBRIC.question}
+        >
+          Theme similarity
+        </div>
+        {links.map(({ pair, otherId, other }) => (
+          <div key={otherId} className="flex items-center gap-1.5 mb-1 flex-wrap">
+            <span
+              className="text-[11px] text-slate-700 break-words min-w-0 flex-1"
+              title={other.run.id === run.id ? undefined : buildRunName(other.run)}
+            >
+              {other.theme.name}
+              {other.run.id !== run.id && (
+                <span className="ml-1 font-mono text-[9px] text-slate-400">
+                  [{buildRunName(other.run)}]
+                </span>
+              )}
+            </span>
+            <ScoreButtons
+              compact
+              value={pair.similarity ?? null}
+              levels={SIMILARITY_RUBRIC.levels}
+              onChange={(v) => onSetSimilarity(theme.id, otherId, v)}
+            />
+            <input
+              value={pair.notes ?? ''}
+              onChange={(e) => onSetSimilarityNotes(theme.id, otherId, e.target.value)}
+              placeholder="notes"
+              className="px-1.5 py-0.5 text-[10px] border border-slate-200 rounded w-[90px] outline-none focus:border-blue-400"
+            />
+            <button
+              type="button"
+              onClick={() => onRemoveSimilarity(theme.id, otherId)}
+              className="text-slate-300 hover:text-red-600 text-[12px] leading-none px-0.5"
+              title="remove similarity link"
+            >
+              ×
+            </button>
+          </div>
+        ))}
+        {candidates.length > 0 && (
+          <select
+            value=""
+            onChange={(e) => {
+              if (e.target.value) onAddSimilarity(theme.id, e.target.value);
+            }}
+            className="w-full px-1.5 py-1 text-[11px] border border-dashed border-slate-300 rounded bg-white text-slate-500 outline-none"
+          >
+            <option value="">+ compare with…</option>
+            {candidates.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.label}
+              </option>
+            ))}
+          </select>
+        )}
       </div>
     </div>
   );

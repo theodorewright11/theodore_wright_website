@@ -1,3 +1,4 @@
+import { buildRunName } from './runName';
 import type {
   AppState,
   AxisScore,
@@ -70,6 +71,9 @@ export function coerceState(p: any): AppState {
           )
       : [],
     activeRunId: typeof p.activeRunId === 'string' ? p.activeRunId : null,
+    rateRunIds: Array.isArray(p.rateRunIds)
+      ? p.rateRunIds.filter((s: any) => typeof s === 'string').slice(0, 3)
+      : undefined,
     view: p.view === 'rate' || p.view === 'explore' ? p.view : 'runs',
     showDefinition: p.showDefinition !== false,
     showReasoning: p.showReasoning !== false,
@@ -113,14 +117,21 @@ function coerceCorpus(c: any): Corpus {
 }
 
 export function coerceRun(r: any): Run {
+  const str = (v: any): string => (typeof v === 'string' ? v : '');
   return {
     id: typeof r?.id === 'string' ? r.id : cryptoRandomId(),
     corpusId: typeof r?.corpusId === 'string' ? r.corpusId : null,
-    model: typeof r?.model === 'string' ? r.model : '',
-    positionality: typeof r?.positionality === 'string' ? r.positionality : '',
-    researchQuestion: typeof r?.researchQuestion === 'string' ? r.researchQuestion : '',
-    condition: typeof r?.condition === 'string' ? r.condition : '',
-    repeat: typeof r?.repeat === 'string' && r.repeat.trim() ? r.repeat : undefined,
+    model: str(r?.model),
+    // Legacy field names from the first cut: condition → promptVariant,
+    // researchQuestion → rq, repeat → runN.
+    promptVariant: str(r?.promptVariant) || str(r?.condition),
+    version: str(r?.version),
+    dataSource: str(r?.dataSource),
+    rq: str(r?.rq) || str(r?.researchQuestion),
+    positionality: str(r?.positionality),
+    runN:
+      (typeof r?.runN === 'string' && r.runN.trim() ? r.runN : undefined) ??
+      (typeof r?.repeat === 'string' && r.repeat.trim() ? r.repeat : undefined),
     notes: typeof r?.notes === 'string' && r.notes.trim() ? r.notes : undefined,
     themes: Array.isArray(r?.themes) ? r.themes.map(coerceTheme) : [],
     additionalText:
@@ -316,12 +327,15 @@ export function ratingsCSV(state: AppState): string {
   const corpusById = new Map(state.corpora.map((c) => [c.id, c]));
   const header = [
     'run_id',
+    'run_name',
     'corpus',
     'model',
+    'prompt_variant',
+    'version',
+    'data_source',
+    'rq',
     'positionality',
-    'research_question',
-    'condition',
-    'repeat',
+    'run_n',
     'theme_name',
     'grounding',
     'research_question_fit',
@@ -341,12 +355,15 @@ export function ratingsCSV(state: AppState): string {
       lines.push(
         [
           csvCell(run.id),
+          csvCell(buildRunName(run)),
           csvCell(run.corpusId ? corpusById.get(run.corpusId)?.name ?? run.corpusId : ''),
           csvCell(run.model),
+          csvCell(run.promptVariant),
+          csvCell(run.version),
+          csvCell(run.dataSource),
+          csvCell(run.rq),
           csvCell(run.positionality),
-          csvCell(run.researchQuestion),
-          csvCell(run.condition),
-          csvCell(run.repeat),
+          csvCell(run.runN),
           csvCell(t.name),
           csvCell(scoreCell(t.rating.grounding)),
           csvCell(scoreCell(t.rating.researchQuestionFit)),
@@ -372,18 +389,7 @@ export function similaritiesCSV(state: AppState): string {
   for (const run of state.runs) {
     for (const t of run.themes) themeIndex.set(t.id, { run, theme: t });
   }
-  const header = [
-    'theme_a',
-    'run_a_model',
-    'run_a_positionality',
-    'run_a_condition',
-    'theme_b',
-    'run_b_model',
-    'run_b_positionality',
-    'run_b_condition',
-    'similarity',
-    'notes',
-  ];
+  const header = ['theme_a', 'run_a', 'theme_b', 'run_b', 'similarity', 'notes'];
   const lines = [header.join(',')];
   for (const s of state.similarities) {
     const a = themeIndex.get(s.themeA);
@@ -392,13 +398,9 @@ export function similaritiesCSV(state: AppState): string {
     lines.push(
       [
         csvCell(a.theme.name),
-        csvCell(a.run.model),
-        csvCell(a.run.positionality),
-        csvCell(a.run.condition),
+        csvCell(buildRunName(a.run)),
         csvCell(b.theme.name),
-        csvCell(b.run.model),
-        csvCell(b.run.positionality),
-        csvCell(b.run.condition),
+        csvCell(buildRunName(b.run)),
         csvCell(scoreCell(s.similarity)),
         csvCell(s.notes),
       ].join(','),

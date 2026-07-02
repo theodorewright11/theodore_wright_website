@@ -1,3 +1,4 @@
+import { buildRunName } from './runName';
 import type { AxisScore, Corpus, RatedTheme, Run } from './types';
 import { AXIS_KEYS } from './types';
 
@@ -69,19 +70,10 @@ export function ratedAxisCount(t: RatedTheme): number {
   return AXIS_KEYS.filter((k) => t.rating[k] !== undefined).length;
 }
 
-// Compact one-line descriptor for a run, used in selectors and chips.
-export function runLabel(run: Run, corpora: Corpus[]): string {
-  const parts = [run.model, run.positionality, run.condition].filter(Boolean);
-  const rq = run.researchQuestion
-    ? run.researchQuestion.length > 48
-      ? run.researchQuestion.slice(0, 48) + '…'
-      : run.researchQuestion
-    : '';
-  if (rq) parts.push(rq);
-  if (run.repeat) parts.push(`rep ${run.repeat}`);
-  const corpus = run.corpusId ? corpora.find((c) => c.id === run.corpusId)?.name : undefined;
-  if (corpus) parts.push(corpus);
-  return parts.join(' · ') || 'untitled run';
+// Compact one-line descriptor for a run — the composed underscore name from
+// the study's naming convention.
+export function runLabel(run: Run, _corpora?: Corpus[]): string {
+  return buildRunName(run);
 }
 
 export function Chip({ label, tone = 'slate' }: { label: string; tone?: 'slate' | 'blue' | 'amber' }) {

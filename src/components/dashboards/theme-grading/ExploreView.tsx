@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
+import { buildRunName } from './runName';
 import { AXES } from './rubric';
-import { Chip, scoreDisplay } from './shared';
+import { scoreDisplay } from './shared';
 import type { AppState, AxisKey, AxisScore, RatedTheme, Run } from './types';
 
 type Props = {
@@ -11,12 +12,14 @@ type Props = {
   onExportJSON: () => void;
 };
 
-type Dimension = 'model' | 'positionality' | 'researchQuestion' | 'condition';
+type Dimension = 'model' | 'promptVariant' | 'version' | 'dataSource' | 'rq' | 'positionality';
 const DIMENSIONS: { key: Dimension; label: string }[] = [
   { key: 'model', label: 'Model' },
+  { key: 'promptVariant', label: 'Prompt variant' },
+  { key: 'version', label: 'Version' },
+  { key: 'dataSource', label: 'Data source' },
+  { key: 'rq', label: 'RQ' },
   { key: 'positionality', label: 'Positionality' },
-  { key: 'researchQuestion', label: 'Research question' },
-  { key: 'condition', label: 'Condition' },
 ];
 
 // Axis-score filter values: '' = any, '1'..'5', 'na', 'unrated'.
@@ -39,9 +42,11 @@ export default function ExploreView({
   // Per-dimension selected values (empty set = all).
   const [dimFilters, setDimFilters] = useState<Record<Dimension, Set<string>>>({
     model: new Set(),
+    promptVariant: new Set(),
+    version: new Set(),
+    dataSource: new Set(),
+    rq: new Set(),
     positionality: new Set(),
-    researchQuestion: new Set(),
-    condition: new Set(),
   });
   const [axisFilters, setAxisFilters] = useState<Partial<Record<AxisKey, ScoreFilter>>>({});
   const [groupBy, setGroupBy] = useState<Dimension>('positionality');
@@ -49,9 +54,11 @@ export default function ExploreView({
   const dimValues = useMemo(() => {
     const out: Record<Dimension, string[]> = {
       model: [],
+      promptVariant: [],
+      version: [],
+      dataSource: [],
+      rq: [],
       positionality: [],
-      researchQuestion: [],
-      condition: [],
     };
     for (const d of DIMENSIONS) {
       out[d.key] = [
@@ -141,9 +148,11 @@ export default function ExploreView({
                 onClick={() => {
                   setDimFilters({
                     model: new Set(),
+                    promptVariant: new Set(),
+                    version: new Set(),
+                    dataSource: new Set(),
+                    rq: new Set(),
                     positionality: new Set(),
-                    researchQuestion: new Set(),
-                    condition: new Set(),
                   });
                   setAxisFilters({});
                 }}
@@ -332,12 +341,9 @@ export default function ExploreView({
                         </button>
                       </td>
                       <td className="px-3 py-2">
-                        <div className="flex items-center gap-1 flex-wrap">
-                          {run.model && <Chip label={run.model} tone="blue" />}
-                          {run.positionality && <Chip label={run.positionality} />}
-                          {run.condition && <Chip label={run.condition} />}
-                          {run.repeat && <Chip label={`rep ${run.repeat}`} />}
-                        </div>
+                        <span className="font-mono text-[10px] text-slate-500 break-all">
+                          {buildRunName(run)}
+                        </span>
                       </td>
                       {AXES.map((a) => {
                         const v = theme.rating[a.key];

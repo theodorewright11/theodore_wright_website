@@ -55,14 +55,16 @@
 │   │   │   │                               storage.ts (localStorage + JSON import/export), exporters.ts (JSON + Markdown: doc/codebook/themes/project),
 │   │   │   │                               drive.ts (Drive Files REST + multipart), driveSync.ts (folder-per-project orchestrator)
 │   │   │   └── theme-grading/           ← ThemeGradingDashboard.tsx (root, 3-view router, single-state Drive sync, googleAuth code-flow).
-│   │   │                                   Views: RunsView.tsx (corpus CSV upload + run creation/list), RateView.tsx (side-by-side theme
-│   │   │                                   cards, 6-axis 1–5/N-A scoring, rubric panel, pin-to-compare + pairwise similarity, doc modal),
+│   │   │                                   Views: RunsView.tsx (corpus CSV upload + run creation w/ name-autofill + per-run export),
+│   │   │                                   RateView.tsx (up to 3 runs as side-by-side columns w/ sticky metadata headers, 6-axis 1–5/N-A
+│   │   │                                   scoring, rubric panel + inline score hints, per-theme pairwise similarity picker, doc modal),
 │   │   │                                   ExploreView.tsx (dimension/score filters + mean-by-dimension table + exports).
-│   │   │                                   types.ts, rubric.ts (axis definitions + level text — rubric source of truth), shared.tsx
-│   │   │                                   (ScoreButtons w/ N-A, chips, run labels), storage.ts (localStorage + CSV parse/export),
-│   │   │                                   themeImport.ts (anchors AI theme JSON to a corpus; reuses qual-coding's tolerant parseAIThemesJson),
-│   │   │                                   drive.ts (trimmed Drive REST, tag tw_theme_grading=v1), driveSync.ts (state.json + derived
-│   │   │                                   ratings/similarities CSVs; entity-level merge on pull), AuthBar.tsx
+│   │   │                                   types.ts, rubric.ts (axis definitions + level text — rubric source of truth), runName.ts
+│   │   │                                   (buildRunName/parseRunName for the {model}_{promptvariant}_v{n}_… convention), shared.tsx
+│   │   │                                   (ScoreButtons w/ N-A, chips), storage.ts (localStorage + CSV parse/export), exporters.ts
+│   │   │                                   (per-run <name>.themes-ratings.json), themeImport.ts (anchors AI theme JSON to a corpus;
+│   │   │                                   reuses qual-coding's tolerant parseAIThemesJson), drive.ts (trimmed Drive REST, tag
+│   │   │                                   tw_theme_grading=v1), driveSync.ts (state.json + derived CSVs; entity-level merge on pull), AuthBar.tsx
 │   │   └── ai-research/                 ← React components for AI-research stage visualizations
 │   │       ├── PsychVariationGraph.tsx  ← topology graph (force-directed via d3-force) — pan + wheel-zoom + reset
 │   │       ├── PsychVariationModel.tsx  ← model dashboard (variance decomposition + multivariate sex-difference tabs)
