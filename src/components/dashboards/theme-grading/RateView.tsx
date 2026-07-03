@@ -123,20 +123,10 @@ export default function RateView({
             </span>
           ))}
           {shownRuns.length < 4 && state.runs.length > 0 && (
-            <select
-              value=""
-              onChange={(e) => {
-                if (e.target.value) onSetRateRuns([...shownIds, e.target.value]);
-              }}
-              className="px-2 py-1 text-[11px] border border-dashed border-slate-300 rounded-md bg-white text-slate-500 outline-none max-w-[280px]"
-            >
-              <option value="">+ Show run…</option>
-              {state.runs.map((r) => (
-                <option key={r.id} value={r.id}>
-                  {buildRunName(r)}
-                </option>
-              ))}
-            </select>
+            <AddRunPicker
+              runs={state.runs}
+              onPick={(id) => onSetRateRuns([...shownIds, id])}
+            />
           )}
 
           <div className="flex items-center gap-2.5 text-[11px] text-slate-600 flex-wrap ml-auto">
@@ -238,6 +228,53 @@ function RunHeader({ run, corpusName }: { run: Run; corpusName?: string }) {
         {run.runN && <Chip label={`run${run.runN}`} />}
         {corpusName && <Chip label={corpusName} tone="amber" />}
       </div>
+    </div>
+  );
+}
+
+// Alphabetized run picker with its own scrollable panel (long run names scroll
+// sideways; long lists scroll vertically) — a native <select> can do neither.
+function AddRunPicker({ runs, onPick }: { runs: Run[]; onPick: (id: string) => void }) {
+  const [open, setOpen] = useState(false);
+  const rootRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const onDown = (e: MouseEvent) => {
+      if (rootRef.current && !rootRef.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener('mousedown', onDown);
+    return () => document.removeEventListener('mousedown', onDown);
+  }, [open]);
+
+  const sorted = [...runs].sort((a, b) => buildRunName(a).localeCompare(buildRunName(b)));
+
+  return (
+    <div className="relative" ref={rootRef}>
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="px-2 py-1 text-[11px] border border-dashed border-slate-300 rounded-md bg-white text-slate-500 hover:border-slate-400 hover:text-slate-700 transition-colors"
+      >
+        + Show run…
+      </button>
+      {open && (
+        <div className="absolute left-0 top-full mt-1 z-30 bg-white border border-slate-200 rounded-md shadow-lg max-h-[320px] w-max max-w-[560px] overflow-auto py-1">
+          {sorted.map((r) => (
+            <button
+              key={r.id}
+              type="button"
+              onClick={() => {
+                onPick(r.id);
+                setOpen(false);
+              }}
+              className="block w-full text-left px-2.5 py-1 text-[11px] font-mono text-slate-700 whitespace-nowrap hover:bg-blue-50"
+            >
+              {buildRunName(r)}
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -384,10 +421,12 @@ function ThemeCard({
     .filter((x): x is NonNullable<typeof x> => x !== null);
   const linkedIds = new Set(links.map((l) => l.otherId));
 
-  // Candidates for a new link: same run's themes first, then other shown runs.
+  // Candidates for a new link: same run's themes first, then other shown runs
+  // — each group alphabetical by theme name.
   const candidates: { id: string; label: string }[] = [];
   for (const r of [run, ...shownRuns.filter((r) => r.id !== run.id)]) {
-    for (const t of r.themes) {
+    const themes = [...r.themes].sort((a, b) => a.name.localeCompare(b.name));
+    for (const t of themes) {
       if (t.id === theme.id || linkedIds.has(t.id)) continue;
       candidates.push({
         id: t.id,

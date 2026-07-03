@@ -547,10 +547,7 @@ function RunListSection({
   };
 
   const runs = useMemo(
-    () =>
-      [...state.runs].sort(
-        (a, b) => (Date.parse(b.created_at) || 0) - (Date.parse(a.created_at) || 0),
-      ),
+    () => [...state.runs].sort((a, b) => buildRunName(a).localeCompare(buildRunName(b))),
     [state.runs],
   );
 
