@@ -21,6 +21,16 @@ type Props = {
   onUpdateRunMeta: (id: string, patch: Partial<Run>) => void;
   onOpenRun: (id: string) => void;
   onReanchorRun: (runId: string, corpusId: string) => { anchored: number; total: number };
+  onReplaceRunJson: (
+    runId: string,
+    themesJson: string,
+  ) => {
+    themeCount: number;
+    anchoredQuotes: number;
+    totalQuotes: number;
+    ratingsPreserved: number;
+    warnings: string[];
+  };
 };
 
 export default function RunsView({
@@ -33,6 +43,7 @@ export default function RunsView({
   onUpdateRunMeta,
   onOpenRun,
   onReanchorRun,
+  onReplaceRunJson,
 }: Props) {
   return (
     <div className="flex-1 min-w-0 min-h-0 overflow-y-auto bg-white">
@@ -51,6 +62,7 @@ export default function RunsView({
           onUpdateRunMeta={onUpdateRunMeta}
           onOpenRun={onOpenRun}
           onReanchorRun={onReanchorRun}
+          onReplaceRunJson={onReplaceRunJson}
         />
       </div>
     </div>
@@ -500,15 +512,39 @@ function RunListSection({
   onUpdateRunMeta,
   onOpenRun,
   onReanchorRun,
+  onReplaceRunJson,
 }: {
   state: AppState;
   onDeleteRun: (id: string) => void;
   onUpdateRunMeta: (id: string, patch: Partial<Run>) => void;
   onOpenRun: (id: string) => void;
   onReanchorRun: (runId: string, corpusId: string) => { anchored: number; total: number };
+  onReplaceRunJson: Props['onReplaceRunJson'];
 }) {
   const [editId, setEditId] = useState<string | null>(null);
   const [reanchorReport, setReanchorReport] = useState<Record<string, string>>({});
+  const replaceFileRef = useRef<HTMLInputElement>(null);
+  const replaceTargetId = useRef<string | null>(null);
+
+  const handleReplaceFile = async (file: File) => {
+    const runId = replaceTargetId.current;
+    if (!runId) return;
+    try {
+      const r = onReplaceRunJson(runId, await readFileAsText(file));
+      setReanchorReport((m) => ({
+        ...m,
+        [runId]:
+          `Replaced: ${r.themeCount} themes, ${r.anchoredQuotes}/${r.totalQuotes} quotes in data, ` +
+          `${r.ratingsPreserved} rated theme${r.ratingsPreserved === 1 ? '' : 's'} kept.` +
+          (r.warnings.length > 0 ? ` ${r.warnings.join(' ')}` : ''),
+      }));
+    } catch (e) {
+      setReanchorReport((m) => ({
+        ...m,
+        [runId]: `Replace failed: ${e instanceof Error ? e.message : String(e)}`,
+      }));
+    }
+  };
 
   const runs = useMemo(
     () =>
@@ -538,6 +574,17 @@ function RunListSection({
       <h2 className="font-bold text-[16px] text-slate-900 mb-2">
         Runs <span className="text-slate-400 font-normal text-[13px]">({runs.length})</span>
       </h2>
+      <input
+        ref={replaceFileRef}
+        type="file"
+        accept=".json,application/json,.txt"
+        className="hidden"
+        onChange={(e) => {
+          const f = e.target.files?.[0];
+          if (f) handleReplaceFile(f);
+          e.target.value = '';
+        }}
+      />
       <ul className="space-y-2">
         {runs.map((run) => {
           const rated = run.themes.filter(isFullyRated).length;
@@ -657,6 +704,17 @@ function RunListSection({
                     title="Match every quote against the selected data again"
                   >
                     Re-match quotes
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      replaceTargetId.current = run.id;
+                      replaceFileRef.current?.click();
+                    }}
+                    className="px-2.5 py-1.5 text-[11px] font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-md transition-colors"
+                    title="Re-upload this run's themes JSON — themes matched by name keep their ratings"
+                  >
+                    Replace JSON
                   </button>
                   {reanchorReport[run.id] && (
                     <span className="text-[11px] text-emerald-700">{reanchorReport[run.id]}</span>

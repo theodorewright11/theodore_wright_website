@@ -331,6 +331,49 @@ export default function ThemeGradingDashboard() {
       runs: s.runs.map((r) => (r.id === id ? touchRun({ ...r, ...patch }) : r)),
     }));
 
+  // Replace a run's themes from a fresh JSON (e.g. the file gained the
+  // all_supporting_data field). Themes are matched to the old ones by name so
+  // existing ratings — and similarity links, via preserved theme ids — carry
+  // over; unmatched old themes' ratings are dropped.
+  const replaceRunJson = (runId: string, themesJson: string) => {
+    const run = state.runs.find((r) => r.id === runId);
+    if (!run) throw new Error('Run not found.');
+    const raw = parseAIThemesJson(themesJson);
+    const corpus = run.corpusId ? state.corpora.find((c) => c.id === run.corpusId) ?? null : null;
+    const result = buildThemesFromImport(raw, corpus);
+    if (result.themes.length === 0) {
+      throw new Error(result.warnings.join(' ') || 'No themes found in the JSON.');
+    }
+    const norm = (s: string) => s.trim().toLowerCase();
+    const oldByName = new Map(run.themes.map((t) => [norm(t.name), t]));
+    let ratingsPreserved = 0;
+    const merged = result.themes.map((t) => {
+      const old = oldByName.get(norm(t.name));
+      if (!old) return t;
+      if (Object.keys(old.rating).length > 0) ratingsPreserved++;
+      return { ...t, id: old.id, rating: old.rating };
+    });
+    mutate((s) => ({
+      ...s,
+      runs: s.runs.map((r) =>
+        r.id === runId
+          ? touchRun({
+              ...r,
+              themes: merged,
+              additionalText: result.additionalText ?? r.additionalText,
+            })
+          : r,
+      ),
+    }));
+    return {
+      themeCount: merged.length,
+      anchoredQuotes: result.anchoredQuotes,
+      totalQuotes: result.totalQuotes,
+      ratingsPreserved,
+      warnings: result.warnings,
+    };
+  };
+
   // Re-run quote↔data matching for an existing run (e.g. after uploading the
   // data it should have pointed at). Ratings and theme ids are preserved.
   const reanchorRun = (runId: string, corpusId: string) => {
@@ -497,6 +540,7 @@ export default function ThemeGradingDashboard() {
             setState((s) => ({ ...s, rateRunIds: [id], activeRunId: id, view: 'rate' }))
           }
           onReanchorRun={reanchorRun}
+          onReplaceRunJson={replaceRunJson}
         />
       )}
       {view === 'rate' && (

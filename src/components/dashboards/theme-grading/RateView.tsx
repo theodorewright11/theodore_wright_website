@@ -64,6 +64,12 @@ export default function RateView({
     }
   };
 
+  const openDocByIdx = (run: Run, docIdx: number) => {
+    const corpus = run.corpusId ? corpusById.get(run.corpusId) : undefined;
+    if (!corpus || !corpus.docs[docIdx]) return;
+    setDocModal({ corpus, docIdx });
+  };
+
   const shownIds = shownRuns.map((r) => r.id);
 
   const singleRun = shownRuns.length === 1;
@@ -86,6 +92,7 @@ export default function RateView({
     onSetSimilarityNotes,
     onRemoveSimilarity,
     onQuoteClick: openQuoteDoc,
+    onOpenDoc: openDocByIdx,
     focusThemeId,
     onFocusHandled,
     shownRuns,
@@ -338,6 +345,7 @@ function ThemeCard({
   onSetSimilarityNotes,
   onRemoveSimilarity,
   onQuoteClick,
+  onOpenDoc,
 }: {
   theme: RatedTheme;
   run: Run;
@@ -353,6 +361,7 @@ function ThemeCard({
   onSetSimilarityNotes: Props['onSetSimilarityNotes'];
   onRemoveSimilarity: Props['onRemoveSimilarity'];
   onQuoteClick: (run: Run, q: ThemeQuote, docIdxOverride?: number) => void;
+  onOpenDoc: (run: Run, docIdx: number) => void;
 }) {
   const focus = focusThemeId === theme.id;
   const ref = useRef<HTMLDivElement>(null);
@@ -461,6 +470,31 @@ function ThemeCard({
               </li>
             ))}
           </ul>
+        </div>
+      )}
+
+      {theme.supportingData && theme.supportingData.length > 0 && (
+        <div className="mt-2 text-[11px] leading-snug">
+          <span className="text-[10px] uppercase tracking-wider font-semibold text-slate-400">
+            Supporting data ({theme.supportingData.length}):
+          </span>{' '}
+          {theme.supportingData.map((tag, i) => {
+            const m = tag.match(/(\d+)/);
+            return (
+              <button
+                key={`${tag}:${i}`}
+                type="button"
+                disabled={!m}
+                onClick={() => {
+                  if (m) onOpenDoc(run, parseInt(m[1], 10) - 1);
+                }}
+                className="font-mono text-[10px] text-blue-600 hover:underline mr-1.5"
+                title={`Open ${tag}`}
+              >
+                {tag.replace(/^\[|\]$/g, '')}
+              </button>
+            );
+          })}
         </div>
       )}
 

@@ -170,6 +170,9 @@ function coerceTheme(t: any): RatedTheme {
     name: typeof t?.name === 'string' ? t.name : 'Untitled theme',
     definition: typeof t?.definition === 'string' && t.definition.trim() ? t.definition : undefined,
     reasoning: typeof t?.reasoning === 'string' && t.reasoning.trim() ? t.reasoning : undefined,
+    supportingData: Array.isArray(t?.supportingData)
+      ? t.supportingData.filter((s: any) => typeof s === 'string' && s.trim())
+      : undefined,
     quotes: Array.isArray(t?.quotes)
       ? t.quotes
           .filter((q: any) => q && typeof q.text === 'string')

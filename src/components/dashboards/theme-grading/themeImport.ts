@@ -217,12 +217,18 @@ export function buildThemesFromImport(
       }
       quotes.push(quote);
     }
+    const supportingData: string[] = Array.isArray(rt?.all_supporting_data)
+      ? rt.all_supporting_data.filter((s: any) => typeof s === 'string' && s.trim())
+      : Array.isArray(rt?.supporting_data)
+        ? rt.supporting_data.filter((s: any) => typeof s === 'string' && s.trim())
+        : [];
     return {
       id: cryptoRandomId(),
       name,
       definition: cleanField(rt?.definition),
       reasoning: cleanField(rt?.reasoning),
       quotes,
+      supportingData: supportingData.length > 0 ? supportingData : undefined,
       rating: {},
     };
   });

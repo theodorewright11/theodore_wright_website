@@ -57,6 +57,9 @@ export type RatedTheme = {
   definition?: string;
   reasoning?: string;
   quotes: ThemeQuote[];
+  // The import's `all_supporting_data` list — every data item the AI says
+  // supports this theme, as [D{n}]-style tags (broader than the quoted ones).
+  supportingData?: string[];
   rating: ThemeRating;
 };
 
