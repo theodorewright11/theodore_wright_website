@@ -16,7 +16,13 @@ type Props = {
   onSetSimilarityNotes: (themeA: string, themeB: string, notes: string) => void;
   onRemoveSimilarity: (themeA: string, themeB: string) => void;
   onToggleDisplay: (
-    key: 'showDefinition' | 'showReasoning' | 'showQuotes' | 'showQuoteSources' | 'showRubricHints',
+    key:
+      | 'showDefinition'
+      | 'showReasoning'
+      | 'showQuotes'
+      | 'showQuoteSources'
+      | 'showSupportingData'
+      | 'showRubricHints',
   ) => void;
   onFocusHandled: () => void;
 };
@@ -134,6 +140,7 @@ export default function RateView({
             <Toggle label="Reasoning" on={state.showReasoning !== false} onClick={() => onToggleDisplay('showReasoning')} />
             <Toggle label="Quotes" on={state.showQuotes !== false} onClick={() => onToggleDisplay('showQuotes')} />
             <Toggle label="Sources" on={state.showQuoteSources !== false} onClick={() => onToggleDisplay('showQuoteSources')} />
+            <Toggle label="Supporting data" on={state.showSupportingData !== false} onClick={() => onToggleDisplay('showSupportingData')} />
             <Toggle label="Score hints" on={!!state.showRubricHints} onClick={() => onToggleDisplay('showRubricHints')} />
             <button
               type="button"
@@ -512,7 +519,7 @@ function ThemeCard({
         </div>
       )}
 
-      {theme.supportingData && theme.supportingData.length > 0 && (
+      {state.showSupportingData !== false && theme.supportingData && theme.supportingData.length > 0 && (
         <div className="mt-2 text-[11px] leading-snug">
           <span className="text-[10px] uppercase tracking-wider font-semibold text-slate-400">
             Supporting data ({theme.supportingData.length}):

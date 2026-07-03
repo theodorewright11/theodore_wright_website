@@ -122,6 +122,7 @@ export type AppState = {
   showReasoning?: boolean;
   showQuotes?: boolean;
   showQuoteSources?: boolean;
+  showSupportingData?: boolean;
   showRubricHints?: boolean;
   // Tombstones so a Drive pull doesn't resurrect deleted entities.
   deletedRunIds?: string[];

@@ -40,6 +40,33 @@ const description =
         height: 100vh;
         width: 100vw;
       }
+      /* Dual-thumb range sliders (Explore score filters): the inputs are
+         overlaid with pointer-events: none; only the thumbs are grabbable. */
+      .tg-range::-webkit-slider-thumb {
+        pointer-events: auto;
+        -webkit-appearance: none;
+        appearance: none;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: #2563eb;
+        border: 2px solid #ffffff;
+        box-shadow: 0 0 0 1px #cbd5e1;
+        cursor: pointer;
+      }
+      .tg-range::-moz-range-thumb {
+        pointer-events: auto;
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: #2563eb;
+        border: 2px solid #ffffff;
+        box-shadow: 0 0 0 1px #cbd5e1;
+        cursor: pointer;
+      }
+      .tg-range::-moz-range-track {
+        background: transparent;
+      }
     </style>
   </head>
   <body>

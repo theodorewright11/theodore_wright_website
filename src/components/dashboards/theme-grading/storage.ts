@@ -24,6 +24,7 @@ const empty: AppState = {
   showReasoning: true,
   showQuotes: true,
   showQuoteSources: true,
+  showSupportingData: true,
   showRubricHints: false,
   deletedRunIds: [],
   deletedCorpusIds: [],
@@ -78,6 +79,7 @@ export function coerceState(p: any): AppState {
     showReasoning: p.showReasoning !== false,
     showQuotes: p.showQuotes !== false,
     showQuoteSources: p.showQuoteSources !== false,
+    showSupportingData: p.showSupportingData !== false,
     showRubricHints: !!p.showRubricHints,
     deletedRunIds: Array.isArray(p.deletedRunIds)
       ? p.deletedRunIds.filter((s: any) => typeof s === 'string')
