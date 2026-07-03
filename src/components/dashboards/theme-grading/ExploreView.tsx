@@ -62,6 +62,14 @@ export default function ExploreView({
   const [runFilter, setRunFilter] = useState<Set<string>>(new Set());
   const [axisRanges, setAxisRanges] = useState<AxisRanges>({});
   const [groupBy, setGroupBy] = useState<Dimension>('positionality');
+  const [collapsed, setCollapsed] = useState({
+    filters: false,
+    byDim: false,
+    byRun: false,
+    themes: false,
+  });
+  const toggleSection = (k: keyof typeof collapsed) =>
+    setCollapsed((c) => ({ ...c, [k]: !c[k] }));
 
   const dimValues = useMemo(() => {
     const out = {} as Record<Dimension, string[]>;
@@ -167,9 +175,13 @@ export default function ExploreView({
         {/* Filters */}
         <section className="border border-slate-200 rounded-lg p-3 space-y-2.5">
           <div className="flex items-center gap-2">
-            <h2 className="text-[12px] uppercase tracking-wider font-semibold text-slate-500">
-              Filters
-            </h2>
+            <button
+              type="button"
+              onClick={() => toggleSection('filters')}
+              className="flex items-center gap-1.5 text-[12px] uppercase tracking-wider font-semibold text-slate-500 hover:text-slate-800"
+            >
+              <span className="text-[9px]">{collapsed.filters ? '▸' : '▾'}</span> Filters
+            </button>
             {anyFilter && (
               <button
                 type="button"
@@ -188,6 +200,7 @@ export default function ExploreView({
             </span>
           </div>
 
+          {!collapsed.filters && (<>
           {/* Run multiselect */}
           <div className="flex items-baseline gap-2 flex-wrap">
             <span className="text-[11px] font-medium text-slate-500 w-[130px] flex-shrink-0">
@@ -258,55 +271,85 @@ export default function ExploreView({
               })}
             </div>
           </div>
+          </>)}
         </section>
 
         {/* Aggregates by dimension */}
         <section>
           <div className="flex items-center gap-2 mb-2">
-            <h2 className="font-bold text-[15px] text-slate-900">Mean scores</h2>
-            <span className="text-[11px] text-slate-500">by</span>
-            <select
-              value={groupBy}
-              onChange={(e) => setGroupBy(e.target.value as Dimension)}
-              className="px-2 py-1 text-[12px] border border-slate-300 rounded bg-white outline-none"
+            <button
+              type="button"
+              onClick={() => toggleSection('byDim')}
+              className="flex items-center gap-1.5 font-bold text-[15px] text-slate-900 hover:text-slate-600"
             >
-              {DIMENSIONS.map((d) => (
-                <option key={d.key} value={d.key}>
-                  {d.label}
-                </option>
-              ))}
-            </select>
-            <span className="text-[11px] text-slate-400">
-              means over 1–5 scores only; N/A counted separately
-            </span>
+              <span className="text-[10px] text-slate-400">{collapsed.byDim ? '▸' : '▾'}</span> Mean
+              scores
+            </button>
+            {!collapsed.byDim && (
+              <>
+                <span className="text-[11px] text-slate-500">by</span>
+                <select
+                  value={groupBy}
+                  onChange={(e) => setGroupBy(e.target.value as Dimension)}
+                  className="px-2 py-1 text-[12px] border border-slate-300 rounded bg-white outline-none"
+                >
+                  {DIMENSIONS.map((d) => (
+                    <option key={d.key} value={d.key}>
+                      {d.label}
+                    </option>
+                  ))}
+                </select>
+                <span className="text-[11px] text-slate-400">
+                  means over 1–5 scores only; N/A counted separately
+                </span>
+              </>
+            )}
           </div>
-          <AggTable
-            rows={aggregate.map(([g, rec]) => ({ label: g, rec }))}
-            firstColLabel={DIMENSIONS.find((d) => d.key === groupBy)?.label ?? ''}
-          />
+          {!collapsed.byDim && (
+            <AggTable
+              rows={aggregate.map(([g, rec]) => ({ label: g, rec }))}
+              firstColLabel={DIMENSIONS.find((d) => d.key === groupBy)?.label ?? ''}
+            />
+          )}
         </section>
 
         {/* Aggregates by run */}
         <section>
-          <h2 className="font-bold text-[15px] text-slate-900 mb-2">Mean scores by run</h2>
-          <AggTable
-            rows={aggregateByRun.map((g) => ({ label: g.label, rec: g.rec }))}
-            firstColLabel="Run"
-            mono
-          />
+          <button
+            type="button"
+            onClick={() => toggleSection('byRun')}
+            className="flex items-center gap-1.5 font-bold text-[15px] text-slate-900 hover:text-slate-600 mb-2"
+          >
+            <span className="text-[10px] text-slate-400">{collapsed.byRun ? '▸' : '▾'}</span> Mean
+            scores by run
+          </button>
+          {!collapsed.byRun && (
+            <AggTable
+              rows={aggregateByRun.map((g) => ({ label: g.label, rec: g.rec }))}
+              firstColLabel="Run"
+              mono
+            />
+          )}
         </section>
 
         {/* Theme list */}
         <section>
           <div className="flex items-center gap-2 mb-2">
-            <h2 className="font-bold text-[15px] text-slate-900">Themes</h2>
+            <button
+              type="button"
+              onClick={() => toggleSection('themes')}
+              className="flex items-center gap-1.5 font-bold text-[15px] text-slate-900 hover:text-slate-600"
+            >
+              <span className="text-[10px] text-slate-400">{collapsed.themes ? '▸' : '▾'}</span>{' '}
+              Themes
+            </button>
             <div className="ml-auto flex items-center gap-2">
               <ExportBtn label="Ratings .csv" onClick={onExportRatingsCSV} />
               <ExportBtn label="Similarities .csv" onClick={onExportSimilaritiesCSV} />
               <ExportBtn label="Full .json" onClick={onExportJSON} />
             </div>
           </div>
-          {rows.length === 0 ? (
+          {collapsed.themes ? null : rows.length === 0 ? (
             <div className="text-[13px] text-slate-400 italic border border-dashed border-slate-200 rounded-lg p-6 text-center">
               No themes match the filters.
             </div>
