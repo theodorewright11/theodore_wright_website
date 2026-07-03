@@ -40,9 +40,9 @@ export function runThemesRatingsJSON(run: Run, state: AppState): unknown {
         grounding: scoreOut(t.rating.grounding),
         researchQuestionFit: scoreOut(t.rating.researchQuestionFit),
         interpretationLevel: scoreOut(t.rating.interpretationLevel),
-        aiPriorNovelty: scoreOut(t.rating.aiPriorNovelty),
-        analyticalNovelty: scoreOut(t.rating.analyticalNovelty),
-        positionalityInfluence: scoreOut(t.rating.positionalityInfluence),
+        novelty: scoreOut(t.rating.novelty),
+        dataContribution: scoreOut(t.rating.dataContribution),
+        positionalityContribution: scoreOut(t.rating.positionalityContribution),
         notes: t.rating.notes ?? null,
       },
       similarities: state.similarities

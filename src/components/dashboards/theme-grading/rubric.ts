@@ -22,7 +22,7 @@ export const AXES: AxisDef[] = [
     short: 'G',
     kind: 'evaluative',
     question:
-      'Does this theme accurately reflect patterns present in the data? For surface/semantic themes, the supporting text demonstrates the theme. For interpretive themes, the argument connecting the supporting text to the theme is specific, traceable, and convincing.',
+      'Does this theme accurately reflect patterns present in the data? For surface/semantic themes, the supporting text from the data demonstrates the theme. For interpretive themes, the argument connecting the supporting text from the data to the theme is specific, traceable, and convincing.',
     levels: [
       'The theme accurately reflects patterns in the data. Extracts clearly demonstrate the claimed pattern. Interpretive arguments, where present, are specific and traceable to particular extracts.',
       'The theme mostly reflects patterns in the data. Extracts largely demonstrate the claimed pattern with minor mismatches. Interpretive arguments, where present, are mostly traceable with minor gaps.',
@@ -37,7 +37,7 @@ export const AXES: AxisDef[] = [
     short: 'RQF',
     kind: 'evaluative',
     question:
-      'Does this theme contribute to advancing the analysis, and is it relevant to the research question at the specificity and depth it demands?',
+      'Does this theme contribute to advancing the analysis and is it relevant to the research question at the specificity and depth it demands?',
     levels: [
       'The theme directly addresses the research question at the specificity and depth it demands. It contributes a clear, well matched understanding that meaningfully advances the analysis.',
       'The theme mostly addresses the research question with minor mismatches in specificity or depth. It contributes understanding that largely advances the analysis.',
@@ -62,12 +62,26 @@ export const AXES: AxisDef[] = [
     ],
   },
   {
-    key: 'aiPriorNovelty',
-    label: 'AI prior novelty',
-    short: 'PN',
+    key: 'novelty',
+    label: 'Novelty',
+    short: 'N',
     kind: 'descriptive',
     question:
-      "Does this theme's subject matter appear in the AI no-data baseline output?",
+      'Would someone familiar with the domain already know or infer this without reading the data?',
+    levels: [
+      'The theme provides an insight that could not be readily anticipated. The understanding goes well beyond obvious or expected patterns.',
+      'The theme provides an insight that would probably not be readily anticipated. The understanding goes substantially beyond obvious or expected patterns.',
+      'The theme provides an insight that might not be readily anticipated. The understanding goes meaningfully beyond obvious or expected patterns.',
+      'The theme provides an insight that could largely be anticipated. The understanding goes only slightly beyond obvious or expected patterns.',
+      'The theme provides an insight that could readily be anticipated. The understanding does not go beyond obvious or expected patterns.',
+    ],
+  },
+  {
+    key: 'dataContribution',
+    label: 'Data contribution',
+    short: 'DC',
+    kind: 'descriptive',
+    question: "How much does this theme's content appear in the no-data baseline?",
     levels: [
       'The theme has no counterpart in the AI no-data baseline. The baseline does not capture this pattern or the territory it occupies.',
       'The theme has no clear counterpart in the AI no-data baseline. The baseline does not capture this pattern, though it may touch adjacent territory.',
@@ -77,42 +91,24 @@ export const AXES: AxisDef[] = [
     ],
   },
   {
-    key: 'analyticalNovelty',
-    label: 'Analytical novelty',
-    short: 'AN',
+    key: 'positionalityContribution',
+    label: 'Positionality contribution',
+    short: 'PC',
     kind: 'descriptive',
-    question:
-      'Would someone familiar with the domain already know or infer this without reading the data?',
+    question: "How much does this theme's content appear in the no-positionality baseline?",
     levels: [
-      'The theme provides an insight that could not be anticipated without reading the data. The understanding goes well beyond what domain familiarity alone would provide.',
-      'The theme provides an insight that would probably not be anticipated without reading the data. The understanding goes substantially beyond what domain familiarity alone would provide.',
-      'The theme provides an insight that might not be anticipated without reading the data. The understanding goes meaningfully beyond what domain familiarity alone would provide.',
-      'The theme provides an insight that could largely be anticipated without reading the data. The understanding goes only slightly beyond what domain familiarity alone would provide.',
-      'The theme provides an insight that could readily be anticipated without reading the data. The understanding does not go beyond what domain familiarity alone would provide.',
-    ],
-  },
-  {
-    key: 'positionalityInfluence',
-    label: 'Positionality influence',
-    short: 'PI',
-    kind: 'descriptive',
-    wip: true,
-    question:
-      'WIP — How much the theme differs from the neutral positionality, or how much the theme seems influenced by the instantiated positionality. Use N/A on runs with no positionality.',
-    levels: [
-      'The theme is strongly shaped by the instantiated positionality — its framing, salience, and content clearly differ from what a neutral run produces.',
-      'The theme is clearly shaped by the positionality, with visible differences in framing or emphasis from the neutral run.',
-      'The theme is moderately shaped by the positionality — some framing or emphasis reflects it, but the core would likely appear in a neutral run.',
-      'The theme is slightly shaped by the positionality — minor wording or emphasis differences only.',
-      'The theme shows no discernible influence of the positionality — it matches what a neutral run produces.',
+      'The theme has no counterpart in the AI no-positionality baseline. The baseline does not capture this pattern or the territory it occupies.',
+      'The theme has no clear counterpart in the AI no-positionality baseline. The baseline does not capture this pattern, though it may touch adjacent territory.',
+      'The theme has a partial counterpart in the AI no-positionality baseline. The baseline approaches this pattern but does not fully capture it.',
+      'The theme has a close counterpart in the AI no-positionality baseline. The baseline captures the core of this pattern with only minor differences.',
+      'The theme has a direct counterpart in the AI no-positionality baseline. The baseline captures this pattern with no meaningful difference.',
     ],
   },
 ];
 
 export const AXIS_BY_KEY = new Map(AXES.map((a) => [a.key, a]));
 
-// Pairwise similarity axis (rated on theme pairs in compare mode, not on a
-// single theme).
+// Pairwise similarity axis (rated on theme pairs, not on a single theme).
 export const SIMILARITY_RUBRIC = {
   label: 'Theme similarity',
   question: 'How much overlap do these two themes share?',

@@ -141,9 +141,22 @@ export function coerceRun(r: any): Run {
   };
 }
 
+// Rubric-rename migration (2026-07): old axis keys → current ones. Old
+// aiPriorNovelty became Data contribution, analyticalNovelty became Novelty,
+// positionalityInfluence became Positionality contribution.
+const LEGACY_AXIS_KEYS: Record<string, (typeof AXIS_KEYS)[number]> = {
+  aiPriorNovelty: 'dataContribution',
+  analyticalNovelty: 'novelty',
+  positionalityInfluence: 'positionalityContribution',
+};
+
 function coerceTheme(t: any): RatedTheme {
   const rating: RatedTheme['rating'] = {};
   if (t?.rating && typeof t.rating === 'object') {
+    for (const [legacy, current] of Object.entries(LEGACY_AXIS_KEYS)) {
+      const v = coerceScore(t.rating[legacy]);
+      if (v !== undefined) rating[current] = v;
+    }
     for (const k of AXIS_KEYS) {
       const v = coerceScore(t.rating[k]);
       if (v !== undefined) rating[k] = v;
@@ -338,9 +351,9 @@ export function ratingsCSV(state: AppState): string {
     'grounding',
     'research_question_fit',
     'interpretation_level',
-    'ai_prior_novelty',
-    'analytical_novelty',
-    'positionality_influence',
+    'novelty',
+    'data_contribution',
+    'positionality_contribution',
     'rating_notes',
     'quote_count',
     'anchored_quote_count',
@@ -366,9 +379,9 @@ export function ratingsCSV(state: AppState): string {
           csvCell(scoreCell(t.rating.grounding)),
           csvCell(scoreCell(t.rating.researchQuestionFit)),
           csvCell(scoreCell(t.rating.interpretationLevel)),
-          csvCell(scoreCell(t.rating.aiPriorNovelty)),
-          csvCell(scoreCell(t.rating.analyticalNovelty)),
-          csvCell(scoreCell(t.rating.positionalityInfluence)),
+          csvCell(scoreCell(t.rating.novelty)),
+          csvCell(scoreCell(t.rating.dataContribution)),
+          csvCell(scoreCell(t.rating.positionalityContribution)),
           csvCell(t.rating.notes),
           csvCell(t.quotes.length),
           csvCell(t.quotes.filter((q) => q.anchor).length),

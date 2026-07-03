@@ -9,9 +9,9 @@ export type AxisKey =
   | 'grounding'
   | 'researchQuestionFit'
   | 'interpretationLevel'
-  | 'aiPriorNovelty'
-  | 'analyticalNovelty'
-  | 'positionalityInfluence';
+  | 'novelty'
+  | 'dataContribution'
+  | 'positionalityContribution';
 
 export type ThemeRating = Partial<Record<AxisKey, AxisScore>> & {
   notes?: string;
@@ -131,9 +131,9 @@ export const AXIS_KEYS: AxisKey[] = [
   'grounding',
   'researchQuestionFit',
   'interpretationLevel',
-  'aiPriorNovelty',
-  'analyticalNovelty',
-  'positionalityInfluence',
+  'novelty',
+  'dataContribution',
+  'positionalityContribution',
 ];
 
 // Known prompt-variant values (free text; these seed the autocomplete). The

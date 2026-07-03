@@ -548,9 +548,9 @@ function RunListSection({
             { k: 'G', v: meanScore(run.themes.map((t) => t.rating.grounding)) },
             { k: 'RQF', v: meanScore(run.themes.map((t) => t.rating.researchQuestionFit)) },
             { k: 'IL', v: meanScore(run.themes.map((t) => t.rating.interpretationLevel)) },
-            { k: 'PN', v: meanScore(run.themes.map((t) => t.rating.aiPriorNovelty)) },
-            { k: 'AN', v: meanScore(run.themes.map((t) => t.rating.analyticalNovelty)) },
-            { k: 'PI', v: meanScore(run.themes.map((t) => t.rating.positionalityInfluence)) },
+            { k: 'N', v: meanScore(run.themes.map((t) => t.rating.novelty)) },
+            { k: 'DC', v: meanScore(run.themes.map((t) => t.rating.dataContribution)) },
+            { k: 'PC', v: meanScore(run.themes.map((t) => t.rating.positionalityContribution)) },
           ].filter((m) => m.v !== null);
           return (
             <li key={run.id} className="border border-slate-200 rounded-lg px-3 py-2.5">
