@@ -55,12 +55,13 @@ export function parseRunName(name: string): Partial<RunMeta> {
     parts.pop();
   }
 
-  // The promptvariant slot is the one ending in -v{n}. Everything before it is
-  // the model; after it come datasource, rq, positionality in order.
-  let pvIdx = parts.findIndex((p) => /-v\d+$/i.test(p));
+  // The promptvariant slot is the one ending in -v{n} (dotted versions like
+  // v3.1 allowed). Everything before it is the model; after it come
+  // datasource, rq, positionality in order.
+  let pvIdx = parts.findIndex((p) => /-v\d+(?:\.\d+)*$/i.test(p));
   if (pvIdx >= 0) {
     const slot = parts[pvIdx];
-    const m = slot.match(/^(.*)-v(\d+)$/i)!;
+    const m = slot.match(/^(.*)-v(\d+(?:\.\d+)*)$/i)!;
     out.promptVariant = m[1];
     out.version = m[2];
     if (pvIdx > 0) out.model = parts.slice(0, pvIdx).join('_');
