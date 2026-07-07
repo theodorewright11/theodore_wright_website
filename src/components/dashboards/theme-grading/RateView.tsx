@@ -42,6 +42,8 @@ export default function RateView({
   onFocusHandled,
 }: Props) {
   const [rubricOpen, setRubricOpen] = useState(false);
+  // Index of the run chip being dragged (chips reorder the run columns).
+  const [dragIdx, setDragIdx] = useState<number | null>(null);
   const [docModal, setDocModal] = useState<{
     corpus: Corpus;
     docIdx: number;
@@ -115,7 +117,24 @@ export default function RateView({
           {shownRuns.map((r, i) => (
             <span
               key={`${r.id}:${i}`}
-              className="inline-flex items-center gap-1.5 pl-2.5 pr-1.5 py-1 bg-white border border-slate-300 rounded-md text-[11px] font-mono text-slate-700 max-w-[380px]"
+              draggable
+              onDragStart={() => setDragIdx(i)}
+              onDragEnd={() => setDragIdx(null)}
+              onDragOver={(e) => e.preventDefault()}
+              onDrop={(e) => {
+                e.preventDefault();
+                if (dragIdx !== null && dragIdx !== i) {
+                  const next = [...shownIds];
+                  const [moved] = next.splice(dragIdx, 1);
+                  next.splice(i, 0, moved);
+                  onSetRateRuns(next);
+                }
+                setDragIdx(null);
+              }}
+              title="Drag to reorder columns"
+              className={`inline-flex items-center gap-1.5 pl-2.5 pr-1.5 py-1 bg-white border rounded-md text-[11px] font-mono text-slate-700 max-w-[380px] cursor-grab active:cursor-grabbing ${
+                dragIdx === i ? 'border-blue-400 opacity-60' : 'border-slate-300'
+              }`}
             >
               <span className="truncate">{buildRunName(r)}</span>
               <button
