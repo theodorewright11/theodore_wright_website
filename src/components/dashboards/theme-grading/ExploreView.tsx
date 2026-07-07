@@ -121,10 +121,10 @@ export default function ExploreView({
     return out;
   }, [state.runs, dimFilters, runFilter, axisRanges]);
 
-  type AggRec = Record<AxisKey, { sum: number; n: number; na: number }>;
+  type AggRec = Record<AxisKey, { sum: number; n: number; na: number; fives: number }>;
   const newAggRec = (): AggRec => {
     const init = {} as AggRec;
-    for (const a of AXES) init[a.key] = { sum: 0, n: 0, na: 0 };
+    for (const a of AXES) init[a.key] = { sum: 0, n: 0, na: 0, fives: 0 };
     return init;
   };
   const addToAgg = (rec: AggRec, theme: RatedTheme) => {
@@ -133,6 +133,7 @@ export default function ExploreView({
       if (typeof v === 'number') {
         rec[a.key].sum += v;
         rec[a.key].n += 1;
+        if (v === 5) rec[a.key].fives += 1;
       } else if (v === 'na') {
         rec[a.key].na += 1;
       }
@@ -555,7 +556,10 @@ function AggTable({
   firstColLabel,
   mono = false,
 }: {
-  rows: { label: string; rec: Record<AxisKey, { sum: number; n: number; na: number }> }[];
+  rows: {
+    label: string;
+    rec: Record<AxisKey, { sum: number; n: number; na: number; fives: number }>;
+  }[];
   firstColLabel: string;
   mono?: boolean;
 }) {
@@ -594,13 +598,19 @@ function AggTable({
                 {label}
               </td>
               {AXES.map((a) => {
-                const { sum, n, na } = rec[a.key];
+                const { sum, n, na, fives } = rec[a.key];
                 return (
                   <td key={a.key} className="px-2 py-2 text-center font-mono text-slate-600">
                     {n > 0 ? (
                       <>
                         <span className="font-semibold text-slate-800">{(sum / n).toFixed(2)}</span>{' '}
                         <span className="text-[10px] text-slate-400">({n})</span>
+                        <span
+                          className={`block text-[9px] ${fives > 0 ? 'text-blue-600' : 'text-slate-300'}`}
+                          title={`${fives} of ${n} scored 5`}
+                        >
+                          {fives}× 5
+                        </span>
                       </>
                     ) : (
                       <span className="text-slate-300">—</span>
