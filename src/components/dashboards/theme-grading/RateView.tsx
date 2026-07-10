@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { buildRunName } from './runName';
 import { AXES, SIMILARITY_RUBRIC, type AxisDef } from './rubric';
 import { Chip, ScoreButtons, isFullyRated, ratedAxisCount } from './shared';
+import { docIndexForNumber, docNumber } from './storage';
 import type { AppState, AxisScore, Corpus, RatedTheme, Run, ThemeQuote } from './types';
 
 type Props = {
@@ -58,23 +59,22 @@ export default function RateView({
     return m;
   }, [state.runs]);
 
-  const openQuoteDoc = (run: Run, q: ThemeQuote, docIdxOverride?: number) => {
+  const openQuoteDoc = (run: Run, q: ThemeQuote) => {
     const corpus = run.corpusId ? corpusById.get(run.corpusId) : undefined;
-    if (!corpus) return;
-    if (q.anchor && docIdxOverride === undefined) {
-      setDocModal({
-        corpus,
-        docIdx: q.anchor.docIdx,
-        highlight: { start: q.anchor.start, end: q.anchor.end },
-      });
-    } else if (docIdxOverride !== undefined && corpus.docs[docIdxOverride]) {
-      setDocModal({ corpus, docIdx: docIdxOverride });
-    }
+    if (!corpus || !q.anchor) return;
+    setDocModal({
+      corpus,
+      docIdx: q.anchor.docIdx,
+      highlight: { start: q.anchor.start, end: q.anchor.end },
+    });
   };
 
-  const openDocByIdx = (run: Run, docIdx: number) => {
+  // Open a document by its D-number (supporting-data tags, possible sources).
+  const openDocByNumber = (run: Run, n: number) => {
     const corpus = run.corpusId ? corpusById.get(run.corpusId) : undefined;
-    if (!corpus || !corpus.docs[docIdx]) return;
+    if (!corpus) return;
+    const docIdx = docIndexForNumber(corpus, n);
+    if (docIdx === null) return;
     setDocModal({ corpus, docIdx });
   };
 
@@ -100,7 +100,7 @@ export default function RateView({
     onSetSimilarityNotes,
     onRemoveSimilarity,
     onQuoteClick: openQuoteDoc,
-    onOpenDoc: openDocByIdx,
+    onOpenDocNumber: openDocByNumber,
     focusThemeId,
     onFocusHandled,
     shownRuns,
@@ -408,7 +408,7 @@ function ThemeCard({
   onSetSimilarityNotes,
   onRemoveSimilarity,
   onQuoteClick,
-  onOpenDoc,
+  onOpenDocNumber,
 }: {
   theme: RatedTheme;
   run: Run;
@@ -423,8 +423,8 @@ function ThemeCard({
   onSetSimilarity: Props['onSetSimilarity'];
   onSetSimilarityNotes: Props['onSetSimilarityNotes'];
   onRemoveSimilarity: Props['onRemoveSimilarity'];
-  onQuoteClick: (run: Run, q: ThemeQuote, docIdxOverride?: number) => void;
-  onOpenDoc: (run: Run, docIdx: number) => void;
+  onQuoteClick: (run: Run, q: ThemeQuote) => void;
+  onOpenDocNumber: (run: Run, n: number) => void;
 }) {
   const focus = focusThemeId === theme.id;
   const ref = useRef<HTMLDivElement>(null);
@@ -522,7 +522,7 @@ function ThemeCard({
                           type="button"
                           onClick={() => {
                             const m = p.source.match(/(\d+)/);
-                            if (m) onQuoteClick(run, q, parseInt(m[1], 10) - 1);
+                            if (m) onOpenDocNumber(run, parseInt(m[1], 10));
                           }}
                           className="ml-1 text-[10px] text-blue-600 hover:underline"
                           title={`possible source (score ${p.score})`}
@@ -551,7 +551,7 @@ function ThemeCard({
                 type="button"
                 disabled={!m}
                 onClick={() => {
-                  if (m) onOpenDoc(run, parseInt(m[1], 10) - 1);
+                  if (m) onOpenDocNumber(run, parseInt(m[1], 10));
                 }}
                 className="font-mono text-[10px] text-blue-600 hover:underline mr-1.5"
                 title={`Open ${tag}`}
@@ -742,8 +742,12 @@ function DocModal({
         onClick={(e) => e.stopPropagation()}
       >
         <div className="px-4 py-2.5 border-b border-slate-100 flex items-center gap-2">
-          <span className="font-mono text-[12px] font-bold text-slate-700">D{docIdx + 1}</span>
-          {doc.extId && <span className="text-[11px] text-slate-400">id: {doc.extId}</span>}
+          <span className="font-mono text-[12px] font-bold text-slate-700">
+            D{docNumber(corpus, docIdx)}
+          </span>
+          {doc.extId && doc.extId !== `D${docNumber(corpus, docIdx)}` && (
+            <span className="text-[11px] text-slate-400">id: {doc.extId}</span>
+          )}
           <span className="text-[11px] text-slate-400">· {corpus.name}</span>
           <button
             type="button"

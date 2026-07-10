@@ -2,7 +2,7 @@ import { useMemo, useRef, useState } from 'react';
 import { runExportFilename, runThemesRatingsJSON } from './exporters';
 import { buildRunName, parseRunName } from './runName';
 import { Chip, isFullyRated, meanScore } from './shared';
-import { downloadJSON, readFileAsText } from './storage';
+import { docNumber, downloadJSON, readFileAsText } from './storage';
 import type { AppState, Corpus, Run } from './types';
 import { DATA_SOURCE_SUGGESTIONS, PROMPT_VARIANTS } from './types';
 
@@ -181,8 +181,8 @@ function CorpusSection({
                     {c.docs.slice(0, 200).map((d, i) => (
                       <li key={i} className="px-2.5 py-1.5 text-[12px] text-slate-600 flex gap-2">
                         <span className="font-mono text-[10px] text-slate-400 flex-shrink-0 pt-0.5">
-                          D{i + 1}
-                          {d.extId ? ` (${d.extId})` : ''}
+                          D{docNumber(c, i)}
+                          {d.extId && d.extId !== `D${docNumber(c, i)}` ? ` (${d.extId})` : ''}
                         </span>
                         <span className="break-words leading-snug">
                           {d.text.length > 220 ? d.text.slice(0, 220) + '…' : d.text}

@@ -17,13 +17,16 @@ export type ThemeRating = Partial<Record<AxisKey, AxisScore>> & {
   notes?: string;
 };
 
-// One row of the uploaded data CSV. The document's [D{n}] number is its
-// position in Corpus.docs (idx = position + 1) — same convention as the
-// qual-coding corpus.md export, so AI theme JSON quotes anchor the same way.
+// One row of the uploaded data CSV. The document's [D{n}] number is `dnum`
+// when the CSV's id column carried an explicit D-tag (D35 stays D35 no matter
+// what row it sits on), otherwise its position (idx + 1).
 export type CorpusDoc = {
   // The `id` column from the CSV (external identifier, e.g. a comment id).
   extId: string;
   text: string;
+  // Explicit D-number parsed from an id like "D35" / "[D35]". Authoritative
+  // for quote anchoring when present.
+  dnum?: number;
 };
 
 export type Corpus = {

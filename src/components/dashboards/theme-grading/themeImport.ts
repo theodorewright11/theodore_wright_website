@@ -12,7 +12,7 @@
 // Tolerant JSON parsing (stray quotes, fences, jsonrepair) is shared with the
 // qual-coding dashboard.
 import { parseAIThemesJson } from '../qualitative-coding/aiThemeImport';
-import { cryptoRandomId } from './storage';
+import { cryptoRandomId, docIndexForNumber, docNumber } from './storage';
 import type { Corpus, RatedTheme, ThemeQuote } from './types';
 
 export { parseAIThemesJson };
@@ -25,15 +25,16 @@ export type ThemeImportResult = {
   warnings: string[];
 };
 
-// Pull the document index out of a source tag. Accepts "D4", "[D4]", "d4",
-// "Item 4", or a bare "4". Returns a 0-based index.
-function resolveDocIndex(source: unknown): number | null {
+// Pull the D-number out of a source tag. Accepts "D4", "[D4]", "d4",
+// "Item 4", or a bare "4". Resolution to a doc index goes through
+// docIndexForNumber so explicit CSV D-ids are honoured.
+function resolveDocNumber(source: unknown): number | null {
   if (typeof source !== 'string') return null;
   const m = source.match(/(\d+)/);
   if (!m) return null;
   const n = parseInt(m[1], 10);
   if (!Number.isFinite(n) || n < 1) return null;
-  return n - 1;
+  return n;
 }
 
 function cleanField(v: unknown): string | undefined {
@@ -143,7 +144,8 @@ function findPossibleSources(
       const present = qWords.filter((w) => nd.includes(w)).length;
       score = present / qWords.length;
     }
-    if (score >= 0.6) out.push({ source: `D${i + 1}`, score: Math.round(score * 100) / 100 });
+    if (score >= 0.6)
+      out.push({ source: `D${docNumber(corpus, i)}`, score: Math.round(score * 100) / 100 });
   });
   out.sort((a, b) => b.score - a.score);
   return out.slice(0, 3);
@@ -155,17 +157,18 @@ type NormCache = Map<number, NormIndex>;
 
 function anchorQuote(quote: ThemeQuote, corpus: Corpus, cache: NormCache): ThemeQuote {
   const out: ThemeQuote = { text: quote.text, source: quote.source, role: quote.role };
-  const idx = resolveDocIndex(quote.source);
+  const n = resolveDocNumber(quote.source);
+  const idx = n !== null ? docIndexForNumber(corpus, n) : null;
   const doc = idx !== null ? corpus.docs[idx] : undefined;
-  if (doc) {
-    let normIdx = cache.get(idx!);
+  if (doc && idx !== null) {
+    let normIdx = cache.get(idx);
     if (!normIdx) {
       normIdx = buildNormIndex(doc.text);
-      cache.set(idx!, normIdx);
+      cache.set(idx, normIdx);
     }
     const hit = locateQuote(doc.text, normIdx, quote.text);
     if (hit) {
-      out.anchor = { docIdx: idx!, start: hit.start, end: hit.end };
+      out.anchor = { docIdx: idx, start: hit.start, end: hit.end };
       return out;
     }
   }

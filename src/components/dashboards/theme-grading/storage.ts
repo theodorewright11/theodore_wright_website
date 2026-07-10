@@ -110,6 +110,7 @@ function coerceCorpus(c: any): Corpus {
           .map((d: any): CorpusDoc => ({
             extId: typeof d.extId === 'string' ? d.extId : '',
             text: d.text,
+            dnum: typeof d.dnum === 'number' && d.dnum >= 1 ? d.dnum : undefined,
           }))
       : [],
     created_at: typeof c?.created_at === 'string' ? c.created_at : new Date().toISOString(),
@@ -316,12 +317,51 @@ export function parseCorpusCSV(text: string): CorpusParseResult {
       warnings.push(`Row ${i + 2}: empty text — skipped.`);
       return;
     }
+    const extId = idCol >= 0 ? (r[idCol] ?? '').trim() : String(docs.length + 1);
+    // An id like "D35" (or "[D35]") is an explicit D-number: that row IS D35
+    // for quote anchoring, regardless of its position in the file.
+    const dm = extId.match(/^\[?[Dd](\d+)\]?$/);
     docs.push({
-      extId: idCol >= 0 ? (r[idCol] ?? '').trim() : String(docs.length + 1),
+      extId,
       text: t,
+      dnum: dm ? parseInt(dm[1], 10) : undefined,
     });
   });
+
+  const withDnum = docs.filter((d) => d.dnum !== undefined).length;
+  if (withDnum > 0) {
+    warnings.push(
+      `Using explicit D-numbers from the id column (${withDnum}/${docs.length} rows).`,
+    );
+    const seen = new Set<number>();
+    const dups = new Set<number>();
+    for (const d of docs) {
+      if (d.dnum === undefined) continue;
+      if (seen.has(d.dnum)) dups.add(d.dnum);
+      seen.add(d.dnum);
+    }
+    if (dups.size > 0) {
+      warnings.push(
+        `Duplicate D-numbers (first occurrence wins): ${[...dups].map((n) => `D${n}`).join(', ')}.`,
+      );
+    }
+  }
   return { docs, warnings };
+}
+
+// The D-number a corpus doc goes by: its explicit dnum when the CSV carried
+// one, else its 1-based position.
+export function docNumber(corpus: Corpus, idx: number): number {
+  return corpus.docs[idx]?.dnum ?? idx + 1;
+}
+
+// Inverse: which doc a [D{n}] tag points at. First doc whose effective number
+// matches wins; null when the number doesn't exist in this corpus.
+export function docIndexForNumber(corpus: Corpus, n: number): number | null {
+  for (let i = 0; i < corpus.docs.length; i++) {
+    if ((corpus.docs[i].dnum ?? i + 1) === n) return i;
+  }
+  return null;
 }
 
 // --- Ratings CSV export ------------------------------------------------------
