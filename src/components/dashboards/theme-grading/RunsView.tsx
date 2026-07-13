@@ -110,8 +110,9 @@ function CorpusSection({
           Upload CSV
         </button>
         <span className="text-[11px] text-slate-400">
-          columns: <code className="bg-slate-100 px-1 rounded">id</code>,{' '}
-          <code className="bg-slate-100 px-1 rounded">text</code> (row order sets the D-numbers)
+          columns: <code className="bg-slate-100 px-1 rounded">ai_id</code>,{' '}
+          <code className="bg-slate-100 px-1 rounded">comment</code> (D-tag ids set the D-numbers;
+          otherwise row order)
         </span>
         <input
           ref={fileRef}
@@ -132,8 +133,9 @@ function CorpusSection({
       )}
       {corpora.length === 0 ? (
         <div className="text-[13px] text-slate-400 italic border border-dashed border-slate-200 rounded-lg p-6 text-center">
-          No data uploaded yet. Upload a CSV with an <code>id</code> column and a <code>text</code>{' '}
-          column — each row becomes a document (D1, D2, …) that theme quotes anchor against.
+          No data uploaded yet. Upload a CSV with an <code>ai_id</code> column and a{' '}
+          <code>comment</code> column — each row becomes a document (numbered by its D-tag id, or
+          by row order) that theme quotes anchor against.
         </div>
       ) : (
         <ul className="border border-slate-200 rounded-lg divide-y divide-slate-100">

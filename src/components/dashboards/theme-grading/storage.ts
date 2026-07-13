@@ -273,8 +273,8 @@ export function parseCSV(text: string): string[][] {
   return rows.filter((r) => r.some((c) => c.trim().length > 0));
 }
 
-const ID_ALIASES = ['id', 'ext_id', 'extid', 'comment_id', '#'];
-const TEXT_ALIASES = ['text', 'data', 'comment', 'body', 'content', 'document'];
+const ID_ALIASES = ['ai_id', 'id', 'ext_id', 'extid', 'comment_id', '#'];
+const TEXT_ALIASES = ['comment', 'text', 'data', 'body', 'content', 'document'];
 
 export type CorpusParseResult = {
   docs: CorpusDoc[];
@@ -290,8 +290,17 @@ export function parseCorpusCSV(text: string): CorpusParseResult {
   if (rows.length === 0) return { docs: [], warnings: ['CSV is empty.'] };
 
   const header = rows[0].map((h) => h.trim().toLowerCase());
-  let idCol = header.findIndex((h) => ID_ALIASES.includes(h));
-  let textCol = header.findIndex((h) => TEXT_ALIASES.includes(h));
+  // Alias order is priority order (e.g. an `ai_id` column beats a leftover
+  // `id` column even if `id` comes first in the file).
+  const findByAlias = (aliases: string[]) => {
+    for (const a of aliases) {
+      const i = header.indexOf(a);
+      if (i >= 0) return i;
+    }
+    return -1;
+  };
+  let idCol = findByAlias(ID_ALIASES);
+  let textCol = findByAlias(TEXT_ALIASES);
   let dataRows: string[][];
 
   if (textCol >= 0) {
