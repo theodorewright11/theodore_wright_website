@@ -217,8 +217,15 @@ export default function ExploreView({
           {DIMENSIONS.map((d) =>
             dimValues[d.key].length > 0 ? (
               <div key={d.key} className="flex items-baseline gap-2 flex-wrap">
-                <span className="text-[11px] font-medium text-slate-500 w-[130px] flex-shrink-0">
+                <span
+                  className={`text-[11px] font-medium w-[130px] flex-shrink-0 ${
+                    dimFilters[d.key].size > 0 ? 'text-blue-700 font-semibold' : 'text-slate-500'
+                  }`}
+                >
                   {d.label}
+                  {dimFilters[d.key].size > 0 && (
+                    <span className="ml-1 font-normal">({dimFilters[d.key].size})</span>
+                  )}
                 </span>
                 {dimValues[d.key].map((v) => (
                   <button
