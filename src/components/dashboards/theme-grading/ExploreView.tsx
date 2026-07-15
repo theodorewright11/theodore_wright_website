@@ -156,9 +156,10 @@ export default function ExploreView({
 
   // Aggregate per run.
   const aggregateByRun = useMemo(() => {
-    const groups = new Map<string, { label: string; rec: AggRec }>();
+    const groups = new Map<string, { key: string; label: string; rec: AggRec }>();
     for (const { run, theme } of rows) {
-      if (!groups.has(run.id)) groups.set(run.id, { label: buildRunName(run), rec: newAggRec() });
+      if (!groups.has(run.id))
+        groups.set(run.id, { key: run.id, label: buildRunName(run), rec: newAggRec() });
       addToAgg(groups.get(run.id)!.rec, theme);
     }
     return [...groups.values()].sort((a, b) => a.label.localeCompare(b.label));
@@ -315,7 +316,7 @@ export default function ExploreView({
           </div>
           {!collapsed.byDim && (
             <AggTable
-              rows={aggregate.map(([g, rec]) => ({ label: g, rec }))}
+              rows={aggregate.map(([g, rec]) => ({ key: `${groupBy}:${g}`, label: g, rec }))}
               firstColLabel={DIMENSIONS.find((d) => d.key === groupBy)?.label ?? ''}
             />
           )}
@@ -333,7 +334,7 @@ export default function ExploreView({
           </button>
           {!collapsed.byRun && (
             <AggTable
-              rows={aggregateByRun.map((g) => ({ label: g.label, rec: g.rec }))}
+              rows={aggregateByRun.map((g) => ({ key: g.key, label: g.label, rec: g.rec }))}
               firstColLabel="Run"
               mono
             />
@@ -385,7 +386,10 @@ export default function ExploreView({
                 </thead>
                 <tbody>
                   {rows.map(({ run, theme }) => (
-                    <tr key={theme.id} className="border-t border-slate-100 hover:bg-slate-50/60">
+                    <tr
+                      key={`${run.id}:${theme.id}`}
+                      className="border-t border-slate-100 hover:bg-slate-50/60"
+                    >
                       <td className="px-3 py-2">
                         <button
                           type="button"
@@ -564,6 +568,9 @@ function AggTable({
   mono = false,
 }: {
   rows: {
+    // Stable unique key (run id / group value) — labels can collide when two
+    // runs share a composed name, and duplicate React keys leave ghost rows.
+    key: string;
     label: string;
     rec: Record<AxisKey, { sum: number; n: number; na: number; fives: number }>;
   }[];
@@ -597,8 +604,8 @@ function AggTable({
           </tr>
         </thead>
         <tbody>
-          {rows.map(({ label, rec }) => (
-            <tr key={label} className="border-t border-slate-100">
+          {rows.map(({ key, label, rec }) => (
+            <tr key={key} className="border-t border-slate-100">
               <td
                 className={`px-3 py-2 text-slate-800 break-all max-w-[360px] ${mono ? 'font-mono text-[10px] text-slate-600' : 'break-words'}`}
               >
