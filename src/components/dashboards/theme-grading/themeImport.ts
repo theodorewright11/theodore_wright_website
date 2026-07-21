@@ -220,11 +220,11 @@ export function buildThemesFromImport(
       }
       quotes.push(quote);
     }
-    const supportingData: string[] = Array.isArray(rt?.all_supporting_data)
-      ? rt.all_supporting_data.filter((s: any) => typeof s === 'string' && s.trim())
-      : Array.isArray(rt?.supporting_data)
-        ? rt.supporting_data.filter((s: any) => typeof s === 'string' && s.trim())
-        : [];
+    const supportingRaw =
+      rt?.representative_supporting_data ?? rt?.all_supporting_data ?? rt?.supporting_data;
+    const supportingData: string[] = Array.isArray(supportingRaw)
+      ? supportingRaw.filter((s: any) => typeof s === 'string' && s.trim())
+      : [];
     return {
       id: cryptoRandomId(),
       name,

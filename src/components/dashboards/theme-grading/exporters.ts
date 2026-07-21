@@ -66,7 +66,7 @@ export function runThemesRatingsJSON(run: Run, state: AppState): unknown {
         anchored: !!q.anchor,
         possibleSources: q.possibleSources ?? undefined,
       })),
-      all_supporting_data: t.supportingData ?? null,
+      representative_supporting_data: t.supportingData ?? null,
     })),
     additional_text: run.additionalText ?? null,
   };
