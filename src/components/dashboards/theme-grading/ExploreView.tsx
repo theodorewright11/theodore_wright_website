@@ -65,6 +65,8 @@ export default function ExploreView({
   const [variantVersions, setVariantVersions] = useState<Record<string, Set<string>>>({});
   const [runFilter, setRunFilter] = useState<Set<string>>(new Set());
   const [axisRanges, setAxisRanges] = useState<AxisRanges>({});
+  // 'rated' = at least one axis has a value (1–5 or N/A); 'unrated' = none.
+  const [ratedFilter, setRatedFilter] = useState<'any' | 'rated' | 'unrated'>('any');
   const [groupBy, setGroupBy] = useState<Dimension>('positionality');
   const [collapsed, setCollapsed] = useState({
     filters: false,
@@ -143,6 +145,10 @@ export default function ExploreView({
       const vv = variantVersions[dimValue(run, 'promptVariant')];
       if (vv && vv.size > 0 && !vv.has(dimValue(run, 'version'))) continue;
       for (const theme of run.themes) {
+        if (ratedFilter !== 'any') {
+          const hasRating = AXES.some((a) => theme.rating[a.key] !== undefined);
+          if (ratedFilter === 'rated' ? !hasRating : hasRating) continue;
+        }
         let ok = true;
         for (const a of AXES) {
           const r = axisRanges[a.key];
@@ -157,7 +163,7 @@ export default function ExploreView({
       }
     }
     return out;
-  }, [state.runs, dimFilters, variantVersions, runFilter, axisRanges]);
+  }, [state.runs, dimFilters, variantVersions, runFilter, axisRanges, ratedFilter]);
 
   type AggRec = Record<AxisKey, { sum: number; n: number; na: number; fives: number }>;
   const newAggRec = (): AggRec => {
@@ -208,6 +214,7 @@ export default function ExploreView({
     runFilter.size > 0 ||
     DIMENSIONS.some((d) => dimFilters[d.key].size > 0) ||
     Object.values(variantVersions).some((s) => s.size > 0) ||
+    ratedFilter !== 'any' ||
     AXES.some((a) => rangeActive(axisRanges[a.key]));
 
   return (
@@ -231,6 +238,7 @@ export default function ExploreView({
                   setVariantVersions({});
                   setRunFilter(new Set());
                   setAxisRanges({});
+                  setRatedFilter('any');
                 }}
                 className="text-[11px] text-slate-500 hover:text-slate-800 px-1.5 py-0.5 rounded hover:bg-slate-100"
               >
@@ -336,6 +344,42 @@ export default function ExploreView({
               Scores
             </span>
             <div className="flex items-center gap-x-4 gap-y-1.5 flex-wrap">
+              <div className="flex items-center gap-1.5">
+                <span
+                  className={`text-[11px] ${ratedFilter !== 'any' ? 'text-blue-700 font-semibold' : 'text-slate-600'}`}
+                >
+                  Rated
+                </span>
+                <div className="inline-flex rounded border border-slate-300 overflow-hidden">
+                  {(
+                    [
+                      ['any', 'Any'],
+                      ['rated', 'Yes'],
+                      ['unrated', 'No'],
+                    ] as const
+                  ).map(([v, label]) => (
+                    <button
+                      key={v}
+                      type="button"
+                      onClick={() => setRatedFilter(v)}
+                      title={
+                        v === 'rated'
+                          ? 'Only themes with at least one axis rated'
+                          : v === 'unrated'
+                            ? 'Only themes with no ratings yet'
+                            : 'All themes'
+                      }
+                      className={`px-2 py-0.5 text-[11px] font-semibold ${
+                        ratedFilter === v
+                          ? 'bg-slate-900 text-white'
+                          : 'text-slate-600 hover:bg-slate-100 border-l border-slate-200 first:border-l-0'
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </div>
               {AXES.map((a) => {
                 const r = axisRanges[a.key] ?? ([1, 5] as [number, number]);
                 const active = rangeActive(axisRanges[a.key]);
