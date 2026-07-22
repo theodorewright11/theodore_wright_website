@@ -186,7 +186,10 @@ export function buildThemesFromImport(
   let anchoredQuotes = 0;
   const cache: NormCache = new Map();
 
-  const additionalText = cleanField((raw as any)?.additional_text);
+  // Sentinel values ("N/A - low-effort condition", "None") mean no content.
+  const rawAdditional = cleanField((raw as any)?.additional_text);
+  const additionalText =
+    rawAdditional && !/^(n\/?a\b|none\b)/i.test(rawAdditional) ? rawAdditional : undefined;
   const rawThemes: any[] = Array.isArray((raw as any)?.themes)
     ? (raw as any).themes
     : Array.isArray(raw)
