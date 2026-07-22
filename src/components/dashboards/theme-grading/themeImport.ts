@@ -177,6 +177,37 @@ function anchorQuote(quote: ThemeQuote, corpus: Corpus, cache: NormCache): Theme
   return out;
 }
 
+// Supporting-data lists arrive in several shapes depending on the converter's
+// mood: ["D3","D7"], [3, 7], "D3, D7, D12" (one comma-joined string), under
+// representative_supporting_data / all_supporting_data / supporting_data or a
+// close variant. Accept all of them; drop sentinel/junk tokens.
+function parseSupportingData(rt: any): string[] {
+  let raw =
+    rt?.representative_supporting_data ?? rt?.all_supporting_data ?? rt?.supporting_data;
+  if (raw === undefined || raw === null) {
+    for (const k of Object.keys(rt ?? {})) {
+      if (/support/i.test(k)) {
+        raw = rt[k];
+        break;
+      }
+    }
+  }
+  const out: string[] = [];
+  const push = (v: any) => {
+    if (typeof v === 'number' && Number.isFinite(v)) {
+      out.push(`D${v}`);
+      return;
+    }
+    if (typeof v === 'string') {
+      const t = v.trim();
+      if (t && /\d/.test(t) && !/^n\/?a\b/i.test(t)) out.push(t);
+    }
+  };
+  if (Array.isArray(raw)) raw.forEach(push);
+  else if (typeof raw === 'string') raw.split(/[,;\s]+/).forEach(push);
+  return out;
+}
+
 export function buildThemesFromImport(
   raw: unknown,
   corpus: Corpus | null,
@@ -226,11 +257,7 @@ export function buildThemesFromImport(
       }
       quotes.push(quote);
     }
-    const supportingRaw =
-      rt?.representative_supporting_data ?? rt?.all_supporting_data ?? rt?.supporting_data;
-    const supportingData: string[] = Array.isArray(supportingRaw)
-      ? supportingRaw.filter((s: any) => typeof s === 'string' && s.trim())
-      : [];
+    const supportingData = parseSupportingData(rt);
     return {
       id: cryptoRandomId(),
       name,
