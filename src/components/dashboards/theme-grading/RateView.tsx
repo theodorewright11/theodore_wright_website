@@ -107,8 +107,8 @@ export default function RateView({
   };
 
   return (
-    <div className="flex-1 min-w-0 min-h-0 overflow-y-auto bg-slate-50/60">
-      <div className="max-w-[1500px] mx-auto px-6 py-4">
+    <div className="flex-1 min-w-0 min-h-0 flex flex-col bg-slate-50/60">
+      <div className="max-w-[1500px] w-full mx-auto px-6 pt-4 flex-shrink-0">
         {/* Toolbar */}
         <div className="flex items-center gap-3 flex-wrap mb-3">
           <span className="text-[11px] uppercase tracking-wider font-semibold text-slate-500">
@@ -176,15 +176,19 @@ export default function RateView({
         </div>
 
         {rubricOpen && <RubricPanel />}
+      </div>
 
+      {/* Each run column scrolls independently — one can sit at its top while
+          another is at its bottom. Headers stay pinned inside their column. */}
+      <div className="flex-1 min-h-0 max-w-[1500px] w-full mx-auto px-6 pb-4">
         {shownRuns.length === 0 ? (
           <div className="text-[13px] text-slate-400 italic border border-dashed border-slate-300 rounded-lg p-10 text-center bg-white">
             No run shown. Pick one with “+ Show run…” above, or create one in the Runs tab.
           </div>
         ) : (
-          <div className={`grid gap-4 ${runGridCls} items-start`}>
+          <div className={`grid gap-4 ${runGridCls} h-full`}>
             {shownRuns.map((run, i) => (
-              <div key={`${run.id}:${i}`} className="min-w-0">
+              <div key={`${run.id}:${i}`} className="min-w-0 h-full overflow-y-auto">
                 <RunHeader run={run} corpusName={run.corpusId ? corpusById.get(run.corpusId)?.name : undefined} />
                 <div className={`grid gap-3 ${singleRun ? 'grid-cols-1 lg:grid-cols-2' : 'grid-cols-1'}`}>
                   {run.themes.map((t, ti) => (
@@ -326,7 +330,7 @@ function Toggle({ label, on, onClick }: { label: string; on: boolean; onClick: (
 function RubricPanel() {
   const [openKey, setOpenKey] = useState<string | null>(null);
   return (
-    <div className="mb-4 bg-white border border-slate-200 rounded-lg divide-y divide-slate-100">
+    <div className="mb-4 bg-white border border-slate-200 rounded-lg divide-y divide-slate-100 max-h-[45vh] overflow-y-auto">
       {AXES.map((a) => (
         <div key={a.key}>
           <button
