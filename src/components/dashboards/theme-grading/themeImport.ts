@@ -209,9 +209,12 @@ export function buildThemesFromImport(
       const text = cleanField(q?.text);
       if (!text) continue;
       totalQuotes++;
+      // Low-effort conversions fill absent fields with sentinels like
+      // "N/A - low-effort condition" — treat those as no value.
+      const src = typeof q?.source === 'string' ? q.source.trim() : '';
       let quote: ThemeQuote = {
         text,
-        source: typeof q?.source === 'string' ? q.source : undefined,
+        source: src && !/^n\/?a\b/i.test(src) ? src : undefined,
         role: q?.role === 'core' || q?.role === 'supporting' ? q.role : undefined,
       };
       if (corpus) {
