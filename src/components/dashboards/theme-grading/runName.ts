@@ -47,9 +47,9 @@ export function parseRunName(name: string): Partial<RunMeta> {
   const parts = s.split('_').filter(Boolean);
   if (parts.length === 0) return out;
 
-  // Trailing run{n} slot.
+  // Trailing run{n} slot (dotted repeats like run1.1 allowed).
   const last = parts[parts.length - 1];
-  const runM = last.match(/^run(\d+)$/i);
+  const runM = last.match(/^run(\d+(?:\.\d+)*)$/i);
   if (runM) {
     out.runN = runM[1];
     parts.pop();
