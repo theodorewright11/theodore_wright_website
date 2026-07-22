@@ -187,8 +187,8 @@ export default function RateView({
               <div key={`${run.id}:${i}`} className="min-w-0">
                 <RunHeader run={run} corpusName={run.corpusId ? corpusById.get(run.corpusId)?.name : undefined} />
                 <div className={`grid gap-3 ${singleRun ? 'grid-cols-1 lg:grid-cols-2' : 'grid-cols-1'}`}>
-                  {run.themes.map((t) => (
-                    <ThemeCard key={t.id} theme={t} run={run} {...cardProps} />
+                  {run.themes.map((t, ti) => (
+                    <ThemeCard key={t.id} theme={t} run={run} index={ti + 1} {...cardProps} />
                   ))}
                   {run.themes.length === 0 && (
                     <div className="text-[12px] text-slate-400 italic border border-dashed border-slate-300 rounded-lg p-6 text-center bg-white">
@@ -396,6 +396,7 @@ function RubricPanel() {
 function ThemeCard({
   theme,
   run,
+  index,
   state,
   themeById,
   shownRuns,
@@ -412,6 +413,7 @@ function ThemeCard({
 }: {
   theme: RatedTheme;
   run: Run;
+  index: number;
   state: AppState;
   themeById: Map<string, { run: Run; theme: RatedTheme }>;
   shownRuns: Run[];
@@ -469,9 +471,17 @@ function ThemeCard({
         focus ? 'border-blue-400 ring-2 ring-blue-100' : 'border-slate-200'
       }`}
     >
-      <h3 className="text-[14px] font-bold text-slate-900 leading-snug break-words">
-        {theme.name}
-      </h3>
+      <div className="flex items-start gap-2">
+        <h3 className="text-[14px] font-bold text-slate-900 leading-snug break-words flex-1">
+          {theme.name}
+        </h3>
+        <span
+          className="flex-shrink-0 font-mono text-[10px] text-slate-400 border border-slate-200 rounded px-1 py-0.5 leading-none"
+          title={`Theme ${index} of ${run.themes.length} in this run`}
+        >
+          {index}
+        </span>
+      </div>
 
       {state.showDefinition !== false && theme.definition && (
         <Section label="Definition" text={theme.definition} />

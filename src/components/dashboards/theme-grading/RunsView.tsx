@@ -224,6 +224,25 @@ const emptyMeta = {
   notes: '',
 };
 
+// Pick the corpus a bulk-uploaded run should anchor against, from its
+// dataSource slot: 'na' → none; else match by item count (577-als-comments →
+// the 577-doc corpus), then by name; else the first corpus.
+function matchCorpus(dataSource: string | undefined, corpora: Corpus[]): string | null {
+  if (!dataSource || /^na$/i.test(dataSource)) return null;
+  const num = dataSource.match(/(\d+)/)?.[1];
+  if (num) {
+    const byCount = corpora.find((c) => c.docs.length === parseInt(num, 10));
+    if (byCount) return byCount.id;
+    const byName = corpora.find((c) => c.name.toLowerCase().includes(num));
+    if (byName) return byName.id;
+  }
+  const ds = dataSource.toLowerCase();
+  const byName = corpora.find(
+    (c) => c.name.toLowerCase().includes(ds) || ds.includes(c.name.toLowerCase()),
+  );
+  return byName?.id ?? corpora[0]?.id ?? null;
+}
+
 function NewRunSection({
   state,
   onCreateRun,
@@ -232,6 +251,46 @@ function NewRunSection({
   onCreateRun: Props['onCreateRun'];
 }) {
   const [open, setOpen] = useState(false);
+  const bulkRef = useRef<HTMLInputElement>(null);
+  const [bulkReport, setBulkReport] = useState<string[] | null>(null);
+
+  // Each file becomes a run: metadata from its filename, corpus matched from
+  // the dataSource slot. Existing run names are skipped, not overwritten.
+  const handleBulkFiles = async (files: File[]) => {
+    const lines: string[] = [];
+    const existing = new Set(state.runs.map((r) => buildRunName(r)));
+    for (const file of files.sort((a, b) => a.name.localeCompare(b.name))) {
+      const parsed = parseRunName(file.name);
+      const meta = {
+        model: parsed.model ?? '',
+        promptVariant: parsed.promptVariant ?? '',
+        version: parsed.version ?? '',
+        dataSource: parsed.dataSource ?? '',
+        rq: parsed.rq ?? '',
+        positionality: parsed.positionality ?? '',
+        runN: parsed.runN,
+      };
+      const composed = buildRunName(meta);
+      if (existing.has(composed)) {
+        lines.push(`✗ ${file.name}: run already exists — skipped (use its Replace JSON to update).`);
+        continue;
+      }
+      try {
+        const corpusId = matchCorpus(parsed.dataSource, state.corpora);
+        const corpusName = corpusId
+          ? state.corpora.find((c) => c.id === corpusId)?.name ?? '?'
+          : 'no data';
+        const r = onCreateRun({ ...meta, corpusId, notes: undefined }, await readFileAsText(file));
+        existing.add(composed);
+        lines.push(
+          `✓ ${file.name}: ${r.themeCount} themes, ${r.anchoredQuotes}/${r.totalQuotes} quotes in data (${corpusName}).`,
+        );
+      } catch (e) {
+        lines.push(`✗ ${file.name}: ${e instanceof Error ? e.message : String(e)}`);
+      }
+    }
+    setBulkReport(lines);
+  };
   const [corpusId, setCorpusId] = useState<string>('');
   const [name, setName] = useState('');
   const [meta, setMeta] = useState({ ...emptyMeta });
@@ -315,7 +374,54 @@ function NewRunSection({
         >
           {open ? 'Close' : '+ Add run'}
         </button>
+        <button
+          type="button"
+          onClick={() => bulkRef.current?.click()}
+          className="px-3 py-1 text-[12px] font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-md transition-colors"
+          title="Select many .json files — filenames set the metadata, data is matched from the datasource slot"
+        >
+          Bulk upload
+        </button>
+        <span className="text-[11px] text-slate-400">
+          select many .json files at once — filenames set the metadata
+        </span>
+        <input
+          ref={bulkRef}
+          type="file"
+          accept=".json,application/json"
+          multiple
+          className="hidden"
+          onChange={(e) => {
+            const files = e.target.files ? Array.from(e.target.files) : [];
+            if (files.length > 0) handleBulkFiles(files);
+            e.target.value = '';
+          }}
+        />
       </div>
+      {bulkReport && (
+        <div className="mb-2 text-[12px] border border-slate-200 rounded-lg px-3 py-2 max-h-[260px] overflow-y-auto">
+          <div className="flex items-center gap-2 mb-1">
+            <span className="text-[10px] uppercase tracking-wider font-semibold text-slate-500">
+              Bulk upload — {bulkReport.filter((l) => l.startsWith('✓')).length}/{bulkReport.length}{' '}
+              created
+            </span>
+            <button
+              type="button"
+              onClick={() => setBulkReport(null)}
+              className="ml-auto text-[11px] text-slate-400 hover:text-slate-700"
+            >
+              Dismiss
+            </button>
+          </div>
+          <ul className="space-y-0.5 font-mono text-[11px] leading-snug">
+            {bulkReport.map((l, i) => (
+              <li key={i} className={l.startsWith('✓') ? 'text-emerald-700' : 'text-red-600'}>
+                {l}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
       {open && (
         <div className="border border-slate-200 rounded-lg p-4 space-y-3">
           <Field label="Run name (autofills the fields below)">
