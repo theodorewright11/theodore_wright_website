@@ -59,6 +59,10 @@ export default function ExploreView({
   onExportJSON,
 }: Props) {
   const [dimFilters, setDimFilters] = useState<Record<Dimension, Set<string>>>(emptyDimFilters);
+  // Per-selected-prompt-variant version selection (versions only mean
+  // something within their variant, so they're picked per variant, not
+  // globally). Key = variant value, set = selected versions for it.
+  const [variantVersions, setVariantVersions] = useState<Record<string, Set<string>>>({});
   const [runFilter, setRunFilter] = useState<Set<string>>(new Set());
   const [axisRanges, setAxisRanges] = useState<AxisRanges>({});
   const [groupBy, setGroupBy] = useState<Dimension>('positionality');
@@ -88,7 +92,38 @@ export default function ExploreView({
       else next.add(value);
       return { ...f, [dim]: next };
     });
+    // Deselecting a prompt variant drops its per-variant version picks.
+    if (dim === 'promptVariant') {
+      setVariantVersions((m) => {
+        if (!(value in m)) return m;
+        const { [value]: _gone, ...rest } = m;
+        return rest;
+      });
+    }
   };
+
+  const toggleVariantVersion = (variant: string, version: string) => {
+    setVariantVersions((m) => {
+      const next = new Set(m[variant] ?? []);
+      if (next.has(version)) next.delete(version);
+      else next.add(version);
+      return { ...m, [variant]: next };
+    });
+  };
+
+  // Versions observed per prompt variant, for the per-variant sub-rows.
+  const versionsByVariant = useMemo(() => {
+    const m = new Map<string, string[]>();
+    for (const r of state.runs) {
+      const pv = dimValue(r, 'promptVariant');
+      const v = dimValue(r, 'version');
+      if (!pv || !v) continue;
+      if (!m.has(pv)) m.set(pv, []);
+      if (!m.get(pv)!.includes(v)) m.get(pv)!.push(v);
+    }
+    for (const arr of m.values()) arr.sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+    return m;
+  }, [state.runs]);
 
   // Filtered (run, theme) rows.
   const rows = useMemo(() => {
@@ -97,6 +132,7 @@ export default function ExploreView({
       if (runFilter.size > 0 && !runFilter.has(run.id)) continue;
       let runOk = true;
       for (const d of DIMENSIONS) {
+        if (d.key === 'version') continue; // versions are filtered per variant below
         const sel = dimFilters[d.key];
         if (sel.size > 0 && !sel.has(dimValue(run, d.key))) {
           runOk = false;
@@ -104,6 +140,8 @@ export default function ExploreView({
         }
       }
       if (!runOk) continue;
+      const vv = variantVersions[dimValue(run, 'promptVariant')];
+      if (vv && vv.size > 0 && !vv.has(dimValue(run, 'version'))) continue;
       for (const theme of run.themes) {
         let ok = true;
         for (const a of AXES) {
@@ -119,7 +157,7 @@ export default function ExploreView({
       }
     }
     return out;
-  }, [state.runs, dimFilters, runFilter, axisRanges]);
+  }, [state.runs, dimFilters, variantVersions, runFilter, axisRanges]);
 
   type AggRec = Record<AxisKey, { sum: number; n: number; na: number; fives: number }>;
   const newAggRec = (): AggRec => {
@@ -169,6 +207,7 @@ export default function ExploreView({
   const anyFilter =
     runFilter.size > 0 ||
     DIMENSIONS.some((d) => dimFilters[d.key].size > 0) ||
+    Object.values(variantVersions).some((s) => s.size > 0) ||
     AXES.some((a) => rangeActive(axisRanges[a.key]));
 
   return (
@@ -189,6 +228,7 @@ export default function ExploreView({
                 type="button"
                 onClick={() => {
                   setDimFilters(emptyDimFilters());
+                  setVariantVersions({});
                   setRunFilter(new Set());
                   setAxisRanges({});
                 }}
@@ -215,37 +255,80 @@ export default function ExploreView({
             />
           </div>
 
-          {DIMENSIONS.map((d) =>
-            dimValues[d.key].length > 0 ? (
-              <div key={d.key} className="flex items-baseline gap-2 flex-wrap">
-                <span
-                  className={`text-[11px] font-medium w-[130px] flex-shrink-0 ${
-                    dimFilters[d.key].size > 0 ? 'text-blue-700 font-semibold' : 'text-slate-500'
-                  }`}
-                >
-                  {d.label}
-                  {dimFilters[d.key].size > 0 && (
-                    <span className="ml-1 font-normal">({dimFilters[d.key].size})</span>
-                  )}
-                </span>
-                {dimValues[d.key].map((v) => (
-                  <button
-                    key={v}
-                    type="button"
-                    onClick={() => toggleDim(d.key, v)}
-                    className={`px-2 py-0.5 rounded border text-[11px] font-medium transition-colors max-w-[340px] truncate ${
-                      dimFilters[d.key].has(v)
-                        ? 'bg-blue-600 text-white border-blue-600'
-                        : 'bg-white text-slate-600 border-slate-300 hover:bg-slate-100'
+          {DIMENSIONS.map((d) => {
+            // Versions are picked per selected prompt variant (sub-rows below),
+            // not as a global row.
+            if (d.key === 'version') return null;
+            if (dimValues[d.key].length === 0) return null;
+            return (
+              <div key={d.key}>
+                <div className="flex items-baseline gap-2 flex-wrap">
+                  <span
+                    className={`text-[11px] font-medium w-[130px] flex-shrink-0 ${
+                      dimFilters[d.key].size > 0 ? 'text-blue-700 font-semibold' : 'text-slate-500'
                     }`}
-                    title={v}
                   >
-                    {v}
-                  </button>
-                ))}
+                    {d.label}
+                    {dimFilters[d.key].size > 0 && (
+                      <span className="ml-1 font-normal">({dimFilters[d.key].size})</span>
+                    )}
+                  </span>
+                  {dimValues[d.key].map((v) => (
+                    <button
+                      key={v}
+                      type="button"
+                      onClick={() => toggleDim(d.key, v)}
+                      className={`px-2 py-0.5 rounded border text-[11px] font-medium transition-colors max-w-[340px] truncate ${
+                        dimFilters[d.key].has(v)
+                          ? 'bg-blue-600 text-white border-blue-600'
+                          : 'bg-white text-slate-600 border-slate-300 hover:bg-slate-100'
+                      }`}
+                      title={v}
+                    >
+                      {v}
+                    </button>
+                  ))}
+                </div>
+                {/* Per-variant version pickers for each selected prompt variant */}
+                {d.key === 'promptVariant' &&
+                  [...dimFilters.promptVariant]
+                    .sort()
+                    .map((variant) => {
+                      const versions = versionsByVariant.get(variant) ?? [];
+                      if (versions.length === 0) return null;
+                      const sel = variantVersions[variant] ?? new Set<string>();
+                      return (
+                        <div
+                          key={variant}
+                          className="flex items-baseline gap-2 flex-wrap mt-1.5 ml-[130px]"
+                        >
+                          <span
+                            className={`text-[11px] font-medium flex-shrink-0 ${
+                              sel.size > 0 ? 'text-blue-700 font-semibold' : 'text-slate-400'
+                            }`}
+                          >
+                            {variant} versions{sel.size > 0 ? ` (${sel.size})` : ''}
+                          </span>
+                          {versions.map((v) => (
+                            <button
+                              key={v}
+                              type="button"
+                              onClick={() => toggleVariantVersion(variant, v)}
+                              className={`px-2 py-0.5 rounded border text-[11px] font-medium transition-colors ${
+                                sel.has(v)
+                                  ? 'bg-blue-600 text-white border-blue-600'
+                                  : 'bg-white text-slate-600 border-slate-300 hover:bg-slate-100'
+                              }`}
+                            >
+                              v{v}
+                            </button>
+                          ))}
+                        </div>
+                      );
+                    })}
               </div>
-            ) : null,
-          )}
+            );
+          })}
 
           {/* Score ranges */}
           <div className="flex items-start gap-2 flex-wrap pt-1 border-t border-slate-100">
