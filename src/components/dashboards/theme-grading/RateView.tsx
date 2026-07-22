@@ -43,6 +43,9 @@ export default function RateView({
   onFocusHandled,
 }: Props) {
   const [rubricOpen, setRubricOpen] = useState(false);
+  // Collapse the whole control strip (run chips + display toggles + rubric)
+  // to give the columns the full viewport height.
+  const [toolbarCollapsed, setToolbarCollapsed] = useState(false);
   // Index of the run chip being dragged (chips reorder the run columns).
   const [dragIdx, setDragIdx] = useState<number | null>(null);
   const [docModal, setDocModal] = useState<{
@@ -108,12 +111,32 @@ export default function RateView({
 
   return (
     <div className="flex-1 min-w-0 min-h-0 flex flex-col bg-slate-50/60">
-      <div className="max-w-[1500px] w-full mx-auto px-6 pt-4 flex-shrink-0">
+      <div className="max-w-[1500px] w-full mx-auto px-6 pt-3 flex-shrink-0">
+        {toolbarCollapsed ? (
+          <div className="flex items-center gap-2 mb-2">
+            <button
+              type="button"
+              onClick={() => setToolbarCollapsed(false)}
+              className="flex items-center gap-1.5 text-[11px] uppercase tracking-wider font-semibold text-slate-500 hover:text-slate-800"
+            >
+              <span className="text-[9px]">▸</span> Controls
+            </button>
+            <span className="text-[11px] text-slate-400 font-mono">
+              {shownRuns.length} run{shownRuns.length === 1 ? '' : 's'} shown
+            </span>
+          </div>
+        ) : (
+        <>
         {/* Toolbar */}
         <div className="flex items-center gap-3 flex-wrap mb-3">
-          <span className="text-[11px] uppercase tracking-wider font-semibold text-slate-500">
-            Runs
-          </span>
+          <button
+            type="button"
+            onClick={() => setToolbarCollapsed(true)}
+            title="Collapse controls"
+            className="flex items-center gap-1.5 text-[11px] uppercase tracking-wider font-semibold text-slate-500 hover:text-slate-800"
+          >
+            <span className="text-[9px]">▾</span> Runs
+          </button>
           {shownRuns.map((r, i) => (
             <span
               key={`${r.id}:${i}`}
@@ -176,6 +199,8 @@ export default function RateView({
         </div>
 
         {rubricOpen && <RubricPanel />}
+        </>
+        )}
       </div>
 
       {/* Each run column scrolls independently — one can sit at its top while
