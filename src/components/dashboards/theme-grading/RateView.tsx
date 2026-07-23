@@ -291,6 +291,9 @@ function RunHeader({ run, corpusName }: { run: Run; corpusName?: string }) {
 // sideways; long lists scroll vertically) — a native <select> can do neither.
 function AddRunPicker({ runs, onPick }: { runs: Run[]; onPick: (id: string) => void }) {
   const [open, setOpen] = useState(false);
+  // Open the panel to whichever side has room — a left-aligned panel walks off
+  // the viewport once chips have pushed the button toward the right edge.
+  const [alignRight, setAlignRight] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -308,13 +311,19 @@ function AddRunPicker({ runs, onPick }: { runs: Run[]; onPick: (id: string) => v
     <div className="relative" ref={rootRef}>
       <button
         type="button"
-        onClick={() => setOpen((v) => !v)}
+        onClick={() => {
+          const r = rootRef.current?.getBoundingClientRect();
+          setAlignRight(!!r && r.left > window.innerWidth / 2);
+          setOpen((v) => !v);
+        }}
         className="px-2 py-1 text-[11px] border border-dashed border-slate-300 rounded-md bg-white text-slate-500 hover:border-slate-400 hover:text-slate-700 transition-colors"
       >
         + Show run…
       </button>
       {open && (
-        <div className="absolute left-0 top-full mt-1 z-30 bg-white border border-slate-200 rounded-md shadow-lg max-h-[320px] w-max max-w-[560px] overflow-auto py-1">
+        <div
+          className={`absolute ${alignRight ? 'right-0' : 'left-0'} top-full mt-1 z-30 bg-white border border-slate-200 rounded-md shadow-lg max-h-[320px] w-max max-w-[min(560px,calc(100vw-32px))] overflow-auto py-1`}
+        >
           {sorted.map((r) => (
             <button
               key={r.id}
