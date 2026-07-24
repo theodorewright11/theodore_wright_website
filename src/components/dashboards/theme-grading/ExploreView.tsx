@@ -67,6 +67,9 @@ export default function ExploreView({
   const [axisRanges, setAxisRanges] = useState<AxisRanges>({});
   // 'rated' = at least one axis has a value (1–5 or N/A); 'unrated' = none.
   const [ratedFilter, setRatedFilter] = useState<'any' | 'rated' | 'unrated'>('any');
+  // The themes table re-renders on every filter interaction; with hundreds of
+  // themes that's the whole tab's lag, so cap it unless expanded.
+  const [showAllThemes, setShowAllThemes] = useState(false);
   const [groupBy, setGroupBy] = useState<Dimension>('positionality');
   const [collapsed, setCollapsed] = useState({
     filters: false,
@@ -512,7 +515,7 @@ export default function ExploreView({
                   </tr>
                 </thead>
                 <tbody>
-                  {rows.map(({ run, theme }) => (
+                  {(showAllThemes ? rows : rows.slice(0, 100)).map(({ run, theme }) => (
                     <tr
                       key={`${run.id}:${theme.id}`}
                       className="border-t border-slate-100 hover:bg-slate-50/60"
@@ -552,6 +555,19 @@ export default function ExploreView({
                   ))}
                 </tbody>
               </table>
+              {rows.length > 100 && (
+                <div className="border-t border-slate-100 px-3 py-1.5">
+                  <button
+                    type="button"
+                    onClick={() => setShowAllThemes((v) => !v)}
+                    className="text-[11px] font-semibold text-slate-500 hover:text-slate-800"
+                  >
+                    {showAllThemes
+                      ? 'Show first 100'
+                      : `Show all ${rows.length} (filtering gets slower)`}
+                  </button>
+                </div>
+              )}
             </div>
           )}
         </section>
