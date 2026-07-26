@@ -27,11 +27,22 @@ export type Income = {
   effective_from: string;  // ISO YYYY-MM-DD
 };
 
+// Three-level taxonomy entry. `detailed` is the unique key stored on a
+// Transaction / Budget. The taxonomy is user-editable data (synced to the
+// `categories` sheet tab), not a hardcoded list — DEFAULT_CATEGORIES in
+// categories.ts is only the initial seed.
+export type CategoryEntry = {
+  broad: string;
+  mid: string;
+  detailed: string;
+};
+
 export type DataState = {
   version: 1;
   transactions: Transaction[];
   budgets: Budget[];
   incomes: Income[];
+  categories: CategoryEntry[];
 };
 
 export const EMPTY_STATE: DataState = {
@@ -39,4 +50,5 @@ export const EMPTY_STATE: DataState = {
   transactions: [],
   budgets: [],
   incomes: [],
+  categories: [],
 };

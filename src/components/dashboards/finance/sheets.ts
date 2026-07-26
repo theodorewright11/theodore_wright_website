@@ -1,19 +1,24 @@
-// Google Sheets sync layer. Browser-side OAuth via Google Identity Services
-// (GIS); direct REST calls to the Sheets v4 API. No server, no service
-// account, no client secret. The user signs in with the Google account that
-// owns the sheet; the access token lives in memory + sessionStorage and is
-// only ever sent to Google's own endpoints.
+// Google Sheets sync layer. Direct REST calls to the Sheets v4 API using an
+// access token obtained via the shared OAuth code-flow (src/lib/googleAuth.ts).
+// No auth logic lives here anymore — this module is purely the Sheets transport
+// (read/write per entity) plus tab bootstrapping.
 
-const GIS_SRC = 'https://accounts.google.com/gsi/client';
-const SCOPE = 'https://www.googleapis.com/auth/spreadsheets email profile';
-const TOKEN_KEY = 'tw-finance-google-token';
+import type { Transaction, Budget, Income, CategoryEntry } from './types';
+import { ACCOUNTS, type Account } from './types';
 
 export const SHEET_TABS = {
   transactions: 'transactions',
   budgets: 'budgets',
   incomes: 'incomes',
+  categories: 'categories',
   spendingLog: 'Spending Log',  // legacy tab — read-only, used for one-time seeding
 } as const;
+
+// Tabs the dashboard owns and auto-creates. `Spending Log` is excluded — it's a
+// pre-existing legacy tab we only ever read.
+const OWNED_TABS: string[] = [
+  SHEET_TABS.transactions, SHEET_TABS.budgets, SHEET_TABS.incomes, SHEET_TABS.categories,
+];
 
 // Canonical header order. Writes always use this order; reads tolerate
 // columns in any order (matched by name).
@@ -21,111 +26,8 @@ export const HEADERS = {
   transactions: ['id','date','item','amount','account','category','notes','created_at','updated_at'] as const,
   budgets: ['category','monthly_amount','effective_from'] as const,
   incomes: ['id','source','monthly_amount','effective_from'] as const,
+  categories: ['broad','mid','detailed'] as const,
 };
-
-export type StoredToken = {
-  access_token: string;
-  expires_at: number;   // ms epoch
-  email?: string;
-};
-
-// --- Token persistence ---------------------------------------------------
-
-export function loadStoredToken(): StoredToken | null {
-  if (typeof window === 'undefined') return null;
-  try {
-    const raw = window.sessionStorage.getItem(TOKEN_KEY);
-    if (!raw) return null;
-    const t = JSON.parse(raw) as StoredToken;
-    if (!t.access_token || !t.expires_at || t.expires_at <= Date.now()) {
-      window.sessionStorage.removeItem(TOKEN_KEY);
-      return null;
-    }
-    return t;
-  } catch {
-    return null;
-  }
-}
-
-function saveToken(t: StoredToken): void {
-  if (typeof window === 'undefined') return;
-  window.sessionStorage.setItem(TOKEN_KEY, JSON.stringify(t));
-}
-
-export function clearStoredToken(): void {
-  if (typeof window === 'undefined') return;
-  window.sessionStorage.removeItem(TOKEN_KEY);
-}
-
-// --- Google Identity Services bootstrap ----------------------------------
-
-declare global {
-  interface Window {
-    google?: any;
-  }
-}
-
-let gisLoadPromise: Promise<void> | null = null;
-
-export function loadGIS(): Promise<void> {
-  if (typeof window === 'undefined') return Promise.reject(new Error('GIS only loads in the browser'));
-  if (window.google?.accounts?.oauth2) return Promise.resolve();
-  if (gisLoadPromise) return gisLoadPromise;
-  gisLoadPromise = new Promise<void>((resolve, reject) => {
-    const script = document.createElement('script');
-    script.src = GIS_SRC;
-    script.async = true;
-    script.defer = true;
-    script.onload = () => resolve();
-    script.onerror = () => { gisLoadPromise = null; reject(new Error('Failed to load Google Identity Services')); };
-    document.head.appendChild(script);
-  });
-  return gisLoadPromise;
-}
-
-export type SignInOptions = {
-  clientId: string;
-  prompt?: 'consent' | '' | 'none';   // '' = silent if possible, 'consent' = always show consent
-};
-
-export async function signIn(opts: SignInOptions): Promise<StoredToken> {
-  await loadGIS();
-  const google = window.google!;
-  return new Promise<StoredToken>((resolve, reject) => {
-    const tokenClient = google.accounts.oauth2.initTokenClient({
-      client_id: opts.clientId,
-      scope: SCOPE,
-      callback: async (resp: any) => {
-        if (resp.error) { reject(new Error(resp.error_description || resp.error)); return; }
-        const expires_at = Date.now() + (resp.expires_in - 60) * 1000;  // -60s safety margin
-        const t: StoredToken = { access_token: resp.access_token, expires_at };
-        try {
-          t.email = await fetchEmail(t.access_token);
-        } catch { /* userinfo failure is non-fatal */ }
-        saveToken(t);
-        resolve(t);
-      },
-    });
-    tokenClient.requestAccessToken({ prompt: opts.prompt ?? 'consent' });
-  });
-}
-
-export function signOut(token?: string): void {
-  if (typeof window === 'undefined') return;
-  if (token && window.google?.accounts?.oauth2) {
-    try { window.google.accounts.oauth2.revoke(token, () => {}); } catch { /* best-effort */ }
-  }
-  clearStoredToken();
-}
-
-async function fetchEmail(accessToken: string): Promise<string | undefined> {
-  const r = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
-    headers: { Authorization: `Bearer ${accessToken}` },
-  });
-  if (!r.ok) return undefined;
-  const j = await r.json();
-  return j.email;
-}
 
 // --- Sheets REST helpers --------------------------------------------------
 
@@ -210,14 +112,26 @@ export function rowsToObjects<K extends string>(
     });
 }
 
+// Create any owned tab that doesn't exist yet, so a sheet missing the
+// `categories` tab (or a brand-new empty spreadsheet) works without manual
+// setup. Safe to call on every pull.
+export async function ensureTabs(token: string, sheetId: string): Promise<void> {
+  const meta = await api<{ sheets?: { properties?: { title?: string } }[] }>(
+    token, sheetsUrl(sheetId, '?fields=sheets.properties.title'),
+  );
+  const existing = new Set((meta.sheets ?? []).map(s => s.properties?.title).filter(Boolean) as string[]);
+  const missing = OWNED_TABS.filter(t => !existing.has(t));
+  if (missing.length === 0) return;
+  await api(token, sheetsUrl(sheetId, ':batchUpdate'), {
+    method: 'POST',
+    body: JSON.stringify({ requests: missing.map(title => ({ addSheet: { properties: { title } } })) }),
+  });
+}
+
 // --- Entity-level CRUD wrappers ------------------------------------------
 // Each writes the full tab (clear + replace). Simpler + safer than per-row
 // edits: we don't have to track row indices, and manual sheet edits don't
 // desync. With <1000 rows the round-trip is well under 2s.
-
-import type { Transaction, Budget, Income } from './types';
-import { ACCOUNTS, type Account } from './types';
-import { isValidCategory } from './categories';
 
 export async function readTransactions(token: string, sheetId: string): Promise<Transaction[]> {
   const rows = await readRange(token, sheetId, `${SHEET_TABS.transactions}!A1:ZZ100000`);
@@ -234,7 +148,9 @@ export async function readTransactions(token: string, sheetId: string): Promise<
       item: r.item,
       amount,
       account,
-      category: r.category && isValidCategory(r.category) ? r.category : (r.category || ''),
+      // Keep the raw category string; validation against the live taxonomy
+      // happens at render time (unknown keys show as "Uncategorized").
+      category: r.category || '',
       notes: r.notes || undefined,
       created_at: r.created_at || new Date().toISOString(),
       updated_at: r.updated_at || new Date().toISOString(),
@@ -283,6 +199,28 @@ export async function readIncomes(token: string, sheetId: string): Promise<Incom
 export async function writeIncomes(token: string, sheetId: string, incomes: Income[]): Promise<void> {
   const rows = incomes.map(i => [i.id, i.source, i.monthly_amount, i.effective_from]);
   await replaceTab(token, sheetId, SHEET_TABS.incomes, HEADERS.incomes, rows);
+}
+
+export async function readCategories(token: string, sheetId: string): Promise<CategoryEntry[]> {
+  const rows = await readRange(token, sheetId, `${SHEET_TABS.categories}!A1:Z100000`);
+  const objs = rowsToObjects(rows, HEADERS.categories);
+  const seen = new Set<string>();
+  const out: CategoryEntry[] = [];
+  for (const r of objs) {
+    const detailed = r.detailed.trim();
+    const broad = r.broad.trim();
+    const mid = r.mid.trim();
+    // `detailed` is the unique key. Skip blanks and duplicates.
+    if (!detailed || !broad || !mid || seen.has(detailed)) continue;
+    seen.add(detailed);
+    out.push({ broad, mid, detailed });
+  }
+  return out;
+}
+
+export async function writeCategories(token: string, sheetId: string, categories: CategoryEntry[]): Promise<void> {
+  const rows = categories.map(c => [c.broad, c.mid, c.detailed]);
+  await replaceTab(token, sheetId, SHEET_TABS.categories, HEADERS.categories, rows);
 }
 
 // --- Config ---------------------------------------------------------------

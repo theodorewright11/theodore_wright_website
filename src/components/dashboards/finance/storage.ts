@@ -1,5 +1,4 @@
 import { EMPTY_STATE, type DataState, type Transaction, type Budget, type Income, type Account, ACCOUNTS } from './types';
-import { isValidCategory } from './categories';
 
 const KEY = 'tw-finance-v1';
 
@@ -15,6 +14,7 @@ export function loadState(): DataState {
       transactions: Array.isArray(parsed.transactions) ? parsed.transactions : [],
       budgets: Array.isArray(parsed.budgets) ? parsed.budgets : [],
       incomes: Array.isArray(parsed.incomes) ? parsed.incomes : [],
+      categories: Array.isArray(parsed.categories) ? parsed.categories : [],
     };
   } catch {
     return EMPTY_STATE;
@@ -99,7 +99,9 @@ export function csvToTransactions(text: string): Transaction[] {
       item: r.item,
       amount,
       account,
-      category: r.category && isValidCategory(r.category) ? r.category : (r.category ?? ''),
+      // Keep the raw category string; unknown keys render as "Uncategorized"
+      // downstream (validated against the live taxonomy, not at parse time).
+      category: r.category ?? '',
       notes: r.notes || undefined,
       created_at: r.created_at || new Date().toISOString(),
       updated_at: r.updated_at || new Date().toISOString(),

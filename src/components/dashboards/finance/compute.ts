@@ -1,4 +1,4 @@
-import type { Transaction, Budget, Income } from './types';
+import type { Transaction, Budget, Income, CategoryEntry } from './types';
 import { isValidCategory, UNCATEGORIZED } from './categories';
 
 // All compute functions are pure. They take data + a target (year, month) and
@@ -48,10 +48,10 @@ export function totalSpend(txs: Transaction[]): number {
   return txs.reduce((sum, t) => sum + (Number.isFinite(t.amount) ? t.amount : 0), 0);
 }
 
-export function spendByCategory(txs: Transaction[]): Map<string, number> {
+export function spendByCategory(txs: Transaction[], categories: CategoryEntry[]): Map<string, number> {
   const out = new Map<string, number>();
   for (const t of txs) {
-    const key = isValidCategory(t.category) ? t.category : UNCATEGORIZED;
+    const key = isValidCategory(categories, t.category) ? t.category : UNCATEGORIZED;
     out.set(key, (out.get(key) ?? 0) + (Number.isFinite(t.amount) ? t.amount : 0));
   }
   return out;

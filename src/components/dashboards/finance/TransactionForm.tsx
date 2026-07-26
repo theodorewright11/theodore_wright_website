@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
-import type { Transaction, Account } from './types';
+import type { Transaction, Account, CategoryEntry } from './types';
 import { ACCOUNTS } from './types';
-import { CATEGORIES, groupByBroadMid } from './categories';
+import { groupByBroadMid } from './categories';
 
 type Props = {
   initial?: Transaction | null;
+  categories: CategoryEntry[];
   onSubmit: (tx: Transaction) => void;
   onCancel: () => void;
   onDelete?: () => void;
@@ -22,12 +23,12 @@ function todayIso() {
   return `${y}-${m}-${day}`;
 }
 
-export default function TransactionForm({ initial, onSubmit, onCancel, onDelete }: Props) {
+export default function TransactionForm({ initial, categories, onSubmit, onCancel, onDelete }: Props) {
   const [date, setDate] = useState(initial?.date ?? todayIso());
   const [item, setItem] = useState(initial?.item ?? '');
   const [amount, setAmount] = useState(initial?.amount?.toString() ?? '');
   const [account, setAccount] = useState<Account>(initial?.account ?? 'Amex');
-  const [category, setCategory] = useState(initial?.category ?? CATEGORIES[0].detailed);
+  const [category, setCategory] = useState(initial?.category ?? categories[0]?.detailed ?? '');
   const [notes, setNotes] = useState(initial?.notes ?? '');
   const [error, setError] = useState<string | null>(null);
 
@@ -60,7 +61,7 @@ export default function TransactionForm({ initial, onSubmit, onCancel, onDelete 
     onSubmit(tx);
   }
 
-  const grouped = groupByBroadMid();
+  const grouped = groupByBroadMid(categories);
 
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center bg-ink/30 px-4 pt-16 pb-8 overflow-y-auto"

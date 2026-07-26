@@ -4,7 +4,7 @@
 // scripts/finance_import_xlsx.py — keep them in sync if the legacy schema
 // changes.
 
-import type { Transaction, Account } from './types';
+import type { Transaction, Account, CategoryEntry } from './types';
 import { isValidCategory } from './categories';
 import { readRange, SHEET_TABS } from './sheets';
 
@@ -63,7 +63,7 @@ export type ImportSummary = {
   unknownCategories: string[];
 };
 
-export async function fetchSpendingLog(token: string, sheetId: string): Promise<ImportSummary> {
+export async function fetchSpendingLog(token: string, sheetId: string, categories: CategoryEntry[]): Promise<ImportSummary> {
   // Pull the whole tab — we don't know how many rows there are.
   const rows = await readRange(token, sheetId, `${SHEET_TABS.spendingLog}!A1:Z100000`);
   // First row is the header — skip it.
@@ -89,7 +89,7 @@ export async function fetchSpendingLog(token: string, sheetId: string): Promise<
 
     const account: Account = ACCOUNT_REMAP[accountRaw.toLowerCase()] ?? 'Other';
     const category = CATEGORY_REMAP[categoryRaw] ?? categoryRaw;
-    if (category && !isValidCategory(category)) unknownSet.add(category);
+    if (category && !isValidCategory(categories, category)) unknownSet.add(category);
 
     imported.push({
       id: crypto.randomUUID(),

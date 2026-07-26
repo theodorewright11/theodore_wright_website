@@ -1,13 +1,17 @@
 import { useMemo, useRef, useState } from 'react';
-import type { Transaction, Account } from './types';
+import type { Transaction, Account, CategoryEntry } from './types';
 import { ACCOUNTS } from './types';
-import { CATEGORIES, lookupCategory, isValidCategory } from './categories';
+import { lookupCategory, isValidCategory } from './categories';
 import { formatMoney } from './compute';
 import { transactionsToCsv, csvToTransactions, downloadFile } from './storage';
 import TransactionForm from './TransactionForm';
 
 type Props = {
   transactions: Transaction[];
+  categories: CategoryEntry[];
+  /** Signed-in users sync to Sheets, so the CSV import/export escape hatch is
+   *  hidden — it's only useful in local-only (public-demo) mode. */
+  signedIn: boolean;
   onAdd: (tx: Transaction) => void;
   onUpdate: (tx: Transaction) => void;
   onDelete: (id: string) => void;
@@ -23,7 +27,7 @@ type SortDir = 'asc' | 'desc';
 
 const PAGE_SIZE = 100;
 
-export default function TransactionsTab({ transactions, onAdd, onUpdate, onDelete, onReplaceAll, onAppend, onSeedFromSpendingLog }: Props) {
+export default function TransactionsTab({ transactions, categories, signedIn, onAdd, onUpdate, onDelete, onReplaceAll, onAppend, onSeedFromSpendingLog }: Props) {
   const [editing, setEditing] = useState<Transaction | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [search, setSearch] = useState('');
@@ -110,20 +114,24 @@ export default function TransactionsTab({ transactions, onAdd, onUpdate, onDelet
           </span>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
-          <input ref={fileInput} type="file" accept=".csv,text/csv" className="hidden"
-                 onChange={() => { /* held until user picks mode */ }} />
-          <button onClick={() => fileInput.current?.click()}
-                  className="font-mono text-[10px] uppercase text-muted hover:text-accent border border-rule hover:border-accent rounded-sm px-2 py-1.5 transition-colors"
-                  style={{ letterSpacing: '0.08em' }}>Pick CSV…</button>
-          <button onClick={() => handleImportClick('append')}
-                  className="font-mono text-[10px] uppercase text-muted hover:text-accent transition-colors px-2 py-1.5"
-                  style={{ letterSpacing: '0.08em' }}>Import (append)</button>
-          <button onClick={() => handleImportClick('replace')}
-                  className="font-mono text-[10px] uppercase text-muted hover:text-accent transition-colors px-2 py-1.5"
-                  style={{ letterSpacing: '0.08em' }}>Import (replace)</button>
-          <button onClick={() => downloadFile('finance-transactions.csv', transactionsToCsv(transactions))}
-                  className="font-mono text-[10px] uppercase text-muted hover:text-accent border border-rule hover:border-accent rounded-sm px-2 py-1.5 transition-colors"
-                  style={{ letterSpacing: '0.08em' }}>Export CSV</button>
+          {!signedIn && (
+            <>
+              <input ref={fileInput} type="file" accept=".csv,text/csv" className="hidden"
+                     onChange={() => { /* held until user picks mode */ }} />
+              <button onClick={() => fileInput.current?.click()}
+                      className="font-mono text-[10px] uppercase text-muted hover:text-accent border border-rule hover:border-accent rounded-sm px-2 py-1.5 transition-colors"
+                      style={{ letterSpacing: '0.08em' }}>Pick CSV…</button>
+              <button onClick={() => handleImportClick('append')}
+                      className="font-mono text-[10px] uppercase text-muted hover:text-accent transition-colors px-2 py-1.5"
+                      style={{ letterSpacing: '0.08em' }}>Import (append)</button>
+              <button onClick={() => handleImportClick('replace')}
+                      className="font-mono text-[10px] uppercase text-muted hover:text-accent transition-colors px-2 py-1.5"
+                      style={{ letterSpacing: '0.08em' }}>Import (replace)</button>
+              <button onClick={() => downloadFile('finance-transactions.csv', transactionsToCsv(transactions))}
+                      className="font-mono text-[10px] uppercase text-muted hover:text-accent border border-rule hover:border-accent rounded-sm px-2 py-1.5 transition-colors"
+                      style={{ letterSpacing: '0.08em' }}>Export CSV</button>
+            </>
+          )}
           <button onClick={() => { setEditing(null); setShowForm(true); }}
                   className="font-mono text-[10px] uppercase text-accent border border-accent hover:bg-accent hover:text-paper rounded-sm px-3 py-1.5 transition-colors"
                   style={{ letterSpacing: '0.08em' }}>+ Add</button>
@@ -171,7 +179,7 @@ export default function TransactionsTab({ transactions, onAdd, onUpdate, onDelet
           <select value={categoryFilter} onChange={e => { setCategoryFilter(e.target.value); setPage(0); }}
                   className="w-full bg-paper border border-rule rounded-sm px-2 py-1.5 text-[13px] font-serif text-ink focus:outline-none focus:border-accent">
             <option value="All">All</option>
-            {CATEGORIES.map(c => <option key={c.detailed} value={c.detailed}>{c.detailed}</option>)}
+            {categories.map(c => <option key={c.detailed} value={c.detailed}>{c.detailed}</option>)}
           </select>
         </div>
         <div>
@@ -206,8 +214,8 @@ export default function TransactionsTab({ transactions, onAdd, onUpdate, onDelet
           </div>
         ) : (
           visible.map((t, idx) => {
-            const cat = lookupCategory(t.category);
-            const validCat = isValidCategory(t.category);
+            const cat = lookupCategory(categories, t.category);
+            const validCat = isValidCategory(categories, t.category);
             return (
               <div key={t.id}
                    className={'grid grid-cols-[110px_1fr_180px_70px_100px_60px] gap-3 px-3 py-2 items-baseline transition-colors hover:bg-accent/[0.04] ' + (
@@ -244,6 +252,7 @@ export default function TransactionsTab({ transactions, onAdd, onUpdate, onDelet
       {showForm && (
         <TransactionForm
           initial={editing}
+          categories={categories}
           onSubmit={(tx) => {
             if (editing) onUpdate(tx); else onAdd(tx);
             setShowForm(false); setEditing(null);

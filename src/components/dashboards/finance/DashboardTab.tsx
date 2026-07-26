@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
-import type { Transaction, Budget, Income } from './types';
-import { CATEGORIES, UNCATEGORIZED, lookupCategory, groupByBroadMid } from './categories';
+import type { Transaction, Budget, Income, CategoryEntry } from './types';
+import { UNCATEGORIZED, groupByBroadMid } from './categories';
 import {
   type YearMonth, ymKey, shiftMonth, todayYM,
   txsInMonth, totalSpend, spendByCategory,
@@ -13,23 +13,24 @@ type Props = {
   transactions: Transaction[];
   budgets: Budget[];
   incomes: Income[];
+  categories: CategoryEntry[];
   initialMonth?: YearMonth;
 };
 
 const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 
-export default function DashboardTab({ transactions, budgets, incomes, initialMonth }: Props) {
+export default function DashboardTab({ transactions, budgets, incomes, categories, initialMonth }: Props) {
   const [ym, setYm] = useState<YearMonth>(initialMonth ?? todayYM());
 
   const data = useMemo(() => {
     const monthTxs = txsInMonth(transactions, ym);
     const spent = totalSpend(monthTxs);
-    const spendMap = spendByCategory(monthTxs);
+    const spendMap = spendByCategory(monthTxs, categories);
     const budgetMap = currentBudgets(budgets, ym);
     const budget = totalBudget(budgets, ym);
     const income = totalIncome(incomes, ym);
     return { monthTxs, spent, spendMap, budgetMap, budget, income };
-  }, [transactions, budgets, incomes, ym]);
+  }, [transactions, budgets, incomes, categories, ym]);
 
   const monthLabel = `${MONTH_NAMES[ym.month - 1]} ${ym.year}`;
   const isCurrentMonth = ymKey(ym) === ymKey(todayYM());
@@ -38,8 +39,7 @@ export default function DashboardTab({ transactions, budgets, incomes, initialMo
   const net = data.income - data.spent;
 
   // Build display rows grouped Broad → Mid → Detailed.
-  const grouped = groupByBroadMid();
-  const allCategoryKeys = new Set<string>([...CATEGORIES.map(c => c.detailed), ...data.spendMap.keys()]);
+  const grouped = groupByBroadMid(categories);
 
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
   function toggle(broad: string) {

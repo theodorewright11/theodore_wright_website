@@ -1,14 +1,13 @@
-export type CategoryEntry = {
-  broad: string;
-  mid: string;
-  detailed: string;   // unique key — also the value stored on a Transaction
-};
+import type { CategoryEntry } from './types';
 
-// Three-level taxonomy. Edit this list to add/rename categories; nothing else
-// in the codebase hardcodes these strings. `detailed` is the persistent key
-// (renaming it leaves historical transactions pointing at a missing category,
-// which the dashboard surfaces as "Uncategorized").
-export const CATEGORIES: CategoryEntry[] = [
+export type { CategoryEntry };
+
+// Initial seed for the three-level taxonomy. This is ONLY the default — the
+// live taxonomy is user-editable data on `DataState.categories` (synced to the
+// `categories` sheet tab). A brand-new / empty sheet gets seeded with this
+// list; after that, edits in the Manage-categories UI are the source of truth.
+// `detailed` is the persistent key stored on a Transaction / Budget.
+export const DEFAULT_CATEGORIES: CategoryEntry[] = [
   // Living Expenses
   { broad: 'Living Expenses', mid: 'Food', detailed: 'Groceries' },
   { broad: 'Living Expenses', mid: 'Food', detailed: 'Eating Out' },
@@ -62,22 +61,27 @@ export const CATEGORIES: CategoryEntry[] = [
   { broad: 'Big Expenses Savings', mid: 'Big Expenses Savings', detailed: 'Car' },
 ];
 
-export const DETAILED_KEYS: string[] = CATEGORIES.map(c => c.detailed);
-
 export const UNCATEGORIZED = 'Uncategorized';
 
-export function isValidCategory(key: string): boolean {
-  return DETAILED_KEYS.includes(key);
+// The taxonomy is passed in (from DataState.categories) so every consumer sees
+// the user's current, edited list rather than a compile-time constant.
+
+export function detailedKeys(categories: CategoryEntry[]): string[] {
+  return categories.map(c => c.detailed);
 }
 
-export function lookupCategory(key: string): CategoryEntry | null {
-  return CATEGORIES.find(c => c.detailed === key) ?? null;
+export function isValidCategory(categories: CategoryEntry[], key: string): boolean {
+  return categories.some(c => c.detailed === key);
+}
+
+export function lookupCategory(categories: CategoryEntry[], key: string): CategoryEntry | null {
+  return categories.find(c => c.detailed === key) ?? null;
 }
 
 // Returns Map<broad, Map<mid, CategoryEntry[]>> in source order.
-export function groupByBroadMid(): Map<string, Map<string, CategoryEntry[]>> {
+export function groupByBroadMid(categories: CategoryEntry[]): Map<string, Map<string, CategoryEntry[]>> {
   const out = new Map<string, Map<string, CategoryEntry[]>>();
-  for (const c of CATEGORIES) {
+  for (const c of categories) {
     let broadMap = out.get(c.broad);
     if (!broadMap) {
       broadMap = new Map();

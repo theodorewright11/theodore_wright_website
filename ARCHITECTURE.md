@@ -39,9 +39,10 @@
 │   │   ├── models/                      ← React components for interactive models
 │   │   │   └── OptionValueDashboard.tsx
 │   │   ├── dashboards/                  ← React components for the /dashboards/<slug> apps
-│   │   │   ├── finance/                 ← FinanceDashboard.tsx (root, queue), DashboardTab/TransactionsTab/BudgetTab/TransactionForm,
-│   │   │   │                               types.ts, categories.ts, compute.ts, storage.ts (localStorage cache + CSV),
-│   │   │   │                               sheets.ts (GIS + Sheets REST), spendingLogImporter.ts (one-shot legacy-tab seed), AuthBar.tsx
+│   │   │   ├── finance/                 ← FinanceDashboard.tsx (root, queue, googleAuth code-flow), DashboardTab/TransactionsTab/BudgetTab/
+│   │   │   │                               TransactionForm/CategoriesModal, types.ts, categories.ts (DEFAULT_CATEGORIES seed + pure helpers),
+│   │   │   │                               compute.ts, storage.ts (localStorage cache + CSV), sheets.ts (Sheets REST + ensureTabs),
+│   │   │   │                               spendingLogImporter.ts (one-shot legacy-tab seed), AuthBar.tsx
 │   │   │   ├── time-tracker/            ← TimeTrackerDashboard.tsx (root, queue, googleAuth code-flow), Clock/Pomodoro/Log tabs,
 │   │   │   │                               WeekStrip/RatingRow/ActivityPicker/TimeStepper, AuthBar.tsx, notify.ts (chime + notification),
 │   │   │   │                               types.ts, compute.ts (pure), storage.ts (localStorage cache + CSV), sheets.ts (Sheets REST + ensureTabs)
@@ -332,7 +333,7 @@ To attach a paper to a research entry, set `paperUrl: '/papers/<slug>.pdf'` in t
 - Static for everything public
 - `/dashboards/*` will be protected by **Cloudflare Access** when those routes get built. No server code required — Cloudflare sits in front of the static deploy and challenges visitors to authenticate.
 
-### Google sign-in (Time Tracker, Qual Coding, Theme Grading; Finance pending)
+### Google sign-in (Time Tracker, Qual Coding, Theme Grading, Finance)
 
 Auth uses the **OAuth 2.0 authorization-code flow with a refresh token**, backed by three Vercel serverless functions. This replaced the old GIS *implicit token flow*, whose silent refresh (`requestAccessToken({ prompt: 'none' })`) was permanently broken: it opens a popup to `accounts.google.com`, which sends `COOP: same-origin`, severing the opener's `window.closed` handle (Chrome: *"Cross-Origin-Opener-Policy policy would block the window.closed call"* → GIS `popup_closed`). No site-side header fixes this, because the boundary is set by Google's popup, not us — so silent refresh failed and forced a manual re-sign-in every hour.
 
@@ -351,7 +352,7 @@ Backend lives in `api/auth/` (`_lib.js` = crypto/cookie/token helpers; `exchange
 
 **COOP header** (`vercel.json` + `astro.config.mjs` dev/preview) is set to `same-origin-allow-popups` — good hygiene for the interactive sign-in popup. Do **not** add `Cross-Origin-Embedder-Policy`; it would block the GIS script and Google APIs.
 
-**Finance** still uses the old implicit flow (`src/components/dashboards/finance/`) — migrate it to `googleAuth.ts` the same way as a follow-up. The dead GIS auth helpers in `time-tracker/sheets.ts` and `qualitative-coding/drive.ts` are unused and can be deleted.
+**Finance** now uses this code-flow too — `finance/sheets.ts` is pure Sheets transport (no auth), and `FinanceDashboard.tsx` imports sign-in/refresh from `googleAuth.ts` like the other dashboards. Because the flow needs `api/auth/*`, Finance sign-in works on the Vercel deploy, not under plain `astro dev`. The dead GIS auth helpers in `time-tracker/sheets.ts` and `qualitative-coding/drive.ts` are unused and can be deleted.
 
 ### Dashboard data tiers
 
@@ -390,9 +391,9 @@ Persistence rules: load from `localStorage` once on mount, persist on every stat
 
 ### Finance dashboard specifics
 
-Lives at [src/components/dashboards/finance/](src/components/dashboards/finance/). Mounted at `/dashboards/finance`. v1 is **private** (hidden from `/dashboards` roster via `private: true` in `dashboards.json`). Two persistence modes: local-only (no env vars set or signed out) and Sheets-synced (signed in to a Google account that owns the configured sheet).
+Lives at [src/components/dashboards/finance/](src/components/dashboards/finance/). Mounted at `/dashboards/finance`. **Private** (hidden from `/dashboards` roster via `private: true` in `dashboards.json`). Two persistence modes: local-only (no env vars set or signed out) and Sheets-synced (signed in to a Google account that owns the configured sheet).
 
-**Storage key**: `tw-finance-v1` (a single JSON object containing transactions, budgets, incomes). Schema is versioned via the `version` field on the persisted object so future migrations have a hook.
+**Storage key**: `tw-finance-v1` (a single JSON object containing transactions, budgets, incomes, and the category taxonomy). Schema is versioned via the `version` field on the persisted object so future migrations have a hook. A store predating the taxonomy field loads with an empty `categories` array, which hydration replaces with `DEFAULT_CATEGORIES`.
 
 **CSV format** (one file per entity; each round-trips through Import/Export):
 
@@ -406,34 +407,37 @@ Headers are authoritative on import; column order doesn't matter. Quoted fields 
 
 **Budget versioning**: editing a category creates a new `Budget` row with today's date as `effective_from` rather than mutating the old row. `currentBudgets(budgets, ym)` picks the most-recent row per category whose `effective_from` is on or before the first day of the target month, so historical month views naturally use the budget that was in effect then. Same convention for `Income`.
 
-**Category taxonomy**: source of truth at [src/components/dashboards/finance/categories.ts](src/components/dashboards/finance/categories.ts). Three-level (Broad → Mid → Detailed). The detailed string is the persistent key stored on `Transaction.category`; it must round-trip via `isValidCategory`. Renaming a leaf strands existing transactions under "Uncategorized" (surfaced as a sienna-tinted bucket on the Dashboard tab).
+**Category taxonomy**: **runtime data**, not a compile-time constant. Lives on `DataState.categories` (localStorage + the `categories` sheet tab). [categories.ts](src/components/dashboards/finance/categories.ts) exports `DEFAULT_CATEGORIES` (the seed applied when the store/tab is empty) plus pure helpers — `isValidCategory(categories, key)`, `lookupCategory(categories, key)`, `groupByBroadMid(categories)`, `detailedKeys(categories)` — that all take the live taxonomy as their first argument. Every consumer (tabs, compute, importer) receives `categories` as a prop/param; nothing reads a module-level list. Three-level (Broad → Mid → Detailed); the `detailed` string is the persistent key stored on `Transaction.category` / `Budget.category`. Unknown keys render under "Uncategorized" (a sienna-tinted bucket on the Dashboard tab).
+
+**Category management** ([CategoriesModal.tsx](src/components/dashboards/finance/CategoriesModal.tsx), opened from the Budget tab's *Manage categories* button): an editable Broad/Mid/Detailed table (datalist-backed Broad/Mid inputs to reuse existing groups) with add / delete rows. On save it diffs against the original by tracking each row's `original` detailed key: rows whose `detailed` changed become **renames** `{from, to}`, which `FinanceDashboard.onSaveCategories` applies across `transactions` + `budgets` (bumping `updated_at`) so a rename doesn't strand history; removed rows are **deletions** (confirmed in a dialog) whose transactions fall to Uncategorized until re-filed. `BudgetTab`'s draft reseed key includes the category keys so a rename/add/delete re-seeds the budget inputs from the migrated rows.
 
 **Spreadsheet importer** at [scripts/finance_import_xlsx.py](scripts/finance_import_xlsx.py) converts the user's `Finances Sheet.xlsx` (the existing spreadsheet workflow) into `transactions.import.csv` + `budgets.import.csv` shaped for the dashboard's CSV importer. Account remap (`Debt` → `Debit`) and category remap (`ChatGPT` → `AI Subscription`, `OneDrive` → `One Drive`, `Car Maintenence` → `Car Maintenance`) live in dictionaries at the top of the script — extend them as the spreadsheet evolves. The script is one-shot; the dashboard does not depend on it at runtime.
 
 **Personal data hygiene**: never seed the public route with real financial data. `.gitignore` excludes `Finances Sheet*.xlsx`, `My Needs*.xlsx`, `*.private.csv`, and `finance-data-local/`. The user can keep their `.xlsx` in project root for context without risk of committing. `.env` (holding Sheets config) is also gitignored.
 
-**Google Sheets sync** (when signed in): see [src/components/dashboards/finance/sheets.ts](src/components/dashboards/finance/sheets.ts). Browser-side OAuth via Google Identity Services (script lazy-loaded on first sign-in attempt; no SDK dependency). Token in `sessionStorage` with a 60-second safety margin on expiry; scope is `https://www.googleapis.com/auth/spreadsheets email profile`. Sheets v4 REST endpoints called directly with `fetch` + `Authorization: Bearer <token>`. No service account, no Cloudflare Worker, no client secret in this repo.
+**Google Sheets sync** (when signed in): see [src/components/dashboards/finance/sheets.ts](src/components/dashboards/finance/sheets.ts) — pure Sheets transport, no auth logic. **Auth is the shared code-flow** (`src/lib/googleAuth.ts` + `api/auth/*`); `FinanceDashboard.tsx` calls `signIn` / `refresh` / `signOut` exactly like Time Tracker (mount refresh, ~1-min-before-expiry silent refresh, focus/visibility wake with near-expiry refresh, 401 → refresh-first-then-sign-out). Sheets v4 REST endpoints called directly with `fetch` + `Authorization: Bearer <token>`. No service account, no Cloudflare Worker. `ensureTabs` (called at the top of every pull) creates any owned tab that doesn't exist, so a sheet missing the newer `categories` tab is fixed automatically.
 
-**Sheet schema**: three tabs in the workbook identified by `PUBLIC_FINANCE_SHEET_ID`, with header row in row 1:
+**Sheet schema**: four owned tabs in the workbook identified by `PUBLIC_FINANCE_SHEET_ID`, with header row in row 1:
 
 | Tab | Headers (canonical order) |
 |---|---|
 | `transactions` | `id,date,item,amount,account,category,notes,created_at,updated_at` |
 | `budgets` | `category,monthly_amount,effective_from` |
 | `incomes` | `id,source,monthly_amount,effective_from` |
+| `categories` | `broad,mid,detailed` |
 
-Reads are tolerant of column reorders (matched by header name via `rowsToObjects`). Writes use the canonical order — every write rewrites the header row too. Existing tabs (`Current Budget`, `Spending Log`, `Dashboard`) are not touched by the dashboard except for the one-shot read in `spendingLogImporter.ts` which reads the legacy `Spending Log` tab to seed historical transactions.
+Reads are tolerant of column reorders (matched by header name via `rowsToObjects`). Writes use the canonical order — every write rewrites the header row too. A pull with an empty `categories` tab seeds `DEFAULT_CATEGORIES` into state and pushes it back up. Existing tabs (`Current Budget`, `Spending Log`, `Dashboard`) are not touched except for the one-shot read in `spendingLogImporter.ts`, which reads the legacy `Spending Log` tab to seed historical transactions (it takes the live `categories` to flag unknown ones).
 
 **Write strategy**: per-entity `clear + write-all` on every mutation. Simpler than per-row diffs (no row-index tracking), resilient to manual sheet edits, and at <1000 rows the round-trip is well under 2s. A per-entity coalescing queue (`pending` + `inflight` refs in `FinanceDashboard.tsx`) collapses bursts of edits into a single write — pending payload is overwritten by the latest, in-flight writes don't block UI updates, and writes serialize per entity so out-of-order completion can't desync the sheet.
 
-**Lifecycle**: on mount, `localStorage` hydrates immediately for fast UI; if a stored token exists in `sessionStorage`, a full pull replaces in-memory state. On sign-in, same full pull. On every state mutation that originates in the dashboard, the affected entity gets queued for write. On `window.focus`, full re-pull (cross-tab edits, manual sheet edits). On `SheetsAuthError` (401/403), token cleared and user prompted to re-sign-in; in-memory state stays intact.
+**Lifecycle**: on mount, `localStorage` hydrates immediately for fast UI (seeding `DEFAULT_CATEGORIES` if the store has no taxonomy), a cached access token paints instantly, and a popup-free `refresh()` confirms/renews the session from the HttpOnly cookie. On token acquisition, a full pull replaces in-memory state. On every state mutation, the affected entity gets queued for write. On focus/visibility, near-expiry silent-refresh then re-pull (cross-tab edits, manual sheet edits). On `SheetsAuthError` (401/403), a silent `refresh()` is attempted first; only if that fails is the token dropped and re-sign-in prompted (in-memory state stays intact).
 
-**One-time historical seed**: when signed in and the `transactions` tab is empty, the Transactions tab surfaces a "Seed from Spending Log" callout. Calls `fetchSpendingLog` (mirrors the Python importer at [scripts/finance_import_xlsx.py](scripts/finance_import_xlsx.py) — keep them in sync if the legacy schema changes), confirms with the user (showing imported count, skipped count, and any unknown categories that'll show as "Uncategorized"), then writes the result to the new `transactions` tab.
+**One-time historical seed**: when signed in and the `transactions` tab is empty, the Transactions tab surfaces a "Seed from Spending Log" callout. Calls `fetchSpendingLog(token, sheetId, categories)` (mirrors the Python importer at [scripts/finance_import_xlsx.py](scripts/finance_import_xlsx.py) — keep them in sync if the legacy schema changes), confirms with the user (showing imported count, skipped count, and any unknown categories that'll show as "Uncategorized" — checked against the live taxonomy), then writes the result to the new `transactions` tab.
 
 **Required env**:
 - `PUBLIC_GOOGLE_CLIENT_ID` — OAuth 2.0 Web Client ID from Google Cloud Console (Sheets API enabled; authorized JS origins must include `http://localhost:4321` for dev and `https://teddy-wright.com` for prod)
 - `PUBLIC_FINANCE_SHEET_ID` — the long ID from the sheet URL between `/d/` and `/edit`
-- The `PUBLIC_` prefix exposes them to the client bundle (Astro convention). The OAuth client *secret* is never used (browser-side flow doesn't need it) and must not be committed.
+- Plus the shared server-side auth vars (`GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` / `TOKEN_ENC_KEY`) backing `api/auth/*` — already provisioned for the other dashboards. Sign-in therefore only works where `api/auth/*` runs (the Vercel deploy), not under plain `astro dev`.
 
 **Auth UI**: [src/components/dashboards/finance/AuthBar.tsx](src/components/dashboards/finance/AuthBar.tsx) lives in the dashboard's app top-bar. Four states: `local only · sync not configured` (no env vars), `Sign in to sync` (configured, no token), signed-in row with sync indicator (synced / syncing / error / offline) + email + sign out + retry-on-error. The "Reset all data" button is hidden when signed in — sheet is the source of truth, so a local reset would just trigger a re-pull on next focus.
 

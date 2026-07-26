@@ -1,15 +1,20 @@
 import { useMemo, useRef, useState } from 'react';
-import type { Budget, Income } from './types';
-import { CATEGORIES, groupByBroadMid } from './categories';
-import { formatMoney, todayYM, currentBudgets, totalIncome, totalBudget } from './compute';
-import { budgetsToCsv, csvToBudgets, incomesToCsv, csvToIncomes, downloadFile } from './storage';
+import type { Budget, Income, CategoryEntry } from './types';
+import { groupByBroadMid } from './categories';
+import { formatMoney, todayYM, currentBudgets } from './compute';
+import { budgetsToCsv, csvToBudgets, downloadFile } from './storage';
+import CategoriesModal from './CategoriesModal';
 
 type Props = {
   budgets: Budget[];
   incomes: Income[];
+  categories: CategoryEntry[];
+  /** CSV import/export is a local-only escape hatch — hidden when synced. */
+  signedIn: boolean;
   onSaveBudgets: (next: Budget[]) => void;
   onSaveIncomes: (next: Income[]) => void;
   onImportBudgets: (next: Budget[]) => void;
+  onSaveCategories: (next: CategoryEntry[], renames: { from: string; to: string }[]) => void;
 };
 
 function todayIso() {
@@ -20,28 +25,31 @@ function todayIso() {
   return `${y}-${m}-${day}`;
 }
 
-export default function BudgetTab({ budgets, incomes, onSaveBudgets, onSaveIncomes, onImportBudgets }: Props) {
+export default function BudgetTab({ budgets, incomes, categories, signedIn, onSaveBudgets, onSaveIncomes, onImportBudgets, onSaveCategories }: Props) {
   const ym = todayYM();
   const current = useMemo(() => currentBudgets(budgets, ym), [budgets, ym.year, ym.month]);
-  const totalBudgeted = totalBudget(budgets, ym);
-  const monthlyIncome = totalIncome(incomes, ym);
+
+  const [showCategories, setShowCategories] = useState(false);
 
   const [drafts, setDrafts] = useState<Map<string, string>>(() => {
     const m = new Map<string, string>();
-    for (const c of CATEGORIES) {
+    for (const c of categories) {
       m.set(c.detailed, (current.get(c.detailed) ?? 0).toString());
     }
     return m;
   });
 
-  // If budgets prop changes externally (e.g. after import), reset drafts.
-  // useMemo to detect change is overkill; just reseed on a key change.
-  const reseedKey = budgets.length + ':' + budgets.map(b => b.effective_from).join('|');
+  // Reseed drafts when budgets or the taxonomy change externally (CSV import,
+  // a category add/rename/delete that migrated budget rows). Keying on budget
+  // versions + category keys catches renames, which change a budget's category
+  // without changing row count or effective_from.
+  const reseedKey = budgets.length + ':' + budgets.map(b => b.effective_from).join('|')
+    + '::' + categories.map(c => c.detailed).join('|');
   const lastSeed = useRef(reseedKey);
   if (lastSeed.current !== reseedKey) {
     lastSeed.current = reseedKey;
     const m = new Map<string, string>();
-    for (const c of CATEGORIES) m.set(c.detailed, (current.get(c.detailed) ?? 0).toString());
+    for (const c of categories) m.set(c.detailed, (current.get(c.detailed) ?? 0).toString());
     setDrafts(m);
   }
 
@@ -75,7 +83,7 @@ export default function BudgetTab({ budgets, incomes, onSaveBudgets, onSaveIncom
   function saveBudgets() {
     const today = todayIso();
     const newRows: Budget[] = [];
-    for (const c of CATEGORIES) {
+    for (const c of categories) {
       const raw = drafts.get(c.detailed) ?? '0';
       const amt = parseFloat(raw);
       if (!Number.isFinite(amt) || amt < 0) {
@@ -103,7 +111,7 @@ export default function BudgetTab({ budgets, incomes, onSaveBudgets, onSaveIncom
 
   function resetDrafts() {
     const m = new Map<string, string>();
-    for (const c of CATEGORIES) m.set(c.detailed, (current.get(c.detailed) ?? 0).toString());
+    for (const c of categories) m.set(c.detailed, (current.get(c.detailed) ?? 0).toString());
     setDrafts(m);
     setIncomeDrafts(incomes.length === 0 ? [{ id: crypto.randomUUID(), source: 'Work', monthly_amount: 0, effective_from: todayIso() }] : incomes.map(i => ({ ...i })));
   }
@@ -123,7 +131,7 @@ export default function BudgetTab({ budgets, incomes, onSaveBudgets, onSaveIncom
     reader.readAsText(f);
   }
 
-  const grouped = groupByBroadMid();
+  const grouped = groupByBroadMid(categories);
   const overspendingPlanned = draftTotal > draftIncomeTotal;
 
   return (
@@ -138,15 +146,30 @@ export default function BudgetTab({ budgets, incomes, onSaveBudgets, onSaveIncom
           </p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
-          <input ref={fileInput} type="file" accept=".csv,text/csv" className="hidden" onChange={importCsv} />
-          <button onClick={() => fileInput.current?.click()}
-                  className="font-mono text-[10px] uppercase text-muted hover:text-accent border border-rule hover:border-accent rounded-sm px-2 py-1.5 transition-colors"
-                  style={{ letterSpacing: '0.08em' }}>Import CSV</button>
-          <button onClick={() => downloadFile('finance-budgets.csv', budgetsToCsv(budgets))}
-                  className="font-mono text-[10px] uppercase text-muted hover:text-accent border border-rule hover:border-accent rounded-sm px-2 py-1.5 transition-colors"
-                  style={{ letterSpacing: '0.08em' }}>Export CSV</button>
+          <button onClick={() => setShowCategories(true)}
+                  className="font-mono text-[10px] uppercase text-accent border border-accent hover:bg-accent hover:text-paper rounded-sm px-2 py-1.5 transition-colors"
+                  style={{ letterSpacing: '0.08em' }}>Manage categories</button>
+          {!signedIn && (
+            <>
+              <input ref={fileInput} type="file" accept=".csv,text/csv" className="hidden" onChange={importCsv} />
+              <button onClick={() => fileInput.current?.click()}
+                      className="font-mono text-[10px] uppercase text-muted hover:text-accent border border-rule hover:border-accent rounded-sm px-2 py-1.5 transition-colors"
+                      style={{ letterSpacing: '0.08em' }}>Import CSV</button>
+              <button onClick={() => downloadFile('finance-budgets.csv', budgetsToCsv(budgets))}
+                      className="font-mono text-[10px] uppercase text-muted hover:text-accent border border-rule hover:border-accent rounded-sm px-2 py-1.5 transition-colors"
+                      style={{ letterSpacing: '0.08em' }}>Export CSV</button>
+            </>
+          )}
         </div>
       </div>
+
+      {showCategories && (
+        <CategoriesModal
+          categories={categories}
+          onClose={() => setShowCategories(false)}
+          onSave={onSaveCategories}
+        />
+      )}
 
       {overspendingPlanned && (
         <div className="px-3 py-2 border border-accent rounded-md bg-accent/5">

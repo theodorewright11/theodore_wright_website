@@ -1,16 +1,20 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { DataState, Transaction, Budget, Income } from './types';
+import type { DataState, Transaction, Budget, Income, CategoryEntry } from './types';
 import { EMPTY_STATE } from './types';
+import { DEFAULT_CATEGORIES } from './categories';
 import { loadState, saveState, clearState } from './storage';
 import {
-  readConfig, type StoredToken,
-  loadStoredToken, clearStoredToken,
-  signIn as gisSignIn, signOut as gisSignOut,
+  readConfig,
+  ensureTabs,
   readTransactions, writeTransactions,
   readBudgets, writeBudgets,
   readIncomes, writeIncomes,
+  readCategories, writeCategories,
   SheetsAuthError,
 } from './sheets';
+import {
+  type StoredToken, loadCachedToken, signIn, refresh, signOut,
+} from '../../../lib/googleAuth';
 import { fetchSpendingLog } from './spendingLogImporter';
 import DashboardTab from './DashboardTab';
 import TransactionsTab from './TransactionsTab';
@@ -27,7 +31,8 @@ const TABS: Array<{ id: Tab; label: string }> = [
 ];
 
 export type SyncState = 'idle' | 'syncing' | 'error' | 'offline';
-type Entity = 'transactions' | 'budgets' | 'incomes';
+type Entity = 'transactions' | 'budgets' | 'incomes' | 'categories';
+const ENTITIES: Entity[] = ['transactions', 'budgets', 'incomes', 'categories'];
 
 export default function FinanceDashboard() {
   const config = useMemo(() => readConfig(), []);
@@ -40,13 +45,20 @@ export default function FinanceDashboard() {
   const [sync, setSync] = useState<SyncState>('idle');
   const [lastError, setLastError] = useState<string | undefined>(undefined);
 
-  // --- Hydration: localStorage first (fast UI), then attempt sheet pull. -
+  // --- Hydration: localStorage first (fast UI), then confirm/renew the token
+  //     from the server-side refresh cookie (popup-free) and pull the sheet. --
 
   useEffect(() => {
-    setState(loadState());
+    const loaded = loadState();
+    // A brand-new local store has no taxonomy — seed the default so the UI has
+    // categories to render before the first sheet pull replaces it.
+    setState(loaded.categories.length ? loaded : { ...loaded, categories: DEFAULT_CATEGORIES });
     setHydrated(true);
-    const stored = loadStoredToken();
-    if (stored) setToken(stored);
+    // Instant paint from the cached access token, then silently renew from the
+    // HttpOnly refresh-token cookie (no popup, immune to COOP).
+    const cached = loadCachedToken();
+    if (cached) setToken(cached);
+    refresh().then(t => { if (t) setToken(t); }).catch(() => {});
   }, []);
 
   // Persist to localStorage on every state change. localStorage is the
@@ -58,26 +70,33 @@ export default function FinanceDashboard() {
 
   // --- Push queue (per-entity, latest-wins coalescing) ---------------------
 
-  const pending = useRef<Record<Entity, any[] | null>>({ transactions: null, budgets: null, incomes: null });
-  const inflight = useRef<Record<Entity, boolean>>({ transactions: false, budgets: false, incomes: false });
+  const pending = useRef<Record<Entity, any[] | null>>(
+    { transactions: null, budgets: null, incomes: null, categories: null });
+  const inflight = useRef<Record<Entity, boolean>>(
+    { transactions: false, budgets: false, incomes: false, categories: false });
 
-  const handleSyncError = useCallback((e: unknown) => {
+  const handleSyncError = useCallback(async (e: unknown) => {
     if (e instanceof SheetsAuthError) {
-      clearStoredToken();
+      // The token 401'd — try a popup-free refresh before forcing re-sign-in.
+      try {
+        const t = await refresh();
+        if (t) { setToken(t); setSync('idle'); setLastError(undefined); return; }
+      } catch { /* fall through to sign-out */ }
       setToken(null);
       setLastError('Session expired. Sign in again.');
     } else {
-      const msg = e instanceof Error ? e.message : String(e);
-      setLastError(msg);
+      setLastError(e instanceof Error ? e.message : String(e));
     }
     setSync('error');
   }, []);
 
   const doWrite = useCallback(async (entity: Entity, payload: any[]) => {
     if (!token || !config) return;
-    if (entity === 'transactions') await writeTransactions(token.access_token, config.sheetId, payload);
-    else if (entity === 'budgets') await writeBudgets(token.access_token, config.sheetId, payload);
-    else if (entity === 'incomes') await writeIncomes(token.access_token, config.sheetId, payload);
+    const t = token.access_token, id = config.sheetId;
+    if (entity === 'transactions') await writeTransactions(t, id, payload);
+    else if (entity === 'budgets') await writeBudgets(t, id, payload);
+    else if (entity === 'incomes') await writeIncomes(t, id, payload);
+    else if (entity === 'categories') await writeCategories(t, id, payload);
   }, [token, config]);
 
   const drainQueue = useCallback(async (entity: Entity) => {
@@ -97,9 +116,7 @@ export default function FinanceDashboard() {
       inflight.current[entity] = false;
     }
     // Settle to idle only when nothing is pending or in-flight on any entity.
-    const settled =
-      !inflight.current.transactions && !inflight.current.budgets && !inflight.current.incomes &&
-      pending.current.transactions === null && pending.current.budgets === null && pending.current.incomes === null;
+    const settled = ENTITIES.every(e => !inflight.current[e] && pending.current[e] === null);
     if (settled) {
       setSync(s => s === 'error' ? 'error' : 'idle');
       setLastError(undefined);
@@ -112,41 +129,79 @@ export default function FinanceDashboard() {
     drainQueue(entity);
   }, [token, config, drainQueue]);
 
-  // --- Initial pull on token acquisition + window focus refresh -----------
+  // --- Pull on token acquisition + window focus refresh -------------------
 
   const pull = useCallback(async () => {
     if (!token || !config) return;
     // Skip while a write is queued or in flight — local state is the source
     // of truth during a mutation, so a focus-triggered re-pull would race.
-    const busy =
-      inflight.current.transactions || inflight.current.budgets || inflight.current.incomes ||
-      pending.current.transactions !== null || pending.current.budgets !== null || pending.current.incomes !== null;
+    const busy = ENTITIES.some(e => inflight.current[e] || pending.current[e] !== null);
     if (busy) return;
     setSync('syncing');
     try {
-      const [txs, bs, is] = await Promise.all([
+      await ensureTabs(token.access_token, config.sheetId);
+      const [txs, bs, is, cats] = await Promise.all([
         readTransactions(token.access_token, config.sheetId),
         readBudgets(token.access_token, config.sheetId),
         readIncomes(token.access_token, config.sheetId),
+        readCategories(token.access_token, config.sheetId),
       ]);
-      setState({ version: 1, transactions: txs, budgets: bs, incomes: is });
-      setSync('idle');
+      // An empty `categories` tab (fresh sheet, or first run after this
+      // upgrade) seeds the default taxonomy and pushes it back up.
+      if (cats.length === 0) {
+        setState({ version: 1, transactions: txs, budgets: bs, incomes: is, categories: DEFAULT_CATEGORIES });
+        pending.current.categories = DEFAULT_CATEGORIES;
+        drainQueue('categories');
+      } else {
+        setState({ version: 1, transactions: txs, budgets: bs, incomes: is, categories: cats });
+        setSync('idle');
+      }
       setLastError(undefined);
     } catch (e) {
       handleSyncError(e);
     }
-  }, [token, config, handleSyncError]);
+  }, [token, config, handleSyncError, drainQueue]);
 
   useEffect(() => {
     if (token && config) pull();
   }, [token?.access_token, config?.sheetId]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // On focus/visibility: if the token is near expiry, silent-refresh first (the
+  // token-change effect re-pulls); otherwise just pull. Covers cross-tab and
+  // manual-sheet edits, and background-tab timer throttling.
   useEffect(() => {
     if (!token || !config) return;
-    function onFocus() { pull(); }
-    window.addEventListener('focus', onFocus);
-    return () => window.removeEventListener('focus', onFocus);
+    const wake = () => {
+      if (!token || !config) return;
+      if (token.expires_at - Date.now() < 5 * 60_000) {
+        refresh().then(t => { if (t) setToken(t); else pull(); }).catch(() => pull());
+      } else {
+        pull();
+      }
+    };
+    window.addEventListener('focus', wake);
+    document.addEventListener('visibilitychange', wake);
+    return () => {
+      window.removeEventListener('focus', wake);
+      document.removeEventListener('visibilitychange', wake);
+    };
   }, [token, config, pull]);
+
+  // Silent token refresh ~1 minute before expiry (no popup). If it fails
+  // (refresh token revoked/expired) the token dies naturally and the next API
+  // call prompts a normal sign-in.
+  useEffect(() => {
+    if (!token || !config) return;
+    const delay = token.expires_at - 60_000 - Date.now();
+    if (delay <= 0) return;
+    const tid = window.setTimeout(async () => {
+      try {
+        const fresh = await refresh();
+        if (fresh) setToken(fresh);
+      } catch { /* let the token die naturally */ }
+    }, delay);
+    return () => clearTimeout(tid);
+  }, [token, config]);
 
   // --- Sign-in / sign-out -------------------------------------------------
 
@@ -154,7 +209,7 @@ export default function FinanceDashboard() {
     if (!config) return;
     try {
       setSync('syncing');
-      const t = await gisSignIn({ clientId: config.clientId, prompt: 'consent' });
+      const t = await signIn(config.clientId);
       setToken(t);
     } catch (e) {
       handleSyncError(e);
@@ -162,11 +217,11 @@ export default function FinanceDashboard() {
   }, [config, handleSyncError]);
 
   const handleSignOut = useCallback(() => {
-    if (token) gisSignOut(token.access_token);
+    signOut();
     setToken(null);
     setSync('idle');
     setLastError(undefined);
-  }, [token]);
+  }, []);
 
   const handleRetry = useCallback(() => {
     setLastError(undefined);
@@ -215,13 +270,32 @@ export default function FinanceDashboard() {
     push('budgets', merged);
   };
 
+  // Save the edited taxonomy. `renames` (oldKey → newKey) migrate existing
+  // transactions and budgets so a renamed category doesn't strand its history
+  // under "Uncategorized". Deletions are intentionally NOT migrated — those
+  // rows fall into the Uncategorized bucket until re-filed (surfaced in the
+  // Manage-categories confirm).
+  const onSaveCategories = (next: CategoryEntry[], renames: { from: string; to: string }[]) => {
+    const map = new Map(renames.filter(r => r.from !== r.to).map(r => [r.from, r.to]));
+    const now = new Date().toISOString();
+    const transactions = map.size
+      ? state.transactions.map(t => map.has(t.category) ? { ...t, category: map.get(t.category)!, updated_at: now } : t)
+      : state.transactions;
+    const budgets = map.size
+      ? state.budgets.map(b => map.has(b.category) ? { ...b, category: map.get(b.category)! } : b)
+      : state.budgets;
+    setState(s => ({ ...s, categories: next, transactions, budgets }));
+    if (map.size) { push('transactions', transactions); push('budgets', budgets); }
+    push('categories', next);
+  };
+
   // --- Seed-from-Spending-Log (one-time historical import) ----------------
 
   const onSeedFromSpendingLog = useCallback(async () => {
     if (!token || !config) return;
     setSync('syncing');
     try {
-      const summary = await fetchSpendingLog(token.access_token, config.sheetId);
+      const summary = await fetchSpendingLog(token.access_token, config.sheetId, state.categories);
       const ok = window.confirm(
         `Found ${summary.imported.length} transactions in your "Spending Log" tab` +
         (summary.skipped ? ` (skipped ${summary.skipped} bad rows)` : '') + `.\n\n` +
@@ -236,14 +310,14 @@ export default function FinanceDashboard() {
     } catch (e) {
       handleSyncError(e);
     }
-  }, [token, config, push, handleSyncError]);
+  }, [token, config, push, handleSyncError, state.categories]);
 
   // --- Local-mode-only reset (hidden when signed in) ----------------------
 
   const resetAll = () => {
-    if (!window.confirm('Erase all local finance data (transactions, budgets, incomes)? This cannot be undone.')) return;
+    if (!window.confirm('Erase all local finance data (transactions, budgets, incomes, categories)? This cannot be undone.')) return;
     clearState();
-    setState(EMPTY_STATE);
+    setState({ ...EMPTY_STATE, categories: DEFAULT_CATEGORIES });
   };
 
   if (!hydrated) {
@@ -292,11 +366,13 @@ export default function FinanceDashboard() {
 
       <div className="p-5 sm:p-6">
         {tab === 'dashboard' && (
-          <DashboardTab transactions={state.transactions} budgets={state.budgets} incomes={state.incomes} />
+          <DashboardTab transactions={state.transactions} budgets={state.budgets} incomes={state.incomes} categories={state.categories} />
         )}
         {tab === 'transactions' && (
           <TransactionsTab
             transactions={state.transactions}
+            categories={state.categories}
+            signedIn={signedIn}
             onAdd={onAddTx} onUpdate={onUpdateTx} onDelete={onDeleteTx}
             onReplaceAll={onReplaceAllTx} onAppend={onAppendTx}
             onSeedFromSpendingLog={signedIn ? onSeedFromSpendingLog : undefined}
@@ -304,10 +380,12 @@ export default function FinanceDashboard() {
         )}
         {tab === 'budget' && (
           <BudgetTab
-            budgets={state.budgets} incomes={state.incomes}
+            budgets={state.budgets} incomes={state.incomes} categories={state.categories}
+            signedIn={signedIn}
             onSaveBudgets={onSaveBudgets}
             onSaveIncomes={onSaveIncomes}
             onImportBudgets={onImportBudgets}
+            onSaveCategories={onSaveCategories}
           />
         )}
         {tab === 'insights' && (

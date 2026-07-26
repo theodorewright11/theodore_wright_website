@@ -128,7 +128,7 @@ A spending-and-budget dashboard that replaces a manual spreadsheet workflow. Sin
 
 - **Dashboard** — month selector + headline cards (Spent / Budgeted / Variance / Income / Net cash flow) + per-category breakdown grouped Broad → Mid → Detailed with per-row variance bars. Defaults to current month; navigation to past months uses the budget that was effective for that month.
 - **Transactions** — sortable, filterable log (search on item, account/category multi-select, date range). Add / edit / delete via modal. Pagination at 100 rows per page.
-- **Budget** — versioned budget editor: editing a category creates a new row with today as `effective_from` rather than mutating history. Includes an Income editor with sources. Warning banner when planned spend exceeds planned income.
+- **Budget** — versioned budget editor: editing a category creates a new row with today as `effective_from` rather than mutating history. Includes an Income editor with sources. Warning banner when planned spend exceeds planned income. A **Manage categories** button opens the taxonomy editor (see below).
 - **Insights** — stub in v1. Planned: spending over time, category drift, rolling averages, runway, month-over-month deltas.
 
 **Data model**:
@@ -136,13 +136,14 @@ A spending-and-budget dashboard that replaces a manual spreadsheet workflow. Sin
 - `Transaction` — `id` (UUID), `date` (ISO), `item`, `amount` (positive USD), `account` (`Amex` / `Debit` / `Cash` / `Other`), `category` (detailed key), `notes?`, `created_at`, `updated_at`.
 - `Budget` — `category`, `monthly_amount`, `effective_from`. Versioned by `effective_from`; never mutated in place.
 - `Income` — `id`, `source`, `monthly_amount`, `effective_from`. Same versioning convention.
+- `CategoryEntry` — `broad`, `mid`, `detailed` (the unique key). The editable taxonomy; `detailed` is the join key stored on transactions/budgets.
 
-**Category taxonomy**: three-level (Broad → Mid → Detailed). Source of truth: `src/components/dashboards/finance/categories.ts`. Adding/renaming a category is editing that file. Detailed key is the persistent string stored on transactions; renaming it strands historical rows under "Uncategorized" until they're re-categorized in the UI.
+**Category taxonomy**: three-level (Broad → Mid → Detailed) — **user-editable data**, not a hardcoded list. Lives on `DataState.categories` (localStorage + the `categories` sheet tab). `categories.ts` holds only `DEFAULT_CATEGORIES` (the seed used when the store/tab is empty) plus pure helpers that take the live taxonomy as a parameter. The **Manage categories** modal (opened from the Budget tab) adds / renames / deletes categories grouped Broad→Mid→Detailed. The `detailed` key is the persistent string stored on transactions/budgets; **renaming a category migrates its existing transactions and budgets automatically** (no stranding), while **deleting** one leaves its history under "Uncategorized" until re-filed (the modal confirms before deleting).
 
 **Data persistence**: two-mode.
 
-- **Local-only** (no sign-in, or no Sheets config in `.env`): browser `localStorage` under key `tw-finance-v1`. CSV import/export per entity. The "Reset all data" button only appears in this mode.
-- **Sheets-synced** (signed in): a dedicated Google Sheet (ID in `PUBLIC_FINANCE_SHEET_ID`) is the source of truth, with three tabs (`transactions`, `budgets`, `incomes`) matching the entity schemas. localStorage stays as offline cache. Auth via **Google Identity Services** browser-side OAuth (token in `sessionStorage`, scope `https://www.googleapis.com/auth/spreadsheets email profile`); no service account, no server. On sign-in, full pull from sheet replaces in-memory state. On every mutation, the affected entity's full tab is rewritten (clear + write) — per-entity coalescing queue collapses bursts of edits into one write. On window focus, full re-pull. 401 → drop token, prompt re-sign-in.
+- **Local-only** (no sign-in, or no Sheets config in `.env`): browser `localStorage` under key `tw-finance-v1`. CSV import/export per entity is the escape hatch here — **the CSV buttons show only in local-only mode** (hidden once signed in, since the sheet is then the backup). The "Reset all data" button also only appears in this mode.
+- **Sheets-synced** (signed in): a dedicated Google Sheet (ID in `PUBLIC_FINANCE_SHEET_ID`) is the source of truth, with four tabs (`transactions`, `budgets`, `incomes`, `categories`) matching the entity schemas; `ensureTabs` auto-creates any missing tab on pull. localStorage stays as offline cache. **Auth is the shared OAuth authorization-code flow** (`src/lib/googleAuth.ts` + `api/auth/*`) — the same weeks-long, popup-free-refresh flow Time Tracker and Qual Coding use (migrated off the old GIS implicit-token flow whose hourly re-sign-in was the v1 pain point). On sign-in / token acquisition, a full pull replaces in-memory state; an empty `categories` tab seeds `DEFAULT_CATEGORIES` and pushes it back. On every mutation, the affected entity's full tab is rewritten (clear + write) via a per-entity coalescing queue. On window focus / visibility, near-expiry silent-refresh then re-pull. 401 → try silent refresh first, else prompt re-sign-in.
 
 **Public-data conventions**: never commit personal data. The user's actual `.xlsx` workbook stays gitignored (`Finances Sheet*.xlsx` rule). The `.env` holding the Client ID + Sheet ID is gitignored too.
 
@@ -151,7 +152,7 @@ A spending-and-budget dashboard that replaces a manual spreadsheet workflow. Sin
 **Required env (when using Sheets sync)**:
 - `PUBLIC_GOOGLE_CLIENT_ID` — OAuth 2.0 Web Client ID from Google Cloud Console (Sheets API enabled; authorized JS origins include `http://localhost:4321` and the deploy domain)
 - `PUBLIC_FINANCE_SHEET_ID` — the long ID from the sheet URL between `/d/` and `/edit`
-- The OAuth client *secret* is **not** used (browser-side OAuth flow)
+- Plus the shared server-side auth vars (`GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` / `TOKEN_ENC_KEY`) that back `api/auth/*` — already set for Time Tracker / Qual Coding, so no new setup. Because auth is now the code-flow, **sign-in only works where `api/auth/*` runs (the Vercel deploy), not under plain `astro dev`.**
 
 **Future (v3 — public demo)**: drop `private: true` from the roster entry, keep localStorage-only for unauthenticated visitors, and ship a writeup explaining how to fork the dashboard and wire it to your own Google Sheet.
 
@@ -359,4 +360,5 @@ Major product and architecture turning points only. **Per-stage LLM Iterate refi
 - **2026-05-02**: **Finance** dashboard shipped (v1, public demo), then reframed to **private** (`private: true` in `dashboards.json`, hidden from the roster). Google Sheets sync wired via browser-side OAuth + direct Sheets v4 REST (per-entity clear+write with a coalescing queue); a public demo + self-host writeup is the eventual v3.
 - **2026-05-16**: **Time Tracker** dashboard (v1) shipped at `/dashboards/time-tracker` — clock/breaks/laps, Pomodoro with a derived reward bank, per-session ratings + activity tagging, Sheets sync.
 - **2026-05**: **Auth migrated** from the GIS implicit-token flow (silent refresh permanently COOP-broken → hourly re-sign-in) to an **OAuth authorization-code flow with a server-side refresh token** — shared `src/lib/googleAuth.ts` + `api/auth/*` Vercel serverless functions, sealed HttpOnly cookie, sessions last weeks. Time Tracker and Qual Coding use it; Finance migration is still pending. See `ARCHITECTURE.md` → "Google sign-in".
+- **2026-07-26**: **Finance dashboard v2** — migrated auth off the broken GIS implicit-token flow onto the shared code-flow (`googleAuth.ts`, sessions last weeks), moved the category taxonomy out of code into user-editable data + a `categories` sheet tab with a **Manage categories** modal (renames migrate history), and gated the CSV import/export buttons to local-only mode.
 - **2026-05/06**: **Qualitative Coding** grew from the v2 coding tool (multi-parent codes, multi-range annotations, Drive folder-per-project sync) into a fuller analysis tool: a **Themes** interpretive layer over annotations and a **Grading** rubric (code specificity, annotation accuracy, five-axis theme ratings) — the TopBar now has six views. Built for comparing one project's coding against another (AI vs analyst).
