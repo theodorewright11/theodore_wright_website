@@ -98,6 +98,70 @@ export function totalIncome(incomes: Income[], ym: YearMonth): number {
   return sum;
 }
 
+// --- Insights aggregation helpers (pure) ---------------------------------
+
+// Inclusive list of months from `from` to `to` in chronological order.
+export function monthsRange(from: YearMonth, to: YearMonth): YearMonth[] {
+  const out: YearMonth[] = [];
+  const toIdx = to.year * 12 + (to.month - 1);
+  let cur = from;
+  while (cur.year * 12 + (cur.month - 1) <= toIdx) { out.push(cur); cur = shiftMonth(cur, 1); }
+  return out;
+}
+
+// The month of the earliest transaction (null if none).
+export function earliestTxYM(txs: Transaction[]): YearMonth | null {
+  let min: string | null = null;
+  for (const t of txs) if (!min || t.date < min) min = t.date;
+  return min ? ymFromKey(min.slice(0, 7)) : null;
+}
+
+export function spendByAccount(txs: Transaction[]): Map<string, number> {
+  const out = new Map<string, number>();
+  for (const t of txs) out.set(t.account, (out.get(t.account) ?? 0) + (Number.isFinite(t.amount) ? t.amount : 0));
+  return out;
+}
+
+// Spend grouped by broad category for a set of transactions. Unknown detailed
+// keys roll into UNCATEGORIZED.
+export function spendByBroad(txs: Transaction[], categories: import('./types').CategoryEntry[]): Map<string, number> {
+  const broadOf = new Map<string, string>();
+  for (const c of categories) broadOf.set(c.detailed, c.broad);
+  const out = new Map<string, number>();
+  for (const t of txs) {
+    const broad = broadOf.get(t.category) ?? UNCATEGORIZED;
+    out.set(broad, (out.get(broad) ?? 0) + (Number.isFinite(t.amount) ? t.amount : 0));
+  }
+  return out;
+}
+
+export function mean(xs: number[]): number | null {
+  if (xs.length === 0) return null;
+  return xs.reduce((s, x) => s + x, 0) / xs.length;
+}
+
+export function median(xs: number[]): number | null {
+  if (xs.length === 0) return null;
+  const s = [...xs].sort((a, b) => a - b);
+  const mid = Math.floor(s.length / 2);
+  return s.length % 2 ? s[mid] : (s[mid - 1] + s[mid]) / 2;
+}
+
+// Trailing rolling average of a numeric series (window inclusive of current).
+// Returns null for positions with fewer than `window` prior points filled.
+export function rollingAverage(series: number[], window: number): (number | null)[] {
+  return series.map((_, i) => {
+    if (i + 1 < window) return null;
+    let s = 0;
+    for (let j = i - window + 1; j <= i; j++) s += series[j];
+    return s / window;
+  });
+}
+
+export function daysInMonth(ym: YearMonth): number {
+  return new Date(ym.year, ym.month, 0).getDate();
+}
+
 export type Variance = { dollars: number; percent: number | null };
 
 // Variance: positive = under budget. Percent is null if budget is zero.

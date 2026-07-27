@@ -40,8 +40,9 @@
 │   │   │   └── OptionValueDashboard.tsx
 │   │   ├── dashboards/                  ← React components for the /dashboards/<slug> apps
 │   │   │   ├── finance/                 ← FinanceDashboard.tsx (root, queue, googleAuth code-flow), DashboardTab/TransactionsTab/BudgetTab/
+│   │   │   │                               InsightsTab (trend/composition/movers/net/adherence/accounts/runway charts),
 │   │   │   │                               TransactionForm/CategoriesModal, types.ts, categories.ts (DEFAULT_CATEGORIES seed + pure helpers),
-│   │   │   │                               compute.ts, storage.ts (localStorage cache + CSV), sheets.ts (Sheets REST + ensureTabs),
+│   │   │   │                               compute.ts (+ insights aggregation), storage.ts (localStorage cache + CSV), sheets.ts (Sheets REST + ensureTabs),
 │   │   │   │                               spendingLogImporter.ts (one-shot legacy-tab seed), AuthBar.tsx
 │   │   │   ├── time-tracker/            ← TimeTrackerDashboard.tsx (root, queue, googleAuth code-flow), Clock/Pomodoro/Log tabs,
 │   │   │   │                               WeekStrip/RatingRow/ActivityPicker/TimeStepper, AuthBar.tsx, notify.ts (chime + notification),

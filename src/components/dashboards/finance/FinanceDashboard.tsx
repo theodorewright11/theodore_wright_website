@@ -19,6 +19,7 @@ import { fetchSpendingLog } from './spendingLogImporter';
 import DashboardTab from './DashboardTab';
 import TransactionsTab from './TransactionsTab';
 import BudgetTab from './BudgetTab';
+import InsightsTab from './InsightsTab';
 import AuthBar from './AuthBar';
 
 type Tab = 'dashboard' | 'transactions' | 'budget' | 'insights';
@@ -390,15 +391,7 @@ export default function FinanceDashboard() {
           />
         )}
         {tab === 'insights' && (
-          <div className="bg-paper border border-rule rounded-md py-16 text-center shadow-[0_1px_2px_rgba(26,22,20,0.03)]">
-            <p className="font-display text-[20px] text-ink m-0 mb-2"
-               style={{ letterSpacing: '-0.01em' }}>Insights — coming soon</p>
-            <p className="font-serif text-[14px] text-muted m-0 max-w-[440px] mx-auto"
-               style={{ textWrap: 'pretty' }}>
-              Spending over time, category drift, rolling averages, runway, month-over-month deltas.
-              Built out after v1 is stable.
-            </p>
-          </div>
+          <InsightsTab transactions={state.transactions} budgets={state.budgets} incomes={state.incomes} categories={state.categories} />
         )}
       </div>
     </div>
