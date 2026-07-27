@@ -286,8 +286,8 @@ export default function InsightsTab({ transactions, budgets, incomes, categories
         <PctChart rows={adherence} />
       </Section>
 
-      {/* Recurring vs discretionary */}
-      <Section title="Recurring vs discretionary" note="Fixed bills/subscriptions vs everything you choose — configure which categories count as recurring">
+      {/* Needs vs wants */}
+      <Section title="Needs vs wants" note="Essentials you have to pay vs everything you choose — configure which categories are needs">
         <div className="flex justify-end mb-2">
           <button onClick={() => setShowRecurringConfig(v => !v)}
             className="font-mono text-[10px] uppercase text-muted hover:text-accent border border-rule hover:border-accent rounded-sm px-2 py-1 transition-colors"
@@ -295,7 +295,7 @@ export default function InsightsTab({ transactions, budgets, incomes, categories
         </div>
         {showRecurringConfig && (
           <div className="mb-4 border border-rule rounded-md p-3 bg-paper-edge/20">
-            <p className="font-serif text-[12px] text-muted m-0 mb-2">Tick the categories that count as <span className="text-ink-soft font-semibold">recurring</span> (fixed bills / subscriptions). Everything unticked is discretionary. Saved on this device.</p>
+            <p className="font-serif text-[12px] text-muted m-0 mb-2">Tick the categories that are <span className="text-ink-soft font-semibold">needs</span> (essentials you have to pay). Everything unticked is a want. Saved on this device.</p>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-1">
               {categories.map(c => (
                 <label key={c.detailed} className="flex items-center gap-1.5 font-serif text-[12px] text-ink cursor-pointer">
@@ -308,14 +308,14 @@ export default function InsightsTab({ transactions, budgets, incomes, categories
         )}
         <StackedChart
           months={recurring.map(r => ({ ym: r.ym, total: r.rec + r.dis, segments: [
-            { broad: 'Recurring', value: r.rec }, { broad: 'Discretionary', value: r.dis },
+            { broad: 'Needs', value: r.rec }, { broad: 'Wants', value: r.dis },
           ].filter(s => s.value > 0) }))}
-          broads={['Recurring', 'Discretionary']}
-          colorOf={(b) => b === 'Recurring' ? '#6f8598' : 'rgb(var(--color-accent))'} />
-        <Legend broads={['Recurring', 'Discretionary']} colorOf={(b) => b === 'Recurring' ? '#6f8598' : 'rgb(var(--color-accent))'} />
+          broads={['Needs', 'Wants']}
+          colorOf={(b) => b === 'Needs' ? '#6f8598' : 'rgb(var(--color-accent))'} />
+        <Legend broads={['Needs', 'Wants']} colorOf={(b) => b === 'Needs' ? '#6f8598' : 'rgb(var(--color-accent))'} />
         <div className="grid grid-cols-2 gap-3 mt-4">
-          <Stat label="Recurring (window)" value={formatMoney(recTotal)} sub={formatPercent(windowSpent ? recTotal / windowSpent : null) + ' of spend'} small />
-          <Stat label="Discretionary (window)" value={formatMoney(disTotal)} sub={formatPercent(windowSpent ? disTotal / windowSpent : null) + ' of spend'} small />
+          <Stat label="Needs (window)" value={formatMoney(recTotal)} sub={formatPercent(windowSpent ? recTotal / windowSpent : null) + ' of spend'} small />
+          <Stat label="Wants (window)" value={formatMoney(disTotal)} sub={formatPercent(windowSpent ? disTotal / windowSpent : null) + ' of spend'} small />
         </div>
       </Section>
 
