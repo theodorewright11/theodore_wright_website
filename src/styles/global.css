@@ -4,6 +4,64 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ── Theme palettes ───────────────────────────────────────────────────────
+   Tokens are RGB channel triples consumed by Tailwind as
+   rgb(var(--color-x) / <alpha>). Switch palettes with data-theme on <html>
+   (set by the no-FOUC script in BaseLayout + the nav toggle in Nav.astro).
+   Default (no attribute) = Quiet Paper. */
+:root {
+  --color-paper: 247 243 236;
+  --color-paper-edge: 239 233 221;
+  --color-ink: 26 22 20;
+  --color-ink-soft: 58 52 44;
+  --color-muted: 122 113 102;
+  --color-rule: 217 208 191;
+  --color-rule-soft: 230 223 207;
+  --color-accent: 138 74 43;
+  --color-accent-soft: 201 138 110;
+}
+
+/* Clean White — white base, crisper, keeps the sienna accent. */
+:root[data-theme='white'] {
+  --color-paper: 255 255 255;
+  --color-paper-edge: 242 241 238;
+  --color-ink: 26 26 28;
+  --color-ink-soft: 63 63 69;
+  --color-muted: 120 120 127;
+  --color-rule: 227 226 223;
+  --color-rule-soft: 239 239 236;
+  --color-accent: 138 74 43;
+  --color-accent-soft: 201 138 110;
+}
+
+/* Dark — warm charcoal, brightened sienna so it reads on dark. */
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --color-paper: 27 25 23;
+  --color-paper-edge: 38 35 32;
+  --color-ink: 241 236 228;
+  --color-ink-soft: 206 198 185;
+  --color-muted: 148 138 124;
+  --color-rule: 58 53 46;
+  --color-rule-soft: 43 39 34;
+  --color-accent: 224 153 107;
+  --color-accent-soft: 181 116 78;
+}
+
+/* Monokai Pro — the VS Code palette: dark plum base, signature pink + orange. */
+:root[data-theme='monokai'] {
+  color-scheme: dark;
+  --color-paper: 45 42 46;
+  --color-paper-edge: 56 53 57;
+  --color-ink: 252 252 250;
+  --color-ink-soft: 193 192 192;
+  --color-muted: 147 146 147;
+  --color-rule: 74 70 77;
+  --color-rule-soft: 56 53 58;
+  --color-accent: 255 97 136;
+  --color-accent-soft: 252 152 103;
+}
+
 @layer base {
   html {
     scroll-behavior: smooth;
@@ -11,10 +69,11 @@
 
   body {
     @apply bg-paper text-ink antialiased font-serif;
+    transition: background-color 0.25s ease, color 0.25s ease;
   }
 
   *::selection {
-    background: rgba(179, 51, 31, 0.18);
+    background: rgb(var(--color-accent) / 0.2);
   }
 }
 
@@ -24,7 +83,7 @@
   font-family: '"Source Serif 4"', Georgia, serif;
   font-size: 18px;
   line-height: 1.75;
-  color: #1a1614;
+  color: rgb(var(--color-ink));
   margin: 0 0 1.4em;
   text-wrap: pretty;
 }
@@ -38,17 +97,17 @@
   line-height: 0.85;
   float: left;
   margin: 6px 12px 0 0;
-  color: #8a4a2b;
+  color: rgb(var(--color-accent));
 }
 .essay-prose strong {
   font-weight: 600;
-  color: #1a1614;
+  color: rgb(var(--color-ink));
 }
 .essay-prose em {
   font-style: italic;
 }
 .essay-prose a {
-  color: #8a4a2b;
+  color: rgb(var(--color-accent));
   text-decoration: underline;
   text-underline-offset: 3px;
   text-decoration-thickness: 1px;
@@ -59,21 +118,21 @@
   font-weight: 600;
   letter-spacing: -0.015em;
   line-height: 1.2;
-  color: #1a1614;
+  color: rgb(var(--color-ink));
   margin: 2em 0 0.6em;
 }
 .essay-prose h3 {
   font-family: Fraunces, serif;
   font-size: 21px;
   font-weight: 600;
-  color: #1a1614;
+  color: rgb(var(--color-ink));
   margin: 1.6em 0 0.5em;
 }
 .essay-prose blockquote {
-  border-left: 2px solid #d9d0bf;
+  border-left: 2px solid rgb(var(--color-rule));
   padding-left: 1em;
   font-style: italic;
-  color: #3a342c;
+  color: rgb(var(--color-ink-soft));
   margin: 1.4em 0;
 }
 .essay-prose ul,
@@ -87,13 +146,13 @@
 .essay-prose code {
   font-family: '"JetBrains Mono"', monospace;
   font-size: 0.9em;
-  background: rgba(217, 208, 191, 0.35);
+  background: rgb(var(--color-rule) / 0.35);
   padding: 1px 5px;
   border-radius: 2px;
 }
 .essay-prose hr {
   border: none;
-  border-top: 1px solid #d9d0bf;
+  border-top: 1px solid rgb(var(--color-rule));
   margin: 2.4em 0;
 }
 
@@ -103,7 +162,7 @@
   font-family: '"Source Serif 4"', Georgia, serif;
   font-size: 16px;
   line-height: 1.7;
-  color: #1a1614;
+  color: rgb(var(--color-ink));
 }
 .paper-prose > p {
   margin: 0 0 1.2em;
@@ -112,7 +171,7 @@
 .paper-prose strong { font-weight: 600; }
 .paper-prose em { font-style: italic; }
 .paper-prose a {
-  color: #8a4a2b;
+  color: rgb(var(--color-accent));
   text-decoration: underline;
   text-underline-offset: 3px;
   text-decoration-thickness: 1px;
@@ -123,21 +182,21 @@
   font-weight: 600;
   letter-spacing: -0.015em;
   line-height: 1.2;
-  color: #1a1614;
+  color: rgb(var(--color-ink));
   margin: 1.8em 0 0.5em;
 }
 .paper-prose h3 {
   font-family: Fraunces, serif;
   font-size: 19px;
   font-weight: 600;
-  color: #1a1614;
+  color: rgb(var(--color-ink));
   margin: 1.4em 0 0.4em;
 }
 .paper-prose blockquote {
-  border-left: 2px solid #d9d0bf;
+  border-left: 2px solid rgb(var(--color-rule));
   padding-left: 1em;
   font-style: italic;
-  color: #3a342c;
+  color: rgb(var(--color-ink-soft));
   margin: 1.2em 0;
 }
 .paper-prose ul,
@@ -151,12 +210,12 @@
 .paper-prose code {
   font-family: '"JetBrains Mono"', monospace;
   font-size: 0.9em;
-  background: rgba(217, 208, 191, 0.35);
+  background: rgb(var(--color-rule) / 0.35);
   padding: 1px 5px;
   border-radius: 2px;
 }
 .paper-prose pre {
-  background: rgba(217, 208, 191, 0.25);
+  background: rgb(var(--color-rule) / 0.25);
   padding: 14px 16px;
   border-radius: 3px;
   overflow-x: auto;
@@ -169,6 +228,6 @@
 }
 .paper-prose hr {
   border: none;
-  border-top: 1px solid #d9d0bf;
+  border-top: 1px solid rgb(var(--color-rule));
   margin: 2em 0;
 }

@@ -325,7 +325,7 @@ Word documents (.docx) should be converted to PDF before upload (Word: File → 
 
 ## Site chrome
 
-- **Nav** at the top of every page (brand + section links). Research tab is labeled **My Research** to distinguish it from AI's Research.
+- **Nav** at the top of every page (brand + section links). Research tab is labeled **My Research** to distinguish it from AI's Research. Carries a **theme toggle** — a cycle button through four site palettes (Quiet Paper / Clean White / Dark / Monokai Pro), remembered across visits.
 - **Footer** at the bottom of every page (replaces the old top-of-page NOW strip). Shows the site's last-updated date (driven by `src/data/now.json`), two download links (`mine ↓` and `ai's research ↓`), and contact links.
 - **Content bundles**: two top-level markdown bundles served at build time:
   - `/bundle-mine.md` — every essay, research entry, model writeup, and update (the user's own work).
@@ -360,5 +360,6 @@ Major product and architecture turning points only. **Per-stage LLM Iterate refi
 - **2026-05-02**: **Finance** dashboard shipped (v1, public demo), then reframed to **private** (`private: true` in `dashboards.json`, hidden from the roster). Google Sheets sync wired via browser-side OAuth + direct Sheets v4 REST (per-entity clear+write with a coalescing queue); a public demo + self-host writeup is the eventual v3.
 - **2026-05-16**: **Time Tracker** dashboard (v1) shipped at `/dashboards/time-tracker` — clock/breaks/laps, Pomodoro with a derived reward bank, per-session ratings + activity tagging, Sheets sync.
 - **2026-05**: **Auth migrated** from the GIS implicit-token flow (silent refresh permanently COOP-broken → hourly re-sign-in) to an **OAuth authorization-code flow with a server-side refresh token** — shared `src/lib/googleAuth.ts` + `api/auth/*` Vercel serverless functions, sealed HttpOnly cookie, sessions last weeks. Time Tracker and Qual Coding use it; Finance migration is still pending. See `ARCHITECTURE.md` → "Google sign-in".
+- **2026-07-26**: **Site theming** — the locked V4 tokens became CSS variables driving **four switchable palettes** (Quiet Paper / Clean White / Dark / Monokai Pro), toggled from the nav and persisted per visitor. Quiet Paper remains the default; the design system is unchanged, just now multi-palette. New colors must be token vars, not raw hex.
 - **2026-07-26**: **Finance dashboard v2** — migrated auth off the broken GIS implicit-token flow onto the shared code-flow (`googleAuth.ts`, sessions last weeks), moved the category taxonomy out of code into user-editable data + a `categories` sheet tab with a **Manage categories** modal (renames migrate history), and gated the CSV import/export buttons to local-only mode.
 - **2026-05/06**: **Qualitative Coding** grew from the v2 coding tool (multi-parent codes, multi-range annotations, Drive folder-per-project sync) into a fuller analysis tool: a **Themes** interpretive layer over annotations and a **Grading** rubric (code specificity, annotation accuracy, five-axis theme ratings) — the TopBar now has six views. Built for comparing one project's coding against another (AI vs analyst).

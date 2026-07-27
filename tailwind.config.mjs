@@ -10,15 +10,19 @@ export default {
         mono: ['"JetBrains Mono"', 'ui-monospace', 'monospace'],
       },
       colors: {
-        paper: '#f7f3ec',
-        'paper-edge': '#efe9dd',
-        ink: '#1a1614',
-        'ink-soft': '#3a342c',
-        muted: '#7a7166',
-        rule: '#d9d0bf',
-        'rule-soft': '#e6dfcf',
-        accent: '#8a4a2b',
-        'accent-soft': '#c98a6e',
+        // Tokens resolve to CSS variables (RGB channel triples) so the whole
+        // site can swap palettes via `data-theme` on <html>. Channel form keeps
+        // Tailwind's opacity utilities (bg-accent/5, bg-paper-edge/50) working.
+        // Palettes live in src/styles/global.css.
+        paper: 'rgb(var(--color-paper) / <alpha-value>)',
+        'paper-edge': 'rgb(var(--color-paper-edge) / <alpha-value>)',
+        ink: 'rgb(var(--color-ink) / <alpha-value>)',
+        'ink-soft': 'rgb(var(--color-ink-soft) / <alpha-value>)',
+        muted: 'rgb(var(--color-muted) / <alpha-value>)',
+        rule: 'rgb(var(--color-rule) / <alpha-value>)',
+        'rule-soft': 'rgb(var(--color-rule-soft) / <alpha-value>)',
+        accent: 'rgb(var(--color-accent) / <alpha-value>)',
+        'accent-soft': 'rgb(var(--color-accent-soft) / <alpha-value>)',
         primary: {
           50: '#f0f4ff',
           100: '#dbe4ff',

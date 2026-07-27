@@ -14,6 +14,15 @@ const { title, description = "Teddy Wright — CS & AI researcher, writer, build
 <!doctype html>
 <html lang="en">
   <head>
+    <!-- Apply the saved color theme before paint to avoid a flash. -->
+    <script is:inline>
+      (function () {
+        try {
+          var t = localStorage.getItem('tw-theme');
+          if (t && t !== 'paper') document.documentElement.setAttribute('data-theme', t);
+        } catch (e) {}
+      })();
+    </script>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content={description} />

@@ -245,6 +245,10 @@ V4 "Quiet Paper + Editorial Front" — locked tokens. Do not deviate without upd
 
 The `primary` indigo ramp is retained in the Tailwind config but unused in V4. Don't reach for it.
 
+**Theming (multi-palette).** These tokens are no longer hardcoded hex — they resolve to CSS variables (RGB channel triples) so the whole site can swap palettes. `tailwind.config.mjs` maps each token to `rgb(var(--color-<token>) / <alpha-value>)` (channel form preserves opacity utilities like `bg-accent/5`). The palettes live in `src/styles/global.css`: `:root` is **Quiet Paper** (the default, values above); `:root[data-theme='white']` is **Clean White**, `[data-theme='dark']` a warm dark, `[data-theme='monokai']` Monokai Pro (dark plum base, pink `#ff6188` accent). Dark palettes also set `color-scheme: dark`. Add a new theme by adding one `[data-theme='x']` block of the nine `--color-*` vars — nothing else changes, since every component already consumes the tokens. **Any new site color must be a token var, not a raw hex** (raw hex won't theme). The prose classes (`.essay-prose`, `.paper-prose`) and the selection color also use `rgb(var(--color-*))` so long-form reading themes too.
+
+- **Switching**: a cycle button in `Nav.astro` (`paper → white → dark → monokai`) sets `data-theme` on `<html>` and persists to `localStorage['tw-theme']`. An inline `is:inline` script in `BaseLayout.astro`'s `<head>` re-applies the saved theme before first paint (no flash). The app-style dashboards that bypass `BaseLayout` (qualitative-coding, theme-grading) are intentionally unthemed — they keep their white + Inter app UI. Dashboards rendered inside `BaseLayout` (finance, time-tracker, emotional-wellbeing) theme automatically because they're built from the tokens.
+
 ### Typography
 
 - `font-display` — Fraunces (variable, opsz 9..144), used for all headlines and brand
