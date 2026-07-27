@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Transaction, Budget, Income, CategoryEntry } from './types';
-import { lookupCategory, UNCATEGORIZED } from './categories';
+import { UNCATEGORIZED } from './categories';
 import {
   type YearMonth, todayYM, ymKey, shiftMonth,
   txsInMonth, totalSpend, totalBudget, totalIncome,
@@ -35,12 +35,50 @@ export default function InsightsTab({ transactions, budgets, incomes, categories
   const today = todayYM();
   const earliest = earliestTxYM(transactions) ?? today;
 
+  // Insights preferences (device-local — not part of the synced sheet).
+  const [excludePartial, setExcludePartial] = useState(true);
+  const [recurringKeys, setRecurringKeys] = useState<Set<string>>(new Set());
+  const recurringLoaded = useRef(false);
+  const [showRecurringConfig, setShowRecurringConfig] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const ep = window.localStorage.getItem('tw-finance-exclude-partial-v1');
+    if (ep !== null) setExcludePartial(ep === '1');
+    const rk = window.localStorage.getItem('tw-finance-recurring-v1');
+    if (rk) { try { const a = JSON.parse(rk); if (Array.isArray(a)) { setRecurringKeys(new Set(a)); recurringLoaded.current = true; } } catch { /* ignore */ } }
+  }, []);
+  useEffect(() => {
+    if (typeof window !== 'undefined') window.localStorage.setItem('tw-finance-exclude-partial-v1', excludePartial ? '1' : '0');
+  }, [excludePartial]);
+
+  // The earliest month is "partial" when the first transaction lands mid-month
+  // (e.g. tracking started Aug 16) — that month skews every monthly stat, so
+  // it can be dropped from all Insights aggregations.
+  const earliestDate = useMemo(() => transactions.reduce((m, t) => !m || t.date < m ? t.date : m, ''), [transactions]);
+  const firstMonthPartial = earliestDate ? parseInt(earliestDate.slice(8, 10), 10) > 1 : false;
+
+  // Recurring set defaults to everything under the "Obligations" broad; the
+  // user can override which categories count as recurring.
+  const defaultRecurring = useMemo(() => new Set(categories.filter(c => c.broad === 'Obligations').map(c => c.detailed)), [categories]);
+  const effectiveRecurring = recurringLoaded.current ? recurringKeys : defaultRecurring;
+  function toggleRecurring(key: string) {
+    const next = new Set(recurringLoaded.current ? recurringKeys : defaultRecurring);
+    if (next.has(key)) next.delete(key); else next.add(key);
+    recurringLoaded.current = true;
+    setRecurringKeys(next);
+    if (typeof window !== 'undefined') window.localStorage.setItem('tw-finance-recurring-v1', JSON.stringify([...next]));
+  }
+
   const months = useMemo(() => {
     const start = win === 'all'
       ? earliest
       : laterYM(earliest, shiftMonth(today, -(win - 1)));
-    return monthsRange(start, today);
-  }, [win, earliest.year, earliest.month, today.year, today.month]);
+    let ms = monthsRange(start, today);
+    // Drop the earliest month only when it's the global (partial) first month.
+    if (excludePartial && firstMonthPartial && ms.length && ymKey(ms[0]) === ymKey(earliest)) ms = ms.slice(1);
+    return ms;
+  }, [win, earliest.year, earliest.month, today.year, today.month, excludePartial, firstMonthPartial]);
 
   // Per-month rollup over the window.
   const data = useMemo(() => months.map(ym => {
@@ -111,15 +149,14 @@ export default function InsightsTab({ transactions, budgets, incomes, categories
     return { ym: d.ym, total: d.spent, segments: broads.map(b => ({ broad: b, value: m.get(b) ?? 0 })).filter(s => s.value > 0) };
   }), [data, categories, broads]);
 
-  // Recurring (broad "Obligations") vs discretionary, per month.
+  // Recurring vs discretionary, per month — split by the configurable set.
   const recurring = useMemo(() => data.map(d => {
     let rec = 0, dis = 0;
     for (const t of d.txs) {
-      const broad = lookupCategory(categories, t.category)?.broad ?? UNCATEGORIZED;
-      if (broad === 'Obligations') rec += t.amount; else dis += t.amount;
+      if (effectiveRecurring.has(t.category)) rec += t.amount; else dis += t.amount;
     }
     return { ym: d.ym, rec, dis };
-  }), [data, categories]);
+  }), [data, effectiveRecurring]);
   const recTotal = recurring.reduce((s, r) => s + r.rec, 0);
   const disTotal = recurring.reduce((s, r) => s + r.dis, 0);
 
@@ -170,13 +207,22 @@ export default function InsightsTab({ transactions, budgets, incomes, categories
       {/* Window selector */}
       <div className="bg-paper border border-rule rounded-md px-3 py-2 flex items-center justify-between gap-3 flex-wrap shadow-[0_1px_2px_rgba(26,22,20,0.03)]">
         <h2 className="font-display font-semibold text-[20px] text-ink m-0" style={{ letterSpacing: '-0.02em' }}>Insights</h2>
-        <div className="flex items-center gap-1">
-          {([6, 12, 24, 'all'] as Win[]).map(w => (
-            <button key={String(w)} onClick={() => setWin(w)}
-              className={'font-mono text-[10px] uppercase px-2.5 py-1 rounded-sm border transition-colors ' + (
-                win === w ? 'text-accent border-accent bg-accent/5' : 'text-muted border-rule hover:text-accent hover:border-accent')}
-              style={{ letterSpacing: '0.08em' }}>{w === 'all' ? 'All' : `${w}mo`}</button>
-          ))}
+        <div className="flex items-center gap-3 flex-wrap">
+          {firstMonthPartial && (
+            <label className="flex items-center gap-1.5 font-mono text-[10px] uppercase text-muted cursor-pointer" style={{ letterSpacing: '0.06em' }}
+                   title={`${monthLong(earliest)} started mid-month, so it drags monthly stats down. Excluded by default.`}>
+              <input type="checkbox" checked={excludePartial} onChange={e => setExcludePartial(e.target.checked)} />
+              Exclude {monthShort(earliest)}
+            </label>
+          )}
+          <div className="flex items-center gap-1">
+            {([6, 12, 24, 'all'] as Win[]).map(w => (
+              <button key={String(w)} onClick={() => setWin(w)}
+                className={'font-mono text-[10px] uppercase px-2.5 py-1 rounded-sm border transition-colors ' + (
+                  win === w ? 'text-accent border-accent bg-accent/5' : 'text-muted border-rule hover:text-accent hover:border-accent')}
+                style={{ letterSpacing: '0.08em' }}>{w === 'all' ? 'All' : `${w}mo`}</button>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -241,7 +287,25 @@ export default function InsightsTab({ transactions, budgets, incomes, categories
       </Section>
 
       {/* Recurring vs discretionary */}
-      <Section title="Recurring vs discretionary" note='"Obligations" (subscriptions + fixed bills) vs everything you choose'>
+      <Section title="Recurring vs discretionary" note="Fixed bills/subscriptions vs everything you choose — configure which categories count as recurring">
+        <div className="flex justify-end mb-2">
+          <button onClick={() => setShowRecurringConfig(v => !v)}
+            className="font-mono text-[10px] uppercase text-muted hover:text-accent border border-rule hover:border-accent rounded-sm px-2 py-1 transition-colors"
+            style={{ letterSpacing: '0.08em' }}>{showRecurringConfig ? 'Done' : 'Configure categories'}</button>
+        </div>
+        {showRecurringConfig && (
+          <div className="mb-4 border border-rule rounded-md p-3 bg-paper-edge/20">
+            <p className="font-serif text-[12px] text-muted m-0 mb-2">Tick the categories that count as <span className="text-ink-soft font-semibold">recurring</span> (fixed bills / subscriptions). Everything unticked is discretionary. Saved on this device.</p>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-1">
+              {categories.map(c => (
+                <label key={c.detailed} className="flex items-center gap-1.5 font-serif text-[12px] text-ink cursor-pointer">
+                  <input type="checkbox" checked={effectiveRecurring.has(c.detailed)} onChange={() => toggleRecurring(c.detailed)} />
+                  <span className="truncate" title={`${c.broad} → ${c.mid}`}>{c.detailed}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+        )}
         <StackedChart
           months={recurring.map(r => ({ ym: r.ym, total: r.rec + r.dis, segments: [
             { broad: 'Recurring', value: r.rec }, { broad: 'Discretionary', value: r.dis },

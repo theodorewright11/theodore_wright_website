@@ -39,47 +39,36 @@ const isActive = (href: string) =>
           </a>
         );
       })}
-      <button
-        id="theme-toggle"
-        type="button"
-        aria-label="Switch color theme"
-        class="self-center font-mono text-[10px] uppercase text-muted hover:text-accent border border-rule hover:border-accent rounded-sm px-2 py-1 flex items-center gap-1.5 transition-colors"
-        style="letter-spacing: 0.08em"
+      <select
+        id="theme-select"
+        aria-label="Color theme"
+        class="self-center font-mono text-[10px] uppercase text-muted hover:text-accent border border-rule hover:border-accent rounded-sm pl-2 pr-1 py-1 bg-paper cursor-pointer transition-colors focus:outline-none focus:border-accent"
+        style="letter-spacing: 0.06em"
       >
-        <span id="theme-swatch" class="inline-block w-2.5 h-2.5 rounded-full border border-rule"></span>
-        <span id="theme-name">paper</span>
-      </button>
+        <option value="paper">Quiet Paper</option>
+        <option value="white">Clean White</option>
+        <option value="dark">Dark</option>
+        <option value="monokai">Monokai Pro</option>
+        <option value="monokai-light">Monokai Light</option>
+      </select>
     </div>
   </nav>
 </header>
 
 <script is:inline>
   (function () {
-    var THEMES = ['paper', 'white', 'dark', 'monokai'];
-    // Swatch previews each palette's base background.
-    var SWATCH = { paper: '#efe9dd', white: '#ffffff', dark: '#1b1917', monokai: '#2d2a2e' };
     function current() {
       return document.documentElement.getAttribute('data-theme') || 'paper';
-    }
-    function render(t) {
-      var n = document.getElementById('theme-name');
-      var s = document.getElementById('theme-swatch');
-      if (n) n.textContent = t;
-      if (s) s.style.background = SWATCH[t] || SWATCH.paper;
     }
     function set(t) {
       if (t === 'paper') document.documentElement.removeAttribute('data-theme');
       else document.documentElement.setAttribute('data-theme', t);
       try { localStorage.setItem('tw-theme', t); } catch (e) {}
-      render(t);
     }
-    var btn = document.getElementById('theme-toggle');
-    if (btn) {
-      btn.addEventListener('click', function () {
-        var i = THEMES.indexOf(current());
-        set(THEMES[(i + 1) % THEMES.length]);
-      });
+    var sel = document.getElementById('theme-select');
+    if (sel) {
+      sel.value = current();
+      sel.addEventListener('change', function () { set(sel.value); });
     }
-    render(current());
   })();
 </script>

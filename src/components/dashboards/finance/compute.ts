@@ -27,6 +27,27 @@ export function shiftMonth(ym: YearMonth, delta: number): YearMonth {
   return { year: Math.floor(idx / 12), month: (idx % 12) + 1 };
 }
 
+// Normalize a date cell to ISO 'YYYY-MM-DD'. Tolerates already-ISO strings,
+// US-locale 'M/D/YYYY' (what Google Sheets produces when a CSV import
+// auto-converts the date column), and Sheets serial numbers. Anything
+// unparseable is returned unchanged.
+export function toIsoDate(v: string): string {
+  const s = String(v ?? '').trim();
+  if (!s) return '';
+  if (/^\d{4}-\d{2}-\d{2}/.test(s)) return s.slice(0, 10);
+  const slash = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(s);
+  if (slash) return `${slash[3]}-${slash[1].padStart(2, '0')}-${slash[2].padStart(2, '0')}`;
+  if (/^\d+(\.\d+)?$/.test(s)) {
+    const d = new Date(Date.UTC(1899, 11, 30) + parseFloat(s) * 86400000);
+    if (!isNaN(d.getTime())) return d.toISOString().slice(0, 10);
+  }
+  const d = new Date(s);
+  if (!isNaN(d.getTime())) {
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  }
+  return s;
+}
+
 // ISO 'YYYY-MM-DD' parse without timezone surprises.
 function parseIsoDate(s: string): { y: number; m: number; d: number } | null {
   const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(s);

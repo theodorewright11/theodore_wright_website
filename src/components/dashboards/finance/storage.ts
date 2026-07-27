@@ -1,4 +1,5 @@
 import { EMPTY_STATE, type DataState, type Transaction, type Budget, type Income, type Account, ACCOUNTS } from './types';
+import { toIsoDate } from './compute';
 
 const KEY = 'tw-finance-v1';
 
@@ -95,7 +96,7 @@ export function csvToTransactions(text: string): Transaction[] {
     const account = (ACCOUNTS as string[]).includes(r.account) ? (r.account as Account) : 'Other';
     out.push({
       id: r.id,
-      date: r.date,
+      date: toIsoDate(r.date),
       item: r.item,
       amount,
       account,

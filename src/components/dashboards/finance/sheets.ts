@@ -5,6 +5,7 @@
 
 import type { Transaction, Budget, Income, CategoryEntry } from './types';
 import { ACCOUNTS, type Account } from './types';
+import { toIsoDate } from './compute';
 
 export const SHEET_TABS = {
   transactions: 'transactions',
@@ -144,7 +145,7 @@ export async function readTransactions(token: string, sheetId: string): Promise<
     const account: Account = (ACCOUNTS as readonly string[]).includes(r.account) ? (r.account as Account) : 'Other';
     out.push({
       id: r.id,
-      date: r.date,
+      date: toIsoDate(r.date),
       item: r.item,
       amount,
       account,

@@ -62,6 +62,19 @@
   --color-accent-soft: 252 152 103;
 }
 
+/* Monokai Pro (Light) — warm light plum base; accents darkened for contrast. */
+:root[data-theme='monokai-light'] {
+  --color-paper: 250 244 242;
+  --color-paper-edge: 242 233 230;
+  --color-ink: 41 35 42;
+  --color-ink-soft: 82 74 84;
+  --color-muted: 138 129 137;
+  --color-rule: 229 219 221;
+  --color-rule-soft: 240 232 232;
+  --color-accent: 225 71 117;
+  --color-accent-soft: 217 128 63;
+}
+
 @layer base {
   html {
     scroll-behavior: smooth;
