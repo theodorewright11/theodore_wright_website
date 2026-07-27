@@ -128,7 +128,7 @@ A spending-and-budget dashboard that replaces a manual spreadsheet workflow. Sin
 
 - **Dashboard** — month selector + headline cards (Spent / Budgeted / Variance / Income / Net cash flow) + per-category breakdown grouped Broad → Mid → Detailed with per-row variance bars. Defaults to current month; navigation to past months uses the budget that was effective for that month.
 - **Transactions** — sortable, filterable log (search on item, account/category multi-select, date range). Add / edit / delete via modal. Pagination at 100 rows per page.
-- **Budget** — versioned budget editor: editing a category creates a new row with today as `effective_from` rather than mutating history. Includes an Income editor with sources. Warning banner when planned spend exceeds planned income. A **Manage categories** button opens the taxonomy editor (see below).
+- **Budget** — versioned budget editor: editing a category creates a new row with today as `effective_from` rather than mutating history. Each category row also shows **actual spend this month** beside the budget input (red when over), so you set budgets against real numbers. Includes an Income editor with sources. Warning banner when planned spend exceeds planned income. A **Manage categories** button opens the taxonomy editor (see below).
 - **Insights** — stub in v1. Planned: spending over time, category drift, rolling averages, runway, month-over-month deltas.
 
 **Data model**:

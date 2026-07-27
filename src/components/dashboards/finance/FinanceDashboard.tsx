@@ -381,6 +381,7 @@ export default function FinanceDashboard() {
         {tab === 'budget' && (
           <BudgetTab
             budgets={state.budgets} incomes={state.incomes} categories={state.categories}
+            transactions={state.transactions}
             signedIn={signedIn}
             onSaveBudgets={onSaveBudgets}
             onSaveIncomes={onSaveIncomes}

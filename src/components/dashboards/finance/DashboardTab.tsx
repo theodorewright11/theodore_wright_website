@@ -91,7 +91,7 @@ export default function DashboardTab({ transactions, budgets, incomes, categorie
               style={{ letterSpacing: '-0.01em' }}>By category</h3>
           <span className="font-mono text-[10px] uppercase text-muted"
                 style={{ letterSpacing: '0.12em' }}>
-            {data.monthTxs.length} {data.monthTxs.length === 1 ? 'tx' : 'tx'}
+            {data.monthTxs.length} {data.monthTxs.length === 1 ? 'transaction' : 'transactions'}
           </span>
         </div>
 
