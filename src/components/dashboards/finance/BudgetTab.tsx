@@ -127,7 +127,7 @@ export default function BudgetTab({ budgets, incomes, categories, transactions, 
       if (!i.source.trim()) { alert('Income source cannot be empty.'); return; }
       if (!Number.isFinite(i.monthly_amount) || i.monthly_amount < 0) { alert(`Invalid income amount for ${i.source}.`); return; }
     }
-    onSaveIncomes(incomeDrafts.map(i => ({ ...i, source: i.source.trim() })));
+    onSaveIncomes(incomeDrafts.map(i => ({ ...i, source: i.source.trim(), effective_from: i.effective_from || todayIso() })));
     alert('Income saved.');
   }
 
@@ -286,28 +286,42 @@ export default function BudgetTab({ budgets, incomes, categories, transactions, 
       <div className="bg-paper border border-rule rounded-md overflow-hidden shadow-[0_1px_2px_rgba(26,22,20,0.03)]">
         {incomeDrafts.length === 0 ? (
           <div className="py-6 text-center font-serif italic text-muted text-[13px]">No income sources yet.</div>
-        ) : incomeDrafts.map((inc, idx) => (
-          <div key={inc.id}
-               className={'grid grid-cols-[1fr_140px_60px] gap-3 items-center px-3 py-2 ' + (idx > 0 ? 'border-t border-rule-soft ' : '') + (idx % 2 === 1 ? 'bg-paper-edge/25' : '')}>
-            <input value={inc.source} onChange={e => {
-              const v = e.target.value;
-              setIncomeDrafts(prev => prev.map((p, i) => i === idx ? { ...p, source: v } : p));
-            }} placeholder="Source"
-              className="bg-paper border border-rule rounded-sm px-2 py-1 text-[13px] font-serif text-ink focus:outline-none focus:border-accent" />
-            <div className="flex items-center gap-1">
-              <span className="font-mono text-[12px] text-muted">$</span>
-              <input type="number" step="0.01" min="0" value={inc.monthly_amount}
-                     onChange={e => {
-                       const v = parseFloat(e.target.value);
-                       setIncomeDrafts(prev => prev.map((p, i) => i === idx ? { ...p, monthly_amount: Number.isFinite(v) ? v : 0 } : p));
-                     }}
-                     className="w-full bg-paper border border-rule rounded-sm px-2 py-1 text-[13px] font-mono text-ink text-right tabular-nums focus:outline-none focus:border-accent" />
+        ) : (
+          <>
+            <div className="grid grid-cols-[1fr_130px_150px_60px] gap-3 px-3 py-1.5 border-b border-rule bg-paper-edge/40 font-mono text-[10px] uppercase text-muted" style={{ letterSpacing: '0.12em' }}>
+              <span>Source</span><span className="text-right">Monthly</span><span>Effective from</span><span></span>
             </div>
-            <button onClick={() => setIncomeDrafts(prev => prev.filter((_, i) => i !== idx))}
-                    className="font-mono text-[10px] uppercase text-muted hover:text-accent transition-colors text-right"
-                    style={{ letterSpacing: '0.08em' }}>Remove</button>
-          </div>
-        ))}
+            {incomeDrafts.map((inc, idx) => (
+              <div key={inc.id}
+                   className={'grid grid-cols-[1fr_130px_150px_60px] gap-3 items-center px-3 py-2 ' + (idx > 0 ? 'border-t border-rule-soft ' : '') + (idx % 2 === 1 ? 'bg-paper-edge/25' : '')}>
+                <input value={inc.source} onChange={e => {
+                  const v = e.target.value;
+                  setIncomeDrafts(prev => prev.map((p, i) => i === idx ? { ...p, source: v } : p));
+                }} placeholder="Source"
+                  className="bg-paper border border-rule rounded-sm px-2 py-1 text-[13px] font-serif text-ink focus:outline-none focus:border-accent" />
+                <div className="flex items-center gap-1">
+                  <span className="font-mono text-[12px] text-muted">$</span>
+                  <input type="number" step="0.01" min="0" value={inc.monthly_amount}
+                         onChange={e => {
+                           const v = parseFloat(e.target.value);
+                           setIncomeDrafts(prev => prev.map((p, i) => i === idx ? { ...p, monthly_amount: Number.isFinite(v) ? v : 0 } : p));
+                         }}
+                         className="w-full bg-paper border border-rule rounded-sm px-2 py-1 text-[13px] font-mono text-ink text-right tabular-nums focus:outline-none focus:border-accent" />
+                </div>
+                <input type="date" value={inc.effective_from}
+                       onChange={e => {
+                         const v = e.target.value;
+                         setIncomeDrafts(prev => prev.map((p, i) => i === idx ? { ...p, effective_from: v } : p));
+                       }}
+                       title="Income counts for months on or after this date"
+                       className="bg-paper border border-rule rounded-sm px-2 py-1 text-[12px] font-mono text-ink focus:outline-none focus:border-accent" />
+                <button onClick={() => setIncomeDrafts(prev => prev.filter((_, i) => i !== idx))}
+                        className="font-mono text-[10px] uppercase text-muted hover:text-accent transition-colors text-right"
+                        style={{ letterSpacing: '0.08em' }}>Remove</button>
+              </div>
+            ))}
+          </>
+        )}
       </div>
 
       <div className="flex items-center justify-between gap-3 flex-wrap">
