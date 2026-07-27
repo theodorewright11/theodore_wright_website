@@ -77,7 +77,7 @@ export default function DashboardTab({ transactions, budgets, incomes, categorie
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
         <Card label="Spent" value={formatMoney(data.spent)} />
         <Card label="Budgeted" value={formatMoney(data.budget)} />
-        <Card label="Variance" value={formatMoney(overall.dollars)}
+        <Card label="Remaining" value={formatMoney(overall.dollars)}
               tone={overall.dollars >= 0 ? 'good' : 'bad'} />
         <Card label="Income" value={formatMoney(data.income)} />
         <Card label="Net cash flow" value={formatMoney(net)}
