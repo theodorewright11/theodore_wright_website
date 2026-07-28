@@ -13,9 +13,10 @@ import ExploreView from './ExploreView';
 import RateView from './RateView';
 import RunsView from './RunsView';
 import type { AxisDef } from './rubric';
-import { filteredThemesJSON } from './exporters';
+import { filteredThemesJSON, runExportFilename, runThemesRatingsJSON } from './exporters';
 import {
   cryptoRandomId,
+  downloadBlob,
   downloadJSON,
   downloadText,
   loadState,
@@ -25,6 +26,7 @@ import {
   saveState,
   similaritiesCSV,
 } from './storage';
+import { zipStore } from './zip';
 import { buildThemesFromImport, parseAIThemesJson, reanchorThemes } from './themeImport';
 import type { AppState, AxisScore, Run, View } from './types';
 
@@ -473,6 +475,23 @@ export default function ThemeGradingDashboard() {
       return { ...s, similarities: next };
     });
 
+  // Bulk export: one <run name>.themes-ratings.json per run, zipped.
+  const exportRunsZip = (runs: Run[], zipName: string) => {
+    if (runs.length === 0) return;
+    const used = new Set<string>();
+    const files = runs.map((r) => {
+      let name = runExportFilename(r);
+      if (used.has(name)) {
+        let i = 2;
+        while (used.has(name.replace(/\.json$/, ` (${i}).json`))) i++;
+        name = name.replace(/\.json$/, ` (${i}).json`);
+      }
+      used.add(name);
+      return { name, text: JSON.stringify(runThemesRatingsJSON(r, state), null, 2) };
+    });
+    downloadBlob(zipName, zipStore(files));
+  };
+
   const jumpToTheme = (runId: string, themeId: string) => {
     setState((s) => {
       const shown = s.rateRunIds ?? (s.activeRunId ? [s.activeRunId] : []);
@@ -543,6 +562,7 @@ export default function ThemeGradingDashboard() {
           }
           onReanchorRun={reanchorRun}
           onReplaceRunJson={replaceRunJson}
+          onExportAllRuns={() => exportRunsZip(state.runs, 'theme-grading-runs.zip')}
         />
       )}
       {view === 'rate' && (
@@ -583,6 +603,7 @@ export default function ThemeGradingDashboard() {
           onExportFilteredJSON={(pairs) =>
             downloadJSON('theme-grading.filtered-themes.json', filteredThemesJSON(state, pairs))
           }
+          onExportRunsZip={(runs) => exportRunsZip(runs, 'theme-grading-filtered-runs.zip')}
           onExportJSON={() => {
             const { drive: _d, ...rest } = state;
             downloadJSON('theme-grading.json', rest);

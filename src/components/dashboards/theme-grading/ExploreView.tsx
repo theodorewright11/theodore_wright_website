@@ -12,6 +12,7 @@ type Props = {
   onExportJSON: () => void;
   onExportFilteredCSV: (pairs: { run: Run; theme: RatedTheme }[]) => void;
   onExportFilteredJSON: (pairs: { run: Run; theme: RatedTheme }[]) => void;
+  onExportRunsZip: (runs: Run[]) => void;
 };
 
 type Dimension =
@@ -61,6 +62,7 @@ export default function ExploreView({
   onExportJSON,
   onExportFilteredCSV,
   onExportFilteredJSON,
+  onExportRunsZip,
 }: Props) {
   const [dimFilters, setDimFilters] = useState<Record<Dimension, Set<string>>>(emptyDimFilters);
   // Per-selected-prompt-variant version selection (versions only mean
@@ -496,6 +498,20 @@ export default function ExploreView({
                 label={`Filtered .json (${rows.length})`}
                 title="Full theme objects (ratings, quotes, similarities) for the filtered set"
                 onClick={() => onExportFilteredJSON(rows)}
+              />
+              <ExportBtn
+                label={`Run files .zip (${new Set(rows.map((r) => r.run.id)).size})`}
+                title="A .zip with one themes-ratings .json per run that has at least one matching theme (each file contains that run's full theme set)"
+                onClick={() => {
+                  const seen = new Set<string>();
+                  const runs: Run[] = [];
+                  for (const { run } of rows) {
+                    if (seen.has(run.id)) continue;
+                    seen.add(run.id);
+                    runs.push(run);
+                  }
+                  onExportRunsZip(runs);
+                }}
               />
               <ExportBtn label="All ratings .csv" onClick={onExportRatingsCSV} />
               <ExportBtn label="Similarities .csv" onClick={onExportSimilaritiesCSV} />

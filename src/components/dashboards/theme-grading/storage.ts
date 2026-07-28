@@ -498,6 +498,11 @@ export function downloadText(filename: string, text: string, mime = 'text/csv'):
   triggerDownload(filename, blob);
 }
 
+export function downloadBlob(filename: string, blob: Blob): void {
+  if (typeof window === 'undefined') return;
+  triggerDownload(filename, blob);
+}
+
 function triggerDownload(filename: string, blob: Blob): void {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');

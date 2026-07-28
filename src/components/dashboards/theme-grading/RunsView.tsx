@@ -21,6 +21,7 @@ type Props = {
   onUpdateRunMeta: (id: string, patch: Partial<Run>) => void;
   onOpenRun: (id: string) => void;
   onReanchorRun: (runId: string, corpusId: string) => { anchored: number; total: number };
+  onExportAllRuns: () => void;
   onReplaceRunJson: (
     runId: string,
     themesJson: string,
@@ -44,6 +45,7 @@ export default function RunsView({
   onOpenRun,
   onReanchorRun,
   onReplaceRunJson,
+  onExportAllRuns,
 }: Props) {
   return (
     <div className="flex-1 min-w-0 min-h-0 overflow-y-auto bg-white">
@@ -63,6 +65,7 @@ export default function RunsView({
           onOpenRun={onOpenRun}
           onReanchorRun={onReanchorRun}
           onReplaceRunJson={onReplaceRunJson}
+          onExportAllRuns={onExportAllRuns}
         />
       </div>
     </div>
@@ -621,6 +624,7 @@ function RunListSection({
   onOpenRun,
   onReanchorRun,
   onReplaceRunJson,
+  onExportAllRuns,
 }: {
   state: AppState;
   onDeleteRun: (id: string) => void;
@@ -628,6 +632,7 @@ function RunListSection({
   onOpenRun: (id: string) => void;
   onReanchorRun: (runId: string, corpusId: string) => { anchored: number; total: number };
   onReplaceRunJson: Props['onReplaceRunJson'];
+  onExportAllRuns: () => void;
 }) {
   const [editId, setEditId] = useState<string | null>(null);
   const [reanchorReport, setReanchorReport] = useState<Record<string, string>>({});
@@ -676,9 +681,19 @@ function RunListSection({
 
   return (
     <section>
-      <h2 className="font-bold text-[16px] text-slate-900 mb-2">
-        Runs <span className="text-slate-400 font-normal text-[13px]">({runs.length})</span>
-      </h2>
+      <div className="flex items-center gap-3 mb-2">
+        <h2 className="font-bold text-[16px] text-slate-900">
+          Runs <span className="text-slate-400 font-normal text-[13px]">({runs.length})</span>
+        </h2>
+        <button
+          type="button"
+          onClick={onExportAllRuns}
+          className="px-3 py-1 text-[12px] font-semibold text-slate-600 border border-slate-300 rounded-md hover:bg-slate-100 transition-colors"
+          title="Download a .zip with every run as its own themes-ratings .json"
+        >
+          Export all (.zip)
+        </button>
+      </div>
       <input
         ref={replaceFileRef}
         type="file"
