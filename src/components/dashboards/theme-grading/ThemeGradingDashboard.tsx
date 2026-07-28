@@ -13,6 +13,7 @@ import ExploreView from './ExploreView';
 import RateView from './RateView';
 import RunsView from './RunsView';
 import type { AxisDef } from './rubric';
+import { filteredThemesJSON } from './exporters';
 import {
   cryptoRandomId,
   downloadJSON,
@@ -20,6 +21,7 @@ import {
   loadState,
   parseCorpusCSV,
   ratingsCSV,
+  ratingsCSVForRows,
   saveState,
   similaritiesCSV,
 } from './storage';
@@ -574,6 +576,12 @@ export default function ThemeGradingDashboard() {
           onExportRatingsCSV={() => downloadText('theme-grading.ratings.csv', ratingsCSV(state))}
           onExportSimilaritiesCSV={() =>
             downloadText('theme-grading.similarities.csv', similaritiesCSV(state))
+          }
+          onExportFilteredCSV={(pairs) =>
+            downloadText('theme-grading.filtered-ratings.csv', ratingsCSVForRows(state, pairs))
+          }
+          onExportFilteredJSON={(pairs) =>
+            downloadJSON('theme-grading.filtered-themes.json', filteredThemesJSON(state, pairs))
           }
           onExportJSON={() => {
             const { drive: _d, ...rest } = state;

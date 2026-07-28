@@ -389,6 +389,18 @@ export function scoreCell(v: AxisScore | undefined): string {
 
 // One row per theme, with full run metadata — the analysis-ready artifact.
 export function ratingsCSV(state: AppState): string {
+  return ratingsCSVForRows(
+    state,
+    state.runs.flatMap((run) => run.themes.map((theme) => ({ run, theme }))),
+  );
+}
+
+// Same shape, but over an explicit (run, theme) selection — the Explore
+// filtered-export path.
+export function ratingsCSVForRows(
+  state: AppState,
+  pairs: { run: Run; theme: RatedTheme }[],
+): string {
   const corpusById = new Map(state.corpora.map((c) => [c.id, c]));
   const header = [
     'run_id',
@@ -415,35 +427,33 @@ export function ratingsCSV(state: AppState): string {
     'reasoning',
   ];
   const lines = [header.join(',')];
-  for (const run of state.runs) {
-    for (const t of run.themes) {
-      lines.push(
-        [
-          csvCell(run.id),
-          csvCell(buildRunName(run)),
-          csvCell(run.corpusId ? corpusById.get(run.corpusId)?.name ?? run.corpusId : ''),
-          csvCell(run.model),
-          csvCell(run.promptVariant),
-          csvCell(run.version),
-          csvCell(run.dataSource),
-          csvCell(run.rq),
-          csvCell(run.positionality),
-          csvCell(run.runN),
-          csvCell(t.name),
-          csvCell(scoreCell(t.rating.grounding)),
-          csvCell(scoreCell(t.rating.researchQuestionFit)),
-          csvCell(scoreCell(t.rating.interpretationLevel)),
-          csvCell(scoreCell(t.rating.novelty)),
-          csvCell(scoreCell(t.rating.dataContribution)),
-          csvCell(scoreCell(t.rating.positionalityContribution)),
-          csvCell(t.rating.notes),
-          csvCell(t.quotes.length),
-          csvCell(t.quotes.filter((q) => q.anchor).length),
-          csvCell(t.definition),
-          csvCell(t.reasoning),
-        ].join(','),
-      );
-    }
+  for (const { run, theme: t } of pairs) {
+    lines.push(
+      [
+        csvCell(run.id),
+        csvCell(buildRunName(run)),
+        csvCell(run.corpusId ? corpusById.get(run.corpusId)?.name ?? run.corpusId : ''),
+        csvCell(run.model),
+        csvCell(run.promptVariant),
+        csvCell(run.version),
+        csvCell(run.dataSource),
+        csvCell(run.rq),
+        csvCell(run.positionality),
+        csvCell(run.runN),
+        csvCell(t.name),
+        csvCell(scoreCell(t.rating.grounding)),
+        csvCell(scoreCell(t.rating.researchQuestionFit)),
+        csvCell(scoreCell(t.rating.interpretationLevel)),
+        csvCell(scoreCell(t.rating.novelty)),
+        csvCell(scoreCell(t.rating.dataContribution)),
+        csvCell(scoreCell(t.rating.positionalityContribution)),
+        csvCell(t.rating.notes),
+        csvCell(t.quotes.length),
+        csvCell(t.quotes.filter((q) => q.anchor).length),
+        csvCell(t.definition),
+        csvCell(t.reasoning),
+      ].join(','),
+    );
   }
   return lines.join('\n');
 }

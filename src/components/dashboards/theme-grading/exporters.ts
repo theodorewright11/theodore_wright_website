@@ -75,3 +75,62 @@ export function runThemesRatingsJSON(run: Run, state: AppState): unknown {
 export function runExportFilename(run: Run): string {
   return `${buildRunName(run)}.themes-ratings.json`;
 }
+
+// Mass export: one entry per (run, theme) pair — the Explore tab's filtered
+// selection — with the same per-theme shape as the per-run export plus the
+// run's metadata inlined on each entry.
+export function filteredThemesJSON(
+  state: AppState,
+  pairs: { run: Run; theme: Run['themes'][number] }[],
+): unknown {
+  const themeIndex = new Map<string, { run: Run; themeName: string }>();
+  for (const r of state.runs) {
+    for (const t of r.themes) themeIndex.set(t.id, { run: r, themeName: t.name });
+  }
+  return {
+    theme_count: pairs.length,
+    themes: pairs.map(({ run, theme: t }) => ({
+      run: buildRunName(run),
+      model: run.model || null,
+      promptVariant: run.promptVariant || null,
+      version: run.version || null,
+      dataSource: run.dataSource || null,
+      rq: run.rq || null,
+      positionality: run.positionality || null,
+      runN: run.runN ?? null,
+      name: t.name,
+      definition: t.definition ?? null,
+      reasoning: t.reasoning ?? null,
+      ratings: {
+        grounding: scoreOut(t.rating.grounding),
+        researchQuestionFit: scoreOut(t.rating.researchQuestionFit),
+        interpretationLevel: scoreOut(t.rating.interpretationLevel),
+        novelty: scoreOut(t.rating.novelty),
+        dataContribution: scoreOut(t.rating.dataContribution),
+        positionalityContribution: scoreOut(t.rating.positionalityContribution),
+        notes: t.rating.notes ?? null,
+      },
+      similarities: state.similarities
+        .filter((s) => s.themeA === t.id || s.themeB === t.id)
+        .map((s) => {
+          const otherId = s.themeA === t.id ? s.themeB : s.themeA;
+          const other = themeIndex.get(otherId);
+          if (!other) return null;
+          return {
+            other: other.themeName,
+            otherRun: other.run.id === run.id ? null : buildRunName(other.run),
+            similarity: scoreOut(s.similarity),
+            notes: s.notes ?? null,
+          };
+        })
+        .filter(Boolean),
+      quotes: t.quotes.map((q) => ({
+        text: q.text,
+        source: q.source ?? null,
+        role: q.role ?? null,
+        anchored: !!q.anchor,
+      })),
+      representative_supporting_data: t.supportingData ?? null,
+    })),
+  };
+}

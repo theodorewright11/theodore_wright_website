@@ -10,6 +10,8 @@ type Props = {
   onExportRatingsCSV: () => void;
   onExportSimilaritiesCSV: () => void;
   onExportJSON: () => void;
+  onExportFilteredCSV: (pairs: { run: Run; theme: RatedTheme }[]) => void;
+  onExportFilteredJSON: (pairs: { run: Run; theme: RatedTheme }[]) => void;
 };
 
 type Dimension =
@@ -57,6 +59,8 @@ export default function ExploreView({
   onExportRatingsCSV,
   onExportSimilaritiesCSV,
   onExportJSON,
+  onExportFilteredCSV,
+  onExportFilteredJSON,
 }: Props) {
   const [dimFilters, setDimFilters] = useState<Record<Dimension, Set<string>>>(emptyDimFilters);
   // Per-selected-prompt-variant version selection (versions only mean
@@ -483,7 +487,17 @@ export default function ExploreView({
               Themes
             </button>
             <div className="ml-auto flex items-center gap-2">
-              <ExportBtn label="Ratings .csv" onClick={onExportRatingsCSV} />
+              <ExportBtn
+                label={`Filtered .csv (${rows.length})`}
+                title="One CSV row per theme currently matching the filters above"
+                onClick={() => onExportFilteredCSV(rows)}
+              />
+              <ExportBtn
+                label={`Filtered .json (${rows.length})`}
+                title="Full theme objects (ratings, quotes, similarities) for the filtered set"
+                onClick={() => onExportFilteredJSON(rows)}
+              />
+              <ExportBtn label="All ratings .csv" onClick={onExportRatingsCSV} />
               <ExportBtn label="Similarities .csv" onClick={onExportSimilaritiesCSV} />
               <ExportBtn label="Full .json" onClick={onExportJSON} />
             </div>
@@ -784,11 +798,20 @@ function AggTable({
   );
 }
 
-function ExportBtn({ label, onClick }: { label: string; onClick: () => void }) {
+function ExportBtn({
+  label,
+  onClick,
+  title,
+}: {
+  label: string;
+  onClick: () => void;
+  title?: string;
+}) {
   return (
     <button
       type="button"
       onClick={onClick}
+      title={title}
       className="px-2.5 py-1 text-[11px] font-semibold text-slate-600 border border-slate-300 rounded-md hover:bg-slate-100 transition-colors"
     >
       {label}
