@@ -9,46 +9,70 @@ const PAPER = '#f7f3ec';
 const INK = '#1a1614';
 const SIENNA = '#8a4a2b';
 
-// Letter skeletons on a 64-unit grid: T and W side by side, overlapping so the
-// W's left arm crosses the T's stem (the interlock in the reference mark).
-const T_BAR = 'M7 16 H37';
-const T_STEM = 'M22 16 V50';
-const W = 'M28 23 L35 50 L42 34 L49 50 L56 23';
-const ALL = [T_BAR, T_STEM, W];
+// ── Mark geometry ──────────────────────────────────────────────────────────
+// T and W side by side on a 64-unit grid, overlapping so the W's left arm
+// crosses the T's stem. Tweak these three strings to reshape the letters.
+const PATHS = [
+  'M7 16 H37',                          // T crossbar
+  'M22 16 V50',                         // T stem
+  'M28 23 L35 50 L42 34 L49 50 L56 23', // W
+];
 
-// skewX(-10) leans the letterforms; translate re-centres the result.
-const SLANT = 'translate(4.5,0) skewX(-10)';
+const SLANT = 'skewX(-10)';   // italic lean
+const SCALE = 0.78;           // shrink to leave room for the extrusion
+const TX = 8.6, TY = 2.9;     // re-centre the letters + their extrusion in the tile
 
-const strokes = (color, w, extra = '') =>
-  ALL.map(d => `<path d="${d}" fill="none" stroke="${color}" stroke-width="${w}" stroke-linecap="butt" stroke-linejoin="miter" stroke-miterlimit="6"${extra}/>`).join('\n    ');
+// ── Extrusion ──────────────────────────────────────────────────────────────
+// Depth is built from stacked copies stepped along a 45° vector — enough
+// copies that the body reads as one solid extruded mass, not a visible stack.
+const STEPS = 16;
+const STEP = 0.42;
 
-const wrap = (bg, body, round = 12) => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <rect width="64" height="64" rx="${round}" fill="${bg}"/>
-  <g transform="${SLANT}">
-    ${body}
-  </g>
+const OUTER = 9;    // silhouette weight
+const INNER = 3.6;  // hollow interior weight
+
+const stroke = (color, w) =>
+  PATHS.map(d => `<path d="${d}" fill="none" stroke="${color}" stroke-width="${w}" stroke-linecap="butt" stroke-linejoin="miter" stroke-miterlimit="6"/>`).join('');
+
+const mark = (color, w) =>
+  `<g transform="translate(${TX},${TY}) scale(${SCALE})"><g transform="${SLANT}">${stroke(color, w)}</g></g>`;
+
+// Far copy → near copy. `from` defaults to 1 so the body stops one step short
+// of the front face — the front is always drawn last and whole, otherwise the
+// near copies eat its edges and the mark collapses into a bare silhouette.
+const layer = (color, w, from = 1) => {
+  let out = '';
+  for (let i = STEPS; i >= from; i--) {
+    const d = (i * STEP).toFixed(2);
+    out += `<g transform="translate(${d},${d})">${mark(color, w)}</g>`;
+  }
+  return out;
+};
+
+// A hollow extruded tube: solid body, hollow bored through it, then the front
+// face redrawn on top so its outline survives.
+const tube = (edge, core) =>
+  layer(edge, OUTER) + layer(core, INNER) + mark(edge, OUTER) + mark(core, INNER);
+
+const wrap = (bg, body) => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+<rect width="64" height="64" rx="12" fill="${bg}"/>
+${body}
 </svg>
 `;
 
 const variants = {
-  // 1 — hollow ink outline. Closest to the reference: thick silhouette, white interior.
-  '1-outline-ink': wrap(PAPER, [strokes(INK, 9), strokes(PAPER, 3.6)].join('\n    ')),
+  // Hollow extruded tube — the interior runs the full depth, as in the reference.
+  '1-3d-hollow-ink': wrap(PAPER, tube(INK, PAPER)),
+  '2-3d-hollow-sienna': wrap(PAPER, tube(SIENNA, PAPER)),
 
-  // 2 — same construction in sienna.
-  '2-outline-sienna': wrap(PAPER, [strokes(SIENNA, 9), strokes(PAPER, 3.6)].join('\n    ')),
+  // Two-tone: solid sienna extruded body, ink outlined front face on top.
+  '3-3d-twotone': wrap(PAPER, layer(SIENNA, OUTER) + mark(INK, OUTER) + mark(PAPER, INNER)),
 
-  // 3 — sienna extrusion offset behind an ink outline: actual 3D depth.
-  '3-extruded': wrap(PAPER, [
-    `<g transform="translate(3.2,3.2)">${strokes(SIENNA, 9)}</g>`,
-    strokes(INK, 9),
-    strokes(PAPER, 3.6),
-  ].join('\n    ')),
+  // Inverted tile.
+  '4-3d-inverted': wrap(SIENNA, tube(PAPER, SIENNA)),
 
-  // 4 — inverted: solid sienna tile, hollow cream outline.
-  '4-inverted': wrap(SIENNA, [strokes(PAPER, 9), strokes(SIENNA, 3.6)].join('\n    ')),
-
-  // 5 — solid slanted mark, no hollow. Heaviest / most legible at 16px.
-  '5-solid': wrap(PAPER, strokes(SIENNA, 8.5)),
+  // Solid front face on a sienna body — no hollow. The only one that survives 16px.
+  '5-3d-solid': wrap(PAPER, layer(SIENNA, OUTER) + mark(INK, OUTER)),
 };
 
 const names = Object.keys(variants);
@@ -57,9 +81,9 @@ for (const [name, svg] of Object.entries(variants)) {
   await sharp(Buffer.from(svg), { density: 900 }).resize(256, 256).png().toFile(join(OUT, `${name}.png`));
 }
 
-// Contact sheet: one row per variant — 128px hero, then 64 / 32 / 16 to check legibility.
+// Contact sheet: one row per variant — 128px hero, then 64 / 32 / 16.
 const SIZES = [128, 64, 32, 16];
-const ROW_H = 150, PAD = 24, LABEL = 0;
+const ROW_H = 150, PAD = 24;
 const width = PAD * 2 + 128 + SIZES.slice(1).reduce((a, s) => a + s + 28, 0);
 const height = PAD + names.length * ROW_H;
 
@@ -78,9 +102,7 @@ for (let r = 0; r < names.length; r++) {
   }
 }
 
-await sharp({
-  create: { width, height, channels: 3, background: '#ffffff' },
-})
+await sharp({ create: { width, height, channels: 3, background: '#ffffff' } })
   .composite(composites)
   .png()
   .toFile(join(OUT, 'contact-sheet.png'));

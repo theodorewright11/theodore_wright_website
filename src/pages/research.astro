@@ -4,7 +4,6 @@ import GroupHeader from '../components/GroupHeader.astro';
 import DownloadMd from '../components/DownloadMd.astro';
 import { getCollection } from 'astro:content';
 import bio from '../data/bio.json';
-import presentations from '../data/presentations.json';
 
 const all = await getCollection('research');
 const byDate = (a: { data: { date: Date } }, b: { data: { date: Date } }) =>
@@ -49,12 +48,16 @@ const groups = [
             </h3>
             <p class="font-serif text-[15px] text-ink-soft leading-[1.55] m-0"
                style="text-wrap: pretty">{r.data.description}</p>
-            {(r.data.paperUrl || r.data.externalUrl) && (
+            {(r.data.paperUrl || r.data.posterUrl || r.data.externalUrl) && (
               <div class="mt-2 flex gap-4 flex-wrap font-mono text-[12px] uppercase"
                    style="letter-spacing: 0.1em">
                 {r.data.paperUrl && (
                   <a href={r.data.paperUrl} target="_blank" rel="noopener"
                      class="text-accent no-underline hover:underline">read paper →</a>
+                )}
+                {r.data.posterUrl && (
+                  <a href={r.data.posterUrl} target="_blank" rel="noopener"
+                     class="text-accent no-underline hover:underline">poster ↓</a>
                 )}
                 {r.data.externalUrl && (
                   <a href={r.data.externalUrl} target="_blank" rel="noopener"
@@ -66,23 +69,5 @@ const groups = [
         ))}
       </section>
     ))}
-
-    <section>
-      <GroupHeader label="Talks & posters" count={presentations.length} />
-      <ul class="list-none p-0 m-0">
-        {presentations.map((p: any, i: number) => (
-          <li class:list={['py-3', i > 0 ? 'border-t border-rule-soft' : '']}>
-            <p class="font-serif text-[14px] text-ink-soft leading-[1.5] m-0"
-               style="text-wrap: pretty">{p.citation}</p>
-            <p class="font-mono text-[11px] text-muted m-0 mt-1" style="letter-spacing: 0.04em">
-              {p.url ? (
-                <a href={p.url} target="_blank" rel="noopener"
-                   class="text-muted no-underline hover:text-accent transition-colors">{p.venue} ↗</a>
-              ) : p.venue}
-            </p>
-          </li>
-        ))}
-      </ul>
-    </section>
   </section>
 </BaseLayout>

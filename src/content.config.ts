@@ -32,6 +32,7 @@ const research = defineCollection({
     collaborators: z.array(z.string()).default([]),
     venue: z.string().optional(),
     paperUrl: z.string().optional(),       // local PDF in /public/papers/
+    posterUrl: z.string().optional(),      // conference poster PDF in /public/papers/
     externalUrl: z.string().url().optional(), // outside link (e.g., MIT report)
     featured: z.boolean().default(false),
   }),

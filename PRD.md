@@ -15,7 +15,7 @@ Three top-level tabs: **Research**, **Writing**, **Other**. "Other" is an umbrel
 | Path | Nav | Purpose |
 |---|---|---|
 | `/` | brand | Combined home + about — bio, contact links, and a short index in nav order (Research → Writing → Other) |
-| `/research` | Research | Formal academic research in three groups: **Publications** (published + contributions), **In progress / planned**, and **Talks & posters** |
+| `/research` | Research | Formal academic research in two groups: **Publications** (published + contributions) and **In progress / planned** |
 | `/writing` | Writing | Essays, with tier labels showing how AI-assisted each piece is |
 | `/other` | Other | Landing page for the Other section — one block per sub-section with its live items |
 | `/ai-research` | Other ▸ | Outputs of the LLM Iterate pipeline (6-stage refinement of topics) |
@@ -319,15 +319,15 @@ A dedicated rubric-rating tool for AI-generated qualitative themes — the fast-
 
 ## Research page conventions
 
-Entries on `/research` are deliberately spare: **title + one plain sentence + paper/external link**. No year, no venue line, no author list, no status pill — that metadata lives on the detail page, where it belongs. The goal is that a page of publications reads as a page of publications, not a page of badges. Descriptions are one sentence in plain language ("Measures how much of U.S. work AI can currently do…"), not abstract-speak.
+Entries on `/research` are deliberately spare: **title + one plain sentence + artifact links**. No year, no venue line, no author list, no status pill — that metadata lives on the detail page, where it belongs. The goal is that a page of publications reads as a page of publications, not a page of badges. Descriptions are one sentence in plain language ("Measures how much of U.S. work AI can currently do…"), not abstract-speak.
 
-**Talks & posters** render from `src/data/presentations.json` (`{citation, venue, url?}`) as a compact citation list at the bottom of `/research`. Same works as the entries above, in their presented form — a poster and its paper are not separate research entries.
+**Posters attach to their entry, not to a separate list.** A poster is the same work as its paper, so it rides along as `posterUrl` in the entry's frontmatter (a PDF in `public/papers/`) and renders as a `poster ↓` link beside `read paper →` on both the index and the detail page. There is no standalone presentations section — one would duplicate every entry above it and inflate a three-item record into six.
 
 ## Papers and PDFs
 
 PDFs live in `public/papers/<slug>.pdf`. Once dropped in that folder, they're served at `/papers/<slug>.pdf` automatically — no build step.
 
-Research entries reference their paper via `paperUrl: '/papers/<slug>.pdf'` in frontmatter. The detail page surfaces an "Open paper →" link.
+Research entries reference their paper via `paperUrl: '/papers/<slug>.pdf'` in frontmatter and their conference poster via `posterUrl: '/papers/<slug>-poster.pdf'`. Both surface as links on `/research` and on the detail page.
 
 Word documents (.docx) should be converted to PDF before upload (Word: File → Save As → PDF). Hosting `.docx` directly causes browsers to download rather than display.
 

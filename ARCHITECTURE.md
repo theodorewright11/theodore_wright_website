@@ -22,7 +22,7 @@
 │   └── <topic>/<stage>.md
 ├── design_handoff_personal_site/        ← V4 design source (reference only)
 ├── public/
-│   ├── favicon.svg                      ← slanted hollow-outline TW monogram w/ sienna extrusion
+│   ├── favicon.svg                      ← slanted TW monogram, extruded 3D hollow tube
 │   ├── favicons/                        ← candidate marks (.svg + .png) + contact-sheet.png, from scripts/gen_favicons.mjs
 │   └── papers/                          ← published PDFs (papers, posters, working drafts)
 │       └── <slug>.pdf
@@ -92,7 +92,6 @@
 │   │   ├── bio.json                     ← name, credentials (subtitle), blurb, location, contact links
 │   │   ├── now.json                     ← `updated` date drives the global Footer (NowStrip retired)
 │   │   ├── dashboards.json              ← roster of dashboards with status (`built` / `in-progress` / `planned`) + one-sentence desc
-│   │   ├── presentations.json           ← talks & posters ({citation, venue, url?}) listed at the bottom of /research
 │   │   └── ai_research_planned.json     ← 16 planned AI-research topics ({title, desc}) rendered on /ai-research + home (prompts.md is the longer brainstorm)
 │   ├── lib/
 │   │   ├── bundle.ts                    ← shared markdown rendering helpers (bundleHeader, blogToMd, researchToMd, modelToMd, aiStageToMd, section, sortByDate, stripImports)
@@ -147,7 +146,7 @@ Defined in `src/content.config.ts` using the legacy `type: 'content'` API (consi
 | Collection | Path glob | Key frontmatter fields |
 |---|---|---|
 | `blog` | `src/content/blog/*.mdx` | title, description, date, tier (`mine`/`collab`/`ai-led`), draft, tags |
-| `research` | `src/content/research/*.mdx` | title, description, date, status (`in-progress`/`published`/`upcoming`/`contribution`), paperStatus?, abstract?, authors[] (`{name, affiliation?, mine}`), collaborators[] (legacy), venue, paperUrl, externalUrl, featured |
+| `research` | `src/content/research/*.mdx` | title, description, date, status (`in-progress`/`published`/`upcoming`/`contribution`), paperStatus?, abstract?, authors[] (`{name, affiliation?, mine}`), collaborators[] (legacy), venue, paperUrl, posterUrl, externalUrl, featured |
 | `models` | `src/content/models/*.mdx` | title, description, date, status (`draft`/`published`), featured, component, tags |
 | `ai_research` | `src/content/ai_research/<topic>/<stage>.mdx` | title, description, date, status (`not-started`/`in-progress`/`complete`), refinementPass, refinementLog |
 
@@ -332,6 +331,8 @@ Wrap interactive components in `not-prose` so Tailwind Typography doesn't overri
 Drop a PDF into `public/papers/<slug>.pdf` — it's served at `https://theodorewright.dev/papers/<slug>.pdf`. No build step needed; Astro serves `public/` as-is.
 
 To attach a paper to a research entry, set `paperUrl: '/papers/<slug>.pdf'` in that entry's frontmatter. The detail page renders an "Open paper →" link in the header.
+
+**Posters** work the same way: drop the poster PDF at `public/papers/<slug>-poster.pdf` and set `posterUrl: '/papers/<slug>-poster.pdf'`. It renders as a `poster ↓` link next to the paper link on both `/research` and the detail page. Posters are never separate entries — a poster and its paper are one work.
 
 **For Word documents**: convert to PDF first (Word: File → Save As → PDF). Don't host `.docx` directly — browsers download instead of displaying, and the file stays editable, which is rarely what you want for a published artifact.
 

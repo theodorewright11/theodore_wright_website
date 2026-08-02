@@ -16,8 +16,8 @@ const research = (await getCollection('research'))
   .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
 
 const other = [
-  { href: '/dashboards', label: 'Dashboards', desc: 'Tools for entering data and seeing it summarized. Everything runs in your browser.' },
-  { href: '/models', label: 'Models', desc: 'Explanations of one idea at a time, with sliders you can move to see how it changes.' },
+  { href: '/dashboards', label: 'Dashboards', desc: 'Tools for different use cases — tracking spending, logging time, coding qualitative data.' },
+  { href: '/models', label: 'Models', desc: 'Breakdowns of something into its parts, and how those parts interact.' },
   { href: '/ai-research', label: 'AI’s Research', desc: 'Topics researched by an LLM in six stages: lit review, topology, model, data, build, writeup.' },
 ];
 ---

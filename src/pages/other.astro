@@ -21,7 +21,7 @@ const sections = [
   {
     href: '/dashboards',
     label: 'Dashboards',
-    desc: 'Tools for entering data and seeing it summarized. Everything runs in your browser.',
+    desc: 'Tools for different use cases — tracking spending, logging time, coding qualitative data.',
     items: dashboards
       .filter(d => d.status === 'built')
       .map(d => ({ href: `/dashboards/${d.slug}`, title: d.title })),
@@ -29,7 +29,7 @@ const sections = [
   {
     href: '/models',
     label: 'Models',
-    desc: 'Explanations of one idea at a time, with sliders you can move to see how it changes.',
+    desc: 'Breakdowns of something into its parts, and how those parts interact.',
     items: models.map(m => ({ href: `/models/${m.slug}`, title: m.data.title })),
   },
   {
