@@ -14,33 +14,20 @@ export async function getStaticPaths() {
 const { entry } = Astro.props;
 const { Content } = await entry.render();
 
-const statusLabel: Record<string, string> = {
-  'in-progress': 'In Progress',
-  published: 'Finished',
-  upcoming: 'Planned',
-  contribution: 'Contribution',
-};
-
 const fmtYear = (date: Date) => String(date.getFullYear());
 ---
 
-<BaseLayout title={`${entry.data.title} — My Research`} description={entry.data.description}>
+<BaseLayout title={`${entry.data.title} — Research`} description={entry.data.description}>
   <article class="max-w-[760px] mx-auto px-8 pt-14 pb-24">
     <div class="flex items-center justify-between gap-4 flex-wrap">
       <a href="/research"
          class="font-mono text-[11px] uppercase text-muted no-underline hover:text-accent transition-colors"
-         style="letter-spacing: 0.08em">← My Research</a>
+         style="letter-spacing: 0.08em">← Research</a>
       <DownloadMd href={`/research/${entry.slug}.md`} label="download as .md" align="right" />
     </div>
 
     <header class="mt-5 mb-10 pb-8 border-b border-rule">
-      <div class="flex items-baseline gap-3 mb-3 flex-wrap">
-        <span class="font-mono text-[10px] uppercase text-accent"
-              style="letter-spacing: 0.12em">
-          {statusLabel[entry.data.status] ?? entry.data.status}
-        </span>
-        <span class="font-mono text-[11px] text-muted">{fmtYear(entry.data.date)}</span>
-      </div>
+      <div class="font-mono text-[11px] text-muted mb-3">{fmtYear(entry.data.date)}</div>
       <h1 class="font-display font-semibold text-[42px] leading-[1.08] m-0 mb-3 text-ink"
           style="letter-spacing: -0.025em; text-wrap: balance">{entry.data.title}</h1>
       <p class="font-serif text-[17px] text-ink-soft leading-[1.55] m-0"

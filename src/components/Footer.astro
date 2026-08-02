@@ -11,27 +11,27 @@ const updated = new Date(now.updated + 'T00:00:00').toLocaleDateString('en-US', 
   <div class="max-w-[1080px] mx-auto px-8 py-8 flex items-baseline justify-between gap-4 flex-wrap font-mono text-[11px] text-muted"
        style="letter-spacing: 0.06em">
     <div class="flex items-baseline gap-4 flex-wrap">
-      <span>last updated {updated}</span>
+      <span>Last updated {updated}</span>
       <span class="text-muted/60">·</span>
-      <span class="text-ink-soft">download all</span>
+      <span class="text-ink-soft">Download</span>
       <a href="/bundle-mine.md"
          class="text-accent no-underline hover:underline"
-         download>mine ↓</a>
+         download>My research ↓</a>
       <a href="/bundle-ai-research.md"
          class="text-accent no-underline hover:underline"
-         download>ai's research ↓</a>
+         download>AI's research ↓</a>
       <a href="/bundle-all.md"
          class="text-accent no-underline hover:underline"
-         download>all ↓</a>
+         download>All ↓</a>
     </div>
     <div class="flex items-baseline gap-3 flex-wrap">
-      <a href={bio.linkedin} target="_blank" rel="noopener" class="text-ink-soft no-underline hover:text-accent transition-colors">linkedin</a>
+      <a href={bio.linkedin} target="_blank" rel="noopener" class="text-ink-soft no-underline hover:text-accent transition-colors">LinkedIn</a>
       <span>/</span>
-      <a href={bio.github} target="_blank" rel="noopener" class="text-ink-soft no-underline hover:text-accent transition-colors">github</a>
+      <a href={bio.github} target="_blank" rel="noopener" class="text-ink-soft no-underline hover:text-accent transition-colors">GitHub</a>
       <span>/</span>
-      <a href={bio.substack} target="_blank" rel="noopener" class="text-ink-soft no-underline hover:text-accent transition-colors">substack</a>
+      <a href={bio.substack} target="_blank" rel="noopener" class="text-ink-soft no-underline hover:text-accent transition-colors">Substack</a>
       <span>/</span>
-      <a href={`mailto:${bio.email}`} class="text-ink-soft no-underline hover:text-accent transition-colors">email</a>
+      <a href={`mailto:${bio.email}`} class="text-ink-soft no-underline hover:text-accent transition-colors">Email</a>
       <span>/</span>
       <select
         id="theme-select"
@@ -39,11 +39,11 @@ const updated = new Date(now.updated + 'T00:00:00').toLocaleDateString('en-US', 
         class="font-mono text-[11px] text-muted hover:text-accent bg-transparent border-0 p-0 cursor-pointer transition-colors focus:outline-none focus:text-accent"
         style="letter-spacing: 0.06em"
       >
-        <option value="paper">theme: paper</option>
-        <option value="white">theme: white</option>
-        <option value="dark">theme: dark</option>
-        <option value="monokai">theme: monokai</option>
-        <option value="monokai-light">theme: monokai light</option>
+        <option value="paper">Theme: Paper</option>
+        <option value="white">Theme: White</option>
+        <option value="dark">Theme: Dark</option>
+        <option value="monokai">Theme: Monokai</option>
+        <option value="monokai-light">Theme: Monokai Light</option>
       </select>
     </div>
   </div>

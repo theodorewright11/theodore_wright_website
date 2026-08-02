@@ -19,14 +19,8 @@ const PATHS = [
 ];
 
 const SLANT = 'skewX(-10)';   // italic lean
-const SCALE = 0.78;           // shrink to leave room for the extrusion
-const TX = 8.6, TY = 2.9;     // re-centre the letters + their extrusion in the tile
-
-// ── Extrusion ──────────────────────────────────────────────────────────────
-// Depth is built from stacked copies stepped along a 45° vector — enough
-// copies that the body reads as one solid extruded mass, not a visible stack.
-const STEPS = 16;
-const STEP = 0.42;
+const SCALE = 0.92;
+const TX = 5.5, TY = 1;       // re-centre after slant + scale
 
 const OUTER = 9;    // silhouette weight
 const INNER = 3.6;  // hollow interior weight
@@ -37,42 +31,29 @@ const stroke = (color, w) =>
 const mark = (color, w) =>
   `<g transform="translate(${TX},${TY}) scale(${SCALE})"><g transform="${SLANT}">${stroke(color, w)}</g></g>`;
 
-// Far copy → near copy. `from` defaults to 1 so the body stops one step short
-// of the front face — the front is always drawn last and whole, otherwise the
-// near copies eat its edges and the mark collapses into a bare silhouette.
-const layer = (color, w, from = 1) => {
-  let out = '';
-  for (let i = STEPS; i >= from; i--) {
-    const d = (i * STEP).toFixed(2);
-    out += `<g transform="translate(${d},${d})">${mark(color, w)}</g>`;
-  }
-  return out;
-};
-
-// A hollow extruded tube: solid body, hollow bored through it, then the front
-// face redrawn on top so its outline survives.
-const tube = (edge, core) =>
-  layer(edge, OUTER) + layer(core, INNER) + mark(edge, OUTER) + mark(core, INNER);
-
-const wrap = (bg, body) => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-<rect width="64" height="64" rx="12" fill="${bg}"/>
+const wrap = (bg, body, round = 12) => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+${bg === null ? '' : `<rect width="64" height="64" rx="${round}" fill="${bg}"/>`}
 ${body}
 </svg>
 `;
 
+const WHITE = '#ffffff';
+
 const variants = {
-  // Hollow extruded tube — the interior runs the full depth, as in the reference.
-  '1-3d-hollow-ink': wrap(PAPER, tube(INK, PAPER)),
-  '2-3d-hollow-sienna': wrap(PAPER, tube(SIENNA, PAPER)),
+  // Solid black letters, white tile. Heaviest and most legible at 16px.
+  '1-solid': wrap(WHITE, mark(INK, OUTER)),
 
-  // Two-tone: solid sienna extruded body, ink outlined front face on top.
-  '3-3d-twotone': wrap(PAPER, layer(SIENNA, OUTER) + mark(INK, OUTER) + mark(PAPER, INNER)),
+  // Hollow outline — black silhouette, white interior.
+  '2-hollow': wrap(WHITE, mark(INK, OUTER) + mark(WHITE, INNER)),
 
-  // Inverted tile.
-  '4-3d-inverted': wrap(SIENNA, tube(PAPER, SIENNA)),
+  // Lighter solid: thinner strokes, more air.
+  '3-light': wrap(WHITE, mark(INK, 6.5)),
 
-  // Solid front face on a sienna body — no hollow. The only one that survives 16px.
-  '5-3d-solid': wrap(PAPER, layer(SIENNA, OUTER) + mark(INK, OUTER)),
+  // Inverted — black tile, white letters.
+  '4-inverted': wrap(INK, mark(WHITE, OUTER), 12),
+
+  // No tile: letters float on the page background, square-cropped.
+  '5-bare': wrap(null, mark(INK, OUTER)),
 };
 
 const names = Object.keys(variants);

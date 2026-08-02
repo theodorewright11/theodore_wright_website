@@ -1,7 +1,6 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import GroupHeader from '../components/GroupHeader.astro';
-import DownloadMd from '../components/DownloadMd.astro';
 import { getCollection } from 'astro:content';
 import bio from '../data/bio.json';
 
@@ -28,8 +27,6 @@ const groups = [
     <p class="font-serif text-[17px] text-muted leading-[1.55] max-w-[580px] m-0 mb-12">
       {bio.credentials}
     </p>
-
-    <DownloadMd href="/research.md" label="download all research (.md)" />
 
     {groups.map(g => (
       <section class="mb-14">

@@ -22,7 +22,7 @@
 │   └── <topic>/<stage>.md
 ├── design_handoff_personal_site/        ← V4 design source (reference only)
 ├── public/
-│   ├── favicon.svg                      ← slanted TW monogram, extruded 3D hollow tube
+│   ├── favicon.svg                      ← flat slanted TW monogram, solid black on white
 │   ├── favicons/                        ← candidate marks (.svg + .png) + contact-sheet.png, from scripts/gen_favicons.mjs
 │   └── papers/                          ← published PDFs (papers, posters, working drafts)
 │       └── <slug>.pdf
