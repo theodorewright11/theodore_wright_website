@@ -8,75 +8,119 @@ mkdirSync(OUT, { recursive: true });
 const INK = '#1a1614';
 const WHITE = '#ffffff';
 
-// ── Mark geometry ──────────────────────────────────────────────────────────
-// T and W side by side on a 64-unit grid, overlapping so the W's left arm
-// crosses the T's stem. Each variant is a list of paths; bounds are measured
-// off the paths, so reshaping a letter can't knock the mark off-centre.
-const W = 'M28 23 L35 50 L42 34 L49 50 L56 23';
-const W_TALL = 'M30 16 L35 50 L42 34 L49 50 L56 23';  // left arm reaches the crossbar
+// ── Geometry helpers ───────────────────────────────────────────────────────
+// The mark is filled polygons rather than uniform strokes: a split needs two
+// separate shapes, and a taper needs the width to vary along a stroke.
+const poly = pts => 'M' + pts.map(p => p.map(v => +v.toFixed(2)).join(' ')).join(' L') + ' Z';
 
-const SHAPES = {
-  // The current mark: plain crossbar, plain stem.
-  'a-plain': ['M7 16 H37', 'M22 16 V50', W],
+const unit = ([x, y]) => { const L = Math.hypot(x, y); return [x / L, y / L]; };
 
-  // Crossbar and the W's left arm are one continuous line.
-  'b-ligature': ['M7 16 H30', 'M22 16 V50', W_TALL],
+// Variable-width polyline → closed polygon, mitred at the joins. `miter` caps
+// how far a join may spike: sharp Vs (the bottom of the W) would otherwise run
+// away to a needle. That cap is the pointiness knob.
+function ribbon(pts, widths, miter = 2.2) {
+  const n = pts.length;
+  const segN = [];
+  for (let i = 0; i < n - 1; i++) {
+    const [dx, dy] = unit([pts[i + 1][0] - pts[i][0], pts[i + 1][1] - pts[i][1]]);
+    segN.push([-dy, dx]);
+  }
+  const off = pts.map((_, i) => {
+    let d;
+    if (i === 0) d = segN[0];
+    else if (i === n - 1) d = segN[n - 2];
+    else {
+      const a = segN[i - 1], b = segN[i];
+      const denom = 1 + (a[0] * b[0] + a[1] * b[1]);
+      d = [(a[0] + b[0]) / denom, (a[1] + b[1]) / denom];
+    }
+    const h = widths[i] / 2;
+    const len = Math.hypot(d[0], d[1]);
+    const k = len > miter ? miter / len : 1;
+    return [d[0] * h * k, d[1] * h * k];
+  });
+  const left = pts.map((p, i) => [p[0] + off[i][0], p[1] + off[i][1]]);
+  const right = pts.map((p, i) => [p[0] - off[i][0], p[1] - off[i][1]]).reverse();
+  return poly([...left, ...right]);
+}
 
-  // Crossbar overhangs hard to the left.
-  'c-overhang': ['M0 16 H37', 'M22 16 V50', W],
+// ── The W ──────────────────────────────────────────────────────────────────
+// Wide at the top, narrow at the two bottom vertices, so the feet come to a
+// blunt point instead of a flat cut.
+const wPts = [[28, 22], [35, 50], [42, 33], [49, 50], [56, 22]];
+const wShape = (feet, miter) => ribbon(wPts, [9, feet, 8.5, feet, 9], miter);
 
-  // Crossbar tilts up to the right, against the italic lean.
-  'd-angled': ['M7 19 L37 13', 'M22 16 V50', W],
+// ── The T ──────────────────────────────────────────────────────────────────
+const BAR_X0 = 3, BAR_X1 = 40, BAR_Y0 = 12, BAR_Y1 = 20;
+const STEM_X = 22, STEM_BOT = 50;
+const STEM_TOP_HALF = 5.5;
 
-  // Crossbar steps: left arm sits higher than the right.
-  'e-split': ['M7 12 H22', 'M22 19 H37', 'M22 12 V50', W],
+// Stem as a tapered trapezoid; `botHalf` sets how much it narrows.
+const stem = (botHalf, top = BAR_Y1) => poly([
+  [STEM_X - STEM_TOP_HALF, top], [STEM_X + STEM_TOP_HALF, top],
+  [STEM_X + botHalf, STEM_BOT], [STEM_X - botHalf, STEM_BOT],
+]);
 
-  // Stem breaks through the crossbar.
-  'f-dagger': ['M7 16 H37', 'M22 9 V50', W],
-
-  // Bracketed: short flags drop from both ends of the crossbar.
-  'g-flagged': ['M7 16 H37', 'M22 16 V50', 'M7 16 V23', 'M37 16 V22', W],
+// Crossbar cut in two with a gap, optionally with the halves at different heights.
+const barHalves = (gap, riseR = 0) => {
+  const g = gap / 2;
+  return [
+    poly([[BAR_X0, BAR_Y0], [STEM_X - g, BAR_Y0], [STEM_X - g, BAR_Y1], [BAR_X0, BAR_Y1]]),
+    poly([[STEM_X + g, BAR_Y0 - riseR], [BAR_X1, BAR_Y0 - riseR],
+          [BAR_X1, BAR_Y1 - riseR], [STEM_X + g, BAR_Y1 - riseR]]),
+  ];
 };
 
+// Stem cut by the same gap, so the split runs the full height of the T.
+const stemHalves = (gap, botHalf) => {
+  const g = gap / 2;
+  return [
+    poly([[STEM_X - STEM_TOP_HALF, BAR_Y1], [STEM_X - g, BAR_Y1],
+          [STEM_X - g, STEM_BOT], [STEM_X - botHalf, STEM_BOT]]),
+    poly([[STEM_X + g, BAR_Y1], [STEM_X + STEM_TOP_HALF, BAR_Y1],
+          [STEM_X + botHalf, STEM_BOT], [STEM_X + g, STEM_BOT]]),
+  ];
+};
+
+const SHAPES = {
+  // Split runs the full height of the T. Moderate taper on stem and W.
+  'a-split-full': [...barHalves(2.6), ...stemHalves(2.6, 3.4), wShape(5.5, 2.2)],
+
+  // Split in the crossbar only; the stem stays one solid tapered slab.
+  'b-split-bar': [...barHalves(2.6), stem(3.4), wShape(5.5, 2.2)],
+
+  // The two crossbar halves sit at different heights — the stepped offset.
+  'c-offset': [...barHalves(2.6, 2.5), stem(3.4, BAR_Y1 - 2.5), wShape(5.5, 2.2)],
+
+  // Same split as b, pushed further: narrower feet, longer mitres.
+  'd-pointier': [...barHalves(2.6), stem(2.4), wShape(3.5, 3.2)],
+
+  // Same split as b, pulled back: wider feet, short mitres.
+  'e-blunter': [...barHalves(2.6), stem(4.4), wShape(7, 1.5)],
+};
+
+// ── Layout ─────────────────────────────────────────────────────────────────
 const SLANT_DEG = 10;
 const K = Math.tan((SLANT_DEG * Math.PI) / 180);
 
-// Walk the path commands (only M/L/H/V are used) to collect every point.
-const points = paths => {
-  const out = [];
-  for (const d of paths) {
-    let x = 0, y = 0;
-    for (const [, cmd, args] of d.matchAll(/([MLHV])\s*([-\d.\s]+)/g)) {
-      const n = args.trim().split(/[\s,]+/).map(Number);
-      if (cmd === 'M' || cmd === 'L') {
-        for (let i = 0; i + 1 < n.length; i += 2) { x = n[i]; y = n[i + 1]; out.push([x, y]); }
-      } else if (cmd === 'H') {
-        for (const v of n) { x = v; out.push([x, y]); }
-      } else {
-        for (const v of n) { y = v; out.push([x, y]); }
-      }
-    }
-  }
-  return out;
+const bounds = paths => {
+  const nums = paths.flatMap(d => [...d.matchAll(/(-?[\d.]+)\s+(-?[\d.]+)/g)].map(m => [+m[1], +m[2]]));
+  return [
+    Math.min(...nums.map(p => p[0])), Math.max(...nums.map(p => p[0])),
+    Math.min(...nums.map(p => p[1])), Math.max(...nums.map(p => p[1])),
+  ];
 };
 
-const stroke = (paths, color, w) =>
-  paths.map(d => `<path d="${d}" fill="none" stroke="${color}" stroke-width="${w}" stroke-linecap="butt" stroke-linejoin="miter" stroke-miterlimit="6"/>`).join('');
-
-// `width` is how wide the mark sits in the 64-unit tile, `w` the stroke weight.
-// Scale and centring are derived from the measured bounds, so the two stay
-// independent — change one without nudging the other back into place.
-const mark = (paths, color, w, width) => {
-  const pts = points(paths);
-  const x0 = Math.min(...pts.map(p => p[0])) - w / 2;
-  const x1 = Math.max(...pts.map(p => p[0])) + w / 2;
-  const y0 = Math.min(...pts.map(p => p[1])) - w / 2;
-  const y1 = Math.max(...pts.map(p => p[1])) + w / 2;
-  const skewedMinX = x0 - K * y1;
+// `width` is how wide the mark sits in the 64-unit tile. Scale and centring are
+// derived from the measured bounds, so reshaping a letter can't knock it
+// off-centre.
+const mark = (paths, color, width) => {
+  const [x0, x1, y0, y1] = bounds(paths);
   const s = width / ((x1 - x0) + K * (y1 - y0));
-  const tx = (64 - width) / 2 - skewedMinX * s;
+  const tx = (64 - width) / 2 - (x0 - K * y1) * s;
   const ty = (64 - (y1 - y0) * s) / 2 - y0 * s;
-  return `<g transform="translate(${tx.toFixed(2)},${ty.toFixed(2)}) scale(${s.toFixed(4)})"><g transform="skewX(-${SLANT_DEG})">${stroke(paths, color, w)}</g></g>`;
+  const body = paths.map(d => `<path d="${d}" fill="${color}"/>`).join('');
+  return `<g transform="translate(${tx.toFixed(2)},${ty.toFixed(2)}) scale(${s.toFixed(4)})"><g transform="skewX(-${SLANT_DEG})">${body}</g></g>`;
 };
 
 const wrap = (bg, body, round = 12) => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
@@ -85,10 +129,10 @@ ${body}
 </svg>
 `;
 
-const WEIGHT = 5.5, WIDTH = 42;
+const WIDTH = 44;
 
 const variants = Object.fromEntries(
-  Object.entries(SHAPES).map(([name, paths]) => [name, wrap(WHITE, mark(paths, INK, WEIGHT, WIDTH))])
+  Object.entries(SHAPES).map(([name, paths]) => [name, wrap(WHITE, mark(paths, INK, WIDTH))])
 );
 
 const names = Object.keys(variants);
