@@ -5,38 +5,78 @@ import { join } from 'node:path';
 const OUT = process.argv[2];
 mkdirSync(OUT, { recursive: true });
 
-const PAPER = '#f7f3ec';
 const INK = '#1a1614';
-const SIENNA = '#8a4a2b';
+const WHITE = '#ffffff';
 
 // ── Mark geometry ──────────────────────────────────────────────────────────
 // T and W side by side on a 64-unit grid, overlapping so the W's left arm
-// crosses the T's stem. Tweak these three strings to reshape the letters.
-const PATHS = [
-  'M7 16 H37',                          // T crossbar
-  'M22 16 V50',                         // T stem
-  'M28 23 L35 50 L42 34 L49 50 L56 23', // W
-];
+// crosses the T's stem. Each variant is a list of paths; bounds are measured
+// off the paths, so reshaping a letter can't knock the mark off-centre.
+const W = 'M28 23 L35 50 L42 34 L49 50 L56 23';
+const W_TALL = 'M30 16 L35 50 L42 34 L49 50 L56 23';  // left arm reaches the crossbar
 
-const SLANT_DEG = 10;                                   // italic lean
+const SHAPES = {
+  // The current mark: plain crossbar, plain stem.
+  'a-plain': ['M7 16 H37', 'M22 16 V50', W],
+
+  // Crossbar and the W's left arm are one continuous line.
+  'b-ligature': ['M7 16 H30', 'M22 16 V50', W_TALL],
+
+  // Crossbar overhangs hard to the left.
+  'c-overhang': ['M0 16 H37', 'M22 16 V50', W],
+
+  // Crossbar tilts up to the right, against the italic lean.
+  'd-angled': ['M7 19 L37 13', 'M22 16 V50', W],
+
+  // Crossbar steps: left arm sits higher than the right.
+  'e-split': ['M7 12 H22', 'M22 19 H37', 'M22 12 V50', W],
+
+  // Stem breaks through the crossbar.
+  'f-dagger': ['M7 16 H37', 'M22 9 V50', W],
+
+  // Bracketed: short flags drop from both ends of the crossbar.
+  'g-flagged': ['M7 16 H37', 'M22 16 V50', 'M7 16 V23', 'M37 16 V22', W],
+};
+
+const SLANT_DEG = 10;
 const K = Math.tan((SLANT_DEG * Math.PI) / 180);
 
-// Ink bounds of the letter skeleton before any transform.
-const [X0, X1, Y0, Y1] = [7, 56, 16, 50];
+// Walk the path commands (only M/L/H/V are used) to collect every point.
+const points = paths => {
+  const out = [];
+  for (const d of paths) {
+    let x = 0, y = 0;
+    for (const [, cmd, args] of d.matchAll(/([MLHV])\s*([-\d.\s]+)/g)) {
+      const n = args.trim().split(/[\s,]+/).map(Number);
+      if (cmd === 'M' || cmd === 'L') {
+        for (let i = 0; i + 1 < n.length; i += 2) { x = n[i]; y = n[i + 1]; out.push([x, y]); }
+      } else if (cmd === 'H') {
+        for (const v of n) { x = v; out.push([x, y]); }
+      } else {
+        for (const v of n) { y = v; out.push([x, y]); }
+      }
+    }
+  }
+  return out;
+};
 
-const stroke = (color, w) =>
-  PATHS.map(d => `<path d="${d}" fill="none" stroke="${color}" stroke-width="${w}" stroke-linecap="butt" stroke-linejoin="miter" stroke-miterlimit="6"/>`).join('');
+const stroke = (paths, color, w) =>
+  paths.map(d => `<path d="${d}" fill="none" stroke="${color}" stroke-width="${w}" stroke-linecap="butt" stroke-linejoin="miter" stroke-miterlimit="6"/>`).join('');
 
-// `width` is how wide the mark should sit in the 64-unit tile and `w` is the
-// stroke weight — the scale and centring fall out of the geometry, so the two
-// stay independent (change one without nudging the other back into place).
-const mark = (color, w, width) => {
-  const x0 = X0 - w / 2, x1 = X1 + w / 2, y0 = Y0 - w / 2, y1 = Y1 + w / 2;
+// `width` is how wide the mark sits in the 64-unit tile, `w` the stroke weight.
+// Scale and centring are derived from the measured bounds, so the two stay
+// independent — change one without nudging the other back into place.
+const mark = (paths, color, w, width) => {
+  const pts = points(paths);
+  const x0 = Math.min(...pts.map(p => p[0])) - w / 2;
+  const x1 = Math.max(...pts.map(p => p[0])) + w / 2;
+  const y0 = Math.min(...pts.map(p => p[1])) - w / 2;
+  const y1 = Math.max(...pts.map(p => p[1])) + w / 2;
   const skewedMinX = x0 - K * y1;
   const s = width / ((x1 - x0) + K * (y1 - y0));
   const tx = (64 - width) / 2 - skewedMinX * s;
   const ty = (64 - (y1 - y0) * s) / 2 - y0 * s;
-  return `<g transform="translate(${tx.toFixed(2)},${ty.toFixed(2)}) scale(${s.toFixed(4)})"><g transform="skewX(-${SLANT_DEG})">${stroke(color, w)}</g></g>`;
+  return `<g transform="translate(${tx.toFixed(2)},${ty.toFixed(2)}) scale(${s.toFixed(4)})"><g transform="skewX(-${SLANT_DEG})">${stroke(paths, color, w)}</g></g>`;
 };
 
 const wrap = (bg, body, round = 12) => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
@@ -45,18 +85,11 @@ ${body}
 </svg>
 `;
 
-const WHITE = '#ffffff';
+const WEIGHT = 5.5, WIDTH = 42;
 
-// A size/weight ladder: 1 → 3 get progressively smaller and finer.
-const variants = {
-  '1-slim': wrap(WHITE, mark(INK, 6.5, 44)),
-  '2-slimmer': wrap(WHITE, mark(INK, 5.5, 42)),
-  '3-slimmest': wrap(WHITE, mark(INK, 4.5, 40)),
-
-  // Mid weight, alternate treatments.
-  '4-inverted': wrap(INK, mark(WHITE, 5.5, 42)),
-  '5-bare': wrap(null, mark(INK, 5.5, 42)),
-};
+const variants = Object.fromEntries(
+  Object.entries(SHAPES).map(([name, paths]) => [name, wrap(WHITE, mark(paths, INK, WEIGHT, WIDTH))])
+);
 
 const names = Object.keys(variants);
 for (const [name, svg] of Object.entries(variants)) {
