@@ -70,16 +70,4 @@ const ai_research = defineCollection({
   }),
 });
 
-const updates = defineCollection({
-  type: 'content',
-  schema: z.object({
-    title: z.string(),
-    description: z.string().optional(),
-    date: z.coerce.date(),
-    period: z.enum(['daily', 'weekly', 'monthly']).default('weekly'),
-    tags: z.array(z.string()).default([]),
-    draft: z.boolean().default(false),
-  }),
-});
-
-export const collections = { blog, research, models, ai_research, updates };
+export const collections = { blog, research, models, ai_research };

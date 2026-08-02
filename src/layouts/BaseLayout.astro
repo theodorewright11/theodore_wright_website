@@ -1,5 +1,6 @@
 ---
 import Nav from '../components/Nav.astro';
+import LabNav from '../components/LabNav.astro';
 import Footer from '../components/Footer.astro';
 import '../styles/global.css';
 
@@ -9,6 +10,11 @@ interface Props {
 }
 
 const { title, description = "Teddy Wright — CS & AI researcher, writer, builder." } = Astro.props;
+
+const path = Astro.url.pathname.replace(/\/$/, '') || '/';
+const inLab = ['/lab', '/ai-research', '/models', '/dashboards'].some(
+  p => path === p || path.startsWith(`${p}/`)
+);
 ---
 
 <!doctype html>
@@ -35,6 +41,7 @@ const { title, description = "Teddy Wright — CS & AI researcher, writer, build
   </head>
   <body class="min-h-screen bg-paper text-ink font-serif flex flex-col">
     <Nav />
+    {inLab && <LabNav />}
     <main class="flex-1">
       <slot />
     </main>

@@ -1,39 +1,38 @@
 [
   {
-    "slug": "decision-helper",
-    "title": "Decision Helper",
-    "desc": "Helps make complex decisions better by breaking them down qualitatively.",
-    "status": "planned"
-  },
-  {
     "slug": "finance",
     "title": "Finance",
-    "desc": "Log spending, set budgets, see where the money's actually going. Public demo runs entirely in your browser with CSV import/export.",
-    "status": "in-progress",
-    "private": true
-  },
-  {
-    "slug": "emotional-wellbeing",
-    "title": "Emotional Well-being",
-    "desc": "Rate emotional needs by priority and how met they are. Surfaces highest-leverage needs, domain gaps, and which sources (self / friends / romantic / activities / career / other) are over- or under-contributing.",
-    "status": "in-progress"
+    "desc": "Track spending against a budget and see where the money actually goes.",
+    "status": "built"
   },
   {
     "slug": "time-tracker",
     "title": "Time Tracker",
-    "desc": "Clock in/out by category with breaks and stopwatch laps, a Pomodoro timer with a reward-minutes bank, and per-session ratings (mood / productivity / enjoyment) plus activity-type tagging. Log tab shows category-stacked daily charts with date-range presets. Syncs to a private Google Sheet.",
-    "status": "in-progress"
+    "desc": "Clock in and out of work sessions and see where the hours went.",
+    "status": "built"
   },
   {
     "slug": "qualitative-coding",
     "title": "Qualitative Coding",
-    "desc": "Personal qualitative-coding tool: nested code tree, per-doc metadata, interpretive themes, a grading rubric, a cross-project Explore view, Markdown notes, and Google Drive sync. Exports canonical JSON and Markdown for AI-comparison work.",
-    "status": "in-progress"
+    "desc": "Code text documents, build themes from them, and export the results.",
+    "status": "built"
   },
   {
     "slug": "theme-grading",
     "title": "Theme Grading",
-    "desc": "Dedicated rubric-rating tool for AI-generated qualitative themes: upload a data CSV and per-run theme JSON, rate six axes (1–5 or N/A) side by side with the rubric inline, pin themes for pairwise similarity, and explore mean scores across models, positionalities, research questions, and conditions. Google Drive sync + CSV export.",
-    "status": "in-progress"
+    "desc": "Score AI-generated qualitative themes against a rubric and compare runs.",
+    "status": "built"
+  },
+  {
+    "slug": "emotional-wellbeing",
+    "title": "Emotional Well-being",
+    "desc": "Rate emotional needs and see which ones are most worth acting on.",
+    "status": "built"
+  },
+  {
+    "slug": "decision-helper",
+    "title": "Decision Helper",
+    "desc": "Break a complicated decision into pieces you can actually weigh.",
+    "status": "planned"
   }
 ]

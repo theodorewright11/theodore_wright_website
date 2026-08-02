@@ -1,16 +1,16 @@
 ---
+// Three top-level tabs. "Lab" is the umbrella for AI's Research / Models /
+// Dashboards — those keep their own URLs and get a sub-nav (LabNav) instead of
+// each occupying a top-level slot.
 const navLinks = [
-  { href: '/research', label: 'My Research' },
-  { href: '/ai-research', label: "AI’s Research" },
-  { href: '/models', label: 'Models' },
-  { href: '/dashboards', label: 'Dashboards' },
-  { href: '/writing', label: 'Writing' },
-  { href: '/updates', label: 'Updates' },
+  { href: '/research', label: 'Research', match: ['/research'] },
+  { href: '/writing', label: 'Writing', match: ['/writing'] },
+  { href: '/lab', label: 'Lab', match: ['/lab', '/ai-research', '/models', '/dashboards'] },
 ];
 
 const currentPath = Astro.url.pathname.replace(/\/$/, '') || '/';
-const isActive = (href: string) =>
-  currentPath === href || currentPath.startsWith(`${href}/`);
+const isActive = (match: string[]) =>
+  match.some(m => currentPath === m || currentPath.startsWith(`${m}/`));
 ---
 
 <header class="border-b border-rule bg-paper">
@@ -22,14 +22,14 @@ const isActive = (href: string) =>
     >
       Teddy Wright
     </a>
-    <div class="flex items-baseline gap-[18px] flex-wrap">
-      {navLinks.map(({ href, label }) => {
-        const active = isActive(href);
+    <div class="flex items-baseline gap-[22px] flex-wrap">
+      {navLinks.map(({ href, label, match }) => {
+        const active = isActive(match);
         return (
           <a
             href={href}
             class:list={[
-              'font-serif text-sm transition-colors',
+              'font-serif text-[15px] transition-colors',
               active
                 ? 'italic text-accent underline underline-offset-4 decoration-1'
                 : 'text-ink-soft no-underline hover:text-accent',
@@ -39,36 +39,6 @@ const isActive = (href: string) =>
           </a>
         );
       })}
-      <select
-        id="theme-select"
-        aria-label="Color theme"
-        class="self-center font-mono text-[10px] uppercase text-muted hover:text-accent border border-rule hover:border-accent rounded-sm pl-2 pr-1 py-1 bg-paper cursor-pointer transition-colors focus:outline-none focus:border-accent"
-        style="letter-spacing: 0.06em"
-      >
-        <option value="paper">Quiet Paper</option>
-        <option value="white">Clean White</option>
-        <option value="dark">Dark</option>
-        <option value="monokai">Monokai Pro</option>
-        <option value="monokai-light">Monokai Light</option>
-      </select>
     </div>
   </nav>
 </header>
-
-<script is:inline>
-  (function () {
-    function current() {
-      return document.documentElement.getAttribute('data-theme') || 'paper';
-    }
-    function set(t) {
-      if (t === 'paper') document.documentElement.removeAttribute('data-theme');
-      else document.documentElement.setAttribute('data-theme', t);
-      try { localStorage.setItem('tw-theme', t); } catch (e) {}
-    }
-    var sel = document.getElementById('theme-select');
-    if (sel) {
-      sel.value = current();
-      sel.addEventListener('change', function () { set(sel.value); });
-    }
-  })();
-</script>

@@ -10,23 +10,23 @@ This is the personal site for Teddy Wright. It serves three audiences:
 
 ### Public
 
-| Path | Purpose |
-|---|---|
-| `/` | Combined home + about — short bio and contact links |
-| `/research` | Formal academic research, grouped by status (In Progress / Finished / Planned / Contributions) |
-| `/ai-research` | Outputs of the LLM Iterate pipeline (6-stage refinement of topics) |
-| `/models` | Polished interactive quantitative models (sliders, real-time computation) |
-| `/dashboards` | Interactive dashboards (public demo + private tier per dashboard) |
-| `/writing` | Essays, with tier labels showing how AI-assisted each piece is |
-| `/updates` | Weekly (or daily/monthly) notes on what's moving — **placeholder for now** ("coming soon"), no live entries listed |
+Three top-level tabs: **Research**, **Writing**, **Lab**. Lab is an umbrella over AI's Research / Models / Dashboards — those keep their own URLs and get a sub-nav (`LabNav`) instead of each taking a top-level slot.
 
-`/about` redirects to `/`.
+| Path | Nav | Purpose |
+|---|---|---|
+| `/` | brand | Combined home + about — bio, contact links, and a short index in nav order (Research → Writing → Lab) |
+| `/research` | Research | Formal academic research in two groups: **Publications** (published + contributions) and **In progress / planned** |
+| `/writing` | Writing | Essays, with tier labels showing how AI-assisted each piece is |
+| `/lab` | Lab | Landing page for the Lab section — one block per sub-section with its live items |
+| `/ai-research` | Lab ▸ | Outputs of the LLM Iterate pipeline (6-stage refinement of topics) |
+| `/models` | Lab ▸ | Polished interactive quantitative models (sliders, real-time computation) |
+| `/dashboards` | Lab ▸ | Interactive dashboards — built ones listed unlabeled, everything else in one "In progress / planned" group |
+
+`/about` redirects to `/`. There is no `/updates` section — the collection, pages, and bundle entries were removed.
 
 ### Private
 
-| Path | Purpose |
-|---|---|
-| `/dashboards` | Auth-gated personal dashboards (life metrics, trackers). Not built yet. |
+No auth-gated routes exist. Every dashboard is reachable by URL; data isolation comes from the storage model (visitor's own `localStorage` + the signed-in user's own Google account), not from a gate. Cloudflare Access in front of `/dashboards/*` remains available if a genuinely gated tier is ever needed.
 
 ## Writing tiers
 
@@ -81,7 +81,7 @@ The topic-level `overview.mdx` is **not written during the pipeline** — it is 
 
 Per-stage pages do not surface the `status` frontmatter field as label text. Each stage page shows only the **refinement pass number** (`pass N`); pass 0 stubs render no pass label. The `status` field still drives the binary draft-vs-stub coloring of the stage bars on the `/ai-research` index page (any non-stub status renders the bar dark; stub renders grey), but it is never displayed as text.
 
-Topic cards on `/ai-research` do **not** show a "X/N" stage-completion counter. The colored stage bars and the per-stage labels underneath them carry the same information at a glance, and the explicit count was redundant. Same convention for the home page topic list — the bars are the indicator, no count.
+Topic cards on `/ai-research` do **not** show a "X/N" stage-completion counter. The colored stage bars and the per-stage labels underneath them carry the same information at a glance, and the explicit count was redundant.
 
 A topic's stage-3 model can be **promoted** to `/models` when polished — copy the formalization to a new `src/content/models/<slug>.mdx` entry.
 
@@ -95,9 +95,9 @@ Active topics — folders exist in `src/content/ai_research/` and `stage_outputs
 | `navigating-ai-world` | Navigating an AI World | writeup (pass 4) | **finished** |
 | `technology-utilization-architecture` | Technology Utilization Architecture | writeup (pass 4) | in progress |
 
-A topic is **finished** when every one of its six stages (lit-review, topology, model, data, build, writeup) has `status: complete` in the stage frontmatter. The `/ai-research` index page renders finished topics in a "Finished" bucket above the "In Progress" bucket; cards carry a small `finished` accent tag next to the title; the home page status pill reads `finished`.
+A topic is **finished** when every one of its six stages (lit-review, topology, model, data, build, writeup) has `status: complete` in the stage frontmatter. The `/ai-research` index page renders finished topics in a "Finished" bucket above the "In Progress" bucket; cards carry a small `finished` accent tag next to the title. Active topics are also listed (title only) under the AI's Research block on `/lab`.
 
-Planned topics render from `src/data/ai_research_planned.json` (16 entries — the `{title, desc}` list shown on `/ai-research` and the home page); `prompts.md` holds the longer brainstorm behind them. Each spins up its own `src/content/ai_research/<topic>/` + `stage_outputs/<topic>/` folder pair when started.
+Planned topics render from `src/data/ai_research_planned.json` (16 entries — the `{title, desc}` list shown on `/ai-research`); `prompts.md` holds the longer brainstorm behind them. Each spins up its own `src/content/ai_research/<topic>/` + `stage_outputs/<topic>/` folder pair when started.
 
 ## Dashboards
 
@@ -110,9 +110,11 @@ Each dashboard ships in two tiers:
 
 **Default behavior**: a visitor lands on the public demo. They get the same UI Teddy uses, but the data starts empty / synthetic and lives only in their browser. They can export to CSV to persist; re-import on next visit. No backend, no account, no privacy concerns.
 
-**Private tier** exists only for dashboards where Teddy's actual data is the point (life metrics, ongoing trackers). Cloudflare Access in front, build-time data fetch from a private source.
+**Private tier** exists only for dashboards where Teddy's actual data is the point (life metrics, ongoing trackers). Cloudflare Access in front, build-time data fetch from a private source. Nothing uses it yet.
 
-Dashboards: decision-helper (planned), finance, emotional-wellbeing, time-tracker, qualitative-coding, theme-grading.
+**Roster display** (`/dashboards`, driven by `src/data/dashboards.json`): `status` is `built` | `in-progress` | `planned`. **Built dashboards carry no status label** — they're just the list at the top of the page, linked. Everything else falls into a single **In progress / planned** group below. Descriptions are one plain sentence each.
+
+Dashboards: finance, time-tracker, qualitative-coding, theme-grading, emotional-wellbeing (all `built`); decision-helper (`planned`).
 
 ### Per-dashboard product specs
 
@@ -120,7 +122,7 @@ Dashboard-specific scope (data model, page layout, computations) lives below as 
 
 #### Finance
 
-**Status**: v1 shipped, **private** (not listed publicly). Marked `private: true` in `src/data/dashboards.json` so it's hidden from the `/dashboards` roster and the home page Dashboards column. The page still renders at `/dashboards/finance` for direct navigation. A public demo + how-to-self-host writeup is planned for once the private version is locked in.
+**Status**: v1 shipped, **listed publicly** (`status: built` in `src/data/dashboards.json`, no `private` flag). Data isolation is structural, not a gate: an unauthenticated visitor gets an empty local-only dashboard backed by their own `localStorage`; Teddy's numbers live in a private Google Sheet reachable only after signing in with the Google account that owns it, and `api/auth/exchange` rejects any email outside `ALLOWED_EMAILS`. A stranger opening `/dashboards/finance` therefore sees an empty tool, never Teddy's data. A how-to-self-host writeup is still planned.
 
 A spending-and-budget dashboard that replaces a manual spreadsheet workflow. Single user (Teddy). Answers: *given what I've spent this month and historically, am I on track with my budget, and where is my money actually going?*
 
@@ -154,7 +156,7 @@ A spending-and-budget dashboard that replaces a manual spreadsheet workflow. Sin
 - `PUBLIC_FINANCE_SHEET_ID` — the long ID from the sheet URL between `/d/` and `/edit`
 - Plus the shared server-side auth vars (`GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` / `TOKEN_ENC_KEY`) that back `api/auth/*` — already set for Time Tracker / Qual Coding, so no new setup. Because auth is now the code-flow, **sign-in only works where `api/auth/*` runs (the Vercel deploy), not under plain `astro dev`.**
 
-**Future (v3 — public demo)**: drop `private: true` from the roster entry, keep localStorage-only for unauthenticated visitors, and ship a writeup explaining how to fork the dashboard and wire it to your own Google Sheet.
+**Future (v3 — public demo)**: ship a writeup explaining how to fork the dashboard and wire it to your own Google Sheet, plus a small synthetic seed so the empty state demos itself.
 
 #### Emotional Well-being
 
@@ -325,13 +327,14 @@ Word documents (.docx) should be converted to PDF before upload (Word: File → 
 
 ## Site chrome
 
-- **Nav** at the top of every page (brand + section links). Research tab is labeled **My Research** to distinguish it from AI's Research. Carries a **theme dropdown** — five site palettes (Quiet Paper / Clean White / Dark / Monokai Pro / Monokai Light), remembered across visits.
-- **Footer** at the bottom of every page (replaces the old top-of-page NOW strip). Shows the site's last-updated date (driven by `src/data/now.json`), two download links (`mine ↓` and `ai's research ↓`), and contact links.
+- **Nav** at the top of every page: brand + three links (Research / Writing / Lab). Nothing else — the theme switcher moved to the footer to stop it taking prime space.
+- **LabNav**: a thin mono sub-nav strip rendered directly under the main nav on any `/lab`, `/ai-research`, `/models`, or `/dashboards` page (mounted conditionally in `BaseLayout`). Links: Overview / AI's Research / Models / Dashboards.
+- **Footer** at the bottom of every page. Shows the site's last-updated date (driven by `src/data/now.json`), the three bundle download links, contact links, and the **theme selector** — an unstyled inline `<select>` (`theme: paper` / `white` / `dark` / `monokai` / `monokai light`), remembered across visits.
 - **Content bundles**: two top-level markdown bundles served at build time:
-  - `/bundle-mine.md` — every essay, research entry, model writeup, and update (the user's own work).
+  - `/bundle-mine.md` — every essay, research entry, and model writeup (the user's own work).
   - `/bundle-ai-research.md` — every stage of every AI-Research topic (the full LLM Iterate pipeline output).
   - `/bundle-all.md` — both bundles concatenated. Footer surfaces all three (`mine ↓`, `ai's research ↓`, `all ↓`).
-- **Per-page downloads**: every content page has a uniform `download as .md` button at the top. Endpoints: `/writing.md`, `/writing/<slug>.md`, `/research.md`, `/research/<slug>.md`, `/models.md`, `/models/<slug>.md`, `/ai-research.md`, `/ai-research/<topic>.md` (whole topic in stage order), `/ai-research/<topic>/<stage>.md`. Shared rendering helpers live in `src/lib/bundle.ts`.
+- **Per-page downloads**: content index and detail pages carry a uniform `download as .md` button at the top. Endpoints: `/writing.md`, `/writing/<slug>.md`, `/research.md`, `/research/<slug>.md`, `/models.md`, `/models/<slug>.md`, `/ai-research.md`, `/ai-research/<topic>.md` (whole topic in stage order), `/ai-research/<topic>/<stage>.md`. Shared rendering helpers live in `src/lib/bundle.ts`.
 
 ## Out of scope (for now)
 
@@ -355,11 +358,12 @@ Major product and architecture turning points only. **Per-stage LLM Iterate refi
 - **2026-04-28**: AI's Research topic page is a single page with stage tabs (Overview + per-stage); standalone deep-link `[stage]` routes also exist.
 - **2026-04-28**: Top-of-page NOW strip retired in favor of a global **Footer** (last-updated date + bundle downloads + contacts).
 - **2026-04-28**: Model titles rewritten in plain language (e.g. "Option Value" → "Why continuing is rational once you exist").
-- **2026-04-29**: `/updates` set to a "coming soon" placeholder — the collection + one entry exist, but the index intentionally lists nothing live yet.
 - **2026-04-29**: Content bundles + per-page `download as .md` endpoints shipped (`/bundle-mine.md`, `/bundle-ai-research.md`, `/bundle-all.md`, plus per-collection/per-page `.md`); shared helpers in `src/lib/bundle.ts`. Designed for LLM ingestion.
 - **2026-05-02**: **Finance** dashboard shipped (v1, public demo), then reframed to **private** (`private: true` in `dashboards.json`, hidden from the roster). Google Sheets sync wired via browser-side OAuth + direct Sheets v4 REST (per-entity clear+write with a coalescing queue); a public demo + self-host writeup is the eventual v3.
 - **2026-05-16**: **Time Tracker** dashboard (v1) shipped at `/dashboards/time-tracker` — clock/breaks/laps, Pomodoro with a derived reward bank, per-session ratings + activity tagging, Sheets sync.
 - **2026-05**: **Auth migrated** from the GIS implicit-token flow (silent refresh permanently COOP-broken → hourly re-sign-in) to an **OAuth authorization-code flow with a server-side refresh token** — shared `src/lib/googleAuth.ts` + `api/auth/*` Vercel serverless functions, sealed HttpOnly cookie, sessions last weeks. Time Tracker and Qual Coding use it; Finance migration is still pending. See `ARCHITECTURE.md` → "Google sign-in".
 - **2026-07-26**: **Site theming** — the locked V4 tokens became CSS variables driving **four switchable palettes** (Quiet Paper / Clean White / Dark / Monokai Pro), toggled from the nav and persisted per visitor. Quiet Paper remains the default; the design system is unchanged, just now multi-palette. New colors must be token vars, not raw hex.
 - **2026-07-26**: **Finance dashboard v2** — migrated auth off the broken GIS implicit-token flow onto the shared code-flow (`googleAuth.ts`, sessions last weeks), moved the category taxonomy out of code into user-editable data + a `categories` sheet tab with a **Manage categories** modal (renames migrate history), and gated the CSV import/export buttons to local-only mode.
+- **2026-08-02**: **Site simplified to three tabs** — Research / Writing / **Lab**, where Lab is an umbrella over AI's Research, Models, and Dashboards (own URLs kept, plus a `LabNav` sub-nav). `/updates` deleted entirely (pages, collection, content, bundle sections). Home page cut back to masthead + a two-column index in nav order. `/research` reduced to Publications + In progress / planned with plain links instead of bordered CTAs. Dashboard roster: one-sentence descriptions, built dashboards unlabeled, everything else in one group; Finance un-privated (its isolation is structural, not a gate). Theme switcher moved from the nav to the footer.
+- **2026-08-02**: **Display font Fraunces → Bricolage Grotesque** — less formal headline voice while keeping Source Serif 4 body + JetBrains Mono labels. Also fixed the long-standing nested-quote font-family bug in `global.css` (`'"Source Serif 4"'` never matched and silently fell through to Georgia).
 - **2026-05/06**: **Qualitative Coding** grew from the v2 coding tool (multi-parent codes, multi-range annotations, Drive folder-per-project sync) into a fuller analysis tool: a **Themes** interpretive layer over annotations and a **Grading** rubric (code specificity, annotation accuracy, five-axis theme ratings) — the TopBar now has six views. Built for comparing one project's coding against another (AI vs analyst).

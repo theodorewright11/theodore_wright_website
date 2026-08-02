@@ -1,0 +1,76 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import GroupHeader from '../components/GroupHeader.astro';
+import { getCollection } from 'astro:content';
+import dashboards from '../data/dashboards.json';
+
+const aiAll = await getCollection('ai_research');
+const topics = new Map<string, string>();
+for (const entry of aiAll) {
+  const [topic, stage] = entry.slug.split('/');
+  if (!topic) continue;
+  if (stage === 'overview') topics.set(topic, entry.data.title);
+  else if (!topics.has(topic)) topics.set(topic, topic);
+}
+
+const models = (await getCollection('models'))
+  .filter(m => m.data.status === 'published')
+  .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
+
+const builtDashboards = dashboards.filter(d => d.status === 'built');
+
+const sections = [
+  {
+    href: '/ai-research',
+    label: 'AI’s Research',
+    desc: 'Topics run through a six-stage LLM refinement pipeline — lit review, topology, model, data, build, writeup.',
+    items: Array.from(topics.entries()).map(([slug, title]) => ({
+      href: `/ai-research/${slug}`, title,
+    })),
+  },
+  {
+    href: '/models',
+    label: 'Models',
+    desc: 'Interactive models that break a phenomenon down into quantified, isolated logic.',
+    items: models.map(m => ({ href: `/models/${m.slug}`, title: m.data.title })),
+  },
+  {
+    href: '/dashboards',
+    label: 'Dashboards',
+    desc: 'Tools I actually use. Your data stays in your own browser.',
+    items: builtDashboards.map(d => ({ href: `/dashboards/${d.slug}`, title: d.title })),
+  },
+];
+---
+
+<BaseLayout title="Lab — Teddy Wright"
+  description="AI's Research, interactive models, and dashboards.">
+  <section class="max-w-[760px] mx-auto px-8 pt-14 pb-24">
+    <h1 class="font-display font-semibold text-[48px] leading-none m-0 mb-3 text-ink"
+        style="letter-spacing: -0.03em">Lab</h1>
+    <p class="font-serif text-[17px] text-muted leading-[1.55] max-w-[580px] m-0 mb-14">
+      Things I build rather than write: AI-run research, interactive models, and dashboards.
+    </p>
+
+    {sections.map(s => (
+      <section class="mb-14">
+        <GroupHeader label={s.label} href={s.href} count={s.items.length} />
+        <p class="font-serif text-[15px] text-ink-soft leading-[1.55] mt-3 mb-4"
+           style="text-wrap: pretty">{s.desc}</p>
+        <ul class="list-none p-0 m-0">
+          {s.items.map((it, i) => (
+            <li class:list={['py-2.5', i > 0 ? 'border-t border-rule-soft' : '']}>
+              <a href={it.href}
+                 class="font-serif text-[15px] font-semibold text-ink no-underline hover:text-accent transition-colors">
+                {it.title}
+              </a>
+            </li>
+          ))}
+        </ul>
+        <a href={s.href}
+           class="inline-block mt-4 font-mono text-[12px] uppercase text-accent no-underline hover:underline"
+           style="letter-spacing: 0.12em">all {s.label.toLowerCase()} →</a>
+      </section>
+    ))}
+  </section>
+</BaseLayout>

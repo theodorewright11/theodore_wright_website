@@ -32,6 +32,37 @@ const updated = new Date(now.updated + 'T00:00:00').toLocaleDateString('en-US', 
       <a href={bio.substack} target="_blank" rel="noopener" class="text-ink-soft no-underline hover:text-accent transition-colors">substack</a>
       <span>/</span>
       <a href={`mailto:${bio.email}`} class="text-ink-soft no-underline hover:text-accent transition-colors">email</a>
+      <span>/</span>
+      <select
+        id="theme-select"
+        aria-label="Color theme"
+        class="font-mono text-[11px] text-muted hover:text-accent bg-transparent border-0 p-0 cursor-pointer transition-colors focus:outline-none focus:text-accent"
+        style="letter-spacing: 0.06em"
+      >
+        <option value="paper">theme: paper</option>
+        <option value="white">theme: white</option>
+        <option value="dark">theme: dark</option>
+        <option value="monokai">theme: monokai</option>
+        <option value="monokai-light">theme: monokai light</option>
+      </select>
     </div>
   </div>
 </footer>
+
+<script is:inline>
+  (function () {
+    function current() {
+      return document.documentElement.getAttribute('data-theme') || 'paper';
+    }
+    function set(t) {
+      if (t === 'paper') document.documentElement.removeAttribute('data-theme');
+      else document.documentElement.setAttribute('data-theme', t);
+      try { localStorage.setItem('tw-theme', t); } catch (e) {}
+    }
+    var sel = document.getElementById('theme-select');
+    if (sel) {
+      sel.value = current();
+      sel.addEventListener('change', function () { set(sel.value); });
+    }
+  })();
+</script>

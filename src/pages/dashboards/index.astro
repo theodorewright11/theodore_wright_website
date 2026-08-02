@@ -3,72 +3,57 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 import GroupHeader from '../../components/GroupHeader.astro';
 import dashboards from '../../data/dashboards.json';
 
-type Status = 'planned' | 'in-progress' | 'finished';
-type Dashboard = { slug: string; title: string; desc: string; status: Status; private?: boolean };
+type Status = 'built' | 'in-progress' | 'planned';
+type Dashboard = { slug: string; title: string; desc: string; status: Status };
 
-const order: Array<[Status, string]> = [
-  ['in-progress', 'In Progress'],
-  ['planned', 'Planned'],
-  ['finished', 'Finished'],
-];
-
-// `private: true` entries are hidden from the public roster — they exist as
-// reachable pages but aren't listed anywhere visible. Used for personal
-// dashboards Teddy uses but isn't ready to surface publicly yet.
-const visible = (dashboards as Dashboard[]).filter(d => !d.private);
-
-const groups = order
-  .map(([k, l]) => ({
-    k,
-    l,
-    items: visible.filter(d => d.status === k),
-  }))
-  .filter(g => g.items.length > 0);
+const all = dashboards as Dashboard[];
+// Built dashboards carry no label — they're just the list. Everything else
+// collapses into one "In progress / planned" group below.
+const built = all.filter(d => d.status === 'built');
+const upcoming = all.filter(d => d.status !== 'built');
 ---
 
 <BaseLayout title="Dashboards — Teddy Wright"
-  description="Usable interactive dashboards to help navigate modern life with its complexities.">
+  description="Interactive dashboards for keeping track of things.">
   <section class="max-w-[760px] mx-auto px-8 pt-14 pb-24">
     <h1 class="font-display font-semibold text-[48px] leading-none m-0 mb-3 text-ink"
         style="letter-spacing: -0.03em">Dashboards</h1>
-    <p class="font-serif text-[17px] text-muted leading-[1.55] max-w-[580px] m-0 mb-14">
-      Usable interactive dashboards to help navigate modern life with its complexities.
+    <p class="font-serif text-[17px] text-muted leading-[1.55] max-w-[580px] m-0 mb-12">
+      Tools I built for myself and left open. Everything runs in your own browser — your data
+      never touches my server, and you only ever see your own.
     </p>
 
-    {groups.length === 0 ? (
-      <div class="text-center py-16 font-serif italic text-muted">
-        <p>No dashboards yet.</p>
-      </div>
-    ) : (
-      groups.map(g => (
-        <section class="mb-14">
-          <GroupHeader label={g.l} count={g.items.length} />
-          {g.items.map((d, i) => {
-            const live = d.status !== 'planned';
-            return (
-              <article class:list={[
-                'py-5',
-                i < g.items.length - 1 ? 'border-b border-rule-soft' : '',
-                live ? '' : 'opacity-70',
-              ]}>
-                <h3 class="font-display font-semibold text-[22px] m-0 mb-1.5 text-ink"
-                    style="letter-spacing: -0.015em">
-                  {live ? (
-                    <a href={`/dashboards/${d.slug}`}
-                       class="text-ink no-underline hover:text-accent transition-colors">
-                      {d.title}
-                    </a>
-                  ) : (
-                    d.title
-                  )}
-                </h3>
-                <p class="font-serif text-[15px] text-ink-soft leading-[1.55] m-0"
-                   style="text-wrap: pretty">{d.desc}</p>
-              </article>
-            );
-          })}
-        </section>
-      ))
+    <div class="mb-14">
+      {built.map((d, i) => (
+        <article class:list={['py-5', i < built.length - 1 ? 'border-b border-rule-soft' : '']}>
+          <h3 class="font-display font-semibold text-[22px] m-0 mb-1.5 text-ink"
+              style="letter-spacing: -0.015em">
+            <a href={`/dashboards/${d.slug}`}
+               class="text-ink no-underline hover:text-accent transition-colors">
+              {d.title}
+            </a>
+          </h3>
+          <p class="font-serif text-[15px] text-ink-soft leading-[1.55] m-0"
+             style="text-wrap: pretty">{d.desc}</p>
+        </article>
+      ))}
+    </div>
+
+    {upcoming.length > 0 && (
+      <section>
+        <GroupHeader label="In progress / planned" count={upcoming.length} />
+        {upcoming.map((d, i) => (
+          <article class:list={[
+            'py-5 opacity-70',
+            i < upcoming.length - 1 ? 'border-b border-rule-soft' : '',
+          ]}>
+            <h3 class="font-display font-semibold text-[22px] m-0 mb-1.5 text-ink"
+                style="letter-spacing: -0.015em">{d.title}</h3>
+            <p class="font-serif text-[15px] text-ink-soft leading-[1.55] m-0"
+               style="text-wrap: pretty">{d.desc}</p>
+          </article>
+        ))}
+      </section>
     )}
   </section>
 </BaseLayout>

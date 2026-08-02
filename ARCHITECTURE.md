@@ -27,8 +27,9 @@
 │       └── <slug>.pdf
 ├── src/
 │   ├── components/
-│   │   ├── Nav.astro                    ← V4 nav (brand + horizontal links, accent active state)
-│   │   ├── Footer.astro                 ← global footer (updated date + bundle downloads + contact)
+│   │   ├── Nav.astro                    ← top nav: brand + 3 links (Research / Writing / Lab)
+│   │   ├── LabNav.astro                 ← Lab sub-nav strip (Overview / AI's Research / Models / Dashboards)
+│   │   ├── Footer.astro                 ← global footer (updated date + bundle downloads + contact + theme select)
 │   │   ├── SectionLabel.astro           ← Fraunces 18px label + accent "see all →" link, hairline rule below
 │   │   ├── GroupHeader.astro            ← shared status-group header used on /research, /models, /ai-research, /dashboards
 │   │   ├── StatusPill.astro             ← small status badge (live / planned / soft tones) used on the home index columns
@@ -84,28 +85,25 @@
 │   │   ├── blog/<slug>.mdx              ← essays
 │   │   ├── research/<slug>.mdx          ← formal research entries
 │   │   ├── models/<slug>.mdx            ← model explanations (drafts included)
-│   │   ├── updates/<slug>.mdx
 │   │   └── ai_research/<topic>/<stage>.mdx
 │   ├── content.config.ts
 │   ├── data/                            ← singletons (not collections — small, edited-by-hand)
 │   │   ├── bio.json                     ← name, credentials (subtitle), blurb, location, contact links
 │   │   ├── now.json                     ← `updated` date drives the global Footer (NowStrip retired)
-│   │   ├── dashboards.json              ← roster of dashboards with status (planned/in-progress/finished) + optional `private`
+│   │   ├── dashboards.json              ← roster of dashboards with status (`built` / `in-progress` / `planned`) + one-sentence desc
 │   │   └── ai_research_planned.json     ← 16 planned AI-research topics ({title, desc}) rendered on /ai-research + home (prompts.md is the longer brainstorm)
 │   ├── lib/
-│   │   ├── bundle.ts                    ← shared markdown rendering helpers (bundleHeader, blogToMd, researchToMd, modelToMd, updateToMd, aiStageToMd, section, sortByDate, stripImports)
+│   │   ├── bundle.ts                    ← shared markdown rendering helpers (bundleHeader, blogToMd, researchToMd, modelToMd, aiStageToMd, section, sortByDate, stripImports)
 │   │   └── googleAuth.ts                ← shared OAuth code-flow client (signIn/refresh/signOut/loadCachedToken); talks to api/auth/*
-│   ├── layouts/BaseLayout.astro         ← Nav + slot + Footer, paper bg, flex-column for sticky footer
+│   ├── layouts/BaseLayout.astro         ← Nav + (LabNav on lab routes) + slot + Footer, paper bg, sticky footer
 │   ├── pages/
-│   │   ├── index.astro                  ← V4 editorial home (masthead + 3-col index + colophon)
+│   │   ├── index.astro                  ← home (masthead + 2-col index: Research/Writing | Lab)
+│   │   ├── lab.astro                    ← Lab landing (one block per sub-section with its live items)
 │   │   ├── research.astro
 │   │   ├── research/[slug].astro
 │   │   ├── writing.astro
 │   │   ├── writing/[slug].astro         ← narrow column (640px) + drop cap
 │   │   ├── models/
-│   │   │   ├── index.astro
-│   │   │   └── [slug].astro
-│   │   ├── updates/
 │   │   │   ├── index.astro
 │   │   │   └── [slug].astro
 │   │   ├── dashboards/
@@ -115,7 +113,7 @@
 │   │   │   ├── time-tracker.astro       ← mounts TimeTrackerDashboard with client:only="react"
 │   │   │   ├── qualitative-coding.astro ← bypasses BaseLayout: own minimal HTML + white bg + Inter font + client:only QualitativeCodingDashboard
 │   │   │   └── theme-grading.astro      ← same pattern: minimal HTML + white bg + Inter + client:only ThemeGradingDashboard
-│   │   ├── bundle-mine.md.ts            ← /bundle-mine.md (writing + research + models + updates)
+│   │   ├── bundle-mine.md.ts            ← /bundle-mine.md (writing + research + models)
 │   │   ├── bundle-ai-research.md.ts     ← /bundle-ai-research.md (every AI-Research stage)
 │   │   ├── bundle-all.md.ts             ← /bundle-all.md (mine + ai-research concatenated)
 │   │   ├── writing.md.ts                ← /writing.md (all blog as one md file)
@@ -149,7 +147,6 @@ Defined in `src/content.config.ts` using the legacy `type: 'content'` API (consi
 | `research` | `src/content/research/*.mdx` | title, description, date, status (`in-progress`/`published`/`upcoming`/`contribution`), paperStatus?, abstract?, authors[] (`{name, affiliation?, mine}`), collaborators[] (legacy), venue, paperUrl, externalUrl, featured |
 | `models` | `src/content/models/*.mdx` | title, description, date, status (`draft`/`published`), featured, component, tags |
 | `ai_research` | `src/content/ai_research/<topic>/<stage>.mdx` | title, description, date, status (`not-started`/`in-progress`/`complete`), refinementPass, refinementLog |
-| `updates` | `src/content/updates/*.mdx` | title, description?, date, period (`daily`/`weekly`/`monthly`), tags, draft |
 
 `research` carries both the new `authors` array (with affiliations; `mine: true` flags Teddy's own entry) and the legacy `collaborators` string array for entries not yet migrated. Source of truth: `src/content.config.ts`.
 
@@ -159,7 +156,7 @@ For `ai_research`, the topic and stage are derived from the file path. The entry
 
 Static routes:
 
-- `/` `/about` `/research` `/writing` `/models` `/ai-research`
+- `/` `/about` `/research` `/writing` `/lab` `/models` `/ai-research` `/dashboards`
 
 Dynamic routes via `getStaticPaths()`:
 
@@ -168,11 +165,12 @@ Dynamic routes via `getStaticPaths()`:
 - `/models/[slug]` — one entry from `models`
 - `/ai-research/[topic]` — one topic landing (lists stages)
 - `/ai-research/[topic]/[stage]` — one stage
-- `/updates/[slug]` — one entry from `updates`
 
 Redirects (in `astro.config.mjs`):
 
 - `/about` → `/`
+
+**Nav grouping.** `Nav.astro` has three links; the Lab entry is active for any path under `/lab`, `/ai-research`, `/models`, or `/dashboards` (its `match` array). `BaseLayout` computes the same predicate and renders `LabNav.astro` under the main nav for those paths — so every Lab page, index or detail, gets the sub-nav from one place. The app-style dashboards that bypass `BaseLayout` (qualitative-coding, theme-grading) don't get it, by design.
 
 ## AI Research stage convention
 
@@ -248,15 +246,15 @@ The `primary` indigo ramp is retained in the Tailwind config but unused in V4. D
 
 **Theming (multi-palette).** These tokens are no longer hardcoded hex — they resolve to CSS variables (RGB channel triples) so the whole site can swap palettes. `tailwind.config.mjs` maps each token to `rgb(var(--color-<token>) / <alpha-value>)` (channel form preserves opacity utilities like `bg-accent/5`). The palettes live in `src/styles/global.css`: `:root` is **Quiet Paper** (the default, values above); `:root[data-theme='white']` is **Clean White**, `[data-theme='dark']` a warm dark, `[data-theme='monokai']` Monokai Pro (dark plum base, pink `#ff6188` accent), `[data-theme='monokai-light']` a warm light Monokai. Dark palettes also set `color-scheme: dark`. Add a new theme by adding one `[data-theme='x']` block of the nine `--color-*` vars — nothing else changes, since every component already consumes the tokens. **Any new site color must be a token var, not a raw hex** (raw hex won't theme). The prose classes (`.essay-prose`, `.paper-prose`) and the selection color also use `rgb(var(--color-*))` so long-form reading themes too.
 
-- **Switching**: a `<select>` dropdown in `Nav.astro` (paper / white / dark / monokai / monokai-light) sets `data-theme` on `<html>` and persists to `localStorage['tw-theme']`. An inline `is:inline` script in `BaseLayout.astro`'s `<head>` re-applies the saved theme before first paint (no flash). The app-style dashboards that bypass `BaseLayout` (qualitative-coding, theme-grading) are intentionally unthemed — they keep their white + Inter app UI. Dashboards rendered inside `BaseLayout` (finance, time-tracker, emotional-wellbeing) theme automatically because they're built from the tokens.
+- **Switching**: a borderless `<select>` in `Footer.astro` (paper / white / dark / monokai / monokai-light) sets `data-theme` on `<html>` and persists to `localStorage['tw-theme']`. It sits inline at the end of the footer's contact row — deliberately low-prominence; it used to occupy a bordered slot in the nav. An inline `is:inline` script in `BaseLayout.astro`'s `<head>` re-applies the saved theme before first paint (no flash). The app-style dashboards that bypass `BaseLayout` (qualitative-coding, theme-grading) are intentionally unthemed — they keep their white + Inter app UI. Dashboards rendered inside `BaseLayout` (finance, time-tracker, emotional-wellbeing) theme automatically because they're built from the tokens.
 
 ### Typography
 
-- `font-display` — Fraunces (variable, opsz 9..144), used for all headlines and brand
+- `font-display` — **Bricolage Grotesque** (variable: opsz 12..96, wdth 75..100, wght 400..800), used for all headlines and the brand. Replaced Fraunces (2026-08) for a less formal headline voice while keeping the paper aesthetic.
 - `font-serif` — Source Serif 4, body and most metadata
 - `font-mono` — JetBrains Mono, labels / dates / chips / "→" affordances
 
-Loaded via Google Fonts at the top of `global.css`.
+Loaded via Google Fonts at the top of `global.css`. **Font-family names are written with a single set of quotes** (`'Source Serif 4'`, not `'"Source Serif 4"'`) — the doubled form is a string containing literal quote characters, matches nothing, and silently falls through to the generic fallback.
 
 ### Containers
 
@@ -266,12 +264,13 @@ Loaded via Google Fonts at the top of `global.css`.
 
 ### Patterns
 
-- **Section label** (column heading on home): Fraunces 18px ink + accent `see all →` mono link, hairline rule below — see `SectionLabel.astro`.
-- **Group header** (status sections on /research, /models, /ai-research): Fraunces 18px label + count on the right, hairline rule below. No `§ N` numeral — see `GroupHeader.astro`.
+- **Section label** (column heading on home): display 18px ink + accent `see all →` mono link, hairline rule below — see `SectionLabel.astro`.
+- **Group header** (status sections on /research, /models, /ai-research, /dashboards, /lab): display 18px label + count on the right, hairline rule below. No `§ N` numeral. Optional `href` makes the label itself a link (used on `/lab`) — see `GroupHeader.astro`.
+- **Lab sub-nav**: mono 11px uppercase, 0.1em tracking, muted → accent on hover/active, on a `paper-edge/40` strip with a `rule-soft` bottom border — see `LabNav.astro`.
 - **Eyebrow / status pills**: mono 10px uppercase letter-spacing 0.12em. Live = accent border + accent text; Draft/Planned = rule border + muted text.
 - **Tier chip** (writing tier): mono 10px uppercase, rule border, muted text. Labels: `me` / `me x ai` / `ai` (mapped from `mine` / `collab` / `ai-led`) — see `TierChip.astro`.
 - **Paper / external CTAs**: `font-mono text-[13px] font-semibold uppercase` border-button — accent border + accent text, hover fills accent. Used on /research index, detail, and home Research column.
-- **Item separator** (writing/models/updates/dashboards lists): `border-t border-rule` between items, plus `border-b` on the last item to close the list.
+- **Item separator** (writing/models/dashboards lists): `border-t border-rule` between items, plus `border-b` on the last item to close the list.
 - **No left-rule cards** (the V3 indigo `border-l-2 border-primary-200` pattern is retired).
 - **Active link**: italic + accent + `underline underline-offset-4`. Inactive nav: `text-ink-soft`, hovers to `text-accent`.
 - **Hover**: linked titles transition `color` over `0.18s` to `text-accent`. Featured-essay title underlines on hover instead of color-shifting.
@@ -281,8 +280,8 @@ Loaded via Google Fonts at the top of `global.css`.
 
 `prose prose-gray` from `@tailwindcss/typography` is **not** used (it ships its own colors and rhythm that fight the paper aesthetic). Two custom prose classes live in `global.css`:
 
-- `.essay-prose` — for `/writing/[slug]`. 18px Source Serif body, 21px lead paragraph, drop cap on first paragraph (76px Fraunces accent, floated). 1.75 line-height, generous paragraph spacing.
-- `.paper-prose` — for research/model/update/stage detail pages. 16px Source Serif body, 1.7 line-height, no drop cap.
+- `.essay-prose` — for `/writing/[slug]`. 18px Source Serif body, 21px lead paragraph, drop cap on first paragraph (76px display-font accent, floated). 1.75 line-height, generous paragraph spacing.
+- `.paper-prose` — for research/model/stage detail pages. 16px Source Serif body, 1.7 line-height, no drop cap.
 
 Both styles use ink/ink-soft/muted/rule/accent tokens consistently.
 
@@ -296,7 +295,7 @@ Static endpoints that prerender to `.md` files at build time. All endpoints shar
 
 **Top-level bundles** linked from the global Footer (`mine ↓`, `ai's research ↓`, `all ↓`):
 
-- `/bundle-mine.md` — `blog` + `research` + `models` + `updates` (the user's own writing/research). Source: `src/pages/bundle-mine.md.ts`.
+- `/bundle-mine.md` — `blog` + `research` + `models` (the user's own writing/research). Source: `src/pages/bundle-mine.md.ts`.
 - `/bundle-ai-research.md` — every stage of every `ai_research` topic (the full LLM Iterate output). Source: `src/pages/bundle-ai-research.md.ts`.
 - `/bundle-all.md` — the two above concatenated. Source: `src/pages/bundle-all.md.ts`.
 
@@ -396,7 +395,7 @@ Persistence rules: load from `localStorage` once on mount, persist on every stat
 
 ### Finance dashboard specifics
 
-Lives at [src/components/dashboards/finance/](src/components/dashboards/finance/). Mounted at `/dashboards/finance`. **Private** (hidden from `/dashboards` roster via `private: true` in `dashboards.json`). Two persistence modes: local-only (no env vars set or signed out) and Sheets-synced (signed in to a Google account that owns the configured sheet).
+Lives at [src/components/dashboards/finance/](src/components/dashboards/finance/). Mounted at `/dashboards/finance` and listed in the `/dashboards` roster (`status: built`). Publicly reachable but data-isolated: an unauthenticated visitor gets an empty local-only dashboard in their own browser, and Teddy's numbers require signing in with the Google account that owns `PUBLIC_FINANCE_SHEET_ID` (with `api/auth/exchange` enforcing the `ALLOWED_EMAILS` owner allowlist). Two persistence modes: local-only (no env vars set or signed out) and Sheets-synced (signed in to a Google account that owns the configured sheet).
 
 **Storage key**: `tw-finance-v1` (a single JSON object containing transactions, budgets, incomes, and the category taxonomy). Schema is versioned via the `version` field on the persisted object so future migrations have a hook. A store predating the taxonomy field loads with an empty `categories` array, which hydration replaces with `DEFAULT_CATEGORIES`.
 

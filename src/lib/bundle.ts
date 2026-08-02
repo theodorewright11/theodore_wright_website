@@ -66,15 +66,6 @@ export const modelToMd = (m: CollectionEntry<'models'>) => [
   stripImports(m.body),
 ].join('\n');
 
-export const updateToMd = (u: CollectionEntry<'updates'>) => [
-  `## ${u.data.title}`,
-  `*${fmt(u.data.date)} · ${u.data.period}*`,
-  '',
-  u.data.description ?? '',
-  '',
-  stripImports(u.body),
-].join('\n');
-
 export const aiStageToMd = (a: CollectionEntry<'ai_research'>) => {
   const [topic, stage] = a.slug.split('/');
   return [
