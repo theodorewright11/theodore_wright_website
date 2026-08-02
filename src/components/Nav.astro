@@ -1,11 +1,11 @@
 ---
-// Three top-level tabs. "Lab" is the umbrella for AI's Research / Models /
-// Dashboards — those keep their own URLs and get a sub-nav (LabNav) instead of
-// each occupying a top-level slot.
+// Three top-level tabs. "Other" is the umbrella for Dashboards / Models /
+// AI's Research — those keep their own URLs and get a sub-nav (SectionNav)
+// instead of each occupying a top-level slot.
 const navLinks = [
   { href: '/research', label: 'Research', match: ['/research'] },
   { href: '/writing', label: 'Writing', match: ['/writing'] },
-  { href: '/lab', label: 'Lab', match: ['/lab', '/ai-research', '/models', '/dashboards'] },
+  { href: '/other', label: 'Other', match: ['/other', '/dashboards', '/models', '/ai-research'] },
 ];
 
 const currentPath = Astro.url.pathname.replace(/\/$/, '') || '/';

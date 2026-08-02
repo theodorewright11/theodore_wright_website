@@ -15,10 +15,10 @@ const writing = (await getCollection('blog', ({ data }) => !data.draft))
 const research = (await getCollection('research'))
   .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
 
-const lab = [
-  { href: '/ai-research', label: 'AI’s Research', desc: 'Topics run through a six-stage LLM refinement pipeline.' },
-  { href: '/models', label: 'Models', desc: 'Interactive models that quantify one phenomenon at a time.' },
-  { href: '/dashboards', label: 'Dashboards', desc: 'Tools I use, open to anyone. Data stays in your browser.' },
+const other = [
+  { href: '/dashboards', label: 'Dashboards', desc: 'Tools for entering data and seeing it summarized. Everything runs in your browser.' },
+  { href: '/models', label: 'Models', desc: 'Explanations of one idea at a time, with sliders you can move to see how it changes.' },
+  { href: '/ai-research', label: 'AI’s Research', desc: 'Topics researched by an LLM in six stages: lit review, topology, model, data, build, writeup.' },
 ];
 ---
 
@@ -91,8 +91,8 @@ const lab = [
       </div>
 
       <div>
-        <SectionLabel label="Lab" href="/lab" />
-        {lab.map(l => (
+        <SectionLabel label="Other" href="/other" />
+        {other.map(l => (
           <article class="py-3.5">
             <h3 class="font-serif text-[16px] font-semibold m-0 mb-1 text-ink leading-[1.35]">
               <a href={l.href} class="text-ink no-underline hover:text-accent transition-colors">

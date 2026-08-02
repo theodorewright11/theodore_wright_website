@@ -17,39 +17,39 @@ const models = (await getCollection('models'))
   .filter(m => m.data.status === 'published')
   .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
 
-const builtDashboards = dashboards.filter(d => d.status === 'built');
-
 const sections = [
   {
-    href: '/ai-research',
-    label: 'AI’s Research',
-    desc: 'Topics run through a six-stage LLM refinement pipeline — lit review, topology, model, data, build, writeup.',
-    items: Array.from(topics.entries()).map(([slug, title]) => ({
-      href: `/ai-research/${slug}`, title,
-    })),
+    href: '/dashboards',
+    label: 'Dashboards',
+    desc: 'Tools for entering data and seeing it summarized. Everything runs in your browser.',
+    items: dashboards
+      .filter(d => d.status === 'built')
+      .map(d => ({ href: `/dashboards/${d.slug}`, title: d.title })),
   },
   {
     href: '/models',
     label: 'Models',
-    desc: 'Interactive models that break a phenomenon down into quantified, isolated logic.',
+    desc: 'Explanations of one idea at a time, with sliders you can move to see how it changes.',
     items: models.map(m => ({ href: `/models/${m.slug}`, title: m.data.title })),
   },
   {
-    href: '/dashboards',
-    label: 'Dashboards',
-    desc: 'Tools I actually use. Your data stays in your own browser.',
-    items: builtDashboards.map(d => ({ href: `/dashboards/${d.slug}`, title: d.title })),
+    href: '/ai-research',
+    label: 'AI’s Research',
+    desc: 'Topics researched by an LLM in six stages: lit review, topology, model, data, build, writeup.',
+    items: Array.from(topics.entries()).map(([slug, title]) => ({
+      href: `/ai-research/${slug}`, title,
+    })),
   },
 ];
 ---
 
-<BaseLayout title="Lab — Teddy Wright"
-  description="AI's Research, interactive models, and dashboards.">
+<BaseLayout title="Other — Teddy Wright"
+  description="Dashboards, interactive models, and AI-run research.">
   <section class="max-w-[760px] mx-auto px-8 pt-14 pb-24">
     <h1 class="font-display font-semibold text-[48px] leading-none m-0 mb-3 text-ink"
-        style="letter-spacing: -0.03em">Lab</h1>
+        style="letter-spacing: -0.03em">Other</h1>
     <p class="font-serif text-[17px] text-muted leading-[1.55] max-w-[580px] m-0 mb-14">
-      Things I build rather than write: AI-run research, interactive models, and dashboards.
+      Dashboards, interactive models, and research run by an LLM.
     </p>
 
     {sections.map(s => (

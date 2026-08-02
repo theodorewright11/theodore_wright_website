@@ -10,17 +10,17 @@ This is the personal site for Teddy Wright. It serves three audiences:
 
 ### Public
 
-Three top-level tabs: **Research**, **Writing**, **Lab**. Lab is an umbrella over AI's Research / Models / Dashboards — those keep their own URLs and get a sub-nav (`LabNav`) instead of each taking a top-level slot.
+Three top-level tabs: **Research**, **Writing**, **Other**. "Other" is an umbrella over Dashboards / Models / AI's Research — those keep their own URLs and get a sub-nav (`SectionNav`) instead of each taking a top-level slot.
 
 | Path | Nav | Purpose |
 |---|---|---|
-| `/` | brand | Combined home + about — bio, contact links, and a short index in nav order (Research → Writing → Lab) |
-| `/research` | Research | Formal academic research in two groups: **Publications** (published + contributions) and **In progress / planned** |
+| `/` | brand | Combined home + about — bio, contact links, and a short index in nav order (Research → Writing → Other) |
+| `/research` | Research | Formal academic research in three groups: **Publications** (published + contributions), **In progress / planned**, and **Talks & posters** |
 | `/writing` | Writing | Essays, with tier labels showing how AI-assisted each piece is |
-| `/lab` | Lab | Landing page for the Lab section — one block per sub-section with its live items |
-| `/ai-research` | Lab ▸ | Outputs of the LLM Iterate pipeline (6-stage refinement of topics) |
-| `/models` | Lab ▸ | Polished interactive quantitative models (sliders, real-time computation) |
-| `/dashboards` | Lab ▸ | Interactive dashboards — built ones listed unlabeled, everything else in one "In progress / planned" group |
+| `/other` | Other | Landing page for the Other section — one block per sub-section with its live items |
+| `/ai-research` | Other ▸ | Outputs of the LLM Iterate pipeline (6-stage refinement of topics) |
+| `/models` | Other ▸ | Polished interactive quantitative models (sliders, real-time computation) |
+| `/dashboards` | Other ▸ | Interactive dashboards — built ones listed unlabeled, everything else in one "In progress / planned" group |
 
 `/about` redirects to `/`. There is no `/updates` section — the collection, pages, and bundle entries were removed.
 
@@ -95,7 +95,7 @@ Active topics — folders exist in `src/content/ai_research/` and `stage_outputs
 | `navigating-ai-world` | Navigating an AI World | writeup (pass 4) | **finished** |
 | `technology-utilization-architecture` | Technology Utilization Architecture | writeup (pass 4) | in progress |
 
-A topic is **finished** when every one of its six stages (lit-review, topology, model, data, build, writeup) has `status: complete` in the stage frontmatter. The `/ai-research` index page renders finished topics in a "Finished" bucket above the "In Progress" bucket; cards carry a small `finished` accent tag next to the title. Active topics are also listed (title only) under the AI's Research block on `/lab`.
+A topic is **finished** when every one of its six stages (lit-review, topology, model, data, build, writeup) has `status: complete` in the stage frontmatter. The `/ai-research` index page renders finished topics in a "Finished" bucket above the "In Progress" bucket; cards carry a small `finished` accent tag next to the title. Active topics are also listed (title only) under the AI's Research block on `/other`.
 
 Planned topics render from `src/data/ai_research_planned.json` (16 entries — the `{title, desc}` list shown on `/ai-research`); `prompts.md` holds the longer brainstorm behind them. Each spins up its own `src/content/ai_research/<topic>/` + `stage_outputs/<topic>/` folder pair when started.
 
@@ -317,6 +317,12 @@ A dedicated rubric-rating tool for AI-generated qualitative themes — the fast-
 
 **Deliberately out of scope (v1)**: codes/annotations, editing theme text, sub-theme hierarchies, AI-assisted grading.
 
+## Research page conventions
+
+Entries on `/research` are deliberately spare: **title + one plain sentence + paper/external link**. No year, no venue line, no author list, no status pill — that metadata lives on the detail page, where it belongs. The goal is that a page of publications reads as a page of publications, not a page of badges. Descriptions are one sentence in plain language ("Measures how much of U.S. work AI can currently do…"), not abstract-speak.
+
+**Talks & posters** render from `src/data/presentations.json` (`{citation, venue, url?}`) as a compact citation list at the bottom of `/research`. Same works as the entries above, in their presented form — a poster and its paper are not separate research entries.
+
 ## Papers and PDFs
 
 PDFs live in `public/papers/<slug>.pdf`. Once dropped in that folder, they're served at `/papers/<slug>.pdf` automatically — no build step.
@@ -327,8 +333,8 @@ Word documents (.docx) should be converted to PDF before upload (Word: File → 
 
 ## Site chrome
 
-- **Nav** at the top of every page: brand + three links (Research / Writing / Lab). Nothing else — the theme switcher moved to the footer to stop it taking prime space.
-- **LabNav**: a thin mono sub-nav strip rendered directly under the main nav on any `/lab`, `/ai-research`, `/models`, or `/dashboards` page (mounted conditionally in `BaseLayout`). Links: Overview / AI's Research / Models / Dashboards.
+- **Nav** at the top of every page: brand + three links (Research / Writing / Other). Nothing else — the theme switcher moved to the footer to stop it taking prime space.
+- **SectionNav**: a thin mono sub-nav strip rendered directly under the main nav on any `/other`, `/ai-research`, `/models`, or `/dashboards` page (mounted conditionally in `BaseLayout`). Links: Overview / Dashboards / Models / AI's Research.
 - **Footer** at the bottom of every page. Shows the site's last-updated date (driven by `src/data/now.json`), the three bundle download links, contact links, and the **theme selector** — an unstyled inline `<select>` (`theme: paper` / `white` / `dark` / `monokai` / `monokai light`), remembered across visits.
 - **Content bundles**: two top-level markdown bundles served at build time:
   - `/bundle-mine.md` — every essay, research entry, and model writeup (the user's own work).
@@ -364,6 +370,7 @@ Major product and architecture turning points only. **Per-stage LLM Iterate refi
 - **2026-05**: **Auth migrated** from the GIS implicit-token flow (silent refresh permanently COOP-broken → hourly re-sign-in) to an **OAuth authorization-code flow with a server-side refresh token** — shared `src/lib/googleAuth.ts` + `api/auth/*` Vercel serverless functions, sealed HttpOnly cookie, sessions last weeks. Time Tracker and Qual Coding use it; Finance migration is still pending. See `ARCHITECTURE.md` → "Google sign-in".
 - **2026-07-26**: **Site theming** — the locked V4 tokens became CSS variables driving **four switchable palettes** (Quiet Paper / Clean White / Dark / Monokai Pro), toggled from the nav and persisted per visitor. Quiet Paper remains the default; the design system is unchanged, just now multi-palette. New colors must be token vars, not raw hex.
 - **2026-07-26**: **Finance dashboard v2** — migrated auth off the broken GIS implicit-token flow onto the shared code-flow (`googleAuth.ts`, sessions last weeks), moved the category taxonomy out of code into user-editable data + a `categories` sheet tab with a **Manage categories** modal (renames migrate history), and gated the CSV import/export buttons to local-only mode.
-- **2026-08-02**: **Site simplified to three tabs** — Research / Writing / **Lab**, where Lab is an umbrella over AI's Research, Models, and Dashboards (own URLs kept, plus a `LabNav` sub-nav). `/updates` deleted entirely (pages, collection, content, bundle sections). Home page cut back to masthead + a two-column index in nav order. `/research` reduced to Publications + In progress / planned with plain links instead of bordered CTAs. Dashboard roster: one-sentence descriptions, built dashboards unlabeled, everything else in one group; Finance un-privated (its isolation is structural, not a gate). Theme switcher moved from the nav to the footer.
-- **2026-08-02**: **Display font Fraunces → Bricolage Grotesque** — less formal headline voice while keeping Source Serif 4 body + JetBrains Mono labels. Also fixed the long-standing nested-quote font-family bug in `global.css` (`'"Source Serif 4"'` never matched and silently fell through to Georgia).
+- **2026-08-02**: **Site simplified to three tabs** — Research / Writing / **Other**, where Other is an umbrella over Dashboards, Models, and AI's Research (own URLs kept, plus a `SectionNav` sub-nav). `/updates` deleted entirely (pages, collection, content, bundle sections). Home page cut back to masthead + a two-column index in nav order. `/research` reduced to Publications + In progress / planned with plain links instead of bordered CTAs. Dashboard roster: one-sentence descriptions, built dashboards unlabeled, everything else in one group; Finance un-privated (its isolation is structural, not a gate). Theme switcher moved from the nav to the footer.
+- **2026-08-02**: Briefly swapped the display font to Bricolage Grotesque, then **reverted to Fraunces** — the grotesque didn't sit right with the paper aesthetic. Kept the fix it surfaced: the long-standing nested-quote font-family bug in `global.css` (`'"Source Serif 4"'` never matched and silently fell through to Georgia).
+- **2026-08-02**: **Favicon** replaced with a slanted, hollow-outlined **TW** monogram with a sienna extrusion behind it (`skewX(-10)`, T and W interlocked side by side). Candidates + a 128/64/32/16 contact sheet are generated by `scripts/gen_favicons.mjs` into `public/favicons/`; edit the path constants there and re-run to iterate.
 - **2026-05/06**: **Qualitative Coding** grew from the v2 coding tool (multi-parent codes, multi-range annotations, Drive folder-per-project sync) into a fuller analysis tool: a **Themes** interpretive layer over annotations and a **Grading** rubric (code specificity, annotation accuracy, five-axis theme ratings) — the TopBar now has six views. Built for comparing one project's coding against another (AI vs analyst).

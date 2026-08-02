@@ -6,7 +6,7 @@ export default {
       fontFamily: {
         sans: ['Inter', 'system-ui', 'sans-serif'],
         serif: ['"Source Serif 4"', 'Georgia', 'serif'],
-        display: ['"Bricolage Grotesque"', '"Source Serif 4"', 'Georgia', 'serif'],
+        display: ['Fraunces', '"Source Serif 4"', 'Georgia', 'serif'],
         mono: ['"JetBrains Mono"', 'ui-monospace', 'monospace'],
       },
       colors: {

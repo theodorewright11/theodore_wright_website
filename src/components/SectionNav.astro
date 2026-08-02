@@ -1,11 +1,11 @@
 ---
-// Sub-nav for the Lab section. Rendered by BaseLayout on any /lab, /ai-research,
-// /models or /dashboards page.
+// Sub-nav for the "Other" section. Rendered by BaseLayout on any /other,
+// /dashboards, /models or /ai-research page.
 const links = [
-  { href: '/lab', label: 'Overview', exact: true },
-  { href: '/ai-research', label: 'AI’s Research' },
-  { href: '/models', label: 'Models' },
+  { href: '/other', label: 'Overview', exact: true },
   { href: '/dashboards', label: 'Dashboards' },
+  { href: '/models', label: 'Models' },
+  { href: '/ai-research', label: 'AI’s Research' },
 ];
 
 const currentPath = Astro.url.pathname.replace(/\/$/, '') || '/';

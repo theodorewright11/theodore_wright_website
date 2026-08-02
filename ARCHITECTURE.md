@@ -22,13 +22,14 @@
 │   └── <topic>/<stage>.md
 ├── design_handoff_personal_site/        ← V4 design source (reference only)
 ├── public/
-│   ├── favicon.svg
+│   ├── favicon.svg                      ← slanted hollow-outline TW monogram w/ sienna extrusion
+│   ├── favicons/                        ← candidate marks (.svg + .png) + contact-sheet.png, from scripts/gen_favicons.mjs
 │   └── papers/                          ← published PDFs (papers, posters, working drafts)
 │       └── <slug>.pdf
 ├── src/
 │   ├── components/
-│   │   ├── Nav.astro                    ← top nav: brand + 3 links (Research / Writing / Lab)
-│   │   ├── LabNav.astro                 ← Lab sub-nav strip (Overview / AI's Research / Models / Dashboards)
+│   │   ├── Nav.astro                    ← top nav: brand + 3 links (Research / Writing / Other)
+│   │   ├── SectionNav.astro                 ← Other sub-nav strip (Overview / AI's Research / Models / Dashboards)
 │   │   ├── Footer.astro                 ← global footer (updated date + bundle downloads + contact + theme select)
 │   │   ├── SectionLabel.astro           ← Fraunces 18px label + accent "see all →" link, hairline rule below
 │   │   ├── GroupHeader.astro            ← shared status-group header used on /research, /models, /ai-research, /dashboards
@@ -91,14 +92,15 @@
 │   │   ├── bio.json                     ← name, credentials (subtitle), blurb, location, contact links
 │   │   ├── now.json                     ← `updated` date drives the global Footer (NowStrip retired)
 │   │   ├── dashboards.json              ← roster of dashboards with status (`built` / `in-progress` / `planned`) + one-sentence desc
+│   │   ├── presentations.json           ← talks & posters ({citation, venue, url?}) listed at the bottom of /research
 │   │   └── ai_research_planned.json     ← 16 planned AI-research topics ({title, desc}) rendered on /ai-research + home (prompts.md is the longer brainstorm)
 │   ├── lib/
 │   │   ├── bundle.ts                    ← shared markdown rendering helpers (bundleHeader, blogToMd, researchToMd, modelToMd, aiStageToMd, section, sortByDate, stripImports)
 │   │   └── googleAuth.ts                ← shared OAuth code-flow client (signIn/refresh/signOut/loadCachedToken); talks to api/auth/*
-│   ├── layouts/BaseLayout.astro         ← Nav + (LabNav on lab routes) + slot + Footer, paper bg, sticky footer
+│   ├── layouts/BaseLayout.astro         ← Nav + (SectionNav on Other routes) + slot + Footer, paper bg, sticky footer
 │   ├── pages/
-│   │   ├── index.astro                  ← home (masthead + 2-col index: Research/Writing | Lab)
-│   │   ├── lab.astro                    ← Lab landing (one block per sub-section with its live items)
+│   │   ├── index.astro                  ← home (masthead + 2-col index: Research/Writing | Other)
+│   │   ├── other.astro                  ← Other landing (one block per sub-section with its live items)
 │   │   ├── research.astro
 │   │   ├── research/[slug].astro
 │   │   ├── writing.astro
@@ -131,7 +133,8 @@
 │   │       └── [topic]/[stage].md.ts    ← /ai-research/<topic>/<stage>.md (single stage)
 │   └── styles/global.css                ← font imports, design tokens, .essay-prose / .paper-prose
 ├── scripts/
-│   └── finance_import_xlsx.py          ← one-shot: Finances Sheet.xlsx → CSVs the dashboard imports
+│   ├── finance_import_xlsx.py          ← one-shot: Finances Sheet.xlsx → CSVs the dashboard imports
+│   └── gen_favicons.mjs                ← favicon generator: letter paths + slant → SVG variants, PNGs, contact sheet
 ├── astro.config.mjs
 ├── tailwind.config.mjs
 └── tsconfig.json
@@ -156,7 +159,7 @@ For `ai_research`, the topic and stage are derived from the file path. The entry
 
 Static routes:
 
-- `/` `/about` `/research` `/writing` `/lab` `/models` `/ai-research` `/dashboards`
+- `/` `/about` `/research` `/writing` `/other` `/models` `/ai-research` `/dashboards`
 
 Dynamic routes via `getStaticPaths()`:
 
@@ -170,7 +173,7 @@ Redirects (in `astro.config.mjs`):
 
 - `/about` → `/`
 
-**Nav grouping.** `Nav.astro` has three links; the Lab entry is active for any path under `/lab`, `/ai-research`, `/models`, or `/dashboards` (its `match` array). `BaseLayout` computes the same predicate and renders `LabNav.astro` under the main nav for those paths — so every Lab page, index or detail, gets the sub-nav from one place. The app-style dashboards that bypass `BaseLayout` (qualitative-coding, theme-grading) don't get it, by design.
+**Nav grouping.** `Nav.astro` has three links; the Other entry is active for any path under `/other`, `/ai-research`, `/models`, or `/dashboards` (its `match` array). `BaseLayout` computes the same predicate and renders `SectionNav.astro` under the main nav for those paths — so every Other page, index or detail, gets the sub-nav from one place. The app-style dashboards that bypass `BaseLayout` (qualitative-coding, theme-grading) don't get it, by design.
 
 ## AI Research stage convention
 
@@ -250,7 +253,7 @@ The `primary` indigo ramp is retained in the Tailwind config but unused in V4. D
 
 ### Typography
 
-- `font-display` — **Bricolage Grotesque** (variable: opsz 12..96, wdth 75..100, wght 400..800), used for all headlines and the brand. Replaced Fraunces (2026-08) for a less formal headline voice while keeping the paper aesthetic.
+- `font-display` — Fraunces (variable, opsz 9..144), used for all headlines and the brand
 - `font-serif` — Source Serif 4, body and most metadata
 - `font-mono` — JetBrains Mono, labels / dates / chips / "→" affordances
 
@@ -265,8 +268,8 @@ Loaded via Google Fonts at the top of `global.css`. **Font-family names are writ
 ### Patterns
 
 - **Section label** (column heading on home): display 18px ink + accent `see all →` mono link, hairline rule below — see `SectionLabel.astro`.
-- **Group header** (status sections on /research, /models, /ai-research, /dashboards, /lab): display 18px label + count on the right, hairline rule below. No `§ N` numeral. Optional `href` makes the label itself a link (used on `/lab`) — see `GroupHeader.astro`.
-- **Lab sub-nav**: mono 11px uppercase, 0.1em tracking, muted → accent on hover/active, on a `paper-edge/40` strip with a `rule-soft` bottom border — see `LabNav.astro`.
+- **Group header** (status sections on /research, /models, /ai-research, /dashboards, /other): display 18px label + count on the right, hairline rule below. No `§ N` numeral. Optional `href` makes the label itself a link (used on `/other`) — see `GroupHeader.astro`.
+- **Other sub-nav**: mono 11px uppercase, 0.1em tracking, muted → accent on hover/active, on a `paper-edge/40` strip with a `rule-soft` bottom border — see `SectionNav.astro`.
 - **Eyebrow / status pills**: mono 10px uppercase letter-spacing 0.12em. Live = accent border + accent text; Draft/Planned = rule border + muted text.
 - **Tier chip** (writing tier): mono 10px uppercase, rule border, muted text. Labels: `me` / `me x ai` / `ai` (mapped from `mine` / `collab` / `ai-led`) — see `TierChip.astro`.
 - **Paper / external CTAs**: `font-mono text-[13px] font-semibold uppercase` border-button — accent border + accent text, hover fills accent. Used on /research index, detail, and home Research column.
