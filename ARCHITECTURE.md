@@ -30,7 +30,7 @@
 │   ├── components/
 │   │   ├── Nav.astro                    ← top nav: brand + 3 links (Research / Writing / Other)
 │   │   ├── SectionNav.astro                 ← Other sub-nav strip (Overview / AI's Research / Models / Dashboards)
-│   │   ├── Footer.astro                 ← global footer (updated date + bundle downloads + contact + theme select)
+│   │   ├── Footer.astro                 ← global footer: one centred line (downloads + contact + theme select)
 │   │   ├── SectionLabel.astro           ← Fraunces 18px label + accent "see all →" link, hairline rule below
 │   │   ├── GroupHeader.astro            ← shared status-group header used on /research, /models, /ai-research, /dashboards
 │   │   ├── StatusPill.astro             ← small status badge (live / planned / soft tones) used on the home index columns
@@ -90,7 +90,7 @@
 │   ├── content.config.ts
 │   ├── data/                            ← singletons (not collections — small, edited-by-hand)
 │   │   ├── bio.json                     ← name, credentials (subtitle), blurb, location, contact links
-│   │   ├── now.json                     ← `updated` date drives the global Footer (NowStrip retired)
+│   │   ├── now.json                     ← `updated` / `line` feed the bundle headers in lib/bundle.ts
 │   │   ├── dashboards.json              ← roster of dashboards with status (`built` / `in-progress` / `planned`) + one-sentence desc
 │   │   └── ai_research_planned.json     ← 16 planned AI-research topics ({title, desc}) rendered on /ai-research + home (prompts.md is the longer brainstorm)
 │   ├── lib/
@@ -248,7 +248,7 @@ The `primary` indigo ramp is retained in the Tailwind config but unused in V4. D
 
 **Theming (multi-palette).** These tokens are no longer hardcoded hex — they resolve to CSS variables (RGB channel triples) so the whole site can swap palettes. `tailwind.config.mjs` maps each token to `rgb(var(--color-<token>) / <alpha-value>)` (channel form preserves opacity utilities like `bg-accent/5`). The palettes live in `src/styles/global.css`: `:root` is **Quiet Paper** (the default, values above); `:root[data-theme='white']` is **Clean White**, `[data-theme='dark']` a warm dark, `[data-theme='monokai']` Monokai Pro (dark plum base, pink `#ff6188` accent), `[data-theme='monokai-light']` a warm light Monokai. Dark palettes also set `color-scheme: dark`. Add a new theme by adding one `[data-theme='x']` block of the nine `--color-*` vars — nothing else changes, since every component already consumes the tokens. **Any new site color must be a token var, not a raw hex** (raw hex won't theme). The prose classes (`.essay-prose`, `.paper-prose`) and the selection color also use `rgb(var(--color-*))` so long-form reading themes too.
 
-- **Switching**: a borderless `<select>` in `Footer.astro` (paper / white / dark / monokai / monokai-light) sets `data-theme` on `<html>` and persists to `localStorage['tw-theme']`. It sits inline at the end of the footer's contact row — deliberately low-prominence; it used to occupy a bordered slot in the nav. An inline `is:inline` script in `BaseLayout.astro`'s `<head>` re-applies the saved theme before first paint (no flash). The app-style dashboards that bypass `BaseLayout` (qualitative-coding, theme-grading) are intentionally unthemed — they keep their white + Inter app UI. Dashboards rendered inside `BaseLayout` (finance, time-tracker, emotional-wellbeing) theme automatically because they're built from the tokens.
+- **Switching**: a borderless `<select>` in `Footer.astro` (paper / white / dark / monokai / monokai-light) sets `data-theme` on `<html>` and persists to `localStorage['tw-theme']`. It sits inline at the end of the footer's single centred row — deliberately low-prominence; it used to occupy a bordered slot in the nav. An inline `is:inline` script in `BaseLayout.astro`'s `<head>` re-applies the saved theme before first paint (no flash). The app-style dashboards that bypass `BaseLayout` (qualitative-coding, theme-grading) are intentionally unthemed — they keep their white + Inter app UI. Dashboards rendered inside `BaseLayout` (finance, time-tracker, emotional-wellbeing) theme automatically because they're built from the tokens.
 
 ### Typography
 
@@ -289,13 +289,17 @@ Both styles use ink/ink-soft/muted/rule/accent tokens consistently.
 
 ### Footer
 
-`Footer.astro` is mounted in `BaseLayout.astro` after the main slot. It reads `src/data/now.json` for the `updated` date (the previous top-of-page NOW strip is retired) and `src/data/bio.json` for contact links. Slots: left (`updated <date>` + bundle downloads `mine ↓` / `ai's research ↓` / `all ↓`), right (email / substack / github). Border-top `rule`, `font-mono text-[11px]`, all in muted/ink-soft.
+`Footer.astro` is mounted in `BaseLayout.astro` after the main slot. It reads `src/data/bio.json` for contact links. One **centred** row (`justify-center`, wrapping only when it has to): `Download` + the four bundle links, a `·`, the contact links, then the theme `<select>`. Border-top `rule`, `font-mono text-[11px]`, all in muted/ink-soft.
+
+Download labels name exactly what the endpoint contains: `My research ↓` → `/research.md`, `My writing ↓` → `/writing.md`, `AI's research ↓` → `/bundle-ai-research.md`, `All ↓` → `/bundle-all.md`. `/bundle-mine.md` (writing + research + models) stays live as a URL but is deliberately unlinked — it overlaps the two named bundles, and `All ↓` covers the everything case.
+
+The last-updated date was dropped (2026-08). `src/data/now.json` is still read by `src/lib/bundle.ts` for the bundle headers, so the file stays.
 
 ### Content bundles + per-page downloads
 
 Static endpoints that prerender to `.md` files at build time. All endpoints share helpers in `src/lib/bundle.ts` (header/footer rendering, MDX import-stripping, per-collection serializers).
 
-**Top-level bundles** linked from the global Footer (`mine ↓`, `ai's research ↓`, `all ↓`):
+**Top-level bundles** (the Footer links `AI's research ↓` and `All ↓` from here, plus the per-collection `/research.md` and `/writing.md`; `bundle-mine` is unlinked):
 
 - `/bundle-mine.md` — `blog` + `research` + `models` (the user's own writing/research). Source: `src/pages/bundle-mine.md.ts`.
 - `/bundle-ai-research.md` — every stage of every `ai_research` topic (the full LLM Iterate output). Source: `src/pages/bundle-ai-research.md.ts`.

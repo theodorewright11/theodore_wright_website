@@ -335,12 +335,12 @@ Word documents (.docx) should be converted to PDF before upload (Word: File → 
 
 - **Nav** at the top of every page: brand + three links (Research / Writing / Other). Nothing else — the theme switcher moved to the footer to stop it taking prime space.
 - **SectionNav**: a thin mono sub-nav strip rendered directly under the main nav on any `/other`, `/ai-research`, `/models`, or `/dashboards` page (mounted conditionally in `BaseLayout`). Links: Overview / Dashboards / Models / AI's Research.
-- **Footer** at the bottom of every page. Shows the site's last-updated date (driven by `src/data/now.json`), the three bundle downloads (`My research ↓` / `AI's research ↓` / `All ↓`), contact links, and the **theme selector** — an unstyled inline `<select>` (`Theme: Paper` / `White` / `Dark` / `Monokai` / `Monokai Light`), remembered across visits. All footer labels are sentence-cased.
-- **Content bundles**: two top-level markdown bundles served at build time:
-  - `/bundle-mine.md` — every essay, research entry, and model writeup (the user's own work).
+- **Footer** at the bottom of every page: a **single centred line** (wrapping only on narrow screens) holding the four downloads (`My research ↓` / `My writing ↓` / `AI's research ↓` / `All ↓`), contact links, and the **theme selector** — an unstyled inline `<select>` (`Theme: Paper` / `White` / `Dark` / `Monokai` / `Monokai Light`), remembered across visits. No last-updated date. All labels sentence-cased.
+- **Content bundles**: top-level markdown bundles served at build time:
+  - `/bundle-mine.md` — every essay, research entry, and model writeup (the user's own work). Live but unlinked — the footer surfaces the narrower `/research.md` and `/writing.md` instead.
   - `/bundle-ai-research.md` — every stage of every AI-Research topic (the full LLM Iterate pipeline output).
   - `/bundle-all.md` — both bundles concatenated. Footer surfaces all three (`mine ↓`, `ai's research ↓`, `all ↓`).
-- **Per-page downloads**: content pages carry a uniform `download as .md` button at the top. `/research` is the exception — the index button was removed to keep the publication list clean; the per-entry button stays on each detail page. Endpoints: `/writing.md`, `/writing/<slug>.md`, `/research.md`, `/research/<slug>.md`, `/models.md`, `/models/<slug>.md`, `/ai-research.md`, `/ai-research/<topic>.md` (whole topic in stage order), `/ai-research/<topic>/<stage>.md`. Shared rendering helpers live in `src/lib/bundle.ts`.
+- **Per-page downloads**: content pages carry a uniform `download as .md` button at the top. `/research` and `/writing` are the exceptions — their index buttons were removed to keep the lists clean, and the whole-collection download moved to the footer instead. Per-entry buttons stay on every detail page. Endpoints: `/writing.md`, `/writing/<slug>.md`, `/research.md`, `/research/<slug>.md`, `/models.md`, `/models/<slug>.md`, `/ai-research.md`, `/ai-research/<topic>.md` (whole topic in stage order), `/ai-research/<topic>/<stage>.md`. Shared rendering helpers live in `src/lib/bundle.ts`.
 
 ## Out of scope (for now)
 

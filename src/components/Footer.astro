@@ -1,51 +1,55 @@
 ---
-import now from '../data/now.json';
 import bio from '../data/bio.json';
 
-const updated = new Date(now.updated + 'T00:00:00').toLocaleDateString('en-US', {
-  month: 'short', day: 'numeric', year: 'numeric',
-});
+// Download labels name exactly what the endpoint contains, so each one is a
+// straight answer to "what do I get". /bundle-mine.md (writing + research +
+// models in one file) stays live as a URL but isn't surfaced here — it overlaps
+// the two named bundles and "All" covers the everything case.
+const downloads = [
+  { href: '/research.md', label: 'My research ↓' },
+  { href: '/writing.md', label: 'My writing ↓' },
+  { href: '/bundle-ai-research.md', label: "AI's research ↓" },
+  { href: '/bundle-all.md', label: 'All ↓' },
+];
+
+const contacts = [
+  { href: bio.linkedin, label: 'LinkedIn', external: true },
+  { href: bio.github, label: 'GitHub', external: true },
+  { href: bio.substack, label: 'Substack', external: true },
+  { href: `mailto:${bio.email}`, label: 'Email', external: false },
+];
 ---
 
 <footer class="border-t border-rule mt-20">
-  <div class="max-w-[1080px] mx-auto px-8 py-8 flex items-baseline justify-between gap-4 flex-wrap font-mono text-[11px] text-muted"
+  <div class="max-w-[1080px] mx-auto px-8 py-8 flex items-baseline justify-center gap-x-3 gap-y-2 flex-wrap font-mono text-[11px] text-muted"
        style="letter-spacing: 0.06em">
-    <div class="flex items-baseline gap-4 flex-wrap">
-      <span>Last updated {updated}</span>
-      <span class="text-muted/60">·</span>
-      <span class="text-ink-soft">Download</span>
-      <a href="/bundle-mine.md"
-         class="text-accent no-underline hover:underline"
-         download>My research ↓</a>
-      <a href="/bundle-ai-research.md"
-         class="text-accent no-underline hover:underline"
-         download>AI's research ↓</a>
-      <a href="/bundle-all.md"
-         class="text-accent no-underline hover:underline"
-         download>All ↓</a>
-    </div>
-    <div class="flex items-baseline gap-3 flex-wrap">
-      <a href={bio.linkedin} target="_blank" rel="noopener" class="text-ink-soft no-underline hover:text-accent transition-colors">LinkedIn</a>
-      <span>/</span>
-      <a href={bio.github} target="_blank" rel="noopener" class="text-ink-soft no-underline hover:text-accent transition-colors">GitHub</a>
-      <span>/</span>
-      <a href={bio.substack} target="_blank" rel="noopener" class="text-ink-soft no-underline hover:text-accent transition-colors">Substack</a>
-      <span>/</span>
-      <a href={`mailto:${bio.email}`} class="text-ink-soft no-underline hover:text-accent transition-colors">Email</a>
-      <span>/</span>
-      <select
-        id="theme-select"
-        aria-label="Color theme"
-        class="font-mono text-[11px] text-muted hover:text-accent bg-transparent border-0 p-0 cursor-pointer transition-colors focus:outline-none focus:text-accent"
-        style="letter-spacing: 0.06em"
-      >
-        <option value="paper">Theme: Paper</option>
-        <option value="white">Theme: White</option>
-        <option value="dark">Theme: Dark</option>
-        <option value="monokai">Theme: Monokai</option>
-        <option value="monokai-light">Theme: Monokai Light</option>
-      </select>
-    </div>
+    <span class="text-ink-soft">Download</span>
+    {downloads.map(d => (
+      <a href={d.href} class="text-accent no-underline hover:underline" download>{d.label}</a>
+    ))}
+    <span class="text-muted/60">·</span>
+    {contacts.map((c, i) => (
+      <>
+        {i > 0 && <span class="text-muted/60">/</span>}
+        <a href={c.href}
+           target={c.external ? '_blank' : undefined}
+           rel={c.external ? 'noopener' : undefined}
+           class="text-ink-soft no-underline hover:text-accent transition-colors">{c.label}</a>
+      </>
+    ))}
+    <span class="text-muted/60">/</span>
+    <select
+      id="theme-select"
+      aria-label="Color theme"
+      class="font-mono text-[11px] text-muted hover:text-accent bg-transparent border-0 p-0 cursor-pointer transition-colors focus:outline-none focus:text-accent"
+      style="letter-spacing: 0.06em"
+    >
+      <option value="paper">Theme: Paper</option>
+      <option value="white">Theme: White</option>
+      <option value="dark">Theme: Dark</option>
+      <option value="monokai">Theme: Monokai</option>
+      <option value="monokai-light">Theme: Monokai Light</option>
+    </select>
   </div>
 </footer>
 

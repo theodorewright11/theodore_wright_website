@@ -1,7 +1,6 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import TierChip from '../components/TierChip.astro';
-import DownloadMd from '../components/DownloadMd.astro';
 import { getCollection } from 'astro:content';
 import bio from '../data/bio.json';
 
@@ -19,8 +18,6 @@ const fmt = (date: Date) =>
     <p class="font-serif text-[17px] text-muted leading-[1.55] max-w-[580px] m-0 mb-14">
       {bio.blurb} Also on <a href={bio.substack} target="_blank" rel="noopener" class="text-accent hover:underline">Substack</a>.
     </p>
-
-    <DownloadMd href="/writing.md" label="download all writing (.md)" />
 
     {posts.length === 0 ? (
       <div class="text-center py-16 font-serif italic text-muted">
