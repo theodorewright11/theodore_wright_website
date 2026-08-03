@@ -3,6 +3,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import GroupHeader from '../components/GroupHeader.astro';
 import { getCollection } from 'astro:content';
 import dashboards from '../data/dashboards.json';
+import { pages, siteName, otherSections } from '../data/site';
 
 const aiAll = await getCollection('ai_research');
 const topics = new Map<string, string>();
@@ -17,40 +18,26 @@ const models = (await getCollection('models'))
   .filter(m => m.data.status === 'published')
   .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
 
-const sections = [
-  {
-    href: '/dashboards',
-    label: 'Dashboards',
-    desc: 'Tools for different use cases — tracking spending, logging time, coding qualitative data.',
-    items: dashboards
-      .filter(d => d.status === 'built')
-      .map(d => ({ href: `/dashboards/${d.slug}`, title: d.title })),
-  },
-  {
-    href: '/models',
-    label: 'Models',
-    desc: 'Breakdowns of something into its parts, and how those parts interact.',
-    items: models.map(m => ({ href: `/models/${m.slug}`, title: m.data.title })),
-  },
-  {
-    href: '/ai-research',
-    label: 'AI’s Research',
-    desc: 'Topics researched by an LLM in six stages: lit review, topology, model, data, build, writeup.',
-    items: Array.from(topics.entries()).map(([slug, title]) => ({
-      href: `/ai-research/${slug}`, title,
-    })),
-  },
-];
+// Labels and descriptions come from `otherSections` in site.ts (shared with the
+// home page); only the item lists are built here.
+const itemsByHref: Record<string, { href: string; title: string }[]> = {
+  '/dashboards': dashboards
+    .filter(d => d.status === 'built')
+    .map(d => ({ href: `/dashboards/${d.slug}`, title: d.title })),
+  '/models': models.map(m => ({ href: `/models/${m.slug}`, title: m.data.title })),
+  '/ai-research': Array.from(topics.entries()).map(([slug, title]) => ({
+    href: `/ai-research/${slug}`, title,
+  })),
+};
+
+const sections = otherSections.map(s => ({ ...s, items: itemsByHref[s.href] ?? [] }));
 ---
 
-<BaseLayout title="Other — Teddy Wright"
-  description="Dashboards, interactive models, and AI-run research.">
+<BaseLayout title={`${pages.other.title} — ${siteName}`} description={pages.other.blurb}>
   <section class="max-w-[760px] mx-auto px-8 pt-14 pb-24">
     <h1 class="font-display font-semibold text-[48px] leading-none m-0 mb-3 text-ink"
-        style="letter-spacing: -0.03em">Other</h1>
-    <p class="font-serif text-[17px] text-muted leading-[1.55] max-w-[580px] m-0 mb-14">
-      Dashboards, interactive models, and research run by an LLM.
-    </p>
+        style="letter-spacing: -0.03em">{pages.other.title}</h1>
+    <p class="font-serif text-[17px] text-muted leading-[1.55] max-w-[580px] m-0 mb-14">{pages.other.blurb}</p>
 
     {sections.map(s => (
       <section class="mb-14">

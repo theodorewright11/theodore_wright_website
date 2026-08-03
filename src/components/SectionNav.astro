@@ -1,12 +1,7 @@
 ---
 // Sub-nav for the "Other" section. Rendered by BaseLayout on any /other,
-// /dashboards, /models or /ai-research page.
-const links = [
-  { href: '/other', label: 'Overview', exact: true },
-  { href: '/dashboards', label: 'Dashboards' },
-  { href: '/models', label: 'Models' },
-  { href: '/ai-research', label: 'AI’s Research' },
-];
+// /dashboards, /models or /ai-research page. Labels live in src/data/site.ts.
+import { sectionNav } from '../data/site';
 
 const currentPath = Astro.url.pathname.replace(/\/$/, '') || '/';
 ---
@@ -14,7 +9,7 @@ const currentPath = Astro.url.pathname.replace(/\/$/, '') || '/';
 <div class="border-b border-rule-soft bg-paper-edge/40">
   <nav class="max-w-[1080px] mx-auto px-8 py-2.5 flex items-baseline gap-5 flex-wrap
               font-mono text-[11px] uppercase" style="letter-spacing: 0.1em">
-    {links.map(({ href, label, exact }) => {
+    {sectionNav.map(({ href, label, exact }) => {
       const active = exact
         ? currentPath === href
         : currentPath === href || currentPath.startsWith(`${href}/`);

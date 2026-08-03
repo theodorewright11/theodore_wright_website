@@ -2,7 +2,7 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 import TierChip from '../components/TierChip.astro';
 import { getCollection } from 'astro:content';
-import bio from '../data/bio.json';
+import { bio, pages, siteName } from '../data/site';
 
 const posts = (await getCollection('blog', ({ data }) => !data.draft))
   .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
@@ -11,12 +11,12 @@ const fmt = (date: Date) =>
   date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 ---
 
-<BaseLayout title="Writing — Teddy Wright" description="Essays on AI, identity, information processing.">
+<BaseLayout title={`${pages.writing.title} — ${siteName}`} description={pages.writing.blurb}>
   <section class="max-w-[760px] mx-auto px-8 pt-14 pb-24">
     <h1 class="font-display font-semibold text-[48px] leading-none m-0 mb-3 text-ink"
-        style="letter-spacing: -0.03em">Writing</h1>
+        style="letter-spacing: -0.03em">{pages.writing.title}</h1>
     <p class="font-serif text-[17px] text-muted leading-[1.55] max-w-[580px] m-0 mb-14">
-      {bio.blurb} Also on <a href={bio.substack} target="_blank" rel="noopener" class="text-accent hover:underline">Substack</a>.
+      {pages.writing.blurb} {pages.writing.substackNote} <a href={bio.substack} target="_blank" rel="noopener" class="text-accent hover:underline">Substack</a>.
     </p>
 
     {posts.length === 0 ? (

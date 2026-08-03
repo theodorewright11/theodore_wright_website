@@ -3,6 +3,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 import GroupHeader from '../../components/GroupHeader.astro';
 import DownloadMd from '../../components/DownloadMd.astro';
 import { getCollection } from 'astro:content';
+import { pages, siteName } from '../../data/site';
 
 const all = await getCollection('models');
 
@@ -29,14 +30,11 @@ const groups = order
   .filter(g => g.items.length > 0);
 ---
 
-<BaseLayout title="Models — Teddy Wright"
-  description="Interactive models that break phenomena down into quantified, isolated logic.">
+<BaseLayout title={`${pages.models.title} — ${siteName}`} description={pages.models.blurb}>
   <section class="max-w-[760px] mx-auto px-8 pt-14 pb-24">
     <h1 class="font-display font-semibold text-[48px] leading-none m-0 mb-3 text-ink"
-        style="letter-spacing: -0.03em">Models</h1>
-    <p class="font-serif text-[17px] text-muted leading-[1.55] max-w-[580px] m-0 mb-14">
-      Interactive models that break phenomena down into quantified, isolated logic. Useful for getting a grasp on complex things in the world.
-    </p>
+        style="letter-spacing: -0.03em">{pages.models.title}</h1>
+    <p class="font-serif text-[17px] text-muted leading-[1.55] max-w-[580px] m-0 mb-14">{pages.models.blurb}</p>
 
     <DownloadMd href="/models.md" label="download all models (.md)" />
 

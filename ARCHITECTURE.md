@@ -89,7 +89,8 @@
 │   │   └── ai_research/<topic>/<stage>.mdx
 │   ├── content.config.ts
 │   ├── data/                            ← singletons (not collections — small, edited-by-hand)
-│   │   ├── bio.json                     ← name, credentials (subtitle), blurb, location, contact links
+│   │   ├── site.ts                      ← ALL site copy: bio, nav + sub-nav labels, page titles/blurbs, group
+│   │   │                                   headings, footer labels + links. Single file to edit chrome text.
 │   │   ├── now.json                     ← `updated` / `line` feed the bundle headers in lib/bundle.ts
 │   │   ├── dashboards.json              ← roster of dashboards with status (`built` / `in-progress` / `planned`) + one-sentence desc
 │   │   └── ai_research_planned.json     ← 16 planned AI-research topics ({title, desc}) rendered on /ai-research + home (prompts.md is the longer brainstorm)
@@ -138,6 +139,24 @@
 ├── tailwind.config.mjs
 └── tsconfig.json
 ```
+
+## Where copy lives
+
+**`src/data/site.ts` is the single file for site copy.** It's a `.ts` module rather than JSON so it can carry comments explaining where each string surfaces, and so entries can reference each other (`pages.research.blurb` *is* `bio.credentials`, not a duplicate of it). Exports:
+
+| Export | Drives |
+|---|---|
+| `siteName`, `siteDescription` | brand in `Nav`, home `<h1>`, page `<title>` suffixes, default `<meta description>` |
+| `bio` | home masthead, `/research` intro, `/writing` intro, footer contacts, bundle headers in `lib/bundle.ts` |
+| `nav` | top nav labels + their active-path `match` arrays |
+| `sectionNav` | the Other sub-nav strip |
+| `otherSections` | the three Other blocks — used by *both* the home right-hand column and `/other` |
+| `pages` | per-page `title`, `blurb`, and group headings |
+| `footer` | download links, contact links, theme-selector options |
+
+Deliberately **not** in `site.ts`, because it belongs with the item it describes: per-entry titles/descriptions (frontmatter in `src/content/<collection>/*.mdx`), the dashboard roster (`src/data/dashboards.json`), and planned AI topics (`src/data/ai_research_planned.json`). Design tokens stay in `global.css`.
+
+`bio.json` was folded into `site.ts` and deleted.
 
 ## Content collections
 

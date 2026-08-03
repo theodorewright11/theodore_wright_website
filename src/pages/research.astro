@@ -2,7 +2,7 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 import GroupHeader from '../components/GroupHeader.astro';
 import { getCollection } from 'astro:content';
-import bio from '../data/bio.json';
+import { pages, siteName } from '../data/site';
 
 const all = await getCollection('research');
 const byDate = (a: { data: { date: Date } }, b: { data: { date: Date } }) =>
@@ -10,23 +10,21 @@ const byDate = (a: { data: { date: Date } }, b: { data: { date: Date } }) =>
 
 const groups = [
   {
-    label: 'Publications',
+    label: pages.research.groups.publications,
     items: all.filter(r => ['published', 'contribution'].includes(r.data.status)).sort(byDate),
   },
   {
-    label: 'In progress / planned',
+    label: pages.research.groups.inProgress,
     items: all.filter(r => ['in-progress', 'upcoming'].includes(r.data.status)).sort(byDate),
   },
 ].filter(g => g.items.length > 0);
 ---
 
-<BaseLayout title="Research — Teddy Wright" description="AI governance research.">
+<BaseLayout title={`${pages.research.title} — ${siteName}`} description={pages.research.blurb}>
   <section class="max-w-[760px] mx-auto px-8 pt-14 pb-24">
     <h1 class="font-display font-semibold text-[48px] leading-none m-0 mb-3 text-ink"
-        style="letter-spacing: -0.03em">Research</h1>
-    <p class="font-serif text-[17px] text-muted leading-[1.55] max-w-[580px] m-0 mb-12">
-      {bio.credentials}
-    </p>
+        style="letter-spacing: -0.03em">{pages.research.title}</h1>
+    <p class="font-serif text-[17px] text-muted leading-[1.55] max-w-[580px] m-0 mb-12">{pages.research.blurb}</p>
 
     {groups.map(g => (
       <section class="mb-14">

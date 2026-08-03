@@ -1,12 +1,8 @@
 ---
-// Three top-level tabs. "Other" is the umbrella for Dashboards / Models /
-// AI's Research — those keep their own URLs and get a sub-nav (SectionNav)
-// instead of each occupying a top-level slot.
-const navLinks = [
-  { href: '/research', label: 'Research', match: ['/research'] },
-  { href: '/writing', label: 'Writing', match: ['/writing'] },
-  { href: '/other', label: 'Other', match: ['/other', '/dashboards', '/models', '/ai-research'] },
-];
+// Labels and links come from src/data/site.ts. "Other" is the umbrella for
+// Dashboards / Models / AI's Research — those keep their own URLs and get a
+// sub-nav (SectionNav) instead of each occupying a top-level slot.
+import { nav, siteName } from '../data/site';
 
 const currentPath = Astro.url.pathname.replace(/\/$/, '') || '/';
 const isActive = (match: string[]) =>
@@ -20,10 +16,10 @@ const isActive = (match: string[]) =>
       class="font-display font-semibold text-[22px] text-ink no-underline hover:text-accent transition-colors"
       style="letter-spacing: -0.02em"
     >
-      Teddy Wright
+      {siteName}
     </a>
     <div class="flex items-baseline gap-[22px] flex-wrap">
-      {navLinks.map(({ href, label, match }) => {
+      {nav.map(({ href, label, match }) => {
         const active = isActive(match);
         return (
           <a

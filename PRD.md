@@ -361,6 +361,7 @@ Major product and architecture turning points only. **Per-stage LLM Iterate refi
 - **2026-04-28**: `/research` reorganized into status groups (In Progress / Finished / Planned / Contributions).
 - **2026-04-28**: `/updates` (content collection) and `/dashboards` (top-level tab) added.
 - **2026-04-28**: Singletons (bio, now-date, dashboard roster, planned AI topics) live in `src/data/*.json` rather than content collections — small, hand-edited, not worth the collection machinery.
+- **2026-08-02**: **All site copy consolidated into `src/data/site.ts`** — bio, nav and sub-nav labels, every page heading and intro paragraph, group headings, and footer labels. A `.ts` module rather than JSON so it can carry comments and cross-reference itself (the `/research` intro *is* `bio.credentials`). `bio.json` folded in and deleted. Per-item text stays with its item (MDX frontmatter, `dashboards.json`, `ai_research_planned.json`).
 - **2026-04-28**: AI's Research topic page is a single page with stage tabs (Overview + per-stage); standalone deep-link `[stage]` routes also exist.
 - **2026-04-28**: Top-of-page NOW strip retired in favor of a global **Footer** (last-updated date + bundle downloads + contacts).
 - **2026-04-28**: Model titles rewritten in plain language (e.g. "Option Value" → "Why continuing is rational once you exist").

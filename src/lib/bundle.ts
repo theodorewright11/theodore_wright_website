@@ -1,5 +1,5 @@
 import type { CollectionEntry } from 'astro:content';
-import bio from '../data/bio.json';
+import { bio } from '../data/site';
 import now from '../data/now.json';
 
 export const fmt = (date: Date) => date.toISOString().slice(0, 10);

@@ -4,6 +4,7 @@ import GroupHeader from '../../components/GroupHeader.astro';
 import DownloadMd from '../../components/DownloadMd.astro';
 import { getCollection } from 'astro:content';
 import plannedTopics from '../../data/ai_research_planned.json';
+import { pages, siteName } from '../../data/site';
 
 const all = await getCollection('ai_research');
 
@@ -77,20 +78,17 @@ const finishedTopics = activeTopics.filter(t => t.finished);
 const inProgressTopics = activeTopics.filter(t => !t.finished);
 
 const groups = [
-  { l: 'Finished', items: finishedTopics, planned: false },
-  { l: 'In Progress', items: inProgressTopics, planned: false },
-  { l: 'Planned', items: plannedTopics, planned: true },
+  { l: pages.aiResearch.groups.finished, items: finishedTopics, planned: false },
+  { l: pages.aiResearch.groups.inProgress, items: inProgressTopics, planned: false },
+  { l: pages.aiResearch.groups.planned, items: plannedTopics, planned: true },
 ].filter(g => g.items.length > 0);
 ---
 
-<BaseLayout title="AI’s Research — Teddy Wright"
-  description="Outputs of the LLM Iterate pipeline — topics refined across five stages. Every stage has a writeup plus a possible artifact; every finished topic ends in a final writeup and artifact(s) anyone can use.">
+<BaseLayout title={`${pages.aiResearch.title} — ${siteName}`} description={pages.aiResearch.blurb}>
   <section class="max-w-[760px] mx-auto px-8 pt-14 pb-24">
     <h1 class="font-display font-semibold text-[48px] leading-none m-0 mb-3 text-ink"
-        style="letter-spacing: -0.03em">AI’s Research</h1>
-    <p class="font-serif text-[17px] text-muted leading-[1.55] max-w-[580px] m-0 mb-14">
-      A pipeline where I set AI loose on topics I choose. Five main stages — lit review, topology, model, data, build. Every stage produces a writeup plus a possible artifact, and every finished topic ends in a final writeup and artifact(s) (tool, dashboard, explainer, etc.) that any person can use.
-    </p>
+        style="letter-spacing: -0.03em">{pages.aiResearch.title}</h1>
+    <p class="font-serif text-[17px] text-muted leading-[1.55] max-w-[580px] m-0 mb-14">{pages.aiResearch.blurb}</p>
 
     <DownloadMd href="/ai-research.md" label="download all AI's research (.md)" />
 

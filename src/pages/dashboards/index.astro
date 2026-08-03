@@ -2,6 +2,7 @@
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import GroupHeader from '../../components/GroupHeader.astro';
 import dashboards from '../../data/dashboards.json';
+import { pages, siteName } from '../../data/site';
 
 type Status = 'built' | 'in-progress' | 'planned';
 type Dashboard = { slug: string; title: string; desc: string; status: Status };
@@ -13,15 +14,11 @@ const built = all.filter(d => d.status === 'built');
 const upcoming = all.filter(d => d.status !== 'built');
 ---
 
-<BaseLayout title="Dashboards — Teddy Wright"
-  description="Interactive dashboards for keeping track of things.">
+<BaseLayout title={`${pages.dashboards.title} — ${siteName}`} description={pages.dashboards.blurb}>
   <section class="max-w-[760px] mx-auto px-8 pt-14 pb-24">
     <h1 class="font-display font-semibold text-[48px] leading-none m-0 mb-3 text-ink"
-        style="letter-spacing: -0.03em">Dashboards</h1>
-    <p class="font-serif text-[17px] text-muted leading-[1.55] max-w-[580px] m-0 mb-12">
-      Tools I built for myself and left open. Everything runs in your own browser — your data
-      never touches my server, and you only ever see your own.
-    </p>
+        style="letter-spacing: -0.03em">{pages.dashboards.title}</h1>
+    <p class="font-serif text-[17px] text-muted leading-[1.55] max-w-[580px] m-0 mb-12">{pages.dashboards.blurb}</p>
 
     <div class="mb-14">
       {built.map((d, i) => (
@@ -41,7 +38,7 @@ const upcoming = all.filter(d => d.status !== 'built');
 
     {upcoming.length > 0 && (
       <section>
-        <GroupHeader label="In progress / planned" count={upcoming.length} />
+        <GroupHeader label={pages.dashboards.upcomingGroup} count={upcoming.length} />
         {upcoming.map((d, i) => (
           <article class:list={[
             'py-5 opacity-70',

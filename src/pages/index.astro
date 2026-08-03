@@ -3,7 +3,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import SectionLabel from '../components/SectionLabel.astro';
 import { Image } from 'astro:assets';
 import { getCollection } from 'astro:content';
-import bio from '../data/bio.json';
+import { bio, siteName, otherSections } from '../data/site';
 import meImg from '../assets/pic_of_me.png';
 
 const fmt = (date: Date) =>
@@ -15,21 +15,16 @@ const writing = (await getCollection('blog', ({ data }) => !data.draft))
 const research = (await getCollection('research'))
   .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
 
-const other = [
-  { href: '/dashboards', label: 'Dashboards', desc: 'Tools for different use cases — tracking spending, logging time, coding qualitative data.' },
-  { href: '/models', label: 'Models', desc: 'Breakdowns of something into its parts, and how those parts interact.' },
-  { href: '/ai-research', label: 'AI’s Research', desc: 'Topics researched by an LLM in six stages: lit review, topology, model, data, build, writeup.' },
-];
 ---
 
-<BaseLayout title="Teddy Wright">
+<BaseLayout title={siteName}>
   <div class="max-w-[1080px] mx-auto px-8 pt-12 pb-20">
 
     {/* Masthead */}
     <div class="border-b border-rule pb-9 mb-10">
       <h1 class="font-display font-semibold text-[60px] sm:text-[76px] text-ink leading-[0.92] m-0 whitespace-nowrap"
           style="letter-spacing: -0.035em">
-        Teddy Wright
+        {siteName}
       </h1>
       <div class="max-w-[760px]">
         <div class="flex items-center gap-5 mt-6">
@@ -90,7 +85,7 @@ const other = [
 
       <div>
         <SectionLabel label="Other" href="/other" />
-        {other.map(l => (
+        {otherSections.map(l => (
           <article class="py-3.5">
             <h3 class="font-serif text-[16px] font-semibold m-0 mb-1 text-ink leading-[1.35]">
               <a href={l.href} class="text-ink no-underline hover:text-accent transition-colors">

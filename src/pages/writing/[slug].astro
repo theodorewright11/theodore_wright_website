@@ -3,7 +3,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 import TierChip from '../../components/TierChip.astro';
 import DownloadMd from '../../components/DownloadMd.astro';
 import { getCollection } from 'astro:content';
-import bio from '../../data/bio.json';
+import { bio } from '../../data/site';
 
 export async function getStaticPaths() {
   const posts = await getCollection('blog');
