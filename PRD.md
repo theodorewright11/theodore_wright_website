@@ -14,7 +14,7 @@ Three top-level tabs: **Research**, **Writing**, **Other**. "Other" is an umbrel
 
 | Path | Nav | Purpose |
 |---|---|---|
-| `/` | brand | Combined home + about — bio, contact links, and a short index in nav order (Research → Writing → Other) |
+| `/` | brand | Combined home + about — single-column masthead (name, photo + credentials, blurb, contact links, capped at 760px), then a short index in nav order (Research → Writing → Other) |
 | `/research` | Research | Formal academic research in two groups: **Publications** (published + contributions) and **In progress / planned** |
 | `/writing` | Writing | Essays, with tier labels showing how AI-assisted each piece is |
 | `/other` | Other | Landing page for the Other section — one block per sub-section with its live items |

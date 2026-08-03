@@ -98,7 +98,7 @@
 │   │   └── googleAuth.ts                ← shared OAuth code-flow client (signIn/refresh/signOut/loadCachedToken); talks to api/auth/*
 │   ├── layouts/BaseLayout.astro         ← Nav + (SectionNav on Other routes) + slot + Footer, paper bg, sticky footer
 │   ├── pages/
-│   │   ├── index.astro                  ← home (masthead + 2-col index: Research/Writing | Other)
+│   │   ├── index.astro                  ← home (single-column masthead + 2-col index: Research/Writing | Other)
 │   │   ├── other.astro                  ← Other landing (one block per sub-section with its live items)
 │   │   ├── research.astro
 │   │   ├── research/[slug].astro

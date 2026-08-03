@@ -31,27 +31,25 @@ const other = [
           style="letter-spacing: -0.035em">
         Teddy Wright
       </h1>
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start mt-6">
-        <div class="flex items-center gap-5">
+      <div class="max-w-[760px]">
+        <div class="flex items-center gap-5 mt-6">
           <Image src={meImg} alt="Teddy Wright"
                  width={224} height={224} densities={[1, 2]} format="webp" quality={82}
                  class="w-24 h-24 sm:w-28 sm:h-28 object-cover border border-rule rounded-sm flex-shrink-0" />
           <p class="font-serif italic text-[13px] text-muted leading-[1.55] m-0"
              style="text-wrap: pretty">{bio.credentials}</p>
         </div>
-        <div>
-          <p class="font-serif text-base leading-[1.6] text-ink-soft m-0 mb-3"
-             style="text-wrap: pretty">{bio.blurb}</p>
-          <div class="font-mono text-[11px] uppercase text-muted"
-               style="letter-spacing: 0.08em">
-            <a href={bio.linkedin} target="_blank" rel="noopener" class="text-ink no-underline hover:text-accent transition-colors">linkedin</a>
-            <span class="text-muted"> / </span>
-            <a href={bio.github} target="_blank" rel="noopener" class="text-ink no-underline hover:text-accent transition-colors">github</a>
-            <span class="text-muted"> / </span>
-            <a href={bio.substack} target="_blank" rel="noopener" class="text-ink no-underline hover:text-accent transition-colors">substack</a>
-            <span class="text-muted"> / </span>
-            <a href={`mailto:${bio.email}`} class="text-ink no-underline hover:text-accent transition-colors">email</a>
-          </div>
+        <p class="font-serif text-base leading-[1.6] text-ink-soft m-0 mt-6"
+           style="text-wrap: pretty">{bio.blurb}</p>
+        <div class="font-mono text-[11px] uppercase text-muted mt-4"
+             style="letter-spacing: 0.08em">
+          <a href={bio.linkedin} target="_blank" rel="noopener" class="text-ink no-underline hover:text-accent transition-colors">linkedin</a>
+          <span class="text-muted"> / </span>
+          <a href={bio.github} target="_blank" rel="noopener" class="text-ink no-underline hover:text-accent transition-colors">github</a>
+          <span class="text-muted"> / </span>
+          <a href={bio.substack} target="_blank" rel="noopener" class="text-ink no-underline hover:text-accent transition-colors">substack</a>
+          <span class="text-muted"> / </span>
+          <a href={`mailto:${bio.email}`} class="text-ink no-underline hover:text-accent transition-colors">email</a>
         </div>
       </div>
     </div>
