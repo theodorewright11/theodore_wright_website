@@ -287,6 +287,7 @@ Loaded via Google Fonts at the top of `global.css`. **Font-family names are writ
 
 - **Section label** (column heading on home): display 18px ink + accent `see all →` mono link, hairline rule below — see `SectionLabel.astro`.
 - **Group header** (status sections on /research, /models, /ai-research, /dashboards, /other): display 18px label + count on the right, hairline rule below. No `§ N` numeral. Optional `href` makes the label itself a link (used on `/other`) — see `GroupHeader.astro`.
+- **Status grouping convention**: every index page collapses to **at most two groups** — a done bucket and one **"In progress / planned"** bucket. `/research` = Publications + In progress / planned. `/ai-research` = Finished + In progress / planned. `/dashboards` = built (no heading at all) + In progress / planned. `/models` = a single In progress / planned. Within a group, unfinished items render dimmed (`opacity-70`) and unlinked; that's what carries the distinction, not a separate heading. Group labels live in `pages.<page>.group(s)` in `site.ts`.
 - **Other sub-nav**: mono 11px uppercase, 0.1em tracking, muted → accent on hover/active, on a `paper-edge/40` strip with a `rule-soft` bottom border — see `SectionNav.astro`.
 - **Eyebrow / status pills**: mono 10px uppercase letter-spacing 0.12em. Live = accent border + accent text; Draft/Planned = rule border + muted text.
 - **Tier chip** (writing tier): mono 10px uppercase, rule border, muted text. Labels: `me` / `me x ai` / `ai` (mapped from `mine` / `collab` / `ai-led`) — see `TierChip.astro`.

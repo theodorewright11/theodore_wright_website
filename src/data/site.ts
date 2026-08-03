@@ -59,7 +59,7 @@ export const otherSections = [
   {
     href: '/models',
     label: 'Models',
-    desc: 'Breakdowns of messy things into components and how those interact to see in a visual, interactive way."',
+    desc: 'Breakdowns of messy things into components and how those interact to see in a visual, interactive way.'
   },
   {
     href: '/ai-research',
@@ -98,21 +98,26 @@ export const pages = {
     title: 'Models',
     blurb:
       'Breakdowns of messy things into components and how those interact to see in a visual, interactive way.',
+    group: 'In progress / planned', // single heading — nothing is finished yet
   },
   aiResearch: {
     title: 'AI’s Research',
     blurb:
       'A pipeline where I set AI loose on topics I choose. Five main stages — lit review, topology, model, data, build. Every stage produces a writeup plus a possible artifact, and every finished topic ends in a final writeup and artifact(s) (tool, dashboard, explainer, etc.) that any person can use.',
-    groups: { finished: 'Finished', inProgress: 'In Progress', planned: 'Planned' },
+    // Two headings: finished topics, then started-and-not-yet-started together.
+    groups: { finished: 'Finished', inProgress: 'In progress / planned' },
   },
 };
 
 // ── Footer ───────────────────────────────────────────────────────────────────
 export const footer = {
   downloadLabel: 'Download',
+  // Each label names exactly what the endpoint contains. `All` is every one of
+  // the others concatenated.
   downloads: [
     { href: '/research.md', label: 'My research ↓' },
     { href: '/writing.md', label: 'My writing ↓' },
+    { href: '/models.md', label: 'Models ↓' },
     { href: '/bundle-ai-research.md', label: "AI's research ↓" },
     { href: '/bundle-all.md', label: 'All ↓' },
   ],

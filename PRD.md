@@ -18,8 +18,8 @@ Three top-level tabs: **Research**, **Writing**, **Other**. "Other" is an umbrel
 | `/research` | Research | Formal academic research in two groups: **Publications** (published + contributions) and **In progress / planned** |
 | `/writing` | Writing | Essays, with tier labels showing how AI-assisted each piece is |
 | `/other` | Other | Landing page for the Other section — one block per sub-section with its live items |
-| `/ai-research` | Other ▸ | Outputs of the LLM Iterate pipeline (6-stage refinement of topics) |
-| `/models` | Other ▸ | Polished interactive quantitative models (sliders, real-time computation) |
+| `/ai-research` | Other ▸ | Outputs of the LLM Iterate pipeline (6-stage refinement of topics), in two groups: **Finished** and **In progress / planned** |
+| `/models` | Other ▸ | Polished interactive quantitative models (sliders, real-time computation), in a single **In progress / planned** group |
 | `/dashboards` | Other ▸ | Interactive dashboards — built ones listed unlabeled, everything else in one "In progress / planned" group |
 
 `/about` redirects to `/`. There is no `/updates` section — the collection, pages, and bundle entries were removed.
@@ -56,6 +56,8 @@ Initial roster (drafts/published over time). Public titles are plain-language ("
 - **How to parent optimally** *(parental decision-making)* — confidence, stakes, reversibility, disclosure, etc.
 
 Tags on model frontmatter exist in the schema but are no longer rendered — model identity is carried by the title and description.
+
+`/models` renders **one group**, "In progress / planned". No model is finished: `published` means it has a real page and dashboard while the work continues, `draft` means stub only. Published models sort first and are linked; drafts render dimmed and unlinked, which carries the distinction without a second heading.
 
 ## AI's Research (LLM Iterate)
 
@@ -95,7 +97,7 @@ Active topics — folders exist in `src/content/ai_research/` and `stage_outputs
 | `navigating-ai-world` | Navigating an AI World | writeup (pass 4) | **finished** |
 | `technology-utilization-architecture` | Technology Utilization Architecture | writeup (pass 4) | in progress |
 
-A topic is **finished** when every one of its six stages (lit-review, topology, model, data, build, writeup) has `status: complete` in the stage frontmatter. The `/ai-research` index page renders finished topics in a "Finished" bucket above the "In Progress" bucket; cards carry a small `finished` accent tag next to the title. Active topics are also listed (title only) under the AI's Research block on `/other`.
+A topic is **finished** when every one of its six stages (lit-review, topology, model, data, build, writeup) has `status: complete` in the stage frontmatter. The `/ai-research` index page renders finished topics in a "Finished" bucket above a single **"In progress / planned"** bucket holding started topics (from the content collection) followed by not-yet-started ones (from `ai_research_planned.json`); cards carry a small `finished` accent tag next to the title. Active topics are also listed (title only) under the AI's Research block on `/other`.
 
 Planned topics render from `src/data/ai_research_planned.json` (16 entries — the `{title, desc}` list shown on `/ai-research`); `prompts.md` holds the longer brainstorm behind them. Each spins up its own `src/content/ai_research/<topic>/` + `stage_outputs/<topic>/` folder pair when started.
 
@@ -335,12 +337,12 @@ Word documents (.docx) should be converted to PDF before upload (Word: File → 
 
 - **Nav** at the top of every page: brand + three links (Research / Writing / Other). Nothing else — the theme switcher moved to the footer to stop it taking prime space.
 - **SectionNav**: a thin mono sub-nav strip rendered directly under the main nav on any `/other`, `/ai-research`, `/models`, or `/dashboards` page (mounted conditionally in `BaseLayout`). Links: Overview / Dashboards / Models / AI's Research.
-- **Footer** at the bottom of every page: a **single centred line** (wrapping only on narrow screens) holding the four downloads (`My research ↓` / `My writing ↓` / `AI's research ↓` / `All ↓`), contact links, and the **theme selector** — an unstyled inline `<select>` (`Theme: Paper` / `White` / `Dark` / `Monokai` / `Monokai Light`), remembered across visits. No last-updated date. All labels sentence-cased.
+- **Footer** at the bottom of every page: a **single centred line** (wrapping only on narrow screens) holding the five downloads (`My research ↓` / `My writing ↓` / `Models ↓` / `AI's research ↓` / `All ↓` — one per collection, plus everything concatenated), contact links, and the **theme selector** — an unstyled inline `<select>` (`Theme: Paper` / `White` / `Dark` / `Monokai` / `Monokai Light`), remembered across visits. No last-updated date. All labels sentence-cased.
 - **Content bundles**: top-level markdown bundles served at build time:
   - `/bundle-mine.md` — every essay, research entry, and model writeup (the user's own work). Live but unlinked — the footer surfaces the narrower `/research.md` and `/writing.md` instead.
   - `/bundle-ai-research.md` — every stage of every AI-Research topic (the full LLM Iterate pipeline output).
   - `/bundle-all.md` — both bundles concatenated. Footer surfaces all three (`mine ↓`, `ai's research ↓`, `all ↓`).
-- **Per-page downloads**: content pages carry a uniform `download as .md` button at the top. `/research` and `/writing` are the exceptions — their index buttons were removed to keep the lists clean, and the whole-collection download moved to the footer instead. Per-entry buttons stay on every detail page. Endpoints: `/writing.md`, `/writing/<slug>.md`, `/research.md`, `/research/<slug>.md`, `/models.md`, `/models/<slug>.md`, `/ai-research.md`, `/ai-research/<topic>.md` (whole topic in stage order), `/ai-research/<topic>/<stage>.md`. Shared rendering helpers live in `src/lib/bundle.ts`.
+- **Per-page downloads**: **no index page carries a download button** — every whole-collection download lives in the footer instead, so the index pages stay a clean list. The uniform `download as .md` button remains on every *detail* page (`/research/<slug>`, `/writing/<slug>`, `/models/<slug>`, and the AI-research stage pages). Endpoints: `/writing.md`, `/writing/<slug>.md`, `/research.md`, `/research/<slug>.md`, `/models.md`, `/models/<slug>.md`, `/ai-research.md`, `/ai-research/<topic>.md` (whole topic in stage order), `/ai-research/<topic>/<stage>.md`. Shared rendering helpers live in `src/lib/bundle.ts`.
 
 ## Out of scope (for now)
 
