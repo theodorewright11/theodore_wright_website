@@ -54,12 +54,12 @@ export const otherSections = [
   {
     href: '/dashboards',
     label: 'Dashboards',
-    desc: 'Tools for different use cases — tracking spending, logging time, coding qualitative data.',
+    desc: 'Tools I built for myself for various things.',
   },
   {
     href: '/models',
     label: 'Models',
-    desc: 'Breakdowns of something into its parts, and how those parts interact.',
+    desc: 'Breakdowns of messy things into components and how those interact to see in a visual, interactive way."',
   },
   {
     href: '/ai-research',
@@ -91,13 +91,13 @@ export const pages = {
   dashboards: {
     title: 'Dashboards',
     blurb:
-      'Tools I built for myself and left open. Everything runs in your own browser — your data never touches my server, and you only ever see your own.',
+      'Tools I built for myself for various things left open for others to see. Anyone can sign in with their email. Don\'t have instructions on how to set up data fields to use the dashboards though. Maybe in the future.',
     upcomingGroup: 'In progress / planned',
   },
   models: {
     title: 'Models',
     blurb:
-      'Interactive models that break phenomena down into quantified, isolated logic. Useful for getting a grasp on complex things in the world.',
+      'Breakdowns of messy things into components and how those interact to see in a visual, interactive way.',
   },
   aiResearch: {
     title: 'AI’s Research',
