@@ -4,7 +4,7 @@ import { UNCATEGORIZED } from './categories';
 import {
   type YearMonth, todayYM, ymKey, shiftMonth,
   txsInMonth, totalSpend, totalBudget, totalIncome,
-  spendByCategory, spendByAccount, spendByBroad,
+  spendByCategory, spendByAccount,
   monthsRange, earliestTxYM, mean, median, rollingAverage, daysInMonth,
   formatMoney, formatPercent,
 } from './compute';
@@ -36,25 +36,20 @@ export default function InsightsTab({ transactions, budgets, incomes, categories
   const earliest = earliestTxYM(transactions) ?? today;
 
   // Insights preferences (device-local — not part of the synced sheet).
-  const [excludePartial, setExcludePartial] = useState(true);
   const [recurringKeys, setRecurringKeys] = useState<Set<string>>(new Set());
   const recurringLoaded = useRef(false);
   const [showRecurringConfig, setShowRecurringConfig] = useState(false);
+  const [compLevel, setCompLevel] = useState<'broad' | 'mid' | 'detailed'>('broad');
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    const ep = window.localStorage.getItem('tw-finance-exclude-partial-v1');
-    if (ep !== null) setExcludePartial(ep === '1');
     const rk = window.localStorage.getItem('tw-finance-recurring-v1');
     if (rk) { try { const a = JSON.parse(rk); if (Array.isArray(a)) { setRecurringKeys(new Set(a)); recurringLoaded.current = true; } } catch { /* ignore */ } }
   }, []);
-  useEffect(() => {
-    if (typeof window !== 'undefined') window.localStorage.setItem('tw-finance-exclude-partial-v1', excludePartial ? '1' : '0');
-  }, [excludePartial]);
 
   // The earliest month is "partial" when the first transaction lands mid-month
   // (e.g. tracking started Aug 16) — that month skews every monthly stat, so
-  // it can be dropped from all Insights aggregations.
+  // it is always dropped from Insights aggregations.
   const earliestDate = useMemo(() => transactions.reduce((m, t) => !m || t.date < m ? t.date : m, ''), [transactions]);
   const firstMonthPartial = earliestDate ? parseInt(earliestDate.slice(8, 10), 10) > 1 : false;
 
@@ -75,10 +70,10 @@ export default function InsightsTab({ transactions, budgets, incomes, categories
       ? earliest
       : laterYM(earliest, shiftMonth(today, -(win - 1)));
     let ms = monthsRange(start, today);
-    // Drop the earliest month only when it's the global (partial) first month.
-    if (excludePartial && firstMonthPartial && ms.length && ymKey(ms[0]) === ymKey(earliest)) ms = ms.slice(1);
+    // Always drop the earliest month when it's the global (partial) first month.
+    if (firstMonthPartial && ms.length && ymKey(ms[0]) === ymKey(earliest)) ms = ms.slice(1);
     return ms;
-  }, [win, earliest.year, earliest.month, today.year, today.month, excludePartial, firstMonthPartial]);
+  }, [win, earliest.year, earliest.month, today.year, today.month, firstMonthPartial]);
 
   // Per-month rollup over the window.
   const data = useMemo(() => months.map(ym => {
@@ -106,24 +101,37 @@ export default function InsightsTab({ transactions, budgets, incomes, categories
 
   const rolling = rollingAverage(data.map(d => d.spent), 3);
 
-  // Ordered broad list (taxonomy order) + Uncategorized, with a stable color.
-  const broads = useMemo(() => {
+  // Composition can be viewed at any hierarchy level (broad / mid / detailed).
+  const entryByDetailed = useMemo(() => {
+    const m = new Map<string, CategoryEntry>();
+    for (const c of categories) m.set(c.detailed, c);
+    return m;
+  }, [categories]);
+  const levelKeys = useMemo(() => {
     const seen = new Set<string>(); const out: string[] = [];
-    for (const c of categories) if (!seen.has(c.broad)) { seen.add(c.broad); out.push(c.broad); }
+    for (const c of categories) { const k = c[compLevel]; if (!seen.has(k)) { seen.add(k); out.push(k); } }
     out.push(UNCATEGORIZED);
     return out;
-  }, [categories]);
-  const colorOf = (broad: string) => BROAD_COLORS[Math.max(0, broads.indexOf(broad)) % BROAD_COLORS.length];
+  }, [categories, compLevel]);
+  const colorOf = (key: string) => BROAD_COLORS[Math.max(0, levelKeys.indexOf(key)) % BROAD_COLORS.length];
+  const groupByLevel = (txs: Transaction[]) => {
+    const m = new Map<string, number>();
+    for (const t of txs) {
+      const k = entryByDetailed.get(t.category)?.[compLevel] ?? UNCATEGORIZED;
+      m.set(k, (m.get(k) ?? 0) + (Number.isFinite(t.amount) ? t.amount : 0));
+    }
+    return m;
+  };
 
   // ── Section data ────────────────────────────────────────────────────────
 
-  // Window-wide totals by broad (composition) and by account.
+  // Window-wide totals at the chosen level (composition) and by account.
   const windowTxs = useMemo(() => data.flatMap(d => d.txs), [data]);
   const windowSpent = totalSpend(windowTxs);
-  const broadTotals = useMemo(() => {
-    const m = spendByBroad(windowTxs, categories);
+  const levelTotals = useMemo(() => {
+    const m = groupByLevel(windowTxs);
     return [...m.entries()].sort((a, b) => b[1] - a[1]);
-  }, [windowTxs, categories]);
+  }, [windowTxs, compLevel, entryByDetailed]);
   const accountTotals = useMemo(() => {
     const m = spendByAccount(windowTxs);
     return [...m.entries()].sort((a, b) => b[1] - a[1]);
@@ -143,11 +151,11 @@ export default function InsightsTab({ transactions, budgets, incomes, categories
     return { cur: cur.ym, prev: prev.ym, rows };
   }, [data, categories]);
 
-  // Composition per month (stacked by broad).
+  // Composition per month (stacked at the chosen level).
   const composition = useMemo(() => data.map(d => {
-    const m = spendByBroad(d.txs, categories);
-    return { ym: d.ym, total: d.spent, segments: broads.map(b => ({ broad: b, value: m.get(b) ?? 0 })).filter(s => s.value > 0) };
-  }), [data, categories, broads]);
+    const m = groupByLevel(d.txs);
+    return { ym: d.ym, total: d.spent, segments: levelKeys.map(k => ({ broad: k, value: m.get(k) ?? 0 })).filter(s => s.value > 0) };
+  }), [data, compLevel, entryByDetailed, levelKeys]);
 
   // Recurring vs discretionary, per month — split by the configurable set.
   const recurring = useMemo(() => data.map(d => {
@@ -208,13 +216,6 @@ export default function InsightsTab({ transactions, budgets, incomes, categories
       <div className="bg-paper border border-rule rounded-md px-3 py-2 flex items-center justify-between gap-3 flex-wrap shadow-[0_1px_2px_rgba(26,22,20,0.03)]">
         <h2 className="font-display font-semibold text-[20px] text-ink m-0" style={{ letterSpacing: '-0.02em' }}>Insights</h2>
         <div className="flex items-center gap-3 flex-wrap">
-          {firstMonthPartial && (
-            <label className="flex items-center gap-1.5 font-mono text-[10px] uppercase text-muted cursor-pointer" style={{ letterSpacing: '0.06em' }}
-                   title={`${monthLong(earliest)} started mid-month, so it drags monthly stats down. Excluded by default.`}>
-              <input type="checkbox" checked={excludePartial} onChange={e => setExcludePartial(e.target.checked)} />
-              Exclude {monthShort(earliest)}
-            </label>
-          )}
           <div className="flex items-center gap-1">
             {([6, 12, 24, 'all'] as Win[]).map(w => (
               <button key={String(w)} onClick={() => setWin(w)}
@@ -243,13 +244,21 @@ export default function InsightsTab({ transactions, budgets, incomes, categories
       </Section>
 
       {/* Category composition over time */}
-      <Section title="Where it goes, over time" note="Spend stacked by broad category each month">
-        <StackedChart months={composition} broads={broads} colorOf={colorOf} />
-        <Legend broads={broadTotals.map(([b]) => b)} colorOf={colorOf} />
+      <Section title="Where it goes, over time" note="Spend by category each month — switch the level of detail">
+        <div className="flex justify-end gap-1 mb-3">
+          {(['broad', 'mid', 'detailed'] as const).map(lv => (
+            <button key={lv} onClick={() => setCompLevel(lv)}
+              className={'font-mono text-[10px] uppercase px-2.5 py-1 rounded-sm border transition-colors ' + (
+                compLevel === lv ? 'text-accent border-accent bg-accent/5' : 'text-muted border-rule hover:text-accent hover:border-accent')}
+              style={{ letterSpacing: '0.08em' }}>{lv === 'broad' ? 'Broad' : lv === 'mid' ? 'Mid' : 'Detailed'}</button>
+          ))}
+        </div>
+        <StackedChart months={composition} broads={levelKeys} colorOf={colorOf} />
+        {levelKeys.length <= 14 && <Legend broads={levelTotals.map(([b]) => b)} colorOf={colorOf} />}
         <div className="mt-4 space-y-1.5">
-          {broadTotals.map(([broad, val]) => (
-            <HBar key={broad} label={broad} value={val} max={broadTotals[0]?.[1] ?? 1}
-                  color={colorOf(broad)} right={`${formatMoney(val)} · ${formatPercent(windowSpent ? val / windowSpent : null)}`} />
+          {levelTotals.map(([key, val]) => (
+            <HBar key={key} label={key} value={val} max={levelTotals[0]?.[1] ?? 1}
+                  color={colorOf(key)} right={`${formatMoney(val)} · ${formatPercent(windowSpent ? val / windowSpent : null)}`} />
           ))}
         </div>
       </Section>
