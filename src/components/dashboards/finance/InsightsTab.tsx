@@ -40,6 +40,8 @@ export default function InsightsTab({ transactions, budgets, incomes, categories
   const recurringLoaded = useRef(false);
   const [showRecurringConfig, setShowRecurringConfig] = useState(false);
   const [compLevel, setCompLevel] = useState<'broad' | 'mid' | 'detailed'>('broad');
+  const [needsLevel, setNeedsLevel] = useState<'broad' | 'mid' | 'detailed'>('broad');
+  const [showNeedsBreakdown, setShowNeedsBreakdown] = useState(false);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -114,10 +116,10 @@ export default function InsightsTab({ transactions, budgets, incomes, categories
     return out;
   }, [categories, compLevel]);
   const colorOf = (key: string) => BROAD_COLORS[Math.max(0, levelKeys.indexOf(key)) % BROAD_COLORS.length];
-  const groupByLevel = (txs: Transaction[]) => {
+  const groupByLevel = (txs: Transaction[], level: 'broad' | 'mid' | 'detailed') => {
     const m = new Map<string, number>();
     for (const t of txs) {
-      const k = entryByDetailed.get(t.category)?.[compLevel] ?? UNCATEGORIZED;
+      const k = entryByDetailed.get(t.category)?.[level] ?? UNCATEGORIZED;
       m.set(k, (m.get(k) ?? 0) + (Number.isFinite(t.amount) ? t.amount : 0));
     }
     return m;
@@ -129,7 +131,7 @@ export default function InsightsTab({ transactions, budgets, incomes, categories
   const windowTxs = useMemo(() => data.flatMap(d => d.txs), [data]);
   const windowSpent = totalSpend(windowTxs);
   const levelTotals = useMemo(() => {
-    const m = groupByLevel(windowTxs);
+    const m = groupByLevel(windowTxs, compLevel);
     return [...m.entries()].sort((a, b) => b[1] - a[1]);
   }, [windowTxs, compLevel, entryByDetailed]);
   const accountTotals = useMemo(() => {
@@ -153,7 +155,7 @@ export default function InsightsTab({ transactions, budgets, incomes, categories
 
   // Composition per month (stacked at the chosen level).
   const composition = useMemo(() => data.map(d => {
-    const m = groupByLevel(d.txs);
+    const m = groupByLevel(d.txs, compLevel);
     return { ym: d.ym, total: d.spent, segments: levelKeys.map(k => ({ broad: k, value: m.get(k) ?? 0 })).filter(s => s.value > 0) };
   }), [data, compLevel, entryByDetailed, levelKeys]);
 
@@ -167,6 +169,17 @@ export default function InsightsTab({ transactions, budgets, incomes, categories
   }), [data, effectiveRecurring]);
   const recTotal = recurring.reduce((s, r) => s + r.rec, 0);
   const disTotal = recurring.reduce((s, r) => s + r.dis, 0);
+
+  // Drill-down: split the window's spend into needs/wants, then group each side
+  // at the chosen hierarchy level (same Broad/Mid/Detailed as the composition).
+  const needsBreakdown = useMemo(() => {
+    const needTx: Transaction[] = [], wantTx: Transaction[] = [];
+    for (const t of windowTxs) (effectiveRecurring.has(t.category) ? needTx : wantTx).push(t);
+    const grp = (txs: Transaction[]) => [...groupByLevel(txs, needsLevel).entries()].sort((a, b) => b[1] - a[1]);
+    const needs = grp(needTx), wants = grp(wantTx);
+    const max = Math.max(1, ...needs.map(x => x[1]), ...wants.map(x => x[1]));
+    return { needs, wants, max };
+  }, [windowTxs, effectiveRecurring, needsLevel, entryByDetailed]);
 
   // Budget adherence: overall % used per month + per-broad summary.
   const adherence = useMemo(() => data.map(d => ({
@@ -326,6 +339,48 @@ export default function InsightsTab({ transactions, budgets, incomes, categories
           <Stat label="Needs (window)" value={formatMoney(recTotal)} sub={formatPercent(windowSpent ? recTotal / windowSpent : null) + ' of spend'} small />
           <Stat label="Wants (window)" value={formatMoney(disTotal)} sub={formatPercent(windowSpent ? disTotal / windowSpent : null) + ' of spend'} small />
         </div>
+
+        <div className="mt-4">
+          <button onClick={() => setShowNeedsBreakdown(v => !v)}
+            className="font-mono text-[10px] uppercase text-muted hover:text-accent border border-rule hover:border-accent rounded-sm px-2 py-1 transition-colors"
+            style={{ letterSpacing: '0.08em' }}>{showNeedsBreakdown ? 'Hide breakdown ▴' : 'Break down by category ▾'}</button>
+        </div>
+        {showNeedsBreakdown && (
+          <div className="mt-3 border border-rule rounded-md p-3 bg-paper-edge/10">
+            <div className="flex justify-end gap-1 mb-3">
+              {(['broad', 'mid', 'detailed'] as const).map(lv => (
+                <button key={lv} onClick={() => setNeedsLevel(lv)}
+                  className={'font-mono text-[10px] uppercase px-2.5 py-1 rounded-sm border transition-colors ' + (
+                    needsLevel === lv ? 'text-accent border-accent bg-accent/5' : 'text-muted border-rule hover:text-accent hover:border-accent')}
+                  style={{ letterSpacing: '0.08em' }}>{lv === 'broad' ? 'Broad' : lv === 'mid' ? 'Mid' : 'Detailed'}</button>
+              ))}
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
+              <div>
+                <div className="flex items-baseline justify-between mb-2">
+                  <span className="font-mono text-[10px] uppercase" style={{ letterSpacing: '0.12em', color: '#6f8598' }}>Needs</span>
+                  <span className="font-mono text-[11px] text-muted tabular-nums">{formatMoney(recTotal)}</span>
+                </div>
+                <div className="space-y-1.5">
+                  {needsBreakdown.needs.length ? needsBreakdown.needs.map(([k, v]) => (
+                    <HBar key={k} label={k} value={v} max={needsBreakdown.max} color="#6f8598" right={formatMoney(v)} />
+                  )) : <p className="font-serif italic text-[12px] text-muted m-0">Nothing here.</p>}
+                </div>
+              </div>
+              <div>
+                <div className="flex items-baseline justify-between mb-2">
+                  <span className="font-mono text-[10px] uppercase text-accent" style={{ letterSpacing: '0.12em' }}>Wants</span>
+                  <span className="font-mono text-[11px] text-muted tabular-nums">{formatMoney(disTotal)}</span>
+                </div>
+                <div className="space-y-1.5">
+                  {needsBreakdown.wants.length ? needsBreakdown.wants.map(([k, v]) => (
+                    <HBar key={k} label={k} value={v} max={needsBreakdown.max} color="rgb(var(--color-accent))" right={formatMoney(v)} />
+                  )) : <p className="font-serif italic text-[12px] text-muted m-0">Nothing here.</p>}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </Section>
 
       {/* Spending by account */}
